@@ -1,15 +1,16 @@
 import re
+import sys
+import time
+
 from pyrogram import Client, filters
 from pyrogram.errors import RPCError
 import streamingtest
 from cleaner import ConfigManager
 
-# 目标群组id, 机器人只会监听这些目标的信息,请更换这些id
+
 config = ConfigManager()
-CHAT_TARGET = [-1001601011623, -1001575894417]
-# USER_TARGET = [1881396047]  # 可以是UID 也可以是用户名
-USER_TARGET = config.getuser()
-admin = [1881396047, -1001172947246]  # 管理员
+USER_TARGET = config.getuser()  # 这是用户列表，从配置文件读取
+admin = config.getAdmin()  # 管理员
 # 你的机器人的用户名
 USERNAME = "@AirportRoster_bot"
 port = 1111
@@ -19,6 +20,11 @@ proxies = {
     "hostname": "127.0.0.1",
     "port": port
 }
+# 如果找不到管理员，程序会被强制退出。
+if admin is None:
+    print("获取管理员失败，将在5s后退出")
+    time.sleep(5)
+    sys.exit(1)
 
 # 你需要一个TG的session后缀文件，以下是session文件的名字，应形如 my_bot.session 为后缀。这个文件小心保管，不要泄露。
 app = Client("my_bot", proxy=proxies)
@@ -67,7 +73,7 @@ async def change(client, message):
 @app.on_message(filters.command(["grant"]) & filters.user(admin), group=2)
 async def grant(client, message):
     try:
-        grant_text = "该成员已被加入到授权目标(重启bot生效)"
+        grant_text = "该成员已被加入到授权目标"
         co = ConfigManager()
         print(message.chat.id)
         if message.reply_to_message is None:
@@ -82,6 +88,7 @@ async def grant(client, message):
                 grant_id = int(message.reply_to_message.sender_chat.id)
             co.add_user(grant_id)
             co.save()
+            USER_TARGET.append(grant_id)
 
     except RPCError as r:
         print(r)
@@ -102,6 +109,7 @@ async def ungrant(client, message):
             try:
                 co.del_user(ungrant_id)
                 co.save()
+                USER_TARGET.remove(ungrant_id)
                 await client.send_message(chat_id=message.chat.id,
                                           text=ungrant_text,
                                           reply_to_message_id=message.reply_to_message.id)
@@ -120,18 +128,18 @@ async def user(client, message):
     await message.reply(text)
 
 
-@app.on_message(filters.command(["new"]) & filters.user(admin), group=5)
-async def new(client, message):
-    text = "新增好了"
-    pattern = re.compile(
-        r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+")  # 匹配订阅地址
-    if "/new" in message.text or "/new" + USERNAME in message.text:
-        # 获取订阅地址
-        try:
-            url = pattern.findall(text)[0]  # 列表中第一个项为订阅地址
-        except IndexError:
-            await message.reply("⚠️无效的订阅地址，请检查后重试。")
-            return
-        # 把名字和订阅url保存
+# @app.on_message(filters.command(["new"]) & filters.user(admin), group=5)
+# async def new(client, message):
+#     text = "新增好了"
+#     pattern = re.compile(
+#         r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+")  # 匹配订阅地址
+#     if "/new" in message.text or "/new" + USERNAME in message.text:
+#         # 获取订阅地址
+#         try:
+#             url = pattern.findall(text)[0]  # 列表中第一个项为订阅地址
+#         except IndexError:
+#             await message.reply("⚠️无效的订阅地址，请检查后重试。")
+#             return
+#         # 把名字和订阅url保存
 
 app.run()

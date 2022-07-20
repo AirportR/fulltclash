@@ -1,3 +1,6 @@
+import sys
+import time
+
 import yaml
 from bs4 import BeautifulSoup
 
@@ -214,8 +217,7 @@ class ConfigManager:
     def getAdmin(self):
         try:
             return self.config['admin']
-        except TypeError as t:
-            print("获取管理员失败")
+        except KeyError:
             return None
 
     def getuser(self):
