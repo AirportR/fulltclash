@@ -223,9 +223,16 @@ class ConfigManager:
     def getuser(self):
         try:
             return self.config['user']
-        except KeyError as t:
+        except KeyError:
             print("获取用户失败,将采用默认用户")
             return [1881396047]  # 默认名单
+
+    def get_proxy_port(self):
+        try:
+            return self.config['proxyport']
+        except KeyError:
+            print("获取代理端口失败，将采用默认7890端口")
+            return 7890
 
     def add(self, data: dict, key):
         try:

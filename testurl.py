@@ -13,7 +13,7 @@ USER_TARGET = config.getuser()  # 这是用户列表，从配置文件读取
 admin = config.getAdmin()  # 管理员
 # 你的机器人的用户名
 USERNAME = "@AirportRoster_bot"
-port = 1111
+port = config.get_proxy_port()
 # 如果是在国内环境，则需要代理环境以供程序连接上TG
 proxies = {
     "scheme": "socks5",  # "socks4", "socks5" and "http" are supported
