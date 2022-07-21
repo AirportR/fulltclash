@@ -28,7 +28,7 @@ if admin is None:
 
 # 你需要一个TG的session后缀文件，以下是session文件的名字，应形如 my_bot.session 为后缀。这个文件小心保管，不要泄露。
 app = Client("my_bot", proxy=proxies)
-
+print("配置已加载")
 print("程序已启动!")
 
 
@@ -75,7 +75,7 @@ async def grant(client, message):
     try:
         grant_text = "该成员已被加入到授权目标"
         co = ConfigManager()
-        print(message.chat.id)
+
         if message.reply_to_message is None:
             await message.reply("请先用该指令回复一个目标")
         else:
@@ -86,6 +86,7 @@ async def grant(client, message):
                 grant_id = int(message.reply_to_message.from_user.id)
             except AttributeError:
                 grant_id = int(message.reply_to_message.sender_chat.id)
+            print("授权id:", grant_id)
             co.add_user(grant_id)
             co.save()
             USER_TARGET.append(grant_id)
@@ -124,7 +125,7 @@ async def ungrant(client, message):
 
 @app.on_message(filters.command(["user"]) & filters.user(admin), group=4)
 async def user(client, message):
-    text = "当前用户有:" + str(USER_TARGET) + "\n共{}个".format(len(USER_TARGET))
+    text = "当前用户有:" + str(set(USER_TARGET)) + "\n共{}个".format(len(USER_TARGET))
     await message.reply(text)
 
 

@@ -208,7 +208,10 @@ class ConfigManager:
         self.yaml = {}
         with open(configpath, "r", encoding="UTF-8") as fp:
             self.config = yaml.load(fp, Loader=yaml.FullLoader)
-            print("配置已加载")
+        try:
+            self.yaml.update(self.config)
+        except Exception:
+            print("加载配置出错")
         if self.config is None:
             di = {'loader': "True"}
             with open(configpath, "w+", encoding="UTF-8") as fp:
@@ -329,7 +332,7 @@ class ConfigManager:
                 print(e)
 
     def reload(self, configpath="./config.yaml"):
-        with open(configpath, "w+", encoding="UTF-8") as fp:
+        with open(configpath, "r", encoding="UTF-8") as fp:
             self.config = yaml.load(fp, Loader=yaml.FullLoader)
 
     def newsub(self, suburl: dict):
