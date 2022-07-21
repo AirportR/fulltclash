@@ -100,7 +100,7 @@ class Collector:
         """
         try:
             s1 = time.time()
-            a1 = await session.get("http://www.gstatic.com/generate_204", proxy=proxy, timeout=10)
+            a1 = await session.get("http://www.gstatic.com/generate_204", proxy=proxy, timeout=5)
             # a2 = await session.get("https://www.google.com/", proxy="http://127.0.0.1:1111", timeout=10)
             # a3 = await session.get("https://www.google.com/", proxy="http://127.0.0.1:1111", timeout=10)
             # if a1.status == 200 and a2.status == 200 and a3.status == 200:
@@ -126,7 +126,7 @@ class Collector:
         :return:
         """
         try:
-            res = await session.get(self.ipurl, proxy=proxy, timeout=10)
+            res = await session.get(self.ipurl, proxy=proxy, timeout=5)
             print("ip查询状态：", res.status)
             if res.status != 200:
                 self.info['ip'] = None
@@ -152,7 +152,7 @@ class Collector:
         :return:
         """
         try:
-            n1 = await session.get(self.netflixurl1, proxy=proxy, timeout=10)
+            n1 = await session.get(self.netflixurl1, proxy=proxy, timeout=5)
             if n1 is not None:
                 self.info['netflix1'] = await n1.text()
                 self.info['ne_status_code1'] = n1.status
@@ -170,7 +170,7 @@ class Collector:
         :return:
         """
         try:
-            n2 = await session.get(self.netflixurl2, proxy=proxy, timeout=10)
+            n2 = await session.get(self.netflixurl2, proxy=proxy, timeout=5)
             if n2 is not None:
                 self.info['netflix2'] = await n2.text()
                 self.info['ne_status_code2'] = n2.status
@@ -189,7 +189,7 @@ class Collector:
         :return:
         """
         try:
-            youtube = await session.get(self.youtubeurl, proxy=proxy, timeout=10)
+            youtube = await session.get(self.youtubeurl, proxy=proxy, timeout=5)
             if youtube.status is not None:
                 self.info['youtube'] = await youtube.text()
                 self.info['youtube_status_code'] = youtube.status
@@ -207,8 +207,8 @@ class Collector:
         :return:
         """
         try:
-            dis1 = await session.get(self.disneyurl1, proxy=proxy, timeout=10)
-            dis2 = await session.get(self.disneyurl2, proxy=proxy, timeout=10)
+            dis1 = await session.get(self.disneyurl1, proxy=proxy, timeout=5)
+            dis2 = await session.get(self.disneyurl2, proxy=proxy, timeout=5)
             if dis1.status == 200 and dis2.status != 403:
                 self.info['disney'] = "解锁"
             else:
@@ -241,12 +241,7 @@ class Collector:
                 task6 = asyncio.create_task(self.httping(session, proxy=proxy))
                 tasks.append(task6)
                 done, pending = await asyncio.wait(tasks)
-                if pending is None:
-                    print("任务已完成")
-                    await session.close()
-                else:
-                    await asyncio.sleep(1)
-                    await session.close()
+                await session.close()
             return self.info
         except Exception as e:
             print(e)
