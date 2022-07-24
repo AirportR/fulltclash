@@ -1,0 +1,11 @@
+aiohttp>=3.8.1
+async_timeout>=4.0.2
+beautifulsoup4~=4.10.0
+Pillow~=9.1.0
+pilmoji>=2.0.1
+Pyrogram>=2.0.26
+PyYAML>=6.0
+requests>=2.26.0
+
+bs4~=0.0.1
+APScheduler~=3.6.3
