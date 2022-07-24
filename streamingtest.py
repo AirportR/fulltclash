@@ -95,9 +95,6 @@ async def testurl(client, message, back_message):
         # 关闭进程
         subp.kill()
         progress = 0
-        print(netflix)
-        print(youtube_info)
-        print(disneyinfo)
         print(gpinginfo)
         new_y = []
         # 过滤None值

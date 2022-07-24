@@ -93,7 +93,7 @@ class Collector:
 
     async def httping(self, session: aiohttp.ClientSession, proxy=None):
         """
-        访问google的延迟
+        访问网页的延迟
         :param session:
         :param proxy:
         :return: float: 一个浮点数值，毫秒为单位
@@ -144,11 +144,12 @@ class Collector:
         except ClientConnectorError as c:
             print(c)
 
-    async def fetch_ninfo1(self, session: aiohttp.ClientSession, proxy=None):
+    async def fetch_ninfo1(self, session: aiohttp.ClientSession, proxy=None, reconnection=1):
         """
         自制剧检测
         :param session:
         :param proxy:
+        :param reconnection :重连次数
         :return:
         """
         try:
@@ -160,13 +161,20 @@ class Collector:
                 self.info['netflix1'] = None
                 self.info['ne_status_code1'] = None
         except ClientConnectorError as c:
-            print(c)
+            print("Netflix请求发生错误:", c)
+            if reconnection != 0:
+                await self.fetch_ninfo1(session=session, proxy=proxy, reconnection=reconnection - 1)
+        except asyncio.exceptions.TimeoutError:
+            print("Netflix请求超时，正在重新发送请求......")
+            if reconnection != 0:
+                await self.fetch_ninfo1(session=session, proxy=proxy, reconnection=reconnection - 1)
 
-    async def fetch_ninfo2(self, session: aiohttp.ClientSession, proxy=None):
+    async def fetch_ninfo2(self, session: aiohttp.ClientSession, proxy=None, reconnection=1):
         """
         非自制剧检测
         :param session:
         :param proxy:
+        :param reconnection :重连次数
         :return:
         """
         try:
@@ -179,9 +187,15 @@ class Collector:
                 self.info['ne_status_code2'] = None
 
         except ClientConnectorError as c:
-            print(c)
+            print("Netflix请求发生错误:", c)
+            if reconnection != 0:
+                await self.fetch_ninfo2(session=session, proxy=proxy, reconnection=reconnection - 1)
+        except asyncio.exceptions.TimeoutError:
+            print("Netflix请求超时，正在重新发送请求......")
+            if reconnection != 0:
+                await self.fetch_ninfo2(session=session, proxy=proxy, reconnection=reconnection - 1)
 
-    async def fetch_youtube(self, session: aiohttp.ClientSession, proxy=None):
+    async def fetch_youtube(self, session: aiohttp.ClientSession, proxy=None, reconnection=1):
         """
         Youtube解锁检测
         :param session:
@@ -197,9 +211,15 @@ class Collector:
             else:
                 self.info['youtube'] = None
         except ClientConnectorError as c:
-            print(c)
+            print("Youtube请求发生错误:", c)
+            if reconnection != 0:
+                await self.fetch_youtube(session=session, proxy=proxy, reconnection=reconnection - 1)
+        except asyncio.exceptions.TimeoutError:
+            print("Youtube请求超时，正在重新发送请求......")
+            if reconnection != 0:
+                await self.fetch_youtube(session=session, proxy=proxy, reconnection=reconnection - 1)
 
-    async def fetch_dis(self, session: aiohttp.ClientSession, proxy=None):
+    async def fetch_dis(self, session: aiohttp.ClientSession, proxy=None, reconnection=1):
         """
         Disney+ 解锁检测
         :param session:
@@ -215,7 +235,13 @@ class Collector:
                 self.info['disney'] = "失败"
             print("disney+ 成功访问")
         except ClientConnectorError as c:
-            print(c)
+            print("disney+请求发生错误:", c)
+            if reconnection != 0:
+                await self.fetch_dis(session=session, proxy=proxy, reconnection=reconnection - 1)
+        except asyncio.exceptions.TimeoutError:
+            print("disney+请求超时，正在重新发送请求......")
+            if reconnection != 0:
+                await self.fetch_dis(session=session, proxy=proxy, reconnection=reconnection - 1)
 
     async def start(self, session: aiohttp.ClientSession = None, proxy=None):
         """
@@ -253,5 +279,3 @@ class Collector:
             self.info['ne_status_code2'] = None
             self.info['youtube_status_code'] = None
             return self.info
-
-
