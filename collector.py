@@ -222,6 +222,7 @@ class Collector:
     async def fetch_dis(self, session: aiohttp.ClientSession, proxy=None, reconnection=1):
         """
         Disney+ 解锁检测
+        :param reconnection:
         :param session:
         :param proxy:
         :return:

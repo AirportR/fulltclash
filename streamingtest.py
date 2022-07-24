@@ -22,7 +22,7 @@ async def testurl(client, message, back_message):
         await back_message.edit_text("⚠️当前已有测试任务运行，请等待上一个任务完成。")
         return
     try:
-        s1 = time.time()
+
         chat_id = message.chat.id
         text = str(message.text)
 
@@ -54,6 +54,7 @@ async def testurl(client, message, back_message):
             cl = cleaner.ClashCleaner(fp)
             nodename = cl.nodesName()
             nodetype = cl.nodesType()
+            nodenum = cl.nodesCount()
             cl.changeClashPort(port=port)
             cl.changeClashEC()
             # cl.changeClashMode()
@@ -62,12 +63,14 @@ async def testurl(client, message, back_message):
         # 启动clash进程
         command = fr"{clash_path} -f {sub_path}"
         subp = subprocess.Popen(command.split(), encoding="utf-8")
+        time.sleep(2)
         # 进入循环，直到所有任务完成
         ninfo = []  # 存放所测节点Netflix的解锁信息
         youtube_info = []
         disneyinfo = []
         gpinginfo = []
         # 启动流媒体测试
+        s1 = time.time()
         for n in nodename:
             proxys.switchProxy_old(proxyName=n, proxyGroup=proxy_group)
             progress += 1
@@ -89,8 +92,10 @@ async def testurl(client, message, back_message):
             youtube_info.append(you)
             dis = clean.getDisneyinfo()
             disneyinfo.append(dis)
-            p_text = "%.2f" % (progress / len(nodename) * 100)
-            await back_message.edit_text("╰(*°▽°*)╯流媒体测试进行中...\n\n" + "当前进度:\n" + p_text + "%")  # 实时反馈进度
+            p_text = "%.2f" % (progress / nodenum * 100)
+            await back_message.edit_text("╰(*°▽°*)╯流媒体测试进行中...\n\n" +
+                                         "当前进度:\n" + p_text +
+                                         "%     [" + str(progress) + "/" + str(nodenum) + "]")  # 实时反馈进度
         netflix = ninfo
         # 关闭进程
         subp.kill()
