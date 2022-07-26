@@ -1,0 +1,52 @@
+allow-lan: false
+bind-address: '*'
+dns:
+  default-nameserver:
+  - 223.5.5.5
+  - 119.29.29.29
+  enable: true
+  enhanced-mode: redir-host
+  fake-ip-range: 198.18.0.1/16
+  fallback:
+  - tls://1.0.0.1:853
+  - https://cloudflare-dns.com/dns-query
+  - https://dns.google/dns-query
+  fallback-filter:
+    geoip: true
+    ipcidr:
+    - 240.0.0.0/4
+    - 0.0.0.0/32
+  ipv6: false
+  nameserver:
+  - https://doh.pub/dns-query
+  - https://dns.alidns.com/dns-query
+  use-hosts: true
+external-controller: 127.0.0.1:1123
+ipv6: false
+log-level: info
+mixed-port: 1122
+mode: rule
+proxies: null
+proxy-groups:
+- name: auto
+  type: select
+  use:
+  - de
+proxy-providers: 
+  de:
+    health-check:
+      enable: true
+      interval: 600000
+      url: http://www.gstatic.com/generate_204
+    path: ./default.yaml
+    type: file
+rules:
+- DOMAIN-SUFFIX,google.com,auto
+- DOMAIN-KEYWORD,google,auto
+- DOMAIN,google.com,auto
+- SRC-IP-CIDR,192.168.1.201/32,DIRECT
+- IP-CIDR,127.0.0.0/8,DIRECT
+- GEOIP,CN,DIRECT
+- DST-PORT,80,DIRECT
+- SRC-PORT,7777,DIRECT
+- MATCH,auto
