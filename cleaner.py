@@ -1,6 +1,3 @@
-import sys
-import time
-
 import yaml
 from bs4 import BeautifulSoup
 
@@ -87,8 +84,6 @@ class ClashCleaner:
     def save(self, savePath: str = "./sub.yaml"):
         with open(savePath, "w", encoding="UTF-8") as fp:
             yaml.dump(self.yaml, fp)
-
-
 
 
 class ReCleaner:
@@ -187,15 +182,16 @@ class ReCleaner:
             print(e)
             return "N/A"
 
-    def getGping(self):
-        """
-        获取Google ping的延迟
-        :return: str: 字符串化的延迟，保留到个位数
-        """
-        if 'delay' in self.data:
-            return "%.0fms" % self.data['delay']
-        else:
-            return "0ms"
+    # 旧版延迟测试方案，已废弃
+    # def getGping(self):
+    #     """
+    #     获取Google ping的延迟
+    #     :return: str: 字符串化的延迟，保留到个位数
+    #     """
+    #     if 'delay' in self.data:
+    #         return "%.0fms" % self.data['delay']
+    #     else:
+    #         return "0ms"
 
 
 class ConfigManager:
@@ -369,14 +365,10 @@ class ConfigManager:
         :param subpath:
         :return:
         """
-        info = {'type': 'file', 'path': subpath, 'health-check': {'enable': True, 'url': 'http://www.gstatic.com/generate_204', 'interval': 600}}
+        info = {'type': 'file', 'path': subpath,
+                'health-check': {'enable': True, 'url': 'http://www.gstatic.com/generate_204', 'interval': 600}}
         a = self.yaml['proxy-providers']
         b = self.yaml['proxy-groups']
         self.yaml['proxy-providers'][subname] = info
         if subname not in self.yaml['proxy-groups'][0]['use']:
             self.yaml['proxy-groups'][0]['use'].append(subname)
-
-
-
-
-

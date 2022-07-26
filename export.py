@@ -48,7 +48,7 @@ def exportImage(proxyname: list, proxytype: list, info: dict):
         d.text((image_width / 2 - 120, 4), "FullTclash - 流媒体测试", font=fnt, fill=(0, 0, 0))
         # 表格项
         export_time1 = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())  # 文件动态命名,输出图片的时间
-        list1 = ["序号", "节点名称", "类型", "HTTPing", "Disney+", "Netflix", "Youtube",
+        list1 = ["序号", "节点名称", "类型", "延迟RTT", "Disney+", "Netflix", "Youtube",
                  "版本:{}     ⏱️总共耗时: {}s".format(_version_, info['wtime']),
                  "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time1)]
 
@@ -86,7 +86,7 @@ def exportImage(proxyname: list, proxytype: list, info: dict):
             else:
                 d.text((880 + num2, 40 * (t + 2)), text=netflixinfo[t], font=fnt, fill=(0, 0, 0))  # netflix解锁
             # 延迟RTT
-            d.text((730 + num2, 40 * (t + 2)), text=gpinginfo[t], font=fnt, fill=(0, 0, 0))  # netflix解锁
+            d.text((730 + num2, 40 * (t + 2)), text=str(gpinginfo[t])+'ms', font=fnt, fill=(0, 0, 0))
             # Disney+
             if disneyinfo[t] == "解锁":
                 out.paste(cg2, (1130 + num2, 40 * (t + 2)))

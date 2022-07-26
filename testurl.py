@@ -32,6 +32,8 @@ if admin is None:
 app = Client("my_bot", proxy=proxies)
 print("配置已加载")
 print("程序已启动!")
+
+# 启动了一个clash常驻进程
 command = fr"{clash_path} -f {'./clash/proxy.yaml'} -d {clash_work_path}"
 subp = subprocess.Popen(command.split(), encoding="utf-8")
 time.sleep(2)

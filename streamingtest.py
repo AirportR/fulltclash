@@ -1,6 +1,4 @@
 import time
-import subprocess
-
 import async_timeout
 from pyrogram.errors import RPCError
 import re
@@ -8,12 +6,6 @@ import collector
 import cleaner
 import export
 import proxys
-
-
-# sub_path = "./clash/proxy.yaml"  # 订阅文件路径
-
-
-# progress = 0  # 整个测试进程的进度
 
 
 async def testurl(client, message, back_message, test_members):
@@ -60,18 +52,17 @@ async def testurl(client, message, back_message, test_members):
         ma = cleaner.ConfigManager('./clash/proxy.yaml')
         ma.addsub(subname=sname, subpath='./sub{}.yaml'.format(sname))
         ma.save('./clash/proxy.yaml')
-            # port = 1122+(test_members-1)*2
-            # cl.changeClashPort(port)
-            # eport = 1123+(test_members-1)*2
-            # cl.changeClashEC('127.0.0.1:{}'.format(eport))
         proxy_group = 'auto'
         # 重载配置文件
         await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=1123)
+        ma.delsub(subname=sname)
+        ma.save(savePath='./clash/proxy.yaml')
         # 进入循环，直到所有任务完成
         ninfo = []  # 存放所测节点Netflix的解锁信息
         youtube_info = []
         disneyinfo = []
-        gpinginfo = []
+        rtt = await collector.delay_providers(providername=sname)
+        print(rtt)
         # 启动流媒体测试
         s1 = time.time()
         for n in nodename:
@@ -80,11 +71,6 @@ async def testurl(client, message, back_message, test_members):
             cl = collector.Collector()
             n1 = await cl.start(proxy="http://127.0.0.1:{}".format(1122))
             clean = cleaner.ReCleaner(n1)
-            gp = clean.getGping()
-            if gp is None:
-                print("发现gping空类型，已重新赋值")
-                gp = "0ms"
-            gpinginfo.append(gp)
             nf = clean.getnetflixinfo()
             if nf is None:
                 print("发现空类型，已重新赋值")
@@ -100,10 +86,7 @@ async def testurl(client, message, back_message, test_members):
                                          "当前进度:\n" + p_text +
                                          "%     [" + str(progress) + "/" + str(nodenum) + "]")  # 实时反馈进度
         netflix = ninfo
-        print(gpinginfo)
         new_y = []
-        ma.delsub(subname=sname)
-        ma.save(savePath='./clash/proxy.yaml')
         # 过滤None值
         for i in youtube_info:
             if i is None:
@@ -133,7 +116,12 @@ async def testurl(client, message, back_message, test_members):
             else:
                 new_dis.append(d)
         info['disney'] = new_dis
-        info['delay'] = gpinginfo
+        if rtt is None:
+            rtt = []
+            for i in range(nodenum):
+                rtt.append(-1)
+        info['delay'] = rtt
+        print(rtt)
         print(new_y)
         print(new_n)
         print(new_dis)

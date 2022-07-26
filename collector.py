@@ -92,26 +92,27 @@ class Collector:
         self.disneyurl1 = "https://www.disneyplus.com/"
         self.disneyurl2 = "https://global.edge.bamgrid.com/token"
 
-    async def httping(self, session: aiohttp.ClientSession, proxy=None):
-        """
-        访问网页的延迟
-        :param session:
-        :param proxy:
-        :return: float: 一个浮点数值，毫秒为单位
-        """
-        try:
-            s1 = time.time()
-            a1 = await session.get("http://www.gstatic.com/generate_204", proxy=proxy, timeout=5)
-            if a1.status == 204:
-                delay = (time.time() - s1) * 1000
-            else:
-                delay = 0
-            print("延迟:", "%.0fms" % delay)
-            self.info['delay'] = delay
-        except Exception as e:
-            print("?", e)
-        except ClientConnectorError as c:
-            print(c)
+    # 旧版延迟测试，已废弃
+    # async def httping(self, session: aiohttp.ClientSession, proxy=None):
+    #     """
+    #     访问网页的延迟
+    #     :param session:
+    #     :param proxy:
+    #     :return: float: 一个浮点数值，毫秒为单位
+    #     """
+    #     try:
+    #         s1 = time.time()
+    #         a1 = await session.get("http://www.gstatic.com/generate_204", proxy=proxy, timeout=5)
+    #         if a1.status == 204:
+    #             delay = (time.time() - s1) * 1000
+    #         else:
+    #             delay = 0
+    #         print("延迟:", "%.0fms" % delay)
+    #         self.info['delay'] = delay
+    #     except Exception as e:
+    #         print("?", e)
+    #     except ClientConnectorError as c:
+    #         print(c)
 
     async def fetch_ip(self, session: aiohttp.ClientSession, proxy=None):
         """
@@ -260,8 +261,6 @@ class Collector:
                 tasks.append(task4)
                 task5 = asyncio.create_task(self.fetch_dis(session, proxy=proxy))
                 tasks.append(task5)
-                task6 = asyncio.create_task(self.httping(session, proxy=proxy))
-                tasks.append(task6)
                 done, pending = await asyncio.wait(tasks)
                 await session.close()
             return self.info
@@ -292,12 +291,43 @@ async def delay(session: aiohttp.ClientSession, proxyname, testurl, hostname, po
             return -1
 
 
-async def batch_delay(session: aiohttp.ClientSession,
-                      proxyname: list,
+async def delay_providers(providername, hostname='127.0.0.1', port=1123, session: aiohttp.ClientSession = None):
+    healthcheckurl = 'http://{}:{}/providers/proxies/{}/healthcheck'.format(hostname, port, providername)
+    url = 'http://{}:{}/providers/proxies/{}/'.format(hostname, port, providername)
+    if session is None:
+        session = aiohttp.ClientSession()
+    async with session.get(healthcheckurl) as r1:
+        if r1.status == 204:
+            print("延迟测试成功")
+    async with session.get(url) as r:
+        try:
+            if r.status == 200:
+                text = await r.json()
+                # 拿到延迟数据
+                delays = []
+                node = text['proxies']
+                for n in node:
+                    s = n['history'].pop()
+                    de = s['delay']
+                    delays.append(de)
+                await session.close()
+                return delays
+            else:
+                print("延迟测试出错:", r.status)
+                await session.close()
+                return -1
+
+        except ClientConnectorError as c:
+            print("连接失败:", c)
+            await session.close()
+            return -1
+
+
+async def batch_delay(proxyname: list, session: aiohttp.ClientSession = None,
                       testurl='http://www.gstatic.com/generate_204',
                       hostname='127.0.0.1', port=1123, timeout='5000'):
     """
-    批量测试延迟，
+    批量测试延迟，仅适用于不含providers的订阅
     :param timeout:
     :param port: 外部控制器端口
     :param hostname: 主机名
@@ -307,14 +337,23 @@ async def batch_delay(session: aiohttp.ClientSession,
     :return: list: 延迟
     """
     try:
-        tasks = []
-        for name in proxyname:
-            task = asyncio.create_task(
-                delay(session, name, testurl=testurl, hostname=hostname, port=port, timeout=timeout))
-            tasks.append(task)
-        done = await asyncio.gather(*tasks)
-        return done
-
+        if session is None:
+            async with aiohttp.ClientSession() as session:
+                tasks = []
+                for name in proxyname:
+                    task = asyncio.create_task(
+                        delay(session, name, testurl=testurl, hostname=hostname, port=port, timeout=timeout))
+                    tasks.append(task)
+                done = await asyncio.gather(*tasks)
+                return done
+        else:
+            tasks = []
+            for name in proxyname:
+                task = asyncio.create_task(
+                    delay(session, name, testurl=testurl, hostname=hostname, port=port, timeout=timeout))
+                tasks.append(task)
+            done = await asyncio.gather(*tasks)
+            return done
     except Exception as e:
         print("错误：", e)
         return None
