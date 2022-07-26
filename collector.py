@@ -53,9 +53,10 @@ class SubCollector(BaseCollector):
         """
         return await self.start(proxy=proxy)
 
-    async def getSubConfig(self, proxy=proxies):
+    async def getSubConfig(self, save_path: str, proxy=proxies):
         """
         获取订阅配置文件
+        :param save_path: 订阅保存路径
         :param proxy:
         :return: 获得一个文件: sub.yaml, bool : True or False
         """
@@ -64,7 +65,7 @@ class SubCollector(BaseCollector):
             async with aiohttp.ClientSession(headers=_headers) as session:
                 async with session.get(self.url, proxy=proxy, timeout=10) as response:
                     if response.status == 200:
-                        with open('sub.yaml', 'wb+') as fd:
+                        with open(save_path, 'wb+') as fd:
                             while True:
                                 chunk = await response.content.read()
                                 if not chunk:
@@ -101,12 +102,6 @@ class Collector:
         try:
             s1 = time.time()
             a1 = await session.get("http://www.gstatic.com/generate_204", proxy=proxy, timeout=5)
-            # a2 = await session.get("https://www.google.com/", proxy="http://127.0.0.1:1111", timeout=10)
-            # a3 = await session.get("https://www.google.com/", proxy="http://127.0.0.1:1111", timeout=10)
-            # if a1.status == 200 and a2.status == 200 and a3.status == 200:
-            #     delay = ((time.time() - s1) * 1000) / 3
-            # else:
-            #     delay = 0
             if a1.status == 204:
                 delay = (time.time() - s1) * 1000
             else:
@@ -280,3 +275,46 @@ class Collector:
             self.info['ne_status_code2'] = None
             self.info['youtube_status_code'] = None
             return self.info
+
+
+async def delay(session: aiohttp.ClientSession, proxyname, testurl, hostname, port, timeout, reconnection=1):
+    url = 'http://{}:{}/proxies/{}/delay?timeout={}&url={}'.format(hostname, port, proxyname, timeout, testurl)
+    async with session.get(url) as r:
+        try:
+            if r.status == 200:
+                text = await r.json()
+                return text['delay']
+            else:
+                print(proxyname, ":", await r.json(), r.status)
+                return -1
+        except ClientConnectorError as c:
+            print("连接失败:", c)
+            return -1
+
+
+async def batch_delay(session: aiohttp.ClientSession,
+                      proxyname: list,
+                      testurl='http://www.gstatic.com/generate_204',
+                      hostname='127.0.0.1', port=1123, timeout='5000'):
+    """
+    批量测试延迟，
+    :param timeout:
+    :param port: 外部控制器端口
+    :param hostname: 主机名
+    :param testurl: 测试网址
+    :param session: 一个连接session
+    :param proxyname: 一组代理名
+    :return: list: 延迟
+    """
+    try:
+        tasks = []
+        for name in proxyname:
+            task = asyncio.create_task(
+                delay(session, name, testurl=testurl, hostname=hostname, port=port, timeout=timeout))
+            tasks.append(task)
+        done = await asyncio.gather(*tasks)
+        return done
+
+    except Exception as e:
+        print("错误：", e)
+        return None

@@ -4,7 +4,7 @@ import time
 # from pilmoji.source import MicrosoftEmojiSource
 
 
-_version_ = "2.2.1(Beta)"  # 版本号
+_version_ = "2.3.0(Beta)"  # 版本号
 
 
 # info 变量里面包含测好的解锁信息
@@ -45,13 +45,12 @@ def exportImage(proxyname: list, proxytype: list, info: dict):
         # 画画对象
         d = ImageDraw.Draw(out)
         # 第一行内容
-        d.text((image_width / 2 - 120, 4), "掌柜的流媒体测试", font=fnt, fill=(0, 0, 0))
+        d.text((image_width / 2 - 120, 4), "FullTclash - 流媒体测试", font=fnt, fill=(0, 0, 0))
         # 表格项
-        export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间
-        export_time1 = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())  # 文件动态命名
+        export_time1 = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())  # 文件动态命名,输出图片的时间
         list1 = ["序号", "节点名称", "类型", "HTTPing", "Disney+", "Netflix", "Youtube",
                  "版本:{}     ⏱️总共耗时: {}s".format(_version_, info['wtime']),
-                 "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time)]
+                 "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time1)]
 
         d.text((20, 40), text=list1[0], font=fnt, fill=(0, 0, 0))  # 序号
         d.text(((500 + num2 - 100) / 2 + 2 * size, 40), text=list1[1], font=fnt, fill=(0, 0, 0))  # 节点名称
@@ -161,11 +160,10 @@ def exportImage_old(proxyname: list, proxytype: list, info: dict):
         # 第一行内容
         d.text((image_width / 2 - 120, 4), "掌柜的流媒体测试", font=fnt, fill=(0, 0, 0))
         # 表格项
-        export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间
         export_time1 = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())  # 文件动态命名
         list1 = ["序号", "节点名称", "类型", "HTTPing", "Disney+", "Netflix",
                  "Youtube", "版本:{}     ⏱️总共耗时: {}s".format(_version_, info['wtime']),
-                 "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time)]
+                 "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time1)]
 
         d.text((20, 40), text=list1[0], font=fnt, fill=(0, 0, 0))  # 序号
         d.text(((500 + num2 - 100) / 2 + 2 * size, 40), text=list1[1], font=fnt, fill=(0, 0, 0))  # 节点名称

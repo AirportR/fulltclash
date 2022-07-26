@@ -9,20 +9,21 @@ import cleaner
 import export
 import proxys
 
-# 你需要一个clash核心程序，此为clash核心运行路径。Windows需要加后缀名.exe
-clash_path = "./clash-windows-amd64.exe"
-sub_path = "./sub.yaml"
-progress = 0  # 整个测试进程的进度
-port = 1122
+
+# sub_path = "./clash/proxy.yaml"  # 订阅文件路径
 
 
-async def testurl(client, message, back_message):
-    global subp, progress
-    if progress != 0:
-        await back_message.edit_text("⚠️当前已有测试任务运行，请等待上一个任务完成。")
+# progress = 0  # 整个测试进程的进度
+
+
+async def testurl(client, message, back_message, test_members):
+    global subp
+    print("当前序号:", test_members)
+    progress = 0
+    if test_members > 4:
+        await back_message.edit_text("⚠️测试任务数量达到最大，请等待一个任务完成。")
         return
     try:
-
         chat_id = message.chat.id
         text = str(message.text)
 
@@ -40,7 +41,8 @@ async def testurl(client, message, back_message):
         # 启动订阅采集器
         suburl = url
         sub = collector.SubCollector(suburl=suburl)
-        config = await sub.getSubConfig()
+        sname = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
+        config = await sub.getSubConfig(save_path='./clash/sub{}.yaml'.format(sname))
         if not config:
             await client.edit_message_text(
                 chat_id=chat_id,
@@ -50,20 +52,21 @@ async def testurl(client, message, back_message):
             return
 
         # 启动订阅清洗
-        with open(sub_path, "r", encoding="UTF-8") as fp:
+        with open('./clash/sub{}.yaml'.format(sname), "r", encoding="UTF-8") as fp:
             cl = cleaner.ClashCleaner(fp)
             nodename = cl.nodesName()
             nodetype = cl.nodesType()
             nodenum = cl.nodesCount()
-            cl.changeClashPort(port=port)
-            cl.changeClashEC()
-            # cl.changeClashMode()
-            proxy_group = cl.proxyGroupName()
-        cl.save()
-        # 启动clash进程
-        command = fr"{clash_path} -f {sub_path}"
-        subp = subprocess.Popen(command.split(), encoding="utf-8")
-        time.sleep(2)
+        ma = cleaner.ConfigManager('./clash/proxy.yaml')
+        ma.addsub(subname=sname, subpath='./sub{}.yaml'.format(sname))
+        ma.save('./clash/proxy.yaml')
+            # port = 1122+(test_members-1)*2
+            # cl.changeClashPort(port)
+            # eport = 1123+(test_members-1)*2
+            # cl.changeClashEC('127.0.0.1:{}'.format(eport))
+        proxy_group = 'auto'
+        # 重载配置文件
+        await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=1123)
         # 进入循环，直到所有任务完成
         ninfo = []  # 存放所测节点Netflix的解锁信息
         youtube_info = []
@@ -72,10 +75,10 @@ async def testurl(client, message, back_message):
         # 启动流媒体测试
         s1 = time.time()
         for n in nodename:
-            proxys.switchProxy_old(proxyName=n, proxyGroup=proxy_group)
+            proxys.switchProxy_old(proxyName=n, proxyGroup=proxy_group, clashPort=1123)
             progress += 1
             cl = collector.Collector()
-            n1 = await cl.start(proxy="http://127.0.0.1:{}".format(port))
+            n1 = await cl.start(proxy="http://127.0.0.1:{}".format(1122))
             clean = cleaner.ReCleaner(n1)
             gp = clean.getGping()
             if gp is None:
@@ -97,11 +100,10 @@ async def testurl(client, message, back_message):
                                          "当前进度:\n" + p_text +
                                          "%     [" + str(progress) + "/" + str(nodenum) + "]")  # 实时反馈进度
         netflix = ninfo
-        # 关闭进程
-        subp.kill()
-        progress = 0
         print(gpinginfo)
         new_y = []
+        ma.delsub(subname=sname)
+        ma.save(savePath='./clash/proxy.yaml')
         # 过滤None值
         for i in youtube_info:
             if i is None:

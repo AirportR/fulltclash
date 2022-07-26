@@ -89,6 +89,8 @@ class ClashCleaner:
             yaml.dump(self.yaml, fp)
 
 
+
+
 class ReCleaner:
     def __init__(self, data: dict):
         self.data = data
@@ -348,10 +350,33 @@ class ConfigManager:
 
     def delsub(self, subname: str):
         try:
-            suburl = self.config['suburl']
-            if suburl is not None:
-                if subname in suburl:
-                    suburl.pop(subname)
+            subinfo = self.yaml['proxy-providers']
+            if subinfo is not None:
+                if subname in subinfo:
+                    subinfo.pop(subname)
+            subinfo2 = self.yaml['proxy-groups'][0]['use']
+            if subinfo2 is not None:
+                if subname in subinfo2:
+                    subinfo2.remove(subname)
         except TypeError as t:
             print("删除失败")
             print(t)
+
+    def addsub(self, subname: str, subpath: str):
+        """
+        添加订阅到总文件，如用相对路径，请注意这里的subpath是写入到配置里面的，如果你指定过clash核心的工作目录，则相对位置以clash工作目录为准
+        :param subname:
+        :param subpath:
+        :return:
+        """
+        info = {'type': 'file', 'path': subpath, 'health-check': {'enable': True, 'url': 'http://www.gstatic.com/generate_204', 'interval': 600}}
+        a = self.yaml['proxy-providers']
+        b = self.yaml['proxy-groups']
+        self.yaml['proxy-providers'][subname] = info
+        if subname not in self.yaml['proxy-groups'][0]['use']:
+            self.yaml['proxy-groups'][0]['use'].append(subname)
+
+
+
+
+

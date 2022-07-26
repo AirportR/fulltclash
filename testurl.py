@@ -1,4 +1,5 @@
 import re
+import subprocess
 import sys
 import time
 
@@ -7,9 +8,10 @@ from pyrogram.errors import RPCError
 import streamingtest
 from cleaner import ConfigManager
 
-
 config = ConfigManager()
 USER_TARGET = config.getuser()  # 这是用户列表，从配置文件读取
+clash_path = "./clash-windows-amd64.exe"  # 为clash核心运行路径, Windows系统需要加后缀名.exe
+clash_work_path = "./clash"  # clash工作路径
 admin = config.getAdmin()  # 管理员
 # 你的机器人的用户名
 USERNAME = "@AirportRoster_bot"
@@ -30,11 +32,15 @@ if admin is None:
 app = Client("my_bot", proxy=proxies)
 print("配置已加载")
 print("程序已启动!")
+command = fr"{clash_path} -f {'./clash/proxy.yaml'} -d {clash_work_path}"
+subp = subprocess.Popen(command.split(), encoding="utf-8")
+time.sleep(2)
+test_members = 0  # 正在测试的成员，如果为零则停止测试，否则一直测试
 
 
 @app.on_message(filters.command(["testurl"]))
 async def mytest(client, message):
-    global USER_TARGET
+    global USER_TARGET, test_members
     try:
         if int(message.from_user.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
             await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
@@ -45,9 +51,10 @@ async def mytest(client, message):
             return
     if "/testurl" in message.text or "/testurl" + USERNAME in message.text:
         back_message = await message.reply("╰(*°▽°*)╯流媒体测试进行中...")  # 发送提示
+        test_members += 1
         try:
-            await streamingtest.testurl(client, message, back_message=back_message)
-
+            await streamingtest.testurl(client, message, back_message=back_message, test_members=test_members)
+            test_members -= 1
         except RPCError as r:
             print(r)
             await client.edit_message_text(
@@ -70,8 +77,16 @@ async def change(client, message):
         print(r)
 
 
-@app.on_message(filters.command(["grant"]) & filters.user(admin), group=2)
+@app.on_message(filters.command(["grant"]), group=2)
 async def grant(client, message):
+    try:
+        if int(message.from_user.id) not in admin:  # 如果不在USER_TARGET名单是不会有权限的
+            await message.reply("⚠️您不是bot的管理员，无法使用该命令")
+            return
+    except AttributeError:
+        if int(message.sender_chat.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
+            await message.reply("⚠️您不是bot的管理员，无法使用该命令")
+            return
     try:
         grant_text = "该成员已被加入到授权目标"
         co = ConfigManager()
@@ -95,8 +110,16 @@ async def grant(client, message):
         print(r)
 
 
-@app.on_message(filters.command(["ungrant"]) & filters.user(admin), group=3)
+@app.on_message(filters.command(["ungrant"]), group=3)
 async def ungrant(client, message):
+    try:
+        if int(message.from_user.id) not in admin:  # 如果不在USER_TARGET名单是不会有权限的
+            await message.reply("⚠️您不是bot的管理员，无法使用该命令")
+            return
+    except AttributeError:
+        if int(message.sender_chat.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
+            await message.reply("⚠️您不是bot的管理员，无法使用该命令")
+            return
     try:
         co = ConfigManager()
         ungrant_text = "该成员已被移出授权目标"
@@ -123,8 +146,16 @@ async def ungrant(client, message):
         print(r)
 
 
-@app.on_message(filters.command(["user"]) & filters.user(admin), group=4)
+@app.on_message(filters.command(["user"]), group=4)
 async def user(client, message):
+    try:
+        if int(message.from_user.id) not in admin:  # 如果不在USER_TARGET名单是不会有权限的
+            await message.reply("⚠️您不是bot的管理员，无法使用该命令")
+            return
+    except AttributeError:
+        if int(message.sender_chat.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
+            await message.reply("⚠️您不是bot的管理员，无法使用该命令")
+            return
     text = "当前用户有:" + str(set(USER_TARGET)) + "\n共{}个".format(len(USER_TARGET))
     await message.reply(text)
 
