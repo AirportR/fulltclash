@@ -92,27 +92,7 @@ class Collector:
         self.disneyurl1 = "https://www.disneyplus.com/"
         self.disneyurl2 = "https://global.edge.bamgrid.com/token"
 
-    # 旧版延迟测试，已废弃
-    # async def httping(self, session: aiohttp.ClientSession, proxy=None):
-    #     """
-    #     访问网页的延迟
-    #     :param session:
-    #     :param proxy:
-    #     :return: float: 一个浮点数值，毫秒为单位
-    #     """
-    #     try:
-    #         s1 = time.time()
-    #         a1 = await session.get("http://www.gstatic.com/generate_204", proxy=proxy, timeout=5)
-    #         if a1.status == 204:
-    #             delay = (time.time() - s1) * 1000
-    #         else:
-    #             delay = 0
-    #         print("延迟:", "%.0fms" % delay)
-    #         self.info['delay'] = delay
-    #     except Exception as e:
-    #         print("?", e)
-    #     except ClientConnectorError as c:
-    #         print(c)
+
 
     async def fetch_ip(self, session: aiohttp.ClientSession, proxy=None):
         """
@@ -140,7 +120,7 @@ class Collector:
         except ClientConnectorError as c:
             print(c)
 
-    async def fetch_ninfo1(self, session: aiohttp.ClientSession, proxy=None, reconnection=1):
+    async def fetch_ninfo1(self, session: aiohttp.ClientSession, proxy=None, reconnection=2):
         """
         自制剧检测
         :param session:
@@ -165,7 +145,7 @@ class Collector:
             if reconnection != 0:
                 await self.fetch_ninfo1(session=session, proxy=proxy, reconnection=reconnection - 1)
 
-    async def fetch_ninfo2(self, session: aiohttp.ClientSession, proxy=None, reconnection=1):
+    async def fetch_ninfo2(self, session: aiohttp.ClientSession, proxy=None, reconnection=2):
         """
         非自制剧检测
         :param session:
@@ -191,7 +171,7 @@ class Collector:
             if reconnection != 0:
                 await self.fetch_ninfo2(session=session, proxy=proxy, reconnection=reconnection - 1)
 
-    async def fetch_youtube(self, session: aiohttp.ClientSession, proxy=None, reconnection=1):
+    async def fetch_youtube(self, session: aiohttp.ClientSession, proxy=None, reconnection=2):
         """
         Youtube解锁检测
         :param session:
@@ -215,7 +195,7 @@ class Collector:
             if reconnection != 0:
                 await self.fetch_youtube(session=session, proxy=proxy, reconnection=reconnection - 1)
 
-    async def fetch_dis(self, session: aiohttp.ClientSession, proxy=None, reconnection=1):
+    async def fetch_dis(self, session: aiohttp.ClientSession, proxy=None, reconnection=2):
         """
         Disney+ 解锁检测
         :param reconnection:

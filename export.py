@@ -45,7 +45,7 @@ def exportImage(proxyname: list, proxytype: list, info: dict):
         # 画画对象
         d = ImageDraw.Draw(out)
         # 第一行内容
-        d.text((image_width / 2 - 120, 4), "FullTclash - 流媒体测试", font=fnt, fill=(0, 0, 0))
+        d.text((image_width / 2 - 120, 4), "FullTclash - 流媒体测试", font=fnt, fill=(0, 0, 0), align="center")
         # 表格项
         export_time1 = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())  # 文件动态命名,输出图片的时间
         list1 = ["序号", "节点名称", "类型", "延迟RTT", "Disney+", "Netflix", "Youtube",

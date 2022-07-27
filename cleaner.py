@@ -19,7 +19,11 @@ class ClashCleaner:
         获取节点数量
         :return: int
         """
-        return len(self.yaml['proxies'])
+        try:
+            return len(self.yaml['proxies'])
+        except TypeError:
+            print("读取节点信息失败！")
+            return None
 
     def nodesName(self):
         """
@@ -27,9 +31,13 @@ class ClashCleaner:
         :return: list
         """
         lis = []
-        for i in self.yaml['proxies']:
-            lis.append(i['name'])
-        return lis
+        try:
+            for i in self.yaml['proxies']:
+                lis.append(i['name'])
+            return lis
+        except TypeError:
+            print("读取节点信息失败！")
+            return None
 
     def nodesType(self):
         """
@@ -37,9 +45,13 @@ class ClashCleaner:
         :return: list
         """
         t = []
-        for i in self.yaml['proxies']:
-            t.append(i['type'])
-        return t
+        try:
+            for i in self.yaml['proxies']:
+                t.append(i['type'])
+            return t
+        except TypeError:
+            print("读取节点信息失败！")
+            return None
 
     def proxyGroupName(self):
         """
@@ -52,6 +64,9 @@ class ClashCleaner:
                     return t['name']
                 else:
                     pass
+        except TypeError:
+            print("读取节点信息失败！")
+            return None
         except Exception as e:
             print(e)
             return ""
@@ -101,9 +116,9 @@ class ReCleaner:
             # print(self.data['ip'])
             if self.data['ip'] is None or self.data['ip'] == "N/A":
                 return ["N/A", "N/A", "N/A"]
-            if self.data['netflix1'] is None:
-                return ["N/A", "N/A", "N/A"]
             if self.data['netflix2'] is None:
+                return ["N/A", "N/A", "N/A"]
+            if self.data['netflix1'] is None:
                 return ["N/A", "N/A", "N/A"]
             r1 = self.data['netflix1']
             status_code = self.data['ne_status_code1']

@@ -1,6 +1,7 @@
+import asyncio
 import time
 import async_timeout
-from pyrogram.errors import RPCError
+from pyrogram.errors import RPCError, FloodWait
 import re
 import collector
 import cleaner
@@ -9,7 +10,6 @@ import proxys
 
 
 async def testurl(client, message, back_message, test_members):
-    global subp
     print("当前序号:", test_members)
     progress = 0
     if test_members > 4:
@@ -49,6 +49,11 @@ async def testurl(client, message, back_message, test_members):
             nodename = cl.nodesName()
             nodetype = cl.nodesType()
             nodenum = cl.nodesCount()
+        # 检查获得的数据
+
+        if nodename is None or nodenum is None or nodetype is None:
+            await back_message.edit_text("❌发生错误，请检查订阅文件")
+            return
         ma = cleaner.ConfigManager('./clash/proxy.yaml')
         ma.addsub(subname=sname, subpath='./sub{}.yaml'.format(sname))
         ma.save('./clash/proxy.yaml')
@@ -75,7 +80,6 @@ async def testurl(client, message, back_message, test_members):
             if nf is None:
                 print("发现空类型，已重新赋值")
                 nf = ["N/A", "N/A", "N/A"]
-            print("netflix:", nf)
             ninfo.append(nf[len(nf) - 1])
             you = clean.getyoutubeinfo()
             youtube_info.append(you)
@@ -162,4 +166,5 @@ async def testurl(client, message, back_message, test_members):
         )
     except KeyboardInterrupt:
         await message.reply("程序已被强行中止")
-        subp.kill()
+    except FloodWait as e:
+        await asyncio.sleep(e.value)  # Wait "value" seconds before continuing

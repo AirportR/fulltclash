@@ -1,10 +1,11 @@
+import asyncio
 import re
 import subprocess
 import sys
 import time
 
 from pyrogram import Client, filters
-from pyrogram.errors import RPCError
+from pyrogram.errors import RPCError, FloodWait
 import streamingtest
 from cleaner import ConfigManager
 
@@ -12,7 +13,8 @@ config = ConfigManager()
 USER_TARGET = config.getuser()  # 这是用户列表，从配置文件读取
 clash_path = "./clash-windows-amd64.exe"  # 为clash核心运行路径, Windows系统需要加后缀名.exe
 clash_work_path = "./clash"  # clash工作路径
-admin = config.getAdmin()  # 管理员
+admin = list(config.getAdmin())  # 管理员
+print(admin)
 # 你的机器人的用户名
 USERNAME = "@AirportRoster_bot"
 port = config.get_proxy_port()
@@ -64,6 +66,11 @@ async def mytest(client, message):
                 message_id=back_message.id,
                 text="出错啦"
             )
+        except FloodWait as e:
+            test_members -= 1
+            await asyncio.sleep(e.value)  # Wait "value" seconds before continuing
+        except KeyboardInterrupt:
+            await back_message.edit_text("程序已被强行中止")
 
 
 @app.on_message(filters.command(["change"]) & filters.user(admin), group=1)
@@ -82,7 +89,7 @@ async def change(client, message):
 @app.on_message(filters.command(["grant"]), group=2)
 async def grant(client, message):
     try:
-        if int(message.from_user.id) not in admin:  # 如果不在USER_TARGET名单是不会有权限的
+        if int(message.from_user.id) or str(message.from_user.username) not in admin:  # 如果不在USER_TARGET名单是不会有权限的
             await message.reply("⚠️您不是bot的管理员，无法使用该命令")
             return
     except AttributeError:
@@ -115,7 +122,7 @@ async def grant(client, message):
 @app.on_message(filters.command(["ungrant"]), group=3)
 async def ungrant(client, message):
     try:
-        if int(message.from_user.id) not in admin:  # 如果不在USER_TARGET名单是不会有权限的
+        if int(message.from_user.id) or str(message.from_user.username) not in admin:  # 如果不在USER_TARGET名单是不会有权限的
             await message.reply("⚠️您不是bot的管理员，无法使用该命令")
             return
     except AttributeError:

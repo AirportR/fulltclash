@@ -32,7 +32,7 @@ proxy-groups:
   type: select
   use:
   - de
-proxy-providers: 
+proxy-providers:
   de:
     health-check:
       enable: true
