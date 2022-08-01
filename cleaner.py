@@ -186,7 +186,7 @@ class ReCleaner:
     def getDisneyinfo(self):
         """
 
-        :return: 解锁信息: 解锁、失败、N/A
+        :return: 解锁信息: 解锁、失败、N/A、待解
         """
         try:
             if self.data['disney'] is None:

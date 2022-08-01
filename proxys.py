@@ -56,7 +56,6 @@ async def reloadConfig(filePath: str, clashHost: str = "127.0.0.1", clashPort: i
     :return:
     """
     pwd = os.path.abspath(filePath)
-    print(pwd)
     url = "http://{}:{}/configs/".format(clashHost, str(clashPort))
     payload = json.dumps({"path": pwd})
     _headers = {'Content-Type': 'application/json'}

@@ -9,9 +9,10 @@ import export
 import proxys
 
 
-async def testurl(client, message, back_message, test_members):
+async def testurl(client, message, back_message, test_members, start_time):
     print("当前序号:", test_members)
     progress = 0
+    sending_time = 0
     if test_members > 4:
         await back_message.edit_text("⚠️测试任务数量达到最大，请等待一个任务完成。")
         return
@@ -33,8 +34,7 @@ async def testurl(client, message, back_message, test_members):
         # 启动订阅采集器
         suburl = url
         sub = collector.SubCollector(suburl=suburl)
-        sname = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
-        config = await sub.getSubConfig(save_path='./clash/sub{}.yaml'.format(sname))
+        config = await sub.getSubConfig(save_path='./clash/sub{}.yaml'.format(start_time))
         if not config:
             await client.edit_message_text(
                 chat_id=chat_id,
@@ -44,29 +44,26 @@ async def testurl(client, message, back_message, test_members):
             return
 
         # 启动订阅清洗
-        with open('./clash/sub{}.yaml'.format(sname), "r", encoding="UTF-8") as fp:
+        with open('./clash/sub{}.yaml'.format(start_time), "r", encoding="UTF-8") as fp:
             cl = cleaner.ClashCleaner(fp)
             nodename = cl.nodesName()
             nodetype = cl.nodesType()
             nodenum = cl.nodesCount()
         # 检查获得的数据
-
         if nodename is None or nodenum is None or nodetype is None:
             await back_message.edit_text("❌发生错误，请检查订阅文件")
             return
         ma = cleaner.ConfigManager('./clash/proxy.yaml')
-        ma.addsub(subname=sname, subpath='./sub{}.yaml'.format(sname))
+        ma.addsub(subname=start_time, subpath='./sub{}.yaml'.format(start_time))
         ma.save('./clash/proxy.yaml')
         proxy_group = 'auto'
         # 重载配置文件
         await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=1123)
-        ma.delsub(subname=sname)
-        ma.save(savePath='./clash/proxy.yaml')
         # 进入循环，直到所有任务完成
         ninfo = []  # 存放所测节点Netflix的解锁信息
         youtube_info = []
         disneyinfo = []
-        rtt = await collector.delay_providers(providername=sname)
+        rtt = await collector.delay_providers(providername=start_time)
         print(rtt)
         # 启动流媒体测试
         s1 = time.time()
@@ -85,10 +82,14 @@ async def testurl(client, message, back_message, test_members):
             youtube_info.append(you)
             dis = clean.getDisneyinfo()
             disneyinfo.append(dis)
-            p_text = "%.2f" % (progress / nodenum * 100)
-            await back_message.edit_text("╰(*°▽°*)╯流媒体测试进行中...\n\n" +
-                                         "当前进度:\n" + p_text +
-                                         "%     [" + str(progress) + "/" + str(nodenum) + "]")  # 实时反馈进度
+            cal = progress / nodenum * 100
+            p_text = "%.2f" % cal
+            # 判断进度条，每隔10%发送一次反馈，有效防止洪水等待(FloodWait)
+            if cal >= sending_time:
+                sending_time += 10
+                await back_message.edit_text("╰(*°▽°*)╯流媒体测试进行中...\n\n" +
+                                             "当前进度:\n" + p_text +
+                                             "%     [" + str(progress) + "/" + str(nodenum) + "]")  # 实时反馈进度
         netflix = ninfo
         new_y = []
         # 过滤None值

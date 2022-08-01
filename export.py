@@ -40,6 +40,7 @@ def exportImage(proxyname: list, proxytype: list, info: dict):
         # 适用于youtube、disney+的填充块
         cg2 = Image.new('RGB', (youtube_length, 40), "#bee47e")  # 成功解锁的绿色填充块
         sb2 = Image.new('RGB', (youtube_length, 40), "#ee6b73")  # 解锁失败的红色填充块
+        djs2 = Image.new('RGB', (youtube_length, 40), "#dcc7e1")  # 待解锁的填充块
         na2 = Image.new('RGB', (youtube_length, 40), "#8d8b8e")  # N/A 的灰色填充块
 
         # 画画对象
@@ -64,9 +65,9 @@ def exportImage(proxyname: list, proxytype: list, info: dict):
         d.text((20, 40 * num1), text=list1[8], font=fnt, fill=(0, 0, 0))  # 测试时间
 
         # 打印信息
-        l1 = int((image_width + 1130 + num2) / 2 - 30)  # Disney+解锁文字放入的位置，为两条竖线的中间 减 一个字的距离
+        l1 = int((image_width + 1130 + num2) / 2 - 60)  # Disney+解锁文字放入的位置，为两条竖线的中间 减 一个字的距离
         for t in range(numNodes):
-            if netflixinfo[t] == "解锁":
+            if "解锁" in netflixinfo[t]:
                 out.paste(cg, (850 + num2, 40 * (t + 2)))
             elif netflixinfo[t] == "失败":
                 out.paste(sb, (850 + num2, 40 * (t + 2)))
@@ -79,8 +80,10 @@ def exportImage(proxyname: list, proxytype: list, info: dict):
                 d.text((510 + num2, 40 * (t + 2)), text="Shadowsocks", font=fnt, fill=(0, 0, 0))  # 类型
             elif proxytype[t] == "trojan":
                 d.text((510 + num2, 40 * (t + 2)), text="Trojan", font=fnt, fill=(0, 0, 0))  # 类型
+            elif proxytype[t] == "vmess":
+                d.text((510 + num2, 40 * (t + 2)), text="Vmess", font=fnt, fill=(0, 0, 0))  # 类型
             else:
-                d.text((510 + num2, 40 * (t + 2)), text=proxytype[t], font=fnt, fill=(0, 0, 0))
+                d.text((510 + num2, 40 * (t + 2)), text=proxytype[t].capitalize(), font=fnt, fill=(0, 0, 0))
             if netflixinfo[t] == "仅自制剧":
                 d.text((855 + num2, 40 * (t + 2)), text=netflixinfo[t], font=fnt, fill=(0, 0, 0))  # netflix解锁
             else:
@@ -88,17 +91,19 @@ def exportImage(proxyname: list, proxytype: list, info: dict):
             # 延迟RTT
             d.text((730 + num2, 40 * (t + 2)), text=str(gpinginfo[t])+'ms', font=fnt, fill=(0, 0, 0))
             # Disney+
-            if disneyinfo[t] == "解锁":
+            if "解锁" in disneyinfo[t] and '待' not in disneyinfo[t]:
                 out.paste(cg2, (1130 + num2, 40 * (t + 2)))
-            elif disneyinfo[t] == "失败":
+            elif "失败" in disneyinfo[t]:
                 out.paste(sb2, (1130 + num2, 40 * (t + 2)))
+            elif "待解" in disneyinfo[t]:
+                out.paste(djs2, (1130 + num2, 40 * (t + 2)))
             else:
                 out.paste(na2, (1130 + num2, 40 * (t + 2)))
             d.text((l1, 40 * (t + 2)), text=disneyinfo[t], font=fnt, fill=(0, 0, 0))  # Disney+解锁
             # Youtube
-            if youtubeinfo[t] == "解锁":
+            if "解锁" in youtubeinfo[t]:
                 out.paste(cg2, (980 + num2, 40 * (t + 2)))
-            elif youtubeinfo[t] == "失败":
+            elif "失败" in youtubeinfo[t]:
                 out.paste(sb2, (980 + num2, 40 * (t + 2)))
             else:
                 out.paste(na2, (980 + num2, 40 * (t + 2)))

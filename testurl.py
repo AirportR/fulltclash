@@ -6,6 +6,8 @@ import time
 
 from pyrogram import Client, filters
 from pyrogram.errors import RPCError, FloodWait
+
+import cleaner
 import streamingtest
 from cleaner import ConfigManager
 
@@ -55,10 +57,15 @@ async def mytest(client, message):
             return
     if "/testurl" in message.text or "/testurl" + USERNAME in message.text:
         back_message = await message.reply("╰(*°▽°*)╯流媒体测试进行中...")  # 发送提示
+        start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
         test_members += 1
+        ma = cleaner.ConfigManager('./clash/proxy.yaml')
         try:
-            await streamingtest.testurl(client, message, back_message=back_message, test_members=test_members)
+            await streamingtest.testurl(client, message, back_message=back_message, test_members=test_members,
+                                        start_time=start_time)
             test_members -= 1
+            ma.delsub(subname=start_time)
+            ma.save(savePath='./clash/proxy.yaml')
         except RPCError as r:
             print(r)
             await client.edit_message_text(

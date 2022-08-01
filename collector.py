@@ -92,8 +92,6 @@ class Collector:
         self.disneyurl1 = "https://www.disneyplus.com/"
         self.disneyurl2 = "https://global.edge.bamgrid.com/token"
 
-
-
     async def fetch_ip(self, session: aiohttp.ClientSession, proxy=None):
         """
         ip查询
@@ -207,7 +205,18 @@ class Collector:
             dis1 = await session.get(self.disneyurl1, proxy=proxy, timeout=5)
             dis2 = await session.get(self.disneyurl2, proxy=proxy, timeout=5)
             if dis1.status == 200 and dis2.status != 403:
-                self.info['disney'] = "解锁"
+                text1 = await dis1.text()
+                index = str(text1).find('Region', 0, 400)
+                region = text1[index + 8:index + 10]
+                if index == -1:
+                    print('disney+未解锁')
+                    self.info['disney'] = "待解锁"
+                elif dis1.history:
+                    if 300 <= dis1.history[0].status <= 399:
+                        self.info['disney'] = "待解({})".format(region)
+                else:
+                    print('disney解锁地区:', region)
+                    self.info['disney'] = "解锁({})".format(region)
             else:
                 self.info['disney'] = "失败"
             print("disney+ 成功访问")
@@ -276,6 +285,7 @@ async def delay_providers(providername, hostname='127.0.0.1', port=1123, session
     url = 'http://{}:{}/providers/proxies/{}/'.format(hostname, port, providername)
     if session is None:
         session = aiohttp.ClientSession()
+    await session.get(healthcheckurl)
     async with session.get(healthcheckurl) as r1:
         if r1.status == 204:
             print("延迟测试成功")
