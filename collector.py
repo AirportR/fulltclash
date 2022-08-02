@@ -305,12 +305,12 @@ async def delay_providers(providername, hostname='127.0.0.1', port=1123, session
             else:
                 print("延迟测试出错:", r.status)
                 await session.close()
-                return -1
+                return 0
 
         except ClientConnectorError as c:
             print("连接失败:", c)
             await session.close()
-            return -1
+            return 0
 
 
 async def batch_delay(proxyname: list, session: aiohttp.ClientSession = None,

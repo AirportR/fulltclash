@@ -197,17 +197,6 @@ class ReCleaner:
             print(e)
             return "N/A"
 
-    # 旧版延迟测试方案，已废弃
-    # def getGping(self):
-    #     """
-    #     获取Google ping的延迟
-    #     :return: str: 字符串化的延迟，保留到个位数
-    #     """
-    #     if 'delay' in self.data:
-    #         return "%.0fms" % self.data['delay']
-    #     else:
-    #         return "0ms"
-
 
 class ConfigManager:
     """
@@ -387,3 +376,32 @@ class ConfigManager:
         self.yaml['proxy-providers'][subname] = info
         if subname not in self.yaml['proxy-groups'][0]['use']:
             self.yaml['proxy-groups'][0]['use'].append(subname)
+
+
+class ResultCleaner:
+    def __init__(self, info: dict | list):
+        self.data = info
+
+    def start(self):
+        try:
+            if '类型' in self.data:
+                type1 = self.data['类型']
+                new_type = []
+                for t in type1:
+                    if t == 'ss':
+                        new_type.append("Shadowsocks")
+                    elif t == "ssr":
+                        new_type.append("ShadowsocksR")
+                    else:
+                        new_type.append(t.capitalize())
+                self.data['类型'] = new_type
+            if '延迟RTT' in self.data:
+                rtt = self.data['延迟RTT']
+                new_rtt = []
+                for r in rtt:
+                    new_rtt.append(str(r) + 'ms')
+                self.data['延迟RTT'] = new_rtt
+            return self.data
+        except TypeError:
+            return {}
+

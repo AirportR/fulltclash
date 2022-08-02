@@ -16,7 +16,7 @@ USER_TARGET = config.getuser()  # 这是用户列表，从配置文件读取
 clash_path = "./clash-windows-amd64.exe"  # 为clash核心运行路径, Windows系统需要加后缀名.exe
 clash_work_path = "./clash"  # clash工作路径
 admin = list(config.getAdmin())  # 管理员
-print(admin)
+print("管理员名单加载:", admin)
 # 你的机器人的用户名
 USERNAME = "@AirportRoster_bot"
 port = config.get_proxy_port()
