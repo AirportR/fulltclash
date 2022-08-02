@@ -30,7 +30,7 @@ FullTclash bot 是承载其测试任务的Telegram 机器人（以下简称bot�
 以及 HTTP ping 的体感延迟测试。
 
 # 效果预览
-![测试图片](https://3o.hk/images/2022/07/15/image.png)
+![测试图片](https://3o.hk/images/2022/08/02/image.png)
 
 # 如何开始
 
