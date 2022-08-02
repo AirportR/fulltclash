@@ -379,7 +379,7 @@ class ConfigManager:
 
 
 class ResultCleaner:
-    def __init__(self, info: dict | list):
+    def __init__(self, info: dict):
         self.data = info
 
     def start(self):
