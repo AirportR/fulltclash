@@ -63,14 +63,23 @@ async def testurl(client, message, back_message, test_members, start_time):
         ninfo = []  # 存放所测节点Netflix的解锁信息
         youtube_info = []
         disneyinfo = []
+        s1 = time.time()
         old_rtt = await collector.delay_providers(providername=start_time)
         rtt = []
         for r1 in old_rtt:
             rtt.append(str(r1))
         print(rtt)
+        rtt_num = 0
         # 启动流媒体测试
-        s1 = time.time()
         for n in nodename:
+            print(old_rtt[rtt_num], type(old_rtt[rtt_num]))
+            if old_rtt[rtt_num] == 0:
+                print("超时节点，跳过测试......")
+                youtube_info.append("N/A")
+                ninfo.append("N/A")
+                disneyinfo.append("N/A")
+                rtt_num += 1
+                continue
             proxys.switchProxy_old(proxyName=n, proxyGroup=proxy_group, clashPort=1123)
             progress += 1
             cl = collector.Collector()
@@ -85,6 +94,7 @@ async def testurl(client, message, back_message, test_members, start_time):
             youtube_info.append(you)
             dis = clean.getDisneyinfo()
             disneyinfo.append(dis)
+            rtt_num += 1
             cal = progress / nodenum * 100
             p_text = "%.2f" % cal
             # 判断进度条，每隔10%发送一次反馈，有效防止洪水等待(FloodWait)
@@ -128,7 +138,6 @@ async def testurl(client, message, back_message, test_members, start_time):
         print(new_n)
         print(new_dis)
         info = cleaner.ResultCleaner(info).start()
-        print(info)
         # 计算测试消耗时间
         wtime = "%.1f" % float(time.time() - s1)
         info['wtime'] = wtime
