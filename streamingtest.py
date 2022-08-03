@@ -78,6 +78,14 @@ async def testurl(client, message, back_message, test_members, start_time):
                 ninfo.append("N/A")
                 disneyinfo.append("N/A")
                 rtt_num += 1
+                progress += 1
+                cal = progress / nodenum * 100
+                p_text = "%.2f" % cal
+                if cal >= sending_time:
+                    sending_time += 10
+                    await back_message.edit_text("╰(*°▽°*)╯流媒体测试进行中...\n\n" +
+                                                 "当前进度:\n" + p_text +
+                                                 "%     [" + str(progress) + "/" + str(nodenum) + "]")  # 实时反馈进度
                 continue
             proxys.switchProxy_old(proxyName=n, proxyGroup=proxy_group, clashPort=1123)
             progress += 1
