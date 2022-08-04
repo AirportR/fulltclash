@@ -148,12 +148,26 @@ class ReCleaner:
                 print("当前节点情况: ", self._netflix_info)
                 return self._netflix_info
             elif self.data['ip']['ip'] == self._netflix_info[0]:
-                ntype = "解锁"
+                text = self.data['netflix2']
+                s = text.find('preferredLocale', 100000)
+                if s == -1:
+                    self._netflix_info.append("解锁(未知)")
+                    print("当前节点情况: ", self._netflix_info)
+                    return self._netflix_info
+                region = text[s+29:s+31]
+                ntype = "解锁({})".format(region)
                 self._netflix_info.append(ntype)
                 print("当前节点情况: ", self._netflix_info)
                 return self._netflix_info
             else:
-                ntype = "解锁"
+                text = self.data['netflix2']
+                s = text.find('preferredLocale', 100000)
+                if s == -1:
+                    self._netflix_info.append("解锁(未知)")
+                    print("当前节点情况: ", self._netflix_info)
+                    return self._netflix_info
+                region = text[s+29:s+31]
+                ntype = "解锁({})".format(region)
                 self._netflix_info.append(ntype)
                 print("当前节点情况: ", self._netflix_info)
                 return self._netflix_info
@@ -176,7 +190,13 @@ class ReCleaner:
                 elif "YouTube Music 在您所在区域无法使用" in self.data['youtube']:
                     return "失败"
                 elif self.data['youtube_status_code'] == 200:
-                    return "解锁"
+                    text = self.data['youtube']
+                    s = text.find('contentRegion', 14000, 16000)
+                    if s == -1:
+                        return "失败"
+                    region = text[s + 16:s + 18]
+                    print("Youtube解锁地区: ", region)
+                    return "解锁({})".format(region)
                 else:
                     return "N/A"
         except Exception as e:
