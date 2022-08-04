@@ -6,6 +6,6 @@ pilmoji>=2.0.1
 Pyrogram>=2.0.26
 PyYAML>=6.0
 requests>=2.26.0
-
+tgcrypto>=1.2.3
 bs4~=0.0.1
 APScheduler~=3.6.3
