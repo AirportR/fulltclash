@@ -9,7 +9,7 @@ import export
 import proxys
 
 
-async def testurl(client, message, back_message, test_members, start_time):
+async def testurl(client, message, back_message, test_members, start_time, suburl:str=None):
     print("当前序号:", test_members)
     progress = 0
     sending_time = 0
@@ -18,22 +18,22 @@ async def testurl(client, message, back_message, test_members, start_time):
         return
     try:
         chat_id = message.chat.id
-        text = str(message.text)
-
-        pattern = re.compile(
-            r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+")  # 匹配订阅地址
-
         info = {}  # Netflix Youtube 等等
-        # 获取订阅地址
-        try:
-            url = pattern.findall(text)[0]  # 列表中第一个项为订阅地址
-        except IndexError:
-            await back_message.edit_text("⚠️无效的订阅地址，请检查后重试。")
-            return
+        if suburl is not None:
+            url = suburl
+        else:
+            text = str(message.text)
+            pattern = re.compile(
+                r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+")  # 匹配订阅地址
+            # 获取订阅地址
+            try:
+                url = pattern.findall(text)[0]  # 列表中第一个项为订阅地址
+            except IndexError:
+                await back_message.edit_text("⚠️无效的订阅地址，请检查后重试。")
+                return
         print(url)
         # 启动订阅采集器
-        suburl = url
-        sub = collector.SubCollector(suburl=suburl)
+        sub = collector.SubCollector(suburl=url)
         config = await sub.getSubConfig(save_path='./clash/sub{}.yaml'.format(start_time))
         if not config:
             await client.edit_message_text(
@@ -154,24 +154,25 @@ async def testurl(client, message, back_message, test_members, start_time):
         # 发送回TG
         with async_timeout.timeout(30):
             if stime is None:
-                await back_message.edit_text("⚠️生成图片失败,可能原因:节点名称包含国旗⚠️\n尝试使用旧版方案......")
+                await back_message.edit_text("⚠️生成图片失败,可能原因:节点名称包含国旗⚠️\n")
                 new_stime = export.exportImage_old(proxyname=nodename, info=info)
                 if new_stime is None:
                     await back_message.edit_text("⚠️生成图片失败!")
                 else:
-                    if len(nodename) > 60:
+                    if len(nodename) > 50:
                         await message.reply_document(r"./results/{}.png".format(stime),
                                                      caption="⏱️总共耗时: {}s".format(wtime))
-                    await message.reply_photo(r"./results/{}.png".format(new_stime),
+                    await message.reply_photo(r"./results/{}.png".format(stime),
                                               caption="⏱️总共耗时: {}s".format(wtime))
                     await back_message.delete()
                     await message.delete()
             else:
-                if len(nodename) > 60:
+                if len(nodename) > 50:
                     await message.reply_document(r"./results/{}.png".format(stime),
                                                  caption="⏱️总共耗时: {}s".format(wtime))
-                await message.reply_photo(r"./results/{}.png".format(stime),
-                                          caption="⏱️总共耗时: {}s".format(wtime))
+                else:
+                    await message.reply_photo(r"./results/{}.png".format(stime),
+                                                 caption="⏱️总共耗时: {}s".format(wtime))
                 await back_message.delete()
                 await message.delete()
     except RPCError as r:

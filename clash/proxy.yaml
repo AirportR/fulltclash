@@ -31,9 +31,9 @@ proxy-groups:
 - name: auto
   type: select
   use:
-  - de
+  - Default
 proxy-providers:
-  de:
+  Default:
     health-check:
       enable: true
       interval: 600000

@@ -208,16 +208,18 @@ class ConfigManager:
 
         """
         self.yaml = {}
-        with open(configpath, "r", encoding="UTF-8") as fp:
-            self.config = yaml.load(fp, Loader=yaml.FullLoader)
         try:
-            self.yaml.update(self.config)
-        except Exception:
-            print("加载配置出错")
+            with open(configpath, "r", encoding="UTF-8") as fp:
+                self.config = yaml.load(fp, Loader=yaml.FullLoader)
+                self.yaml.update(self.config)
+        except FileNotFoundError:
+            print("未发现配置文件，自动生成中......")
+            self.config = None
         if self.config is None:
-            di = {'loader': "True"}
+            di = {'loader': "Success"}
             with open(configpath, "w+", encoding="UTF-8") as fp:
                 yaml.dump(di, fp)
+            self.config = {}
 
     def getAdmin(self):
         try:
@@ -239,6 +241,55 @@ class ConfigManager:
             print("获取代理端口失败，将采用默认7890端口")
             return 7890
 
+    def get_clash_work_path(self):
+        """
+        clash工作路径
+        :return:
+        """
+        try:
+            return self.config['clash']['workpath']
+        except KeyError:
+            print("获取工作路径失败，将采用默认工作路径 ./clash")
+            try:
+                d = {'workpath': './clash'}
+                self.yaml['clash'].update(d)
+            except KeyError:
+                di = {'clash': {'workpath': './clash'}}
+                self.yaml.update(di)
+            return './clash'
+
+    def get_clash_path(self):
+        """
+        clash 核心的运行路径,包括文件名
+        :return:
+        """
+        try:
+            return self.config['clash']['path']
+        except KeyError:
+            print("获取运行路径失败，将采用默认运行路径 ./clash-windows-amd64.exe")
+            try:
+                d = {'path': './clash-windows-amd64.exe'}
+                self.yaml['clash'].update(d)
+            except KeyError:
+                di = {'clash': {'path': './clash-windows-amd64.exe'}}
+                self.yaml.update(di)
+            return './clash-windows-amd64.exe'
+    def get_sub(self, subname:str=None):
+        """
+        获取所有已保存的订阅,或者单个订阅
+        :return:
+        """
+        if subname is None:
+            try:
+                return self.config['subinfo']
+            except KeyError:
+                print("无订阅保存")
+                return {}
+        else:
+            try:
+                return self.config['subinfo'][subname]
+            except KeyError:
+                return None
     def add(self, data: dict, key):
         try:
             self.yaml[key] = data[key]
@@ -334,19 +385,31 @@ class ConfigManager:
                 print(e)
 
     def reload(self, configpath="./config.yaml"):
+        self.save(savePath=configpath)
         with open(configpath, "r", encoding="UTF-8") as fp:
             self.config = yaml.load(fp, Loader=yaml.FullLoader)
+            self.yaml = self.config
 
-    def newsub(self, suburl: dict):
+    def newsub(self, subinfo: dict):
         """添加订阅"""
-        url = suburl
         try:
-            old = self.config['suburl']
-            if old is not None:
-                url.update(old)
-            self.yaml['suburl'] = url
+            self.yaml['subinfo'].update(subinfo)
         except KeyError:
-            self.yaml['suburl'] = url
+            s = {'subinfo': subinfo}
+            self.yaml.update(s)
+
+    def removesub(self, subname: str):
+        """
+        移除订阅
+        :return:
+        """
+        try:
+            subinfo = self.yaml['subinfo']
+            if subinfo is not None:
+                if subname in subinfo:
+                    subinfo.pop(subname)
+        except KeyError:
+            print("移出失败")
 
     def delsub(self, subname: str):
         try:
@@ -404,4 +467,3 @@ class ResultCleaner:
             return self.data
         except TypeError:
             return {}
-
