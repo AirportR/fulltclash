@@ -5,7 +5,7 @@ import time
 # from pilmoji.source import MicrosoftEmojiSource
 
 
-__version__ = "3.0.4"  # 版本号
+__version__ = "3.0.5"  # 版本号
 
 
 # info 变量里面包含测好的解锁信息
