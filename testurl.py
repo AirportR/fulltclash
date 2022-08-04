@@ -236,6 +236,7 @@ async def test(client, message):
         if int(message.sender_chat.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
             await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
             return
+    back_message = await message.reply("╰(*°▽°*)╯流媒体测试进行中...")  # 发送提示
     arg = str(message.text).strip().split(' ')
     c = 0
     while len(arg) > c:
@@ -244,10 +245,14 @@ async def test(client, message):
         else:
             c += 1
     arg.remove('/test')
-    suburl = config.get_sub(subname=arg[0])
-    back_message = await message.reply("╰(*°▽°*)╯流媒体测试进行中...")  # 发送提示
+    suburl = ''
+    if len(arg):
+        suburl = config.get_sub(subname=arg[0])
+    else:
+        await back_message.edit_text("❌发生错误，请检查订阅文件")
+        return
     if suburl is None:
-        back_message.edit_text("❌发生错误，请检查订阅文件")
+        await back_message.edit_text("❌发生错误，请检查订阅文件")
         return
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
     test_members += 1
