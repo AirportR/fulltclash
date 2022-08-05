@@ -122,7 +122,7 @@ python .\testurl.py
 
 如果什么反应都没有，请按 Ctrl + C 一次，出现“程序已启动!”字样就说明在运行了.
 运行之后和bot私聊命令：
-/testurl 订阅地址
+/testurl 订阅地址(clash配置格式)
 即可开始测试
 
 # 目前已知bug:
