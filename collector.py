@@ -4,7 +4,7 @@ import aiohttp
 import async_timeout
 from aiohttp.client_exceptions import ClientConnectorError, ClientResponseError
 
-proxies = "http://127.0.0.1:1111"
+proxies = "http://127.0.0.1:1111"  # 代理
 
 
 class BaseCollector:
@@ -285,12 +285,9 @@ async def delay_providers(providername, hostname='127.0.0.1', port=1123, session
     url = 'http://{}:{}/providers/proxies/{}/'.format(hostname, port, providername)
     if session is None:
         session = aiohttp.ClientSession()
-    await session.get(healthcheckurl)
-    async with session.get(healthcheckurl) as r1:
-        if r1.status == 204:
-            print("延迟测试成功")
-    async with session.get(url) as r:
-        try:
+    try:
+        await session.get(healthcheckurl)
+        async with session.get(url) as r:
             if r.status == 200:
                 text = await r.json()
                 # 拿到延迟数据
@@ -300,17 +297,14 @@ async def delay_providers(providername, hostname='127.0.0.1', port=1123, session
                     s = n['history'].pop()
                     de = s['delay']
                     delays.append(de)
-                await session.close()
                 return delays
             else:
                 print("延迟测试出错:", r.status)
-                await session.close()
                 return 0
-
-        except ClientConnectorError as c:
-            print("连接失败:", c)
-            await session.close()
-            return 0
+    except ClientConnectorError as c:
+        print("连接失败:", c)
+        await session.close()
+        return 0
 
 
 async def batch_delay(proxyname: list, session: aiohttp.ClientSession = None,

@@ -244,7 +244,7 @@ async def test(client, message):
             del arg[c]
         else:
             c += 1
-    arg.remove('/test')
+    del arg[0]
     suburl = ''
     if len(arg):
         suburl = config.get_sub(subname=arg[0])

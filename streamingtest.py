@@ -9,7 +9,7 @@ import export
 import proxys
 
 
-async def testurl(client, message, back_message, test_members, start_time, suburl:str=None):
+async def testurl(client, message, back_message, test_members, start_time, suburl: str = None):
     print("当前序号:", test_members)
     progress = 0
     sending_time = 0
@@ -63,11 +63,14 @@ async def testurl(client, message, back_message, test_members, start_time, subur
         ninfo = []  # 存放所测节点Netflix的解锁信息
         youtube_info = []
         disneyinfo = []
+        rtt = []
         s1 = time.time()
         old_rtt = await collector.delay_providers(providername=start_time)
-        rtt = []
-        for r1 in old_rtt:
-            rtt.append(str(r1))
+        if old_rtt == 0:
+            rtt = [0 for _ in range(nodenum)]
+        else:
+            for r1 in old_rtt:
+                rtt.append(str(r1))
         print(rtt)
         rtt_num = 0
         # 启动流媒体测试
@@ -93,9 +96,6 @@ async def testurl(client, message, back_message, test_members, start_time, subur
             n1 = await cl.start(proxy="http://127.0.0.1:{}".format(1122))
             clean = cleaner.ReCleaner(n1)
             nf = clean.getnetflixinfo()
-            if nf is None:
-                print("发现空类型，已重新赋值")
-                nf = ["N/A", "N/A", "N/A"]
             ninfo.append(nf[len(nf) - 1])
             you = clean.getyoutubeinfo()
             youtube_info.append(you)
@@ -172,7 +172,7 @@ async def testurl(client, message, back_message, test_members, start_time, subur
                                                  caption="⏱️总共耗时: {}s".format(wtime))
                 else:
                     await message.reply_photo(r"./results/{}.png".format(stime),
-                                                 caption="⏱️总共耗时: {}s".format(wtime))
+                                              caption="⏱️总共耗时: {}s".format(wtime))
                 await back_message.delete()
                 await message.delete()
     except RPCError as r:
