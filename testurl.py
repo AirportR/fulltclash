@@ -1,12 +1,11 @@
 import asyncio
-import re
 import subprocess
 import sys
 import time
 
 from pyrogram import Client, filters
 from pyrogram.errors import RPCError, FloodWait
-
+from botModule.command import base_command
 import cleaner
 import streamingtest
 from cleaner import ConfigManager
@@ -33,7 +32,10 @@ if admin is None:
     sys.exit(1)
 
 # 你需要一个TG的session后缀文件，以下是session文件的名字，应形如 my_bot.session 为后缀。这个文件小心保管，不要泄露。
-app = Client("my_bot", proxy=proxies)
+if port:
+    app = Client("my_bot", proxy=proxies)
+else:
+    app = Client("my_bot")
 print("配置已加载")
 print("程序已启动!")
 
@@ -80,11 +82,12 @@ async def mytest(client, message):
             await back_message.edit_text("程序已被强行中止")
 
 
-from botModule import authority
+from botModule.command import authority
+
+
 @app.on_message(filters.command(["invite"]) & filters.user(admin), group=1)
 async def invite(client, message):
     await authority.invite(client, message)
-
 
 
 @app.on_message(filters.command(["grant"]), group=2)
@@ -197,6 +200,8 @@ async def new(client, message):
             await message.reply('新增了一个订阅: ' + subname)
         except IndexError:
             print("错误")
+
+
 @app.on_message(filters.command(["remove"]) & filters.user(admin), group=6)
 async def remove(client, message):
     arg = str(message.text).strip().split(' ')
@@ -218,6 +223,7 @@ async def remove(client, message):
     except IndexError:
         print("错误")
 
+
 @app.on_message(filters.command(["sub"]) & filters.user(admin), group=7)
 async def sub(client, message):
     subinfo = config.get_sub()
@@ -225,6 +231,8 @@ async def sub(client, message):
         await message.reply(str(subinfo))
     except RPCError as r:
         print(r)
+
+
 @app.on_message(filters.command(["test"]))
 async def test(client, message):
     global USER_TARGET, test_members
@@ -275,4 +283,11 @@ async def test(client, message):
         await asyncio.sleep(e.value)  # Wait "value" seconds before continuing
     except KeyboardInterrupt:
         await back_message.edit_text("程序已被强行中止")
+
+
+@app.on_message(filters.command(["help", "start"]))
+async def help_and_start(client, message):
+    await base_command.helps(client, message)
+
+
 app.run()

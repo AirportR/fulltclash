@@ -154,7 +154,7 @@ class ReCleaner:
                     self._netflix_info.append("解锁(未知)")
                     print("当前节点情况: ", self._netflix_info)
                     return self._netflix_info
-                region = text[s+29:s+31]
+                region = text[s + 29:s + 31]
                 ntype = "解锁({})".format(region)
                 self._netflix_info.append(ntype)
                 print("当前节点情况: ", self._netflix_info)
@@ -166,7 +166,7 @@ class ReCleaner:
                     self._netflix_info.append("解锁(未知)")
                     print("当前节点情况: ", self._netflix_info)
                     return self._netflix_info
-                region = text[s+29:s+31]
+                region = text[s + 29:s + 31]
                 ntype = "解锁({})".format(region)
                 self._netflix_info.append(ntype)
                 print("当前节点情况: ", self._netflix_info)
@@ -258,8 +258,15 @@ class ConfigManager:
         try:
             return self.config['proxyport']
         except KeyError:
-            print("获取代理端口失败，将采用默认7890端口")
-            return 7890
+            print("获取代理端口失败")
+            return None
+
+    def get_proxy(self):
+        try:
+            return self.config['proxy']
+        except KeyError:
+            print("获取代理配置失败")
+            return None
 
     def get_clash_work_path(self):
         """
@@ -294,7 +301,8 @@ class ConfigManager:
                 di = {'clash': {'path': './clash-windows-amd64.exe'}}
                 self.yaml.update(di)
             return './clash-windows-amd64.exe'
-    def get_sub(self, subname:str=None):
+
+    def get_sub(self, subname: str = None):
         """
         获取所有已保存的订阅,或者单个订阅
         :return:
@@ -310,6 +318,7 @@ class ConfigManager:
                 return self.config['subinfo'][subname]
             except KeyError:
                 return None
+
     def add(self, data: dict, key):
         try:
             self.yaml[key] = data[key]

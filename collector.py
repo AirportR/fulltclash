@@ -1,10 +1,11 @@
 import asyncio
-import time
 import aiohttp
 import async_timeout
-from aiohttp.client_exceptions import ClientConnectorError, ClientResponseError
+from aiohttp.client_exceptions import ClientConnectorError
+import cleaner
 
-proxies = "http://127.0.0.1:1111"  # 代理
+config = cleaner.ConfigManager()
+proxies = config.get_proxy()  # 代理
 
 
 class BaseCollector:
@@ -229,29 +230,27 @@ class Collector:
             if reconnection != 0:
                 await self.fetch_dis(session=session, proxy=proxy, reconnection=reconnection - 1)
 
-    async def start(self, session: aiohttp.ClientSession = None, proxy=None):
+    async def start(self, proxy=None):
         """
         启动采集器，采用并发操作
-        :param session:
         :param proxy: using proxy
         :return: all content
         """
         try:
-            if session is None:
-                session = aiohttp.ClientSession(headers=self._headers)
-                tasks = []
-                task1 = asyncio.create_task(self.fetch_ip(session=session, proxy=proxy))
-                tasks.append(task1)
-                task2 = asyncio.create_task(self.fetch_ninfo1(session, proxy=proxy))
-                tasks.append(task2)
-                task3 = asyncio.create_task(self.fetch_ninfo2(session, proxy=proxy))
-                tasks.append(task3)
-                task4 = asyncio.create_task(self.fetch_youtube(session, proxy=proxy))
-                tasks.append(task4)
-                task5 = asyncio.create_task(self.fetch_dis(session, proxy=proxy))
-                tasks.append(task5)
-                done, pending = await asyncio.wait(tasks)
-                await session.close()
+            session = aiohttp.ClientSession(headers=self._headers)
+            tasks = []
+            task1 = asyncio.create_task(self.fetch_ip(session=session, proxy=proxy))
+            tasks.append(task1)
+            task2 = asyncio.create_task(self.fetch_ninfo1(session, proxy=proxy))
+            tasks.append(task2)
+            task3 = asyncio.create_task(self.fetch_ninfo2(session, proxy=proxy))
+            tasks.append(task3)
+            task4 = asyncio.create_task(self.fetch_youtube(session, proxy=proxy))
+            tasks.append(task4)
+            task5 = asyncio.create_task(self.fetch_dis(session, proxy=proxy))
+            tasks.append(task5)
+            done, pending = await asyncio.wait(tasks)
+            await session.close()
             return self.info
         except Exception as e:
             print(e)
@@ -297,9 +296,11 @@ async def delay_providers(providername, hostname='127.0.0.1', port=1123, session
                     s = n['history'].pop()
                     de = s['delay']
                     delays.append(de)
+                await session.close()
                 return delays
             else:
                 print("延迟测试出错:", r.status)
+                await session.close()
                 return 0
     except ClientConnectorError as c:
         print("连接失败:", c)
@@ -307,9 +308,7 @@ async def delay_providers(providername, hostname='127.0.0.1', port=1123, session
         return 0
 
 
-async def batch_delay(proxyname: list, session: aiohttp.ClientSession = None,
-                      testurl='http://www.gstatic.com/generate_204',
-                      hostname='127.0.0.1', port=1123, timeout='5000'):
+async def batch_delay(proxyname: list, session: aiohttp.ClientSession = None,testurl='http://www.gstatic.com/generate_204',hostname='127.0.0.1', port=1123, timeout='5000'):
     """
     批量测试延迟，仅适用于不含providers的订阅
     :param timeout:
