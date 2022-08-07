@@ -1,4 +1,3 @@
-from pyrogram import Client, filters
 from pyrogram.errors import RPCError
 
 # 如果是在国内环境，则需要代理环境以供程序连接上TG
