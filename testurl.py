@@ -5,7 +5,7 @@ import time
 
 from pyrogram import Client, filters
 from pyrogram.errors import RPCError, FloodWait
-from botModule.command import base_command
+
 import cleaner
 import streamingtest
 from cleaner import ConfigManager
