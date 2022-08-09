@@ -75,7 +75,7 @@ async def testurl(client, message, back_message, test_members, start_time, subur
         rtt_num = 0
         # 启动流媒体测试
         for n in nodename:
-            if old_rtt[rtt_num] == 0:
+            if rtt[rtt_num] == 0:
                 print("超时节点，跳过测试......")
                 youtube_info.append("N/A")
                 ninfo.append("N/A")

@@ -265,7 +265,6 @@ class ConfigManager:
         try:
             return self.config['proxy']
         except KeyError:
-            print("获取代理配置失败")
             return None
 
     def get_clash_work_path(self):
@@ -400,7 +399,10 @@ class ConfigManager:
                     for li in user:
                         userlist.remove(li)
                 else:
-                    userlist.remove(user)
+                    try:
+                        userlist.remove(user)
+                    except ValueError:
+                        print("目标本身未在用户列表中")
                 self.yaml['user'] = userlist
         except TypeError as t:
             print("删除失败")
@@ -496,3 +498,30 @@ class ResultCleaner:
             return self.data
         except TypeError:
             return {}
+
+
+class ArgCleaner:
+    def __init__(self, string: str = None):
+        self.string = string
+
+    def getall(self, string: str = None):
+        if string is None:
+            if self.string is None:
+                return None
+            arg = self.string.strip().split(' ')
+            c = 0
+            while len(arg) > c:
+                if arg[c] == '':
+                    del arg[c]
+                else:
+                    c += 1
+            return arg
+        else:
+            arg = string.strip().split(' ')
+            c = 0
+            while len(arg) > c:
+                if arg[c] == '':
+                    del arg[c]
+                else:
+                    c += 1
+            return arg
