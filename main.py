@@ -1,6 +1,6 @@
 from pyrogram import Client
 import bot
-from botModule import init_bot
+from botmodule import init_bot
 
 
 if __name__ == "__main__":

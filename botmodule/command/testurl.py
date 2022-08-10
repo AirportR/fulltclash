@@ -2,16 +2,16 @@ import asyncio
 import time
 from pyrogram.errors import RPCError, FloodWait
 
-import botModule.init_bot
+import botmodule.init_bot
 import cleaner
 import streamingtest
-from botModule.init_bot import config
+from botmodule.init_bot import config
 
 test_members = 0
-USER_TARGET = botModule.init_bot.USER_TARGET
+USER_TARGET = botmodule.init_bot.USER_TARGET
 
 
-def reloadU():
+def reloadUser():
     global USER_TARGET
     USER_TARGET = config.getuser()
 

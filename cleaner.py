@@ -287,19 +287,19 @@ class ConfigManager:
     def get_clash_path(self):
         """
         clash 核心的运行路径,包括文件名
-        :return:
+        :return: str
         """
         try:
             return self.config['clash']['path']
         except KeyError:
-            print("获取运行路径失败，将采用默认运行路径 ./clash-windows-amd64.exe")
+            print("获取运行路径失败，将采用默认运行路径 ./resources/clash-windows-amd64.exe")
             try:
-                d = {'path': './clash-windows-amd64.exe'}
+                d = {'path': './resources/clash-windows-amd64.exe'}
                 self.yaml['clash'].update(d)
             except KeyError:
-                di = {'clash': {'path': './clash-windows-amd64.exe'}}
+                di = {'clash': {'path': './resources/clash-windows-amd64.exe'}}
                 self.yaml.update(di)
-            return './clash-windows-amd64.exe'
+            return './resources/clash-windows-amd64.exe'
 
     def get_sub(self, subname: str = None):
         """

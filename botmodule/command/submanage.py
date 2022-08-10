@@ -1,7 +1,7 @@
 from pyrogram.errors import RPCError
 
 import cleaner
-from botModule.init_bot import config
+from botmodule.init_bot import config
 
 
 async def sub(client, message):
