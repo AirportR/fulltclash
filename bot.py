@@ -1,21 +1,8 @@
 from pyrogram import Client, filters
 
 import botmodule
-# import botmodule.command.testurl
-# import botmodule.command.grant
-# from botmodule.command import authority
-# from botmodule.command import basic
-# import botmodule.command.basic
-# import botmodule.command.submanage
-# import botmodule.init_bot
 
-
-config = botmodule.init_bot.config
-USER_TARGET = botmodule.init_bot.USER_TARGET  # 这是用户列表，从配置文件读取
-clash_path = botmodule.init_bot.clash_path  # 为clash核心运行路径, Windows系统需要加后缀名.exe
-clash_work_path = botmodule.init_bot.clash_work_path  # clash工作路径
 admin = botmodule.init_bot.admin  # 管理员
-test_members = 0  # 正在测试的成员，如果为零则停止测试，否则一直测试
 
 
 def loader(app: Client):
@@ -58,6 +45,3 @@ def loader(app: Client):
     @app.on_message(filters.command(["help", "start"]), group=9)
     async def help_and_start(client, message):
         await botmodule.helps(client, message)
-
-
-

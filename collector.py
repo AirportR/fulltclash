@@ -46,6 +46,7 @@ class SubCollector(BaseCollector):
                         return response
         except Exception as e:
             print(e)
+            return None
 
     async def getSubTraffic(self, proxy=None):
         """
@@ -74,6 +75,9 @@ class SubCollector(BaseCollector):
                                     break
                                 fd.write(chunk)
                             return True
+        except asyncio.exceptions.TimeoutError:
+            print("获取订阅超时")
+            return False
         except ClientConnectorError as c:
             print(c)
             return False
@@ -114,10 +118,12 @@ class Collector:
                 return self.info
             else:
                 self.info['ip'] = await res.json()
-        except Exception as e:
-            print(e)
         except ClientConnectorError as c:
             print(c)
+            self.info['ip'] = None
+            return self.info
+        except Exception as e:
+            print(e)
 
     async def fetch_ninfo1(self, session: aiohttp.ClientSession, proxy=None, reconnection=2):
         """
