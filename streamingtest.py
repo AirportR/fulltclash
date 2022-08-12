@@ -9,11 +9,9 @@ import cleaner
 import export
 import proxys
 
-logger.add("./logs/fulltclash_{time}.log", rotation='7 days')
-
 
 async def testurl(client, message, back_message, test_members, start_time, suburl: str = None):
-    logger.info("当前序号:", test_members)
+    logger.info("当前序号:" + str(test_members))
     progress = 0
     sending_time = 0
 
@@ -37,7 +35,7 @@ async def testurl(client, message, back_message, test_members, start_time, subur
             except IndexError:
                 await back_message.edit_text("⚠️无效的订阅地址，请检查后重试。")
                 return
-        logger.info(url)
+        print(url)
         # 启动订阅采集器
         sub = collector.SubCollector(suburl=url)
         subconfig = await sub.getSubConfig(save_path='./clash/sub{}.yaml'.format(start_time))

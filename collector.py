@@ -7,7 +7,6 @@ import cleaner
 
 config = cleaner.ConfigManager()
 proxies = config.get_proxy()  # 代理
-logger.add("./logs/fulltclash_{time}.log", rotation='7 days')
 
 
 class BaseCollector:

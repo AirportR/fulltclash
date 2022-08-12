@@ -5,8 +5,6 @@ import async_timeout
 import requests
 from loguru import logger
 
-logger.add("./logs/fulltclash_{time}.log", rotation='7 days')
-
 
 # 切换节点
 def switchProxy_old(proxyName, proxyGroup, clashHost: str = "127.0.0.1", clashPort: int = 1123):

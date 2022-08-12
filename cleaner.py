@@ -4,8 +4,6 @@ import yaml
 from bs4 import BeautifulSoup
 from loguru import logger
 
-logger.add("./logs/fulltclash_{time}.log", rotation='7 days')
-
 
 class ClashCleaner:
     """
