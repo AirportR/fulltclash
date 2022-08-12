@@ -1,5 +1,10 @@
+import re
+
 import yaml
 from bs4 import BeautifulSoup
+from loguru import logger
+
+logger.add("./logs/fulltclash_{time}.log", rotation='7 days')
 
 
 class ClashCleaner:
@@ -22,7 +27,7 @@ class ClashCleaner:
         try:
             return len(self.yaml['proxies'])
         except TypeError:
-            print("读取节点信息失败！")
+            logger.warning("读取节点信息失败！")
             return None
 
     def nodesName(self):
@@ -36,7 +41,7 @@ class ClashCleaner:
                 lis.append(i['name'])
             return lis
         except TypeError:
-            print("读取节点信息失败！")
+            logger.warning("读取节点信息失败！")
             return None
 
     def nodesType(self):
@@ -50,9 +55,10 @@ class ClashCleaner:
                 t.append(i['type'])
             return t
         except TypeError:
-            print("读取节点信息失败！")
+            logger.warning("读取节点信息失败！")
             return None
 
+    @logger.catch
     def proxyGroupName(self):
         """
         获取第一个"select"类型代理组的名字
@@ -65,11 +71,8 @@ class ClashCleaner:
                 else:
                     pass
         except TypeError:
-            print("读取节点信息失败！")
+            logger.warning("读取节点信息失败！")
             return None
-        except Exception as e:
-            print(e)
-            return ""
 
     def changeClashPort(self, port: str or int = 1122):
         """
@@ -77,25 +80,29 @@ class ClashCleaner:
         """
         if 'mixed-port' in self.yaml:
             self.yaml['mixed-port'] = int(port)
-            print("配置端口已被改变为：", self.yaml['mixed-port'])
+            logger.info("配置端口已被改变为：" + str(port))
         elif 'port' in self.yaml:
             self.yaml['port'] = int(port)
-            print("配置端口已被改变为：", self.yaml['port'])
+            logger.info("配置端口已被改变为：" + str(port))
 
     def changeClashEC(self, ec: str = '127.0.0.1:1123'):
         """
         改变external-controller地址与端口
         """
-        self.yaml['external-controller'] = ec
-        print("外部控制地址已被修改为", self.yaml['external-controller'])
+        try:
+            self.yaml['external-controller'] = ec
+            logger.info("外部控制地址已被修改为：" + ec)
+        except Exception as e:
+            logger.error(str(e))
 
     def changeClashMode(self, mode: str = "global"):
         """
         改变clash模式
         """
         self.yaml['mode'] = mode
-        print("Clash 模式已被修改为:", self.yaml['mode'])
+        logger.info("Clash 模式已被修改为:" + self.yaml['mode'])
 
+    @logger.catch
     def save(self, savePath: str = "./sub.yaml"):
         with open(savePath, "w", encoding="UTF-8") as fp:
             yaml.dump(self.yaml, fp)
@@ -113,7 +120,6 @@ class ReCleaner:
         :return: list: [netflix_ip, proxy_ip, netflix_info: "解锁"，“自制”，“失败”，“N/A”]
         """
         try:
-            # print(self.data['ip'])
             if self.data['ip'] is None or self.data['ip'] == "N/A":
                 return ["N/A", "N/A", "N/A"]
             if self.data['netflix2'] is None:
@@ -140,39 +146,39 @@ class ReCleaner:
             if self._sum == 0:
                 ntype = "失败"
                 self._netflix_info.append(ntype)  # 类型有四种，分别是无、仅自制剧、原生解锁（大概率）、 DNS解锁
-                print("当前节点情况: ", self._netflix_info)
+                logger.info("当前节点情况: " + str(self._netflix_info))
                 return self._netflix_info
             elif self._sum == 1:
                 ntype = "自制"
                 self._netflix_info.append(ntype)
-                print("当前节点情况: ", self._netflix_info)
+                logger.info("当前节点情况: " + str(self._netflix_info))
                 return self._netflix_info
             elif self.data['ip']['ip'] == self._netflix_info[0]:
                 text = self.data['netflix2']
                 s = text.find('preferredLocale', 100000)
                 if s == -1:
                     self._netflix_info.append("解锁(未知)")
-                    print("当前节点情况: ", self._netflix_info)
+                    logger.info("当前节点情况: " + str(self._netflix_info))
                     return self._netflix_info
                 region = text[s + 29:s + 31]
                 ntype = "解锁({})".format(region)
                 self._netflix_info.append(ntype)
-                print("当前节点情况: ", self._netflix_info)
+                logger.info("当前节点情况: " + str(self._netflix_info))
                 return self._netflix_info
             else:
                 text = self.data['netflix2']
                 s = text.find('preferredLocale', 100000)
                 if s == -1:
                     self._netflix_info.append("解锁(未知)")
-                    print("当前节点情况: ", self._netflix_info)
+                    logger.info("当前节点情况: " + str(self._netflix_info))
                     return self._netflix_info
                 region = text[s + 29:s + 31]
                 ntype = "解锁({})".format(region)
                 self._netflix_info.append(ntype)
-                print("当前节点情况: ", self._netflix_info)
+                logger.info("当前节点情况: " + str(self._netflix_info))
                 return self._netflix_info
         except Exception as e:
-            print(e)
+            logger.error(e)
             return ["N/A", "N/A", "N/A"]
 
     def getyoutubeinfo(self):
@@ -182,7 +188,7 @@ class ReCleaner:
                 """
         try:
             if 'youtube' not in self.data:
-                print("采集器内无数据")
+                logger.warning("采集器内无数据")
                 return "N/A"
             else:
                 if "is not available" in self.data['youtube']:
@@ -195,12 +201,12 @@ class ReCleaner:
                     if s == -1:
                         return "失败"
                     region = text[s + 16:s + 18]
-                    print("Youtube解锁地区: ", region)
+                    logger.info("Youtube解锁地区: " + region)
                     return "解锁({})".format(region)
                 else:
                     return "N/A"
         except Exception as e:
-            print(e)
+            logger.error(e)
             return "N/A"
 
     def getDisneyinfo(self):
@@ -210,11 +216,13 @@ class ReCleaner:
         """
         try:
             if self.data['disney'] is None:
+                logger.warning("无法读取Desney Plus解锁信息")
                 return "N/A"
             else:
+                logger.info("Disney+ 状态：" + str(self.data['disney']))
                 return self.data['disney']
         except Exception as e:
-            print(e)
+            logger.error(e)
             return "N/A"
 
 
@@ -233,7 +241,7 @@ class ConfigManager:
                 self.config = yaml.load(fp, Loader=yaml.FullLoader)
                 self.yaml.update(self.config)
         except FileNotFoundError:
-            print("未发现配置文件，自动生成中......")
+            logger.warning("未发现配置文件，自动生成中......")
             self.config = None
         if self.config is None:
             di = {'loader': "Success"}
@@ -251,20 +259,21 @@ class ConfigManager:
         try:
             return self.config['user']
         except KeyError:
-            print("获取用户失败,将采用默认用户")
+            logger.warning("获取用户失败,将采用默认用户")
             return []  # 默认名单
 
     def get_proxy_port(self):
         try:
             return self.config['proxyport']
         except KeyError:
-            print("获取代理端口失败")
+            logger.info("获取代理端口失败")
             return None
 
     def get_proxy(self):
         try:
             return self.config['proxy']
         except KeyError:
+            # logger.info("当前未启用代理配置")
             return None
 
     def get_clash_work_path(self):
@@ -275,7 +284,7 @@ class ConfigManager:
         try:
             return self.config['clash']['workpath']
         except KeyError:
-            print("获取工作路径失败，将采用默认工作路径 ./clash")
+            logger.warning("获取工作路径失败，将采用默认工作路径 ./clash")
             try:
                 d = {'workpath': './clash'}
                 self.yaml['clash'].update(d)
@@ -292,7 +301,7 @@ class ConfigManager:
         try:
             return self.config['clash']['path']
         except KeyError:
-            print("获取运行路径失败，将采用默认运行路径 ./resources/clash-windows-amd64.exe")
+            logger.warning("获取运行路径失败，将采用默认运行路径 ./resources/clash-windows-amd64.exe")
             try:
                 d = {'path': './resources/clash-windows-amd64.exe'}
                 self.yaml['clash'].update(d)
@@ -310,7 +319,7 @@ class ConfigManager:
             try:
                 return self.config['subinfo']
             except KeyError:
-                print("无订阅保存")
+                logger.info("无订阅保存")
                 return {}
         else:
             try:
@@ -318,13 +327,14 @@ class ConfigManager:
             except KeyError:
                 return None
 
+    @logger.catch
     def add(self, data: dict, key):
         try:
             self.yaml[key] = data[key]
         except Exception as e:
-            print("添加失败！")
             print(e)
 
+    @logger.catch
     def add_admin(self, admin: list or str or int):
         """
         添加管理员
@@ -342,12 +352,13 @@ class ConfigManager:
                 adminlist.extend(old)
                 newadminlist = list(set(adminlist))  # 去重
                 self.yaml['admin'] = newadminlist
-                print("添加成功")
+                logger.info("添加成功")
         except KeyError:
             newadminlist = list(set(adminlist))  # 去重
             self.yaml['admin'] = newadminlist
-            print("添加成功")
+            logger.info("添加成功")
 
+    @logger.catch
     def del_admin(self, admin: list or str or int):
         """
         删除管理员
@@ -361,10 +372,10 @@ class ConfigManager:
                 else:
                     adminlist.remove(admin)
                 self.yaml['admin'] = adminlist
-        except TypeError as t:
-            print("删除失败")
-            print(t)
+        except TypeError:
+            logger.error("删除失败")
 
+    @logger.catch
     def add_user(self, user: list or str or int):
         """
         添加授权用户
@@ -382,12 +393,13 @@ class ConfigManager:
                 userlist.extend(old)
             newuserlist = list(set(userlist))  # 去重
             self.yaml['user'] = newuserlist
-            print("添加成功")
+            logger.info("添加成功")
         except KeyError:
             newuserlist = list(set(userlist))  # 去重
             self.yaml['user'] = newuserlist
-            print("添加成功")
+            logger.info("添加成功")
 
+    @logger.catch
     def del_user(self, user: list or str or int):
         """
         删除授权用户
@@ -402,12 +414,12 @@ class ConfigManager:
                     try:
                         userlist.remove(user)
                     except ValueError:
-                        print("目标本身未在用户列表中")
+                        logger.warning("目标本身未在用户列表中")
                 self.yaml['user'] = userlist
-        except TypeError as t:
-            print("删除失败")
-            print(t)
+        except TypeError:
+            logger.error("删除失败")
 
+    @logger.catch
     def save(self, savePath: str = "./config.yaml"):
         with open(savePath, "w+", encoding="UTF-8") as fp:
             try:
@@ -415,12 +427,14 @@ class ConfigManager:
             except Exception as e:
                 print(e)
 
+    @logger.catch
     def reload(self, configpath="./config.yaml"):
         self.save(savePath=configpath)
         with open(configpath, "r", encoding="UTF-8") as fp:
             self.config = yaml.load(fp, Loader=yaml.FullLoader)
             self.yaml = self.config
 
+    @logger.catch
     def newsub(self, subinfo: dict):
         """添加订阅"""
         try:
@@ -429,6 +443,7 @@ class ConfigManager:
             s = {'subinfo': subinfo}
             self.yaml.update(s)
 
+    @logger.catch
     def removesub(self, subname: str):
         """
         移除订阅
@@ -440,8 +455,9 @@ class ConfigManager:
                 if subname in subinfo:
                     subinfo.pop(subname)
         except KeyError:
-            print("移出失败")
+            logger.error('移出失败')
 
+    @logger.catch
     def delsub(self, subname: str):
         try:
             subinfo = self.yaml['proxy-providers']
@@ -452,10 +468,10 @@ class ConfigManager:
             if subinfo2 is not None:
                 if subname in subinfo2:
                     subinfo2.remove(subname)
-        except TypeError as t:
-            print("删除失败")
-            print(t)
+        except TypeError:
+            logger.warning("删除失败")
 
+    @logger.catch
     def addsub(self, subname: str, subpath: str):
         """
         添加订阅到总文件，如用相对路径，请注意这里的subpath是写入到配置里面的，如果你指定过clash核心的工作目录，则相对位置以clash工作目录为准
@@ -465,8 +481,6 @@ class ConfigManager:
         """
         info = {'type': 'file', 'path': subpath,
                 'health-check': {'enable': True, 'url': 'http://www.gstatic.com/generate_204', 'interval': 600}}
-        a = self.yaml['proxy-providers']
-        b = self.yaml['proxy-groups']
         self.yaml['proxy-providers'][subname] = info
         if subname not in self.yaml['proxy-groups'][0]['use']:
             self.yaml['proxy-groups'][0]['use'].append(subname)
@@ -525,3 +539,16 @@ class ArgCleaner:
                 else:
                     c += 1
             return arg
+
+
+def geturl(string: str):
+    text = string
+    pattern = re.compile(
+        r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+")  # 匹配订阅地址
+    # 获取订阅地址
+    try:
+        url = pattern.findall(text)[0]  # 列表中第一个项为订阅地址
+        return url
+    except IndexError:
+        logger.info("未找到URL")
+        return None

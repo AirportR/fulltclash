@@ -2,10 +2,12 @@ import asyncio
 import aiohttp
 import async_timeout
 from aiohttp.client_exceptions import ClientConnectorError
+from loguru import logger
 import cleaner
 
 config = cleaner.ConfigManager()
 proxies = config.get_proxy()  # 代理
+logger.add("./logs/fulltclash_{time}.log", rotation='7 days')
 
 
 class BaseCollector:
@@ -45,7 +47,7 @@ class SubCollector(BaseCollector):
                     async with session.get(self.url, proxy=proxy) as response:
                         return response
         except Exception as e:
-            print(e)
+            logger.error(e)
             return None
 
     async def getSubTraffic(self, proxy=None):
@@ -71,15 +73,15 @@ class SubCollector(BaseCollector):
                             while True:
                                 chunk = await response.content.read()
                                 if not chunk:
-                                    print("获取订阅成功")
+                                    logger.info("获取订阅成功")
                                     break
                                 fd.write(chunk)
                             return True
         except asyncio.exceptions.TimeoutError:
-            print("获取订阅超时")
+            logger.info("获取订阅超时")
             return False
         except ClientConnectorError as c:
-            print(c)
+            logger.warning(c)
             return False
 
 
@@ -106,7 +108,7 @@ class Collector:
         """
         try:
             res = await session.get(self.ipurl, proxy=proxy, timeout=5)
-            print("ip查询状态：", res.status)
+            logger.info("ip查询状态：" + str(res.status))
             if res.status != 200:
                 self.info['ip'] = None
                 self.info['netflix1'] = None
@@ -114,16 +116,16 @@ class Collector:
                 self.info['youtube'] = None
                 self.info['ne_status_code1'] = None
                 self.info['ne_status_code2'] = None
-                print("无法查询到代理ip")
+                logger.warning("无法查询到代理ip")
                 return self.info
             else:
                 self.info['ip'] = await res.json()
         except ClientConnectorError as c:
-            print(c)
+            logger.warning(c)
             self.info['ip'] = None
             return self.info
         except Exception as e:
-            print(e)
+            logger.error(e)
 
     async def fetch_ninfo1(self, session: aiohttp.ClientSession, proxy=None, reconnection=2):
         """
@@ -142,11 +144,11 @@ class Collector:
                 self.info['netflix1'] = None
                 self.info['ne_status_code1'] = None
         except ClientConnectorError as c:
-            print("Netflix请求发生错误:", c)
+            logger.warning("Netflix请求发生错误:", c)
             if reconnection != 0:
                 await self.fetch_ninfo1(session=session, proxy=proxy, reconnection=reconnection - 1)
         except asyncio.exceptions.TimeoutError:
-            print("Netflix请求超时，正在重新发送请求......")
+            logger.warning("Netflix请求超时，正在重新发送请求......")
             if reconnection != 0:
                 await self.fetch_ninfo1(session=session, proxy=proxy, reconnection=reconnection - 1)
 
@@ -168,17 +170,18 @@ class Collector:
                 self.info['ne_status_code2'] = None
 
         except ClientConnectorError as c:
-            print("Netflix请求发生错误:", c)
+            logger.warning("Netflix请求发生错误:", c)
             if reconnection != 0:
                 await self.fetch_ninfo2(session=session, proxy=proxy, reconnection=reconnection - 1)
         except asyncio.exceptions.TimeoutError:
-            print("Netflix请求超时，正在重新发送请求......")
+            logger.warning("Netflix请求超时，正在重新发送请求......")
             if reconnection != 0:
                 await self.fetch_ninfo2(session=session, proxy=proxy, reconnection=reconnection - 1)
 
     async def fetch_youtube(self, session: aiohttp.ClientSession, proxy=None, reconnection=2):
         """
         Youtube解锁检测
+        :param reconnection:
         :param session:
         :param proxy:
         :return:
@@ -188,15 +191,15 @@ class Collector:
             if youtube.status is not None:
                 self.info['youtube'] = await youtube.text()
                 self.info['youtube_status_code'] = youtube.status
-                print("Youtube 成功访问")
+                logger.info("Youtube 成功访问")
             else:
                 self.info['youtube'] = None
         except ClientConnectorError as c:
-            print("Youtube请求发生错误:", c)
+            logger.warning("Youtube请求发生错误:", c)
             if reconnection != 0:
                 await self.fetch_youtube(session=session, proxy=proxy, reconnection=reconnection - 1)
         except asyncio.exceptions.TimeoutError:
-            print("Youtube请求超时，正在重新发送请求......")
+            logger.warning("Youtube请求超时，正在重新发送请求......")
             if reconnection != 0:
                 await self.fetch_youtube(session=session, proxy=proxy, reconnection=reconnection - 1)
 
@@ -216,23 +219,21 @@ class Collector:
                 index = str(text1).find('Region', 0, 400)
                 region = text1[index + 8:index + 10]
                 if index == -1:
-                    print('disney+未解锁')
                     self.info['disney'] = "待解锁"
                 elif dis1.history:
                     if 300 <= dis1.history[0].status <= 399:
                         self.info['disney'] = "待解({})".format(region)
                 else:
-                    print('disney解锁地区:', region)
                     self.info['disney'] = "解锁({})".format(region)
             else:
                 self.info['disney'] = "失败"
-            print("disney+ 成功访问")
+            logger.info("disney+ 成功访问")
         except ClientConnectorError as c:
-            print("disney+请求发生错误:", c)
+            logger.warning("disney+请求发生错误:", c)
             if reconnection != 0:
                 await self.fetch_dis(session=session, proxy=proxy, reconnection=reconnection - 1)
         except asyncio.exceptions.TimeoutError:
-            print("disney+请求超时，正在重新发送请求......")
+            logger.warning("disney+请求超时，正在重新发送请求......")
             if reconnection != 0:
                 await self.fetch_dis(session=session, proxy=proxy, reconnection=reconnection - 1)
 
@@ -259,7 +260,7 @@ class Collector:
             await session.close()
             return self.info
         except Exception as e:
-            print(e)
+            logger.error(e)
             self.info['ip'] = "N/A"
             self.info['netflix1'] = None
             self.info['netflix2'] = None
@@ -270,7 +271,7 @@ class Collector:
             return self.info
 
 
-async def delay(session: aiohttp.ClientSession, proxyname, testurl, hostname, port, timeout, reconnection=1):
+async def delay(session: aiohttp.ClientSession, proxyname, testurl, hostname, port, timeout):
     url = 'http://{}:{}/proxies/{}/delay?timeout={}&url={}'.format(hostname, port, proxyname, timeout, testurl)
     async with session.get(url) as r:
         try:
@@ -278,10 +279,10 @@ async def delay(session: aiohttp.ClientSession, proxyname, testurl, hostname, po
                 text = await r.json()
                 return text['delay']
             else:
-                print(proxyname, ":", await r.json(), r.status)
+                logger.info(proxyname + ":" + str(await r.json()) + str(r.status))
                 return -1
         except ClientConnectorError as c:
-            print("连接失败:", c)
+            logger.warning("连接失败:", c)
             return -1
 
 
@@ -305,16 +306,18 @@ async def delay_providers(providername, hostname='127.0.0.1', port=1123, session
                 await session.close()
                 return delays
             else:
-                print("延迟测试出错:", r.status)
+                logger.warning("延迟测试出错:" + str(r.status))
                 await session.close()
                 return 0
     except ClientConnectorError as c:
-        print("连接失败:", c)
+        logger.warning("连接失败:", c)
         await session.close()
         return 0
 
 
-async def batch_delay(proxyname: list, session: aiohttp.ClientSession = None,testurl='http://www.gstatic.com/generate_204',hostname='127.0.0.1', port=1123, timeout='5000'):
+async def batch_delay(proxyname: list, session: aiohttp.ClientSession = None,
+                      testurl='http://www.gstatic.com/generate_204',
+                      hostname='127.0.0.1', port=1123, timeout='5000'):
     """
     批量测试延迟，仅适用于不含providers的订阅
     :param timeout:
@@ -344,5 +347,5 @@ async def batch_delay(proxyname: list, session: aiohttp.ClientSession = None,tes
             done = await asyncio.gather(*tasks)
             return done
     except Exception as e:
-        print("错误：", e)
+        logger.error(e)
         return None

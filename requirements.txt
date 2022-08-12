@@ -10,3 +10,4 @@ tgcrypto>=1.2.3
 bs4~=0.0.1
 APScheduler~=3.6.3
 emoji==1.7.0
+loguru>=0.6.0

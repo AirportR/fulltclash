@@ -1,8 +1,9 @@
 from pyrogram import Client, filters
 
 import botmodule
+from botmodule import init_bot
 
-admin = botmodule.init_bot.admin  # 管理员
+admin = init_bot.admin  # 管理员
 
 
 def loader(app: Client):

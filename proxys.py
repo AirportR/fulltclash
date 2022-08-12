@@ -3,6 +3,9 @@ import os
 import aiohttp
 import async_timeout
 import requests
+from loguru import logger
+
+logger.add("./logs/fulltclash_{time}.log", rotation='7 days')
 
 
 # 切换节点
@@ -20,10 +23,10 @@ def switchProxy_old(proxyName, proxyGroup, clashHost: str = "127.0.0.1", clashPo
     _headers = {'Content-Type': 'application/json'}
     try:
         r = requests.request("PUT", url, headers=_headers, data=payload)
-        print("切换节点: {}".format(proxyName), r.status_code)
+        logger.info("切换节点: {}".format(proxyName), r.status_code)
         return r
     except Exception as e:
-        print(e)
+        logger.error(e)
 
 
 async def switchProxy(proxyName, proxyGroup, clashHost: str = "127.0.0.1", clashPort: int = 1123):
@@ -44,7 +47,7 @@ async def switchProxy(proxyName, proxyGroup, clashHost: str = "127.0.0.1", clash
                 async with session.put(url, headers=_headers, data=payload) as r:
                     return r
     except Exception as e:
-        print(e)
+        logger.error(e)
 
 
 async def reloadConfig(filePath: str, clashHost: str = "127.0.0.1", clashPort: int = 1123):
@@ -62,6 +65,6 @@ async def reloadConfig(filePath: str, clashHost: str = "127.0.0.1", clashPort: i
     async with aiohttp.ClientSession() as session:
         async with session.put(url, headers=_headers, timeout=5, data=payload) as r:
             if r.status == 204:
-                print("切换配置文件成功，当前配置文件路径:", pwd)
+                logger.info("切换配置文件成功，当前配置文件路径:" + pwd)
             else:
-                print("发送错误: 状态码", r.status)
+                logger.error("发送错误: 状态码" + str(r.status))

@@ -3,7 +3,7 @@ from pilmoji import Pilmoji
 import time
 
 
-__version__ = "3.1.0"  # 版本号
+__version__ = "3.1.1"  # 版本号
 
 
 def color_block(size: tuple, color_value):
@@ -150,9 +150,7 @@ class ExportResult:
         for i in info_list_length:
             x = start_x
             end = start_x + i
-            # print(x,end)
             idraw.text((self.get_mid(x, end, key_list[m]), 40), key_list[m], font=fnt, fill=(0, 0, 0))
-            # print(self.get_mid(x,end,key_list[m]))
             start_x = end
             m = m + 1
         '''

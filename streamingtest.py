@@ -1,24 +1,30 @@
 import asyncio
 import time
 import async_timeout
-from pyrogram.errors import RPCError, FloodWait
 import re
+from pyrogram.errors import RPCError, FloodWait
+from loguru import logger
 import collector
 import cleaner
 import export
 import proxys
 
+logger.add("./logs/fulltclash_{time}.log", rotation='7 days')
+
 
 async def testurl(client, message, back_message, test_members, start_time, suburl: str = None):
-    print("当前序号:", test_members)
+    logger.info("当前序号:", test_members)
     progress = 0
     sending_time = 0
+
     if test_members > 4:
         await back_message.edit_text("⚠️测试任务数量达到最大，请等待一个任务完成。")
         return
+    if test_members > 1:
+        logger.warning("注意，当前测试任务数量大于1，处于多任务同测状态，可能会对测试结果产生影响")
+        await back_message.reply("⚠️注意，当前测试任务数量大于1，处于多任务同测状态，可能会对测试结果产生影响")
     try:
-        chat_id = message.chat.id
-        info = {}  # Netflix Youtube 等等
+        info = {}  # 存放Netflix Youtube 等等
         if suburl is not None:
             url = suburl
         else:
@@ -31,16 +37,13 @@ async def testurl(client, message, back_message, test_members, start_time, subur
             except IndexError:
                 await back_message.edit_text("⚠️无效的订阅地址，请检查后重试。")
                 return
-        print(url)
+        logger.info(url)
         # 启动订阅采集器
         sub = collector.SubCollector(suburl=url)
-        config = await sub.getSubConfig(save_path='./clash/sub{}.yaml'.format(start_time))
-        if not config:
-            await client.edit_message_text(
-                chat_id=chat_id,
-                message_id=back_message.id,
-                text="ERROR: 无法获取到订阅文件"
-            )
+        subconfig = await sub.getSubConfig(save_path='./clash/sub{}.yaml'.format(start_time))
+        if not subconfig:
+            logger.warning("ERROR: 无法获取到订阅文件")
+            await back_message.edit_message_text("ERROR: 无法获取到订阅文件")
             return
 
         # 启动订阅清洗
@@ -52,6 +55,10 @@ async def testurl(client, message, back_message, test_members, start_time, subur
         # 检查获得的数据
         if nodename is None or nodenum is None or nodetype is None:
             await back_message.edit_text("❌发生错误，请检查订阅文件")
+            return
+        if nodenum > 500:
+            logger.warning("❌节点数量过多！已取消本次测试")
+            await back_message.edit_text("❌节点数量过多！已取消本次测试")
             return
         ma = cleaner.ConfigManager('./clash/proxy.yaml')
         ma.addsub(subname=start_time, subpath='./sub{}.yaml'.format(start_time))
@@ -70,13 +77,13 @@ async def testurl(client, message, back_message, test_members, start_time, subur
             rtt = [0 for _ in range(nodenum)]
         else:
             for r1 in old_rtt:
-                rtt.append(str(r1))
-        print(rtt)
+                rtt.append(r1)
+        print("延迟:", rtt)
         rtt_num = 0
         # 启动流媒体测试
         for n in nodename:
             if rtt[rtt_num] == 0:
-                print("超时节点，跳过测试......")
+                logger.info("超时节点，跳过测试......")
                 youtube_info.append("N/A")
                 ninfo.append("N/A")
                 disneyinfo.append("N/A")
@@ -140,10 +147,6 @@ async def testurl(client, message, back_message, test_members, start_time, subur
             else:
                 new_dis.append(d)
         info['Disney+'] = new_dis
-        print(rtt)
-        print(new_y)
-        print(new_n)
-        print(new_dis)
         info = cleaner.ResultCleaner(info).start()
         # 计算测试消耗时间
         wtime = "%.1f" % float(time.time() - s1)
@@ -152,20 +155,9 @@ async def testurl(client, message, back_message, test_members, start_time, subur
         # stime = export.exportImage(proxyname=nodename, info=info)
         stime = export.ExportResult(nodename=nodename, info=info).exportAsPng()
         # 发送回TG
-        with async_timeout.timeout(30):
+        with async_timeout.timeout(60):
             if stime is None:
                 await back_message.edit_text("⚠️生成图片失败,可能原因:节点名称包含国旗⚠️\n")
-                new_stime = export.exportImage_old(proxyname=nodename, info=info)
-                if new_stime is None:
-                    await back_message.edit_text("⚠️生成图片失败!")
-                else:
-                    if len(nodename) > 50:
-                        await message.reply_document(r"./results/{}.png".format(stime),
-                                                     caption="⏱️总共耗时: {}s".format(wtime))
-                    await message.reply_photo(r"./results/{}.png".format(stime),
-                                              caption="⏱️总共耗时: {}s".format(wtime))
-                    await back_message.delete()
-                    await message.delete()
             else:
                 if len(nodename) > 50:
                     await message.reply_document(r"./results/{}.png".format(stime),
@@ -176,7 +168,7 @@ async def testurl(client, message, back_message, test_members, start_time, subur
                 await back_message.delete()
                 await message.delete()
     except RPCError as r:
-        print(r)
+        logger.error(r)
         await client.edit_message_text(
             chat_id=message.chat.id,
             message_id=back_message.id,
@@ -185,4 +177,4 @@ async def testurl(client, message, back_message, test_members, start_time, subur
     except KeyboardInterrupt:
         await message.reply("程序已被强行中止")
     except FloodWait as e:
-        await asyncio.sleep(e.value)  # Wait "value" seconds before continuing
+        await asyncio.sleep(e.value)
