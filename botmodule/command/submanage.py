@@ -1,6 +1,6 @@
 from pyrogram.errors import RPCError
 
-import cleaner
+from libs import cleaner
 from botmodule.init_bot import config
 
 

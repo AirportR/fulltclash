@@ -422,15 +422,22 @@ class ConfigManager:
         with open(savePath, "w+", encoding="UTF-8") as fp:
             try:
                 yaml.dump(self.yaml, fp)
+                return True
             except Exception as e:
-                print(e)
+                logger.error(e)
+                return False
 
     @logger.catch
     def reload(self, configpath="./config.yaml"):
-        self.save(savePath=configpath)
-        with open(configpath, "r", encoding="UTF-8") as fp:
-            self.config = yaml.load(fp, Loader=yaml.FullLoader)
-            self.yaml = self.config
+        if self.save(savePath=configpath):
+            try:
+                with open(configpath, "r", encoding="UTF-8") as fp:
+                    self.config = yaml.load(fp, Loader=yaml.FullLoader)
+                    self.yaml = self.config
+                    return True
+            except Exception as e:
+                logger.error(e)
+                return False
 
     @logger.catch
     def newsub(self, subinfo: dict):
@@ -550,3 +557,39 @@ def geturl(string: str):
     except IndexError:
         logger.info("未找到URL")
         return None
+
+
+def replace(arg, old, new):
+    """
+    将arg里的某个值替换成新的值
+    :param arg: 传入的对象
+    :param old: 旧值
+    :param new: 新值
+    :return: 新的对象
+    """
+    if type(arg).__name__ == 'list':
+        new_arg = []
+        for a in arg:
+            if a == old:
+                logger.info("替换了一个值: {}-->{}".format(a, new))
+                new_arg.append(new)
+            else:
+                new_arg.append(a)
+        return new_arg
+    elif type(arg).__name__ == 'tuple':
+        new_arg = ()
+        for a in arg:
+            if a == old:
+                new_arg += (new,)
+            else:
+                new_arg += (a,)
+        return new_arg
+    elif type(arg).__name__ == 'str':
+        # 我觉得这个if分支挺废的，但我还是留了下来，给后人当个乐子。
+        if arg == old:
+            return str(new)
+        else:
+            return arg
+    else:
+        print("无可替换内容")
+        return arg

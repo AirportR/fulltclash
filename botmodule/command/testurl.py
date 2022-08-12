@@ -3,7 +3,7 @@ import time
 from pyrogram.errors import RPCError, FloodWait
 
 import botmodule.init_bot
-import cleaner
+from libs import cleaner
 import streamingtest
 from botmodule.init_bot import config
 

@@ -1,84 +1,66 @@
 import asyncio
 import time
 import async_timeout
-import re
 from pyrogram.errors import RPCError, FloodWait
 from loguru import logger
-import collector
-import cleaner
-import export
-import proxys
+from libs import cleaner, collector, export, proxys, check
 
 
 async def testurl(client, message, back_message, test_members, start_time, suburl: str = None):
     logger.info("当前序号:" + str(test_members))
     progress = 0
     sending_time = 0
-
-    if test_members > 4:
-        await back_message.edit_text("⚠️测试任务数量达到最大，请等待一个任务完成。")
+    proxy_group = 'auto'
+    info = {}  # 存放Netflix Youtube 等等
+    if await check.check_number(back_message, test_members):
         return
-    if test_members > 1:
-        logger.warning("注意，当前测试任务数量大于1，处于多任务同测状态，可能会对测试结果产生影响")
-        await back_message.reply("⚠️注意，当前测试任务数量大于1，处于多任务同测状态，可能会对测试结果产生影响")
-    try:
-        info = {}  # 存放Netflix Youtube 等等
-        if suburl is not None:
-            url = suburl
-        else:
-            text = str(message.text)
-            pattern = re.compile(
-                r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+")  # 匹配订阅地址
-            # 获取订阅地址
-            try:
-                url = pattern.findall(text)[0]  # 列表中第一个项为订阅地址
-            except IndexError:
-                await back_message.edit_text("⚠️无效的订阅地址，请检查后重试。")
-                return
-        print(url)
-        # 启动订阅采集器
-        sub = collector.SubCollector(suburl=url)
-        subconfig = await sub.getSubConfig(save_path='./clash/sub{}.yaml'.format(start_time))
-        if not subconfig:
-            logger.warning("ERROR: 无法获取到订阅文件")
-            await back_message.edit_message_text("ERROR: 无法获取到订阅文件")
+    if suburl is not None:
+        url = suburl
+    else:
+        text = str(message.text)
+        url = cleaner.geturl(text)
+        if await check.check_url(back_message, url):
             return
-
+    print(url)
+    # 订阅采集
+    sub = collector.SubCollector(suburl=url)
+    subconfig = await sub.getSubConfig(save_path='./clash/sub{}.yaml'.format(start_time))
+    if await check.check_sub(back_message, subconfig):
+        return
+    try:
         # 启动订阅清洗
         with open('./clash/sub{}.yaml'.format(start_time), "r", encoding="UTF-8") as fp:
             cl = cleaner.ClashCleaner(fp)
             nodename = cl.nodesName()
             nodetype = cl.nodesType()
             nodenum = cl.nodesCount()
-        # 检查获得的数据
-        if nodename is None or nodenum is None or nodetype is None:
-            await back_message.edit_text("❌发生错误，请检查订阅文件")
-            return
-        if nodenum > 500:
-            logger.warning("❌节点数量过多！已取消本次测试")
-            await back_message.edit_text("❌节点数量过多！已取消本次测试")
-            return
-        ma = cleaner.ConfigManager('./clash/proxy.yaml')
-        ma.addsub(subname=start_time, subpath='./sub{}.yaml'.format(start_time))
-        ma.save('./clash/proxy.yaml')
-        proxy_group = 'auto'
-        # 重载配置文件
-        await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=1123)
-        # 进入循环，直到所有任务完成
-        ninfo = []  # 存放所测节点Netflix的解锁信息
-        youtube_info = []
-        disneyinfo = []
-        rtt = []
-        s1 = time.time()
-        old_rtt = await collector.delay_providers(providername=start_time)
-        if old_rtt == 0:
-            rtt = [0 for _ in range(nodenum)]
-        else:
-            for r1 in old_rtt:
-                rtt.append(r1)
-        print("延迟:", rtt)
-        rtt_num = 0
-        # 启动流媒体测试
+    except Exception as e:
+        logger.error(e)
+    # 检查获得的数据
+    if await check.check_nodes(back_message, nodenum, (nodename, nodetype,)):
+        return
+
+    ma = cleaner.ConfigManager('./clash/proxy.yaml')
+    ma.addsub(subname=start_time, subpath='./sub{}.yaml'.format(start_time))
+    ma.save('./clash/proxy.yaml')
+    # 重载配置文件
+    await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=1123)
+    # 进入循环，直到所有任务完成
+    ninfo = []  # 存放所测节点Netflix的解锁信息
+    youtube_info = []
+    disneyinfo = []
+    rtt = []
+    s1 = time.time()
+    old_rtt = await collector.delay_providers(providername=start_time)
+    if old_rtt == 0:
+        rtt = [0 for _ in range(nodenum)]
+    else:
+        for r1 in old_rtt:
+            rtt.append(r1)
+    print("延迟:", rtt)
+    rtt_num = 0
+    # 启动流媒体测试
+    try:
         for n in nodename:
             if rtt[rtt_num] == 0:
                 logger.info("超时节点，跳过测试......")
@@ -115,63 +97,26 @@ async def testurl(client, message, back_message, test_members, start_time, subur
                 await back_message.edit_text("╰(*°▽°*)╯流媒体测试进行中...\n\n" +
                                              "当前进度:\n" + p_text +
                                              "%     [" + str(progress) + "/" + str(nodenum) + "]")  # 实时反馈进度
-        new_y = []
         info['类型'] = nodetype
         info['延迟RTT'] = rtt
         # 过滤None值
-        for i in youtube_info:
-            if i is None:
-                a = "N/A"
-                new_y.append(a)
-            elif i == "A":
-                new_y.append("N/A")
-            else:
-                new_y.append(i)
-        info['Youtube'] = new_y
-        new_n = []
-        # 过滤None值
-        for i in ninfo:
-            if i is None:
-                a = "N/A"
-                new_n.append(a)
-            else:
-                new_n.append(i)
+        new_n = cleaner.replace(ninfo, None, "N/A")
+        new_y = cleaner.replace(youtube_info, None, "N/A")
+        new_dis = cleaner.replace(disneyinfo, None, "N/A")
         info['Netflix'] = new_n
-        # 过滤None值
-        new_dis = []
-        for d in disneyinfo:
-            if d is None:
-                new_dis.append("N/A")
-            else:
-                new_dis.append(d)
+        info['Youtube'] = new_y
         info['Disney+'] = new_dis
         info = cleaner.ResultCleaner(info).start()
         # 计算测试消耗时间
         wtime = "%.1f" % float(time.time() - s1)
         info['wtime'] = wtime
         # 生成图片
-        # stime = export.exportImage(proxyname=nodename, info=info)
         stime = export.ExportResult(nodename=nodename, info=info).exportAsPng()
         # 发送回TG
-        with async_timeout.timeout(60):
-            if stime is None:
-                await back_message.edit_text("⚠️生成图片失败,可能原因:节点名称包含国旗⚠️\n")
-            else:
-                if len(nodename) > 50:
-                    await message.reply_document(r"./results/{}.png".format(stime),
-                                                 caption="⏱️总共耗时: {}s".format(wtime))
-                else:
-                    await message.reply_photo(r"./results/{}.png".format(stime),
-                                              caption="⏱️总共耗时: {}s".format(wtime))
-                await back_message.delete()
-                await message.delete()
+        await check.check_photo(message, back_message, stime, nodenum, wtime)
     except RPCError as r:
         logger.error(r)
-        await client.edit_message_text(
-            chat_id=message.chat.id,
-            message_id=back_message.id,
-            text="出错啦"
-        )
+        await back_message.edit_message_text("出错啦")
     except KeyboardInterrupt:
         await message.reply("程序已被强行中止")
     except FloodWait as e:

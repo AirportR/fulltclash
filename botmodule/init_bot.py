@@ -1,9 +1,8 @@
-import os
 import subprocess
 import sys
 import time
 from loguru import logger
-from cleaner import ConfigManager
+from libs.cleaner import ConfigManager
 
 logger.add("./logs/fulltclash_{time}.log", rotation='7 days')
 config = ConfigManager()

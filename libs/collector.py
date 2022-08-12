@@ -3,7 +3,7 @@ import aiohttp
 import async_timeout
 from aiohttp.client_exceptions import ClientConnectorError
 from loguru import logger
-import cleaner
+from libs import cleaner
 
 config = cleaner.ConfigManager()
 proxies = config.get_proxy()  # 代理
