@@ -5,7 +5,7 @@ from loguru import logger
 from libs import cleaner, collector, export, proxys, check
 
 
-async def unit(test_items: list[str], delay: int):
+async def unit(test_items: list, delay: int):
     """
     以一个节点的所有测试项为一个基本单元unit,返回单个节点的测试结果
     :param test_items:
