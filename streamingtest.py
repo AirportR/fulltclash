@@ -31,7 +31,7 @@ async def unit(test_items: list, delay: int):
         return info
 
 
-async def batch_test(message, nodename: list, delays: list, test_items: list[str], proxygroup='auto'):
+async def batch_test(message, nodename: list, delays: list, test_items: list, proxygroup='auto'):
     """
     批量测试
     :param test_items: 测试条目
