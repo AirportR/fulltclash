@@ -31,8 +31,8 @@ async def testurl(client, message):
     test_members += 1
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
     try:
-        await streamingtest.testurl(client, message, back_message=back_message, test_members=test_members,
-                                    start_time=start_time)
+        await streamingtest.core(client, message, back_message=back_message, test_members=test_members,
+                                 start_time=start_time)
         test_members -= 1
         ma.delsub(subname=start_time)
         ma.save(savePath='./clash/proxy.yaml')
@@ -76,8 +76,8 @@ async def test(client, message):
     test_members += 1
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
     try:
-        await streamingtest.testurl(client, message, back_message=back_message, test_members=test_members,
-                                    start_time=start_time, suburl=suburl)
+        await streamingtest.core(client, message, back_message=back_message, test_members=test_members,
+                                 start_time=start_time, suburl=suburl)
         test_members -= 1
         ma.delsub(subname=start_time)
         ma.save(savePath='./clash/proxy.yaml')

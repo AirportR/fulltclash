@@ -17,7 +17,6 @@ async def check_number(message, test_member, max_num=4):
         if test_member > 1:
             logger.warning("注意，当前测试任务数量大于1，处于多任务同测状态，可能会对测试结果产生影响")
             await message.reply("⚠️注意，当前测试任务数量大于1，处于多任务同测状态，可能会对测试结果产生影响")
-            return True
         return False
     except RPCError as r:
         logger.error(r)
@@ -115,3 +114,11 @@ async def check_photo(message, back_message, name, nodenum, wtime):
             await message.delete()
     except RPCError as r:
         logger.error(r)
+
+
+def check_rtt(rtt, nodenum: int):
+    if rtt == 0:
+        new_rtt = [0 for _ in range(nodenum)]
+        return new_rtt
+    else:
+        return rtt

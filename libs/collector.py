@@ -143,7 +143,7 @@ class Collector:
                 self.info['netflix1'] = None
                 self.info['ne_status_code1'] = None
         except ClientConnectorError as c:
-            logger.warning("Netflix请求发生错误:", c)
+            logger.warning("Netflix请求发生错误:" + str(c))
             if reconnection != 0:
                 await self.fetch_ninfo1(session=session, proxy=proxy, reconnection=reconnection - 1)
         except asyncio.exceptions.TimeoutError:
@@ -169,7 +169,7 @@ class Collector:
                 self.info['ne_status_code2'] = None
 
         except ClientConnectorError as c:
-            logger.warning("Netflix请求发生错误:", c)
+            logger.warning("Netflix请求发生错误:" + str(c))
             if reconnection != 0:
                 await self.fetch_ninfo2(session=session, proxy=proxy, reconnection=reconnection - 1)
         except asyncio.exceptions.TimeoutError:
@@ -194,7 +194,7 @@ class Collector:
             else:
                 self.info['youtube'] = None
         except ClientConnectorError as c:
-            logger.warning("Youtube请求发生错误:", c)
+            logger.warning("Youtube请求发生错误:" + str(c))
             if reconnection != 0:
                 await self.fetch_youtube(session=session, proxy=proxy, reconnection=reconnection - 1)
         except asyncio.exceptions.TimeoutError:
@@ -228,7 +228,7 @@ class Collector:
                 self.info['disney'] = "失败"
             logger.info("disney+ 成功访问")
         except ClientConnectorError as c:
-            logger.warning("disney+请求发生错误:", c)
+            logger.warning("disney+请求发生错误:" + str(c))
             if reconnection != 0:
                 await self.fetch_dis(session=session, proxy=proxy, reconnection=reconnection - 1)
         except asyncio.exceptions.TimeoutError:

@@ -112,6 +112,16 @@ class ReCleaner:
         self._sum = 0
         self._netflix_info = []
 
+    def get_all(self):
+        info = {}
+        nf = self.getnetflixinfo()
+        you = self.getyoutubeinfo()
+        dis = self.getDisneyinfo()
+        info['Netflix'] = nf[len(nf)-1]
+        info['Youtube'] = you
+        info['Disney+'] = dis
+        return info
+
     def getnetflixinfo(self):
         """
 

@@ -21,7 +21,7 @@ def switchProxy_old(proxyName, proxyGroup, clashHost: str = "127.0.0.1", clashPo
     _headers = {'Content-Type': 'application/json'}
     try:
         r = requests.request("PUT", url, headers=_headers, data=payload)
-        logger.info("切换节点: {}".format(proxyName), r.status_code)
+        logger.info("切换节点: {} ".format(proxyName) + str(r.status_code))
         return r
     except Exception as e:
         logger.error(e)
