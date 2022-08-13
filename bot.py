@@ -7,7 +7,7 @@ admin = init_bot.admin  # 管理员
 
 
 def loader(app: Client):
-    @app.on_message(filters.command(["testurl"]))
+    @app.on_message(filters.command(["testurl", "testurl_old"]))
     async def testurl(client, message):
         await botmodule.testurl(client, message)
 
