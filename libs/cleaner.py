@@ -117,10 +117,38 @@ class ReCleaner:
         nf = self.getnetflixinfo()
         you = self.getyoutubeinfo()
         dis = self.getDisneyinfo()
+        bili = self.get_bilibili_info()
         info['Netflix'] = nf[len(nf)-1]
         info['Youtube'] = you
         info['Disney+'] = dis
+        info['Bilibili'] = bili
         return info
+
+    def get_bilibili_info(self):
+        """
+
+        :return: str: 解锁信息: [解锁(台湾)、解锁(港澳台)、失败、N/A]
+        """
+        try:
+            if 'bilibili' not in self.data:
+                logger.warning("采集器内无数据: bilibili")
+                return "N/A"
+            else:
+                try:
+                    info = self.data['bilibili']
+                    if info is None:
+                        logger.warning("无法读取bilibili解锁信息")
+                        return "N/A"
+                    else:
+                        logger.info("bilibili情况: " + info)
+                        return info
+                except KeyError:
+                    logger.warning("无法读取bilibili解锁信息")
+                    return "N/A"
+        except Exception as e:
+            logger.error(e)
+            return "N/A"
+
 
     def getnetflixinfo(self):
         """

@@ -23,8 +23,9 @@ async def unit(test_items: list, delay: int):
         cnr = cleaner.ReCleaner(re1)
         old_info = cnr.get_all()
         for item in test_items:
+            i = item.capitalize()
             try:
-                info.append(old_info[item])
+                info.append(old_info[i])
             except KeyError:
                 info.append("N/A")
                 logger.error("KeyError: 无法找到 " + item + " 测试项")
@@ -108,7 +109,7 @@ async def core(client, message, back_message, test_members, start_time, suburl: 
     print("延迟:", rtt)
     # 启动流媒体测试
     try:
-        test_info = await batch_test(back_message, nodename, rtt, ['Netflix', 'Youtube', 'Disney+'])
+        test_info = await batch_test(back_message, nodename, rtt, ['Netflix', 'Youtube', 'Disney+', 'Bilibili'])
         info['类型'] = nodetype
         info['延迟RTT'] = rtt
         info.update(test_info)
