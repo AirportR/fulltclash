@@ -48,7 +48,7 @@ async def check_sub(message, subconfig):
     if not subconfig:
         logger.warning("ERROR: 无法获取到订阅文件")
         try:
-            await message.edit_message_text("ERROR: 无法获取到订阅文件")
+            await message.edit_text("ERROR: 无法获取到订阅文件")
         except RPCError as r:
             logger.error(r)
         return True
@@ -67,13 +67,13 @@ async def check_nodes(message, nodenum, args: tuple, max_num=500):
     """
     if nodenum is None:
         try:
-            message.edit_message_text("❌发生错误，请检查订阅文件")
+            message.edit_text("❌发生错误，请检查订阅文件")
         except RPCError as r:
             logger.error(r)
     for arg in args:
         if arg is None:
             try:
-                message.edit_message_text("❌发生错误，请检查订阅文件")
+                message.edit_text("❌发生错误，请检查订阅文件")
             except RPCError as r:
                 logger.error(r)
             return True
