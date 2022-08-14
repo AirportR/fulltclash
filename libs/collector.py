@@ -87,6 +87,7 @@ class SubCollector(BaseCollector):
 class Collector:
     def __init__(self):
         self.session = None
+        self.tasks = []
         self._headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
                           'Chrome/102.0.5005.63 Safari/537.36'}
@@ -97,6 +98,24 @@ class Collector:
         self.info = {}
         self.disneyurl1 = "https://www.disneyplus.com/"
         self.disneyurl2 = "https://global.edge.bamgrid.com/token"
+
+    @logger.catch
+    def create_tasks(self, session: aiohttp.ClientSession, proxy):
+        try:
+            task1 = asyncio.create_task(self.fetch_ip(session=session, proxy=proxy))
+            self.tasks.append(task1)
+            task2 = asyncio.create_task(self.fetch_ninfo1(session, proxy=proxy))
+            self.tasks.append(task2)
+            task3 = asyncio.create_task(self.fetch_ninfo2(session, proxy=proxy))
+            self.tasks.append(task3)
+            task4 = asyncio.create_task(self.fetch_youtube(session, proxy=proxy))
+            self.tasks.append(task4)
+            task5 = asyncio.create_task(self.fetch_dis(session, proxy=proxy))
+            self.tasks.append(task5)
+            return self.tasks
+        except Exception as e:
+            logger.error(e)
+            return None
 
     async def fetch_ip(self, session: aiohttp.ClientSession, proxy=None):
         """
@@ -244,17 +263,18 @@ class Collector:
         """
         try:
             session = aiohttp.ClientSession(headers=self._headers)
-            tasks = []
-            task1 = asyncio.create_task(self.fetch_ip(session=session, proxy=proxy))
-            tasks.append(task1)
-            task2 = asyncio.create_task(self.fetch_ninfo1(session, proxy=proxy))
-            tasks.append(task2)
-            task3 = asyncio.create_task(self.fetch_ninfo2(session, proxy=proxy))
-            tasks.append(task3)
-            task4 = asyncio.create_task(self.fetch_youtube(session, proxy=proxy))
-            tasks.append(task4)
-            task5 = asyncio.create_task(self.fetch_dis(session, proxy=proxy))
-            tasks.append(task5)
+            # tasks = []
+            # task1 = asyncio.create_task(self.fetch_ip(session=session, proxy=proxy))
+            # tasks.append(task1)
+            # task2 = asyncio.create_task(self.fetch_ninfo1(session, proxy=proxy))
+            # tasks.append(task2)
+            # task3 = asyncio.create_task(self.fetch_ninfo2(session, proxy=proxy))
+            # tasks.append(task3)
+            # task4 = asyncio.create_task(self.fetch_youtube(session, proxy=proxy))
+            # tasks.append(task4)
+            # task5 = asyncio.create_task(self.fetch_dis(session, proxy=proxy))
+            # tasks.append(task5)
+            tasks = self.create_tasks(session, proxy=proxy)
             done, pending = await asyncio.wait(tasks)
             await session.close()
             return self.info

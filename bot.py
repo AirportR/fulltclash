@@ -7,9 +7,13 @@ admin = init_bot.admin  # 管理员
 
 
 def loader(app: Client):
-    @app.on_message(filters.command(["testurl", "testurl_old"]))
+    @app.on_message(filters.command(["testurl"]))
     async def testurl(client, message):
         await botmodule.testurl(client, message)
+
+    @app.on_message(filters.command(["testurl_old"]))
+    async def testurl_old(client, message):
+        await botmodule.testurl_old(client, message)
 
     @app.on_message(filters.command(["invite"]) & filters.user(admin), group=1)
     async def invite(client, message):
