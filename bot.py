@@ -11,7 +11,7 @@ def loader(app: Client):
     async def testurl(client, message):
         await botmodule.testurl(client, message)
 
-    @app.on_message(filters.command(["testurl_old"]))
+    @app.on_message(filters.command(["testurlold"]))
     async def testurl_old(client, message):
         await botmodule.testurl_old(client, message)
 
@@ -46,6 +46,10 @@ def loader(app: Client):
     @app.on_message(filters.command(["test"]), group=8)
     async def test(client, message):
         await botmodule.test(client, message)
+
+    @app.on_message(filters.command(["testold"]), group=8)
+    async def test_old(client, message):
+        await botmodule.test_old(client, message)
 
     @app.on_message(filters.command(["help", "start"]), group=9)
     async def help_and_start(client, message):

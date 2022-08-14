@@ -3,7 +3,7 @@ from pilmoji import Pilmoji
 import time
 
 
-__version__ = "3.1.3"  # 版本号
+__version__ = "3.1.4"  # 版本号
 
 
 def color_block(size: tuple, color_value):
