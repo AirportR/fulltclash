@@ -86,13 +86,18 @@ pip install -r requirements.txt
 
 方法1： 您可以参阅[这篇文档](https://docs.pyrogram.org/start/auth)，以快速获得后缀为 .session 的文件
 
-方法2： 项目中有一个文件名为 login.py ，可以通过指令运行它：
+方法2： 项目中./libs文件夹下有一个文件名为 login.py ，可以通过指令运行它：
 
 ```
 python .\login.py
 ```
-
 当程序退出后即可自动生成一个名为 my_bot.session 的文件
+
+运行后它会尝试给你输入的用户名的目标发送消息，当接收到：嗨, 我在正常工作哦！
+
+这句话时，即可说明该session文件有效，否则无效。
+
+
 
 
 ## 为bot进行相关配置
@@ -123,8 +128,10 @@ python .\main.py
 
 如果什么反应都没有，请按 Ctrl + C 一次，出现“程序已启动!”字样就说明在运行了.
 运行之后和bot私聊命令：
+
 /testurl 订阅地址(clash配置格式)
 即可开始测试
+
 /help 可查看所有命令说明
 # 目前已知bug:
 
@@ -133,7 +140,7 @@ python .\main.py
 
 # 交流探讨
 
-目前项目尚未成熟，我们欢迎各方朋友提出针对性的反馈：
+我们欢迎各方朋友提出针对性的反馈：
 
 [TG更新发布频道](https://t.me/FullTClash)
 
