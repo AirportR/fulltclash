@@ -2,16 +2,8 @@
 
 基于clash 核心运作的、进行全量订阅测试的telegram机器人
 
-# 最近更新(3.1.4)
-- 新增bilibili解锁测试，有四种解锁情况:[解锁(台湾)、解锁(港澳台)、失败、N/A]
-
-- 对streamingtest.py文件进行了大改，该文件是实现流媒体测试的关键，里面含有整个测试逻辑，
-本人对其进行了小功能拆分，便于维护了。相当于改头换面了吧。
-
-- 由于大改了前述文件，故暂未获取其稳定性，旧版流媒体测试方案仍旧可用。
-现如今/test /testurl 对接的是新版测试方案，若想使用旧版测试方案，可使用 /testurlold /testold命令进行旧版测试。旧版测试无bilibili测试项
-
-- 修复部分bot功能使用上的bug
+# 最近更新(3.1.5)
+- 新增Dazn解锁测试
 
 历史更新请到TG频道查看: 
 
@@ -27,6 +19,10 @@ FullTclash bot 是承载其测试任务的Telegram 机器人（以下简称bot�
 - Youtube
   
 - Disney Plus
+
+- Bilibili
+
+- Dazn
   
 
 以及 HTTP ping 的体感延迟测试。
