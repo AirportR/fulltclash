@@ -109,7 +109,7 @@ async def core(client, message, back_message, test_members, start_time, suburl: 
     print("延迟:", rtt)
     # 启动流媒体测试
     try:
-        test_info = await batch_test(back_message, nodename, rtt, ['Netflix', 'Youtube', 'Disney+', 'Bilibili'])
+        test_info = await batch_test(back_message, nodename, rtt, ['Netflix', 'Youtube', 'Disney+', 'Bilibili', 'Dazn'])
         info['类型'] = nodetype
         info['延迟RTT'] = rtt
         info.update(test_info)

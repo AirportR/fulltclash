@@ -118,11 +118,48 @@ class ReCleaner:
         you = self.getyoutubeinfo()
         dis = self.getDisneyinfo()
         bili = self.get_bilibili_info()
-        info['Netflix'] = nf[len(nf)-1]
+        dazn = self.get_dazn_info()
+        info['Netflix'] = nf[len(nf) - 1]
         info['Youtube'] = you
         info['Disney+'] = dis
         info['Bilibili'] = bili
+        info['Dazn'] = dazn
         return info
+
+    def get_dazn_info(self):
+        """
+
+        :return: str: 解锁信息: [解锁(地区代码)、失败、N/A]
+        """
+        try:
+            if 'dazn' not in self.data:
+                logger.warning("采集器内无数据: Dazn")
+                return "N/A"
+            else:
+                try:
+                    info = self.data['dazn']['Region']
+                    isAllowed = info['isAllowed']
+                    region = info['GeolocatedCountry']
+                except KeyError as k:
+                    logger.error(str(k))
+                    return "N/A"
+                if isAllowed == False:
+                    logger.info("Dazn状态: " + "失败")
+                    return "失败"
+                elif isAllowed == True:
+                    if region:
+                        countrycode = region.upper()
+                        logger.info("Dazn状态: " + "解锁({})".format(countrycode))
+                        return "解锁({})".format(countrycode)
+                    else:
+                        logger.info("Dazn状态: " + "解锁")
+                        return "解锁"
+                else:
+                    logger.info("Dazn状态: N/A(未找到)")
+                    return "N/A"
+        except Exception as e:
+            logger.error(str(e))
+            return "N/A"
 
     def get_bilibili_info(self):
         """
@@ -148,7 +185,6 @@ class ReCleaner:
         except Exception as e:
             logger.error(e)
             return "N/A"
-
 
     def getnetflixinfo(self):
         """

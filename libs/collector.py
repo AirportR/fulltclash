@@ -1,4 +1,6 @@
 import asyncio
+import json
+
 import aiohttp
 import async_timeout
 from aiohttp.client_exceptions import ClientConnectorError
@@ -91,6 +93,9 @@ class Collector:
         self._headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
                           'Chrome/102.0.5005.63 Safari/537.36'}
+        self._headers_json = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
+                          'Chrome/102.0.5005.63 Safari/537.36', "Content-Type": 'application/json'}
         self.netflixurl1 = "https://www.netflix.com/title/70242311"
         self.netflixurl2 = "https://www.netflix.com/title/70143836"
         self.ipurl = "https://api.ip.sb/geoip"
@@ -104,6 +109,7 @@ class Collector:
         self.biliurl2 = "https://api.bilibili.com/pgc/player/web/playurl?avid=18281381&cid=29892777&qn=0&type=&otype" \
                         "=json&ep_id=183799&fourk=1&fnver=0&fnval=16&session=926c41d4f12e53291b284b94f555e7df&module" \
                         "=bangumi"
+        self.daznurl = "https://startup.core.indazn.com/misl/v5/Startup"
 
     @logger.catch
     def create_tasks(self, session: aiohttp.ClientSession, proxy):
@@ -120,6 +126,8 @@ class Collector:
             self.tasks.append(task5)
             task6 = asyncio.create_task(self.fetch_bilibili(session, proxy=proxy))
             self.tasks.append(task6)
+            task7 = asyncio.create_task(self.fetch_dazn(session, proxy=proxy))
+            self.tasks.append(task7)
             return self.tasks
         except Exception as e:
             logger.error(e)
@@ -134,13 +142,13 @@ class Collector:
         :param proxy:
         :return:
         """
-        if flag == 1:
-            res = await session.get(self.biliurl1, proxy=proxy, timeout=5)
-        elif flag == 2:
-            res = await session.get(self.biliurl2, proxy=proxy, timeout=5)
-        else:
-            return
         try:
+            if flag == 1:
+                res = await session.get(self.biliurl1, proxy=proxy, timeout=5)
+            elif flag == 2:
+                res = await session.get(self.biliurl2, proxy=proxy, timeout=5)
+            else:
+                return
             if res.status == 200:
                 text = await res.json()
                 try:
@@ -306,6 +314,31 @@ class Collector:
             if reconnection != 0:
                 await self.fetch_dis(session=session, proxy=proxy, reconnection=reconnection - 1)
 
+    async def fetch_dazn(self, session: aiohttp.ClientSession, proxy=None, reconnection=2):
+        """
+        Dazn解锁测试
+        :param reconnection:
+        :param session:
+        :param proxy:
+        :return:
+        """
+        payload = json.dumps(
+            {"LandingPageKey": "generic", "Languages": "zh-CN,zh,en", "Platform": "web", "PlatformAttributes": {},
+             "Manufacturer": "", "PromoCode": "", "Version": "2"})
+        try:
+            r = await session.post(url=self.daznurl, proxy=proxy, data=payload, timeout=5, headers=self._headers_json)
+            if r.status == 200:
+                text = await r.json()
+                self.info['dazn'] = text
+        except ClientConnectorError as c:
+            logger.warning("Dazn请求发生错误:" + str(c))
+            if reconnection != 0:
+                await self.fetch_dis(session=session, proxy=proxy, reconnection=reconnection - 1)
+        except asyncio.exceptions.TimeoutError:
+            logger.warning("Dazn请求超时，正在重新发送请求......")
+            if reconnection != 0:
+                await self.fetch_dis(session=session, proxy=proxy, reconnection=reconnection - 1)
+
     async def start(self, proxy=None):
         """
         启动采集器，采用并发操作
@@ -315,7 +348,8 @@ class Collector:
         try:
             session = aiohttp.ClientSession(headers=self._headers)
             tasks = self.create_tasks(session, proxy=proxy)
-            done, pending = await asyncio.wait(tasks)
+            if tasks:
+                done, pending = await asyncio.wait(tasks)
             await session.close()
             return self.info
         except Exception as e:
