@@ -2,7 +2,7 @@ from PIL import Image, ImageDraw, ImageFont
 from pilmoji import Pilmoji
 import time
 
-__version__ = "3.2.0"  # 版本号
+__version__ = "3.2.0(dev)"  # 版本号
 
 
 def color_block(size: tuple, color_value):
