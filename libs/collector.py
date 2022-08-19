@@ -1,6 +1,7 @@
 import asyncio
 import json
-
+import re
+from typing import List
 import aiohttp
 import async_timeout
 from aiohttp.client_exceptions import ClientConnectorError
@@ -28,6 +29,79 @@ class BaseCollector:
             async with aiohttp.ClientSession(headers=self._headers) as session:
                 async with session.get(url, proxy=proxy) as response:
                     return await response.text()
+
+
+class IPCollector:
+    def __init__(self):
+        self.tasks = None
+        self._headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
+                          'Chrome/102.0.5005.63 Safari/537.36'}
+        self.url = "https://api.ip.sb/geoip/"
+
+    def create_tasks(self, session: aiohttp.ClientSession, hosts: list = None, proxy=None):
+        """
+        创建采集任务
+        :param session:
+        :param hosts: 主机信息，因查询ip的api限制，无法查询域名，请先转换成ip
+        :param proxy: 代理
+        :return:
+        """
+        tasks = []
+        if hosts is None:
+            task = asyncio.create_task(self.fetch(session, proxy=proxy))
+            tasks.append(task)
+        else:
+            for ip in hosts:
+                task = asyncio.create_task(self.fetch(session, proxy=proxy, host=ip))
+                tasks.append(task)
+        self.tasks = tasks
+
+    async def start(self):
+        """
+        启动ip信息采集，并发操作，启动之前请务必通过self.create_tasks创建任务，否则只会返回空
+        :return: list | None
+        """
+        try:
+            if self.tasks:
+                done = await asyncio.gather(*self.tasks)
+                return done
+            else:
+                return None
+        except Exception as e:
+            logger.error(e)
+            return None
+
+    async def fetch(self, session: aiohttp.ClientSession, proxy=None, host: str = None, reconnection=2):
+        """
+        获取ip地址信息
+        :param session:
+        :param proxy: 代理
+        :param host: 一个v4地址/v6地址
+        :param reconnection: 重连次数
+        :return: json数据
+        """
+        if host == "N/A":
+            return None
+        try:
+            if host:
+                resp = await session.get(self.url + host, proxy=proxy, timeout=10)
+                return await resp.json()
+            else:
+                resp = await session.get(self.url, proxy=proxy, timeout=10)
+                return await resp.json()
+        except ClientConnectorError as c:
+            logger.warning("ip查询请求发生错误:" + str(c))
+            if reconnection != 0:
+                await self.fetch(session=session, proxy=proxy, host=host, reconnection=reconnection - 1)
+            else:
+                return None
+        except asyncio.exceptions.TimeoutError:
+            if reconnection != 0:
+                logger.warning("ip查询请求超时，正在重新发送请求......")
+                await self.fetch(session=session, proxy=proxy, host=host, reconnection=reconnection - 1)
+            else:
+                return None
 
 
 class SubCollector(BaseCollector):
@@ -112,7 +186,7 @@ class Collector:
         self.daznurl = "https://startup.core.indazn.com/misl/v5/Startup"
 
     @logger.catch
-    def create_tasks(self, session: aiohttp.ClientSession, proxy):
+    def create_tasks(self, session: aiohttp.ClientSession, proxy=None):
         try:
             task1 = asyncio.create_task(self.fetch_ip(session=session, proxy=proxy))
             self.tasks.append(task1)
@@ -154,7 +228,7 @@ class Collector:
                 try:
                     message = text['message']
                     if message == "抱歉您所在地区不可观看！" and flag == 1:
-                        await self.fetch_bilibili(session, flag=flag+1, proxy=proxy, reconnection=2)
+                        await self.fetch_bilibili(session, flag=flag + 1, proxy=proxy, reconnection=2)
                     elif message == "抱歉您所在地区不可观看！" and flag == 2:
                         self.info['bilibili'] = "失败"
                     elif message == "success" and flag == 1:

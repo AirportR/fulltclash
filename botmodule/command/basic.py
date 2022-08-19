@@ -6,8 +6,10 @@ async def helps(client, message):
     欢迎使用FullTclash bot,目前可用命令有:
 
 /help & /start [游客]获取帮助菜单
-/testurl <订阅链接> [用户]临时下载订阅来进行一项测试
-/test <订阅名> [用户]进行一项测试
+/testurl <订阅链接> [用户]临时下载订阅进行一次流媒体测试
+/test <订阅名> [用户]进行一次流媒体测试测试
+/analyzeurl <订阅链接> [用户]临时下载订阅进行一次节点链路拓扑测试
+/analyze <订阅名> [用户]进行一次节点链路拓扑测试
 /grant <回复一个目标> [管理]授权一个目标
 /ungrant <回复一个目标> [管理]取消授权一个目标
 /user [管理]查看所有授权用户的id

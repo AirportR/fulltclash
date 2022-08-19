@@ -118,7 +118,7 @@ async def core(client, message, back_message, test_members, start_time, suburl: 
         wtime = "%.1f" % float(time.time() - s1)
         info['wtime'] = wtime
         # 生成图片
-        stime = export.ExportResult(nodename=nodename, info=info).exportAsPng()
+        stime = export.ExportResult(nodename=nodename, info=info).exportUnlock()
         # 发送回TG
         await check.check_photo(message, back_message, stime, nodenum, wtime)
     except RPCError as r:
@@ -231,7 +231,7 @@ async def old_core(client, message, back_message, test_members, start_time, subu
         wtime = "%.1f" % float(time.time() - s1)
         info['wtime'] = wtime
         # 生成图片
-        stime = export.ExportResult(nodename=nodename, info=info).exportAsPng()
+        stime = export.ExportResult(nodename=nodename, info=info).exportUnlock()
         # 发送回TG
         await check.check_photo(message, back_message, stime, nodenum, wtime)
     except RPCError as r:

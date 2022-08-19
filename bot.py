@@ -54,3 +54,11 @@ def loader(app: Client):
     @app.on_message(filters.command(["help", "start"]), group=9)
     async def help_and_start(client, message):
         await botmodule.helps(client, message)
+
+    @app.on_message(filters.command(["analyzeurl"]), group=10)
+    async def analyzeurl(client, message):
+        await botmodule.analyzeurl(client, message)
+
+    @app.on_message(filters.command(["analyze"]), group=11)
+    async def analyze(client, message):
+        await botmodule.analyze(client, message)

@@ -1,3 +1,5 @@
+import re
+
 from pyrogram.errors import RPCError
 from loguru import logger
 
@@ -67,13 +69,13 @@ async def check_nodes(message, nodenum, args: tuple, max_num=500):
     """
     if nodenum is None:
         try:
-            message.edit_text("❌发生错误，请检查订阅文件")
+            await message.edit_text("❌发生错误，请检查订阅文件")
         except RPCError as r:
             logger.error(r)
     for arg in args:
         if arg is None:
             try:
-                message.edit_text("❌发生错误，请检查订阅文件")
+                await message.edit_text("❌发生错误，请检查订阅文件")
             except RPCError as r:
                 logger.error(r)
             return True
@@ -104,7 +106,7 @@ async def check_photo(message, back_message, name, nodenum, wtime):
         if name is None:
             await back_message.edit_text("⚠️生成图片失败,可能原因:节点名称包含国旗⚠️\n")
         else:
-            if nodenum > 50:
+            if nodenum > 40:
                 await message.reply_document(r"./results/{}.png".format(name),
                                              caption="⏱️总共耗时: {}s".format(wtime))
             else:
@@ -122,3 +124,17 @@ def check_rtt(rtt, nodenum: int):
         return new_rtt
     else:
         return rtt
+
+
+def checkIPv4(ip):
+    """
+    检查合法v4地址，注意，该函数时间开销很大，谨慎使用
+    :param ip:
+    :return:
+    """
+    r = re.compile(r"\b((?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(?:(?<!\.)\b|\.)){4}")
+    _ip = r.match(ip)
+    if _ip:
+        if _ip.group(0) == ip:
+            return True
+    return False

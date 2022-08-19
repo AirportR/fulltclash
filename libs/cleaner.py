@@ -1,8 +1,45 @@
 import re
+import socket
 
 import yaml
 from bs4 import BeautifulSoup
 from loguru import logger
+
+
+class IPCleaner:
+    def __init__(self, data):
+        self._data = data
+
+    def get(self, key):
+        try:
+            return self._data[key]
+        except KeyError as k:
+            logger.error(str(k))
+            return None
+        except TypeError:
+            logger.error("无法获取对应信息: " + str(key))
+            return None
+
+    def get_org(self):
+        org = self.get('asn_organization')
+        if org:
+            return org
+        else:
+            return ""
+
+    def get_country_code(self):
+        region_code = self.get('country_code')
+        if region_code:
+            return region_code
+        else:
+            return ""
+
+    def get_asn(self):
+        asn = self.get('asn')
+        if asn:
+            return asn
+        else:
+            return "0"
 
 
 class ClashCleaner:
@@ -15,7 +52,25 @@ class ClashCleaner:
 
         :param config: 传入一个文件对象，或者一个字符串,文件对象需指向 yaml/yml 后缀文件
         """
-        self.yaml = yaml.load(config, Loader=yaml.FullLoader)
+        if type(config).__name__ == 'str':
+            with open(config, 'r', encoding="UTF-8") as fp:
+                self.yaml = yaml.load(fp, Loader=yaml.FullLoader)
+        else:
+            self.yaml = yaml.load(config, Loader=yaml.FullLoader)
+
+    def getProxies(self):
+        """
+        获取整个代理信息
+        :return: list[dict,dict...]
+        """
+        try:
+            return self.yaml['proxies']
+        except KeyError:
+            logger.warning("读取节点信息失败！")
+            return None
+        except TypeError:
+            logger.warning("读取节点信息失败！")
+            return None
 
     def nodesCount(self):
         """
@@ -54,6 +109,56 @@ class ClashCleaner:
             return t
         except TypeError:
             logger.warning("读取节点信息失败！")
+            return None
+
+    def nodesAddr(self, name=None):
+        """
+        获取节点地址
+        :return: list | str
+        """
+        if name:
+            try:
+                for i in self.yaml['proxies']:
+                    if name == i['name']:
+                        return i['server']
+                    else:
+                        pass
+                return None
+            except TypeError:
+                logger.warning("读取节点信息失败")
+                return None
+            except KeyError:
+                logger.warning("读取节点信息失败！")
+                return None
+        addrs = []
+        try:
+            for i in self.yaml['proxies']:
+                addrs.append(i['server'])
+            return addrs
+        except TypeError:
+            logger.warning("读取节点信息失败")
+            return None
+        except KeyError:
+            logger.warning("读取节点信息失败！")
+            return None
+
+    @staticmethod
+    def count_element(addrs: list = None):
+        """
+        返回入站ip信息,本质上是统计一个列表里每个元素出现的次数
+        :return: dict
+        """
+        dic = {}
+        if addrs is None:
+            return None
+        else:
+            nodeaddrs = addrs
+        try:
+            for key in nodeaddrs:
+                dic[key] = dic.get(key, 0) + 1
+            return dic
+        except Exception as e:
+            logger.error(str(e))
             return None
 
     @logger.catch
@@ -321,6 +426,19 @@ class ConfigManager:
                 yaml.dump(di, fp)
             self.config = {}
 
+    # def get(self, string: tuple):
+    #     """
+    #     获取对应键的值，比如要获取 admin键的值，那么string参数传入(admin,)
+    #     要获取clash键下workpath键的值,那么string参数传入(clash,workpath)
+    #     :param string:
+    #     :param level:
+    #     :return:
+    #     """
+    #     level = len(string)
+    #     try:
+    #         for i in range(level):
+    #             arg = string[i]
+    #             return self.config
     def getAdmin(self):
         try:
             return self.config['admin']
@@ -667,3 +785,46 @@ def replace(arg, old, new):
     else:
         print("无可替换内容")
         return arg
+
+
+@logger.catch
+def domain_to_ip(host: str):
+    """
+    将域名转成ip
+    :param host:
+    :return:
+    """
+    try:
+        ip = socket.gethostbyname(host)
+        return ip
+    except socket.gaierror:
+        return None
+
+
+def batch_domain2ip(host: list):
+    """
+    批量将域名转成ip地址
+    :param host: 一个列表
+    :return:
+    """
+    old = host
+    ipaddrs = []
+    for h in host:
+        if type(h).__name__ == 'dict':
+            try:
+                ip = domain_to_ip(h['server'])
+                if ip:
+                    h['server'] = ip
+                else:
+                    h['server'] = "N/A"
+                ipaddrs.append(h)
+            except KeyError:
+                h['server'] = "N/A"
+                ipaddrs.append(h)
+        else:
+            ip = domain_to_ip(h)
+            if ip:
+                ipaddrs.append(ip)
+            else:
+                ipaddrs.append("N/A")
+    return ipaddrs
