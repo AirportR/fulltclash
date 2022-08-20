@@ -4,7 +4,7 @@ from pyrogram.errors import RPCError
 from loguru import logger
 
 
-async def check_number(message, test_member, max_num=4):
+async def check_number(message, test_member, max_num=1):
     """
     检查任务数量
     :param message: 消息对象
@@ -14,7 +14,7 @@ async def check_number(message, test_member, max_num=4):
     """
     try:
         if test_member > max_num:
-            await message.edit_text("⚠️测试任务数量达到最大，请等待一个任务完成。")
+            await message.edit_text("⚠️测试任务数量达到最大，请等待一个任务完成。\n提示：可用 /reload 命令重置此状态")
             return True
         if test_member > 1:
             logger.warning("注意，当前测试任务数量大于1，处于多任务同测状态，可能会对测试结果产生影响")
@@ -106,7 +106,7 @@ async def check_photo(message, back_message, name, nodenum, wtime):
         if name is None:
             await back_message.edit_text("⚠️生成图片失败,可能原因:节点名称包含国旗⚠️\n")
         else:
-            if nodenum > 40:
+            if nodenum > 25:
                 await message.reply_document(r"./results/{}.png".format(name),
                                              caption="⏱️总共耗时: {}s".format(wtime))
             else:

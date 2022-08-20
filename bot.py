@@ -62,3 +62,10 @@ def loader(app: Client):
     @app.on_message(filters.command(["analyze"]), group=11)
     async def analyze(client, message):
         await botmodule.analyze(client, message)
+
+    @app.on_message(filters.command(["reload"]) & filters.user(admin), group=12)
+    async def reload_testmember(client, message):
+        botmodule.reload_test_members()
+        botmodule.reloadUser()
+        await message.reply("已重置")
+

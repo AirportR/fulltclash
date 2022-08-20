@@ -2,7 +2,7 @@ from PIL import Image, ImageDraw, ImageFont
 from pilmoji import Pilmoji
 import time
 
-__version__ = "3.2.0(dev)"  # 版本号
+__version__ = "3.2.0"  # 版本号
 
 
 def color_block(size: tuple, color_value):
@@ -364,7 +364,7 @@ class ExportTopo(ExportResult):
         idraw = ImageDraw.Draw(img)
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
-        list1 = ["出口", "版本:{}     ⏱️总共耗时: {}".format(__version__, wtime),
+        list1 = ["出口（提示:出口数量顺数即为每个入口对应节点）", "版本:{}     ⏱️总共耗时: {}".format(__version__, wtime),
                  "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time)]
         export_time = export_time.replace(':', '-')
         title = list1[0]

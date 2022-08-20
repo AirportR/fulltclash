@@ -3,8 +3,7 @@ import time
 from pyrogram.errors import RPCError, FloodWait
 
 import botmodule.init_bot
-from libs import cleaner, topotest
-import streamingtest
+from libs import cleaner, topotest, streamingtest
 from botmodule.init_bot import config
 
 test_members = 0
@@ -14,6 +13,11 @@ USER_TARGET = botmodule.init_bot.USER_TARGET
 def reloadUser():
     global USER_TARGET
     USER_TARGET = config.getuser()
+
+
+def reload_test_members():
+    global test_members
+    test_members = 0
 
 
 async def testurl(client, message):

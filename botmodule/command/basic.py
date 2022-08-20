@@ -15,7 +15,11 @@ async def helps(client, message):
 /user [管理]查看所有授权用户的id
 /new [管理]新增一个订阅
 /remove [管理]移除一个订阅
+/reload [管理]重载部分配置
+        (若一直提示多任务状态，可尝试此项，该命令不会对正在测试的任务产生影响)
 /sub [管理]查看所有已保存的订阅
+
+如有使用问题加入频道 @FullTClash 交流
     """
     try:
         await message.reply(send_text)

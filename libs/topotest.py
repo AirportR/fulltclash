@@ -77,7 +77,6 @@ async def core(client, message, back_message, test_members, start_time, suburl: 
     info1, hosts, cl = await topo('./clash/sub{}.yaml'.format(start_time))
     nodename = cl.nodesName()
 
-
     # 启动链路拓扑测试
     try:
         info2 = {}
@@ -106,8 +105,8 @@ async def core(client, message, back_message, test_members, start_time, suburl: 
                 sending_time += 10
                 try:
                     await back_message.edit_text("╰(*°▽°*)╯节点链路拓扑测试进行中...\n\n" +
-                                            "当前进度:\n" + p_text +
-                                            "%     [" + str(progress) + "/" + str(nodenum) + "]")  # 实时反馈进度
+                                                 "当前进度:\n" + p_text +
+                                                 "%     [" + str(progress) + "/" + str(nodenum) + "]")  # 实时反馈进度
                 except RPCError as r:
                     logger.error(r)
 
@@ -127,7 +126,7 @@ async def core(client, message, back_message, test_members, start_time, suburl: 
         # 生成图片
         stime = export.ExportTopo(name=hosts, info=info1).exportTopoInbound(nodename, info2)
         # 发送回TG
-        await check.check_photo(message, back_message, 'Topo'+ stime, nodenum, wtime)
+        await check.check_photo(message, back_message, 'Topo' + stime, nodenum, wtime)
     except RPCError as r:
         logger.error(r)
         await back_message.edit_message_text("出错啦")
