@@ -91,7 +91,6 @@ async def core(client, message, back_message, test_members, start_time, suburl: 
             ipcol.create_tasks(session, proxy="http://127.0.0.1:1122")
             sub_res = await ipcol.start()
             await session.close()
-            print(sub_res)
             if sub_res:
                 res.append(sub_res[0])
             else:
@@ -136,6 +135,6 @@ async def core(client, message, back_message, test_members, start_time, suburl: 
     except FloodWait as e:
         logger.error(str(e))
         await asyncio.sleep(e.value)
-    # except Exception as e:
-    #     logger.error(str(e))
-    #     await message.reply(str(e))
+    except Exception as e:
+        logger.error(str(e))
+        await message.reply(str(e))
