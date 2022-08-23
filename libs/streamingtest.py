@@ -71,6 +71,8 @@ async def batch_test(message, nodename: list, delays: list, test_items: list, pr
 async def core(client, message, back_message, test_members, start_time, suburl: str = None):
     logger.info("当前序号:" + str(test_members))
     info = {}  # 存放Netflix Youtube 等等
+    test_items = collector.media_items
+    print(test_items)
     if await check.check_number(back_message, test_members):
         return
     if suburl is not None:
@@ -109,7 +111,7 @@ async def core(client, message, back_message, test_members, start_time, suburl: 
     print("延迟:", rtt)
     # 启动流媒体测试
     try:
-        test_info = await batch_test(back_message, nodename, rtt, ['Netflix', 'Youtube', 'Disney+', 'Bilibili', 'Dazn'])
+        test_info = await batch_test(back_message, nodename, rtt, test_items=test_items)
         info['类型'] = nodetype
         info['延迟RTT'] = rtt
         info.update(test_info)

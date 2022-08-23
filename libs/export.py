@@ -2,7 +2,7 @@ from PIL import Image, ImageDraw, ImageFont
 from pilmoji import Pilmoji
 import time
 
-__version__ = "3.2.0"  # 版本号
+__version__ = "3.2.1"  # 版本号
 
 
 def color_block(size: tuple, color_value):
@@ -76,18 +76,17 @@ class ExportResult:
         """
         key_list = self.get_key_list()  # 得到每个测试项绘图的大小[100,80]
         width_list = []
-        max_width = 0
         for i in key_list:
             key_width = self.text_width(i)
             value_width = self.text_maxwidth(self.info[i])
             max_width = max(key_width, value_width)
-            max_width = max_width + 45
+            max_width = max_width + 40
             width_list.append(max_width)
         return width_list  # 测试项列的大小
 
-    def get_width(self):
+    def get_width(self, compare: int = None):
         """
-        获得整个图片的宽度
+        获得整个图片的宽度,compare参数在这里无用，是继承给子类用的
         :return:
         """
         img_width = 100  # 序号
@@ -213,15 +212,25 @@ class ExportTopo(ExportResult):
     生成节点拓扑测试图
     """
 
-    def __init__(self, name, info: dict):
-        self.name = name
-        super().__init__(info, nodename=self.name)
+    def __init__(self, name: list = None, info: dict = None):
+        super().__init__({}, [])
+        if name is None:
+            self.nodenum = 0
+            self.nodename = []
+        else:
+            self.nodename = name
+            self.nodenum = len(name)
+        if info is None:
+            self.info = {}
+        else:
+            self.info = info
         self.front_size = 30
         self.__font = ImageFont.truetype(r"./resources/苹方黑体-准-简.ttf", self.front_size)
 
-    def get_width(self):
+    def get_width(self, compare: int = None):
         """
         获得整个图片的宽度
+        :param: compare 是传入的另一张图片宽度，将与当前图片宽度做比较，目的为了保持两张原本宽度不同的图能宽度一致
         :return:
         """
         img_width = 100  # 序号
@@ -230,6 +239,12 @@ class ExportTopo(ExportResult):
         for i in infolist_width:
             info_width = info_width + i
         img_width = img_width + info_width
+        # 如果compare不为空，则将会与当前图片宽度进行比较，取较大值。
+        if compare:
+            diff = compare - img_width
+            if diff > 0:
+                img_width = compare
+                infolist_width[-1] += diff
         return img_width, infolist_width
 
     def get_height(self):
@@ -270,11 +285,11 @@ class ExportTopo(ExportResult):
             key_list.append(i)
         return key_list
 
-    def exportTopoInbound(self, nodename: list = None, info2: dict = None):
+    def exportTopoInbound(self, nodename: list = None, info2: dict = None, img2_width: int = None):
         # wtime = self.info['wtime']
         wtime = "未知"
         fnt = self.__font
-        image_width, info_list_length = self.get_width()
+        image_width, info_list_length = self.get_width(compare=img2_width)
         image_height = self.get_height()
         key_list = self.get_key_list()
         img = Image.new("RGB", (image_width, image_height), (255, 255, 255))
@@ -335,24 +350,28 @@ class ExportTopo(ExportResult):
             idraw.line([(x, 40), (x, image_height - 80)], fill=(255, 255, 255), width=1)
             start_x = end
         if info2 and nodename:
-            img2, image_height2, image_width2 = self.exportTopoOutbound(nodename,info2)
-            img3 = Image.new("RGB", (max(image_width, image_width2), image_height+image_height2-80), (255, 255, 255))
+            img2, image_height2, image_width2 = self.exportTopoOutbound(nodename, info2, img2_width=image_width)
+            img3 = Image.new("RGB", (max(image_width, image_width2), image_height + image_height2 - 80),
+                             (255, 255, 255))
             img3.paste(img, (0, 0))
-            img3.paste(img2, (0, image_height-80))
+            img3.paste(img2, (0, image_height - 80))
             print(export_time)
+            # img3.show()
             img3.save(r"./results/Topo{}.png".format(export_time.replace(':', '-')))
             return export_time
         else:
             print(export_time)
-            img.save(r"./results/Topo{}.png".format(export_time.replace(':', '-')))
+            img.show()
+            # img.save(r"./results/Topo{}.png".format(export_time.replace(':', '-')))
             return export_time
 
-    def exportTopoOutbound(self, nodename, info):
+    def exportTopoOutbound(self, nodename: list = None, info: dict = None, img2_width: int = None):
         # wtime = self.info['wtime']
-        self.__init__(nodename, info)
+        if nodename and info:
+            self.__init__(nodename, info)
         wtime = "未知"
         fnt = self.__font
-        image_width, info_list_length = self.get_width()
+        image_width, info_list_length = self.get_width(compare=img2_width)
         image_height = self.get_height()
         key_list = self.get_key_list()
         img = Image.new("RGB", (image_width, image_height), (255, 255, 255))
@@ -412,4 +431,6 @@ class ExportTopo(ExportResult):
             end = start_x + i
             idraw.line([(x, 40), (x, image_height - 80)], fill=(255, 255, 255), width=1)
             start_x = end
+        if nodename is None and info is None:
+            img.save(r"./results/Topo{}.png".format(export_time.replace(':', '-')))
         return img, image_height, image_width

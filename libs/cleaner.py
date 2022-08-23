@@ -211,6 +211,313 @@ class ClashCleaner:
             yaml.dump(self.yaml, fp)
 
 
+class ConfigManager:
+    """
+    配置清洗
+    """
+
+    def __init__(self, configpath="./config.yaml"):
+        """
+
+        """
+        self.yaml = {}
+        try:
+            with open(configpath, "r", encoding="UTF-8") as fp:
+                self.config = yaml.load(fp, Loader=yaml.FullLoader)
+                self.yaml.update(self.config)
+        except FileNotFoundError:
+            logger.warning("未发现配置文件，自动生成中......")
+            self.config = None
+        if self.config is None:
+            di = {'loader': "Success"}
+            with open(configpath, "w+", encoding="UTF-8") as fp:
+                yaml.dump(di, fp)
+            self.config = {}
+
+    # def get(self, string: tuple):
+    #     """
+    #     获取对应键的值，比如要获取 admin键的值，那么string参数传入(admin,)
+    #     要获取clash键下workpath键的值,那么string参数传入(clash,workpath)
+    #     :param string:
+    #     :param level:
+    #     :return:
+    #     """
+    #     level = len(string)
+    #     try:
+    #         for i in range(level):
+    #             arg = string[i]
+    #             return self.config
+    def getAdmin(self):
+        try:
+            return self.config['admin']
+        except KeyError:
+            return None
+
+    def getuser(self):
+        try:
+            return self.config['user']
+        except KeyError:
+            logger.warning("获取用户失败,将采用默认用户")
+            return []  # 默认名单
+
+    def get_proxy_port(self):
+        try:
+            return self.config['proxyport']
+        except KeyError:
+            logger.info("获取代理端口失败")
+            return None
+
+    def get_proxy(self):
+        try:
+            return 'http://' + str(self.config['proxy'])
+        except KeyError:
+            # logger.info("当前未启用代理配置")
+            return None
+
+    def get_media_item(self):
+        try:
+            return self.config['item']
+        except KeyError:
+            logger.error("获取测试项失败，将采用默认测试项：[Netflix,Youtube,Disney,Bilibili,Dazn]")
+            return ['Netflix', 'Youtube', 'Disney', 'Bilibili', 'Dazn']
+
+    def get_clash_work_path(self):
+        """
+        clash工作路径
+        :return:
+        """
+        try:
+            return self.config['clash']['workpath']
+        except KeyError:
+            logger.warning("获取工作路径失败，将采用默认工作路径 ./clash")
+            try:
+                d = {'workpath': './clash'}
+                self.yaml['clash'].update(d)
+            except KeyError:
+                di = {'clash': {'workpath': './clash'}}
+                self.yaml.update(di)
+            return './clash'
+
+    def get_clash_path(self):
+        """
+        clash 核心的运行路径,包括文件名
+        :return: str
+        """
+        try:
+            return self.config['clash']['path']
+        except KeyError:
+            logger.warning("获取运行路径失败，将采用默认运行路径 ./resources/clash-windows-amd64.exe")
+            try:
+                d = {'path': './resources/clash-windows-amd64.exe'}
+                self.yaml['clash'].update(d)
+            except KeyError:
+                di = {'clash': {'path': './resources/clash-windows-amd64.exe'}}
+                self.yaml.update(di)
+            return './resources/clash-windows-amd64.exe'
+
+    def get_sub(self, subname: str = None):
+        """
+        获取所有已保存的订阅,或者单个订阅
+        :return:
+        """
+        if subname is None:
+            try:
+                return self.config['subinfo']
+            except KeyError:
+                logger.info("无订阅保存")
+                return {}
+        else:
+            try:
+                return self.config['subinfo'][subname]
+            except KeyError:
+                return None
+
+    @logger.catch
+    def add(self, data: dict, key):
+        try:
+            self.yaml[key] = data[key]
+        except Exception as e:
+            print(e)
+
+    @logger.catch
+    def add_admin(self, admin: list or str or int):
+        """
+        添加管理员
+        """
+        adminlist = []
+
+        if admin is list:
+            for li in admin:
+                adminlist.append(li)
+        else:
+            adminlist.append(admin)
+        try:
+            old = self.config['admin']
+            if old is not None:
+                adminlist.extend(old)
+                newadminlist = list(set(adminlist))  # 去重
+                self.yaml['admin'] = newadminlist
+                logger.info("添加成功")
+        except KeyError:
+            newadminlist = list(set(adminlist))  # 去重
+            self.yaml['admin'] = newadminlist
+            logger.info("添加成功")
+
+    @logger.catch
+    def del_admin(self, admin: list or str or int):
+        """
+        删除管理员
+        """
+        try:
+            adminlist = self.config['admin']
+            if adminlist is not None:
+                if admin is list:
+                    for li in admin:
+                        adminlist.remove(li)
+                else:
+                    adminlist.remove(admin)
+                self.yaml['admin'] = adminlist
+        except TypeError:
+            logger.error("删除失败")
+
+    @logger.catch
+    def add_user(self, user: list or str or int):
+        """
+        添加授权用户
+        """
+        userlist = []
+
+        if user is list:
+            for li in user:
+                userlist.append(li)
+        else:
+            userlist.append(user)
+        try:
+            old = self.config['user']
+            if old is not None:
+                userlist.extend(old)
+            newuserlist = list(set(userlist))  # 去重
+            self.yaml['user'] = newuserlist
+            logger.info("添加成功")
+        except KeyError:
+            newuserlist = list(set(userlist))  # 去重
+            self.yaml['user'] = newuserlist
+            logger.info("添加成功")
+
+    @logger.catch
+    def del_user(self, user: list or str or int):
+        """
+        删除授权用户
+        """
+        try:
+            userlist = self.config['user']
+            if userlist is not None:
+                if user is list:
+                    for li in user:
+                        userlist.remove(li)
+                else:
+                    try:
+                        userlist.remove(user)
+                    except ValueError:
+                        logger.warning("目标本身未在用户列表中")
+                self.yaml['user'] = userlist
+        except TypeError:
+            logger.error("删除失败")
+
+    @logger.catch
+    def save(self, savePath: str = "./config.yaml"):
+        with open(savePath, "w+", encoding="UTF-8") as fp:
+            try:
+                yaml.dump(self.yaml, fp)
+                return True
+            except Exception as e:
+                logger.error(e)
+                return False
+
+    @logger.catch
+    def reload(self, configpath="./config.yaml", issave=True):
+        if issave:
+            if self.save(savePath=configpath):
+                try:
+                    with open(configpath, "r", encoding="UTF-8") as fp:
+                        self.config = yaml.load(fp, Loader=yaml.FullLoader)
+                        self.yaml = self.config
+                        return True
+                except Exception as e:
+                    logger.error(e)
+                    return False
+        else:
+            try:
+                with open(configpath, "r", encoding="UTF-8") as fp:
+                    self.config = yaml.load(fp, Loader=yaml.FullLoader)
+                    self.yaml = self.config
+                    return True
+            except Exception as e:
+                logger.error(e)
+                return False
+
+    @logger.catch
+    def newsub(self, subinfo: dict):
+        """添加订阅"""
+        try:
+            self.yaml['subinfo'].update(subinfo)
+        except KeyError:
+            s = {'subinfo': subinfo}
+            self.yaml.update(s)
+
+    @logger.catch
+    def removesub(self, subname: str):
+        """
+        移除订阅
+        :return:
+        """
+        try:
+            subinfo = self.yaml['subinfo']
+            if subinfo is not None:
+                if subname in subinfo:
+                    subinfo.pop(subname)
+        except KeyError:
+            logger.error('移出失败')
+
+    @logger.catch
+    def delsub(self, subname: str):
+        try:
+            subinfo = self.yaml['proxy-providers']
+            if subinfo is not None:
+                if subname in subinfo:
+                    subinfo.pop(subname)
+            subinfo2 = self.yaml['proxy-groups'][0]['use']
+            if subinfo2 is not None:
+                if subname in subinfo2:
+                    subinfo2.remove(subname)
+        except TypeError:
+            logger.warning("删除失败")
+
+    @logger.catch
+    def addsub(self, subname: str, subpath: str):
+        """
+        添加订阅到总文件，如用相对路径，请注意这里的subpath是写入到配置里面的，如果你指定过clash核心的工作目录，则相对位置以clash工作目录为准
+        :param subname:
+        :param subpath:
+        :return:
+        """
+        info = {'type': 'file', 'path': subpath,
+                'health-check': {'enable': True, 'url': 'http://www.gstatic.com/generate_204', 'interval': 600}}
+        self.yaml['proxy-providers'][subname] = info
+        if subname not in self.yaml['proxy-groups'][0]['use']:
+            self.yaml['proxy-groups'][0]['use'].append(subname)
+
+
+config = ConfigManager()
+media_item = config.get_media_item()
+
+
+def reload_config():
+    global config, media_item
+    config.reload(issave=False)
+    media_item = config.get_media_item()
+
+
 class ReCleaner:
     def __init__(self, data: dict):
         self.data = data
@@ -219,16 +526,29 @@ class ReCleaner:
 
     def get_all(self):
         info = {}
-        nf = self.getnetflixinfo()
-        you = self.getyoutubeinfo()
-        dis = self.getDisneyinfo()
-        bili = self.get_bilibili_info()
-        dazn = self.get_dazn_info()
-        info['Netflix'] = nf[len(nf) - 1]
-        info['Youtube'] = you
-        info['Disney+'] = dis
-        info['Bilibili'] = bili
-        info['Dazn'] = dazn
+        items = media_item
+        for item in items:
+            i = item.capitalize()
+            if i == "Netflix":
+                nf = self.getnetflixinfo()
+                info['Netflix'] = nf[len(nf) - 1]
+            elif i == "Youtube":
+                you = self.getyoutubeinfo()
+                info['Youtube'] = you
+            elif i == "Disney":
+                dis = self.getDisneyinfo()
+                info['Disney'] = dis
+            elif i == "Disney+":
+                dis = self.getDisneyinfo()
+                info['Disney+'] = dis
+            elif i == "Bilibili":
+                bili = self.get_bilibili_info()
+                info['Bilibili'] = bili
+            elif i == "Dazn":
+                dazn = self.get_dazn_info()
+                info['Dazn'] = dazn
+            else:
+                pass
         return info
 
     def get_dazn_info(self):
@@ -401,286 +721,6 @@ class ReCleaner:
         except Exception as e:
             logger.error(e)
             return "N/A"
-
-
-class ConfigManager:
-    """
-    配置清洗
-    """
-
-    def __init__(self, configpath="./config.yaml"):
-        """
-
-        """
-        self.yaml = {}
-        try:
-            with open(configpath, "r", encoding="UTF-8") as fp:
-                self.config = yaml.load(fp, Loader=yaml.FullLoader)
-                self.yaml.update(self.config)
-        except FileNotFoundError:
-            logger.warning("未发现配置文件，自动生成中......")
-            self.config = None
-        if self.config is None:
-            di = {'loader': "Success"}
-            with open(configpath, "w+", encoding="UTF-8") as fp:
-                yaml.dump(di, fp)
-            self.config = {}
-
-    # def get(self, string: tuple):
-    #     """
-    #     获取对应键的值，比如要获取 admin键的值，那么string参数传入(admin,)
-    #     要获取clash键下workpath键的值,那么string参数传入(clash,workpath)
-    #     :param string:
-    #     :param level:
-    #     :return:
-    #     """
-    #     level = len(string)
-    #     try:
-    #         for i in range(level):
-    #             arg = string[i]
-    #             return self.config
-    def getAdmin(self):
-        try:
-            return self.config['admin']
-        except KeyError:
-            return None
-
-    def getuser(self):
-        try:
-            return self.config['user']
-        except KeyError:
-            logger.warning("获取用户失败,将采用默认用户")
-            return []  # 默认名单
-
-    def get_proxy_port(self):
-        try:
-            return self.config['proxyport']
-        except KeyError:
-            logger.info("获取代理端口失败")
-            return None
-
-    def get_proxy(self):
-        try:
-            return self.config['proxy']
-        except KeyError:
-            # logger.info("当前未启用代理配置")
-            return None
-
-    def get_clash_work_path(self):
-        """
-        clash工作路径
-        :return:
-        """
-        try:
-            return self.config['clash']['workpath']
-        except KeyError:
-            logger.warning("获取工作路径失败，将采用默认工作路径 ./clash")
-            try:
-                d = {'workpath': './clash'}
-                self.yaml['clash'].update(d)
-            except KeyError:
-                di = {'clash': {'workpath': './clash'}}
-                self.yaml.update(di)
-            return './clash'
-
-    def get_clash_path(self):
-        """
-        clash 核心的运行路径,包括文件名
-        :return: str
-        """
-        try:
-            return self.config['clash']['path']
-        except KeyError:
-            logger.warning("获取运行路径失败，将采用默认运行路径 ./resources/clash-windows-amd64.exe")
-            try:
-                d = {'path': './resources/clash-windows-amd64.exe'}
-                self.yaml['clash'].update(d)
-            except KeyError:
-                di = {'clash': {'path': './resources/clash-windows-amd64.exe'}}
-                self.yaml.update(di)
-            return './resources/clash-windows-amd64.exe'
-
-    def get_sub(self, subname: str = None):
-        """
-        获取所有已保存的订阅,或者单个订阅
-        :return:
-        """
-        if subname is None:
-            try:
-                return self.config['subinfo']
-            except KeyError:
-                logger.info("无订阅保存")
-                return {}
-        else:
-            try:
-                return self.config['subinfo'][subname]
-            except KeyError:
-                return None
-
-    @logger.catch
-    def add(self, data: dict, key):
-        try:
-            self.yaml[key] = data[key]
-        except Exception as e:
-            print(e)
-
-    @logger.catch
-    def add_admin(self, admin: list or str or int):
-        """
-        添加管理员
-        """
-        adminlist = []
-
-        if admin is list:
-            for li in admin:
-                adminlist.append(li)
-        else:
-            adminlist.append(admin)
-        try:
-            old = self.config['admin']
-            if old is not None:
-                adminlist.extend(old)
-                newadminlist = list(set(adminlist))  # 去重
-                self.yaml['admin'] = newadminlist
-                logger.info("添加成功")
-        except KeyError:
-            newadminlist = list(set(adminlist))  # 去重
-            self.yaml['admin'] = newadminlist
-            logger.info("添加成功")
-
-    @logger.catch
-    def del_admin(self, admin: list or str or int):
-        """
-        删除管理员
-        """
-        try:
-            adminlist = self.config['admin']
-            if adminlist is not None:
-                if admin is list:
-                    for li in admin:
-                        adminlist.remove(li)
-                else:
-                    adminlist.remove(admin)
-                self.yaml['admin'] = adminlist
-        except TypeError:
-            logger.error("删除失败")
-
-    @logger.catch
-    def add_user(self, user: list or str or int):
-        """
-        添加授权用户
-        """
-        userlist = []
-
-        if user is list:
-            for li in user:
-                userlist.append(li)
-        else:
-            userlist.append(user)
-        try:
-            old = self.config['user']
-            if old is not None:
-                userlist.extend(old)
-            newuserlist = list(set(userlist))  # 去重
-            self.yaml['user'] = newuserlist
-            logger.info("添加成功")
-        except KeyError:
-            newuserlist = list(set(userlist))  # 去重
-            self.yaml['user'] = newuserlist
-            logger.info("添加成功")
-
-    @logger.catch
-    def del_user(self, user: list or str or int):
-        """
-        删除授权用户
-        """
-        try:
-            userlist = self.config['user']
-            if userlist is not None:
-                if user is list:
-                    for li in user:
-                        userlist.remove(li)
-                else:
-                    try:
-                        userlist.remove(user)
-                    except ValueError:
-                        logger.warning("目标本身未在用户列表中")
-                self.yaml['user'] = userlist
-        except TypeError:
-            logger.error("删除失败")
-
-    @logger.catch
-    def save(self, savePath: str = "./config.yaml"):
-        with open(savePath, "w+", encoding="UTF-8") as fp:
-            try:
-                yaml.dump(self.yaml, fp)
-                return True
-            except Exception as e:
-                logger.error(e)
-                return False
-
-    @logger.catch
-    def reload(self, configpath="./config.yaml"):
-        if self.save(savePath=configpath):
-            try:
-                with open(configpath, "r", encoding="UTF-8") as fp:
-                    self.config = yaml.load(fp, Loader=yaml.FullLoader)
-                    self.yaml = self.config
-                    return True
-            except Exception as e:
-                logger.error(e)
-                return False
-
-    @logger.catch
-    def newsub(self, subinfo: dict):
-        """添加订阅"""
-        try:
-            self.yaml['subinfo'].update(subinfo)
-        except KeyError:
-            s = {'subinfo': subinfo}
-            self.yaml.update(s)
-
-    @logger.catch
-    def removesub(self, subname: str):
-        """
-        移除订阅
-        :return:
-        """
-        try:
-            subinfo = self.yaml['subinfo']
-            if subinfo is not None:
-                if subname in subinfo:
-                    subinfo.pop(subname)
-        except KeyError:
-            logger.error('移出失败')
-
-    @logger.catch
-    def delsub(self, subname: str):
-        try:
-            subinfo = self.yaml['proxy-providers']
-            if subinfo is not None:
-                if subname in subinfo:
-                    subinfo.pop(subname)
-            subinfo2 = self.yaml['proxy-groups'][0]['use']
-            if subinfo2 is not None:
-                if subname in subinfo2:
-                    subinfo2.remove(subname)
-        except TypeError:
-            logger.warning("删除失败")
-
-    @logger.catch
-    def addsub(self, subname: str, subpath: str):
-        """
-        添加订阅到总文件，如用相对路径，请注意这里的subpath是写入到配置里面的，如果你指定过clash核心的工作目录，则相对位置以clash工作目录为准
-        :param subname:
-        :param subpath:
-        :return:
-        """
-        info = {'type': 'file', 'path': subpath,
-                'health-check': {'enable': True, 'url': 'http://www.gstatic.com/generate_204', 'interval': 600}}
-        self.yaml['proxy-providers'][subname] = info
-        if subname not in self.yaml['proxy-groups'][0]['use']:
-            self.yaml['proxy-groups'][0]['use'].append(subname)
 
 
 class ResultCleaner:

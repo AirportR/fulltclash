@@ -65,7 +65,11 @@ def loader(app: Client):
 
     @app.on_message(filters.command(["reload"]) & filters.user(admin), group=12)
     async def reload_testmember(client, message):
+        from libs.collector import reload_config as r1
+        from libs.cleaner import reload_config as r2
         botmodule.reload_test_members()
         botmodule.reloadUser()
-        await message.reply("已重置")
+        r1()
+        r2()
+        await message.reply("已重载配置")
 
