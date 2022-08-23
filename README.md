@@ -40,7 +40,9 @@ FullTclash bot 是承载其测试任务的Telegram 机器人（以下简称bot�
 以及clash 延迟测试和链路拓扑测试（节点出入口分析）。
 
 # 效果预览
-![测试图片](https://3o.hk/images/2022/08/12/2022-08-12T00-36-19.png)
+流媒体测试:
+![测试图片](https://3o.hk/images/2022/08/23/image.png)
+![测试图片](https://3o.hk/images/2022/08/23/image9e8596612cb3ff6a.png)
 
 # 如何开始
 
