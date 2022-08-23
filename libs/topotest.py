@@ -124,7 +124,8 @@ async def core(client, message, back_message, test_members, start_time, suburl: 
         # 计算测试消耗时间
         wtime = "%.1f" % float(time.time() - s1)
         # 生成图片
-        stime = export.ExportTopo(name=hosts, info=info1).exportTopoInbound(nodename, info2)
+        vvbhj, yug, image_width2 = export.ExportTopo().exportTopoOutbound(nodename=nodename, info=info2)
+        stime = export.ExportTopo(name=hosts, info=info1).exportTopoInbound(nodename, info2, img2_width=image_width2)
         # 发送回TG
         await check.check_photo(message, back_message, 'Topo' + stime, nodenum, wtime)
     except RPCError as r:
@@ -135,6 +136,6 @@ async def core(client, message, back_message, test_members, start_time, suburl: 
     except FloodWait as e:
         logger.error(str(e))
         await asyncio.sleep(e.value)
-    except Exception as e:
-        logger.error(str(e))
-        await message.reply(str(e))
+    # except Exception as e:
+    #     logger.error(str(e))
+    #     await message.reply(str(e))
