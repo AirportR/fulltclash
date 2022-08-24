@@ -413,7 +413,7 @@ class ExportTopo(ExportResult):
                                self.info[t1][t],
                                font=fnt, fill=(0, 0, 0))
                 elif t1 == "节点名称":
-                    idraw.text((width + 10, (t + 2) * 40),
+                    pilmoji.text((width + 10, (t + 2) * 40),
                                self.info[t1][t],
                                font=fnt, fill=(0, 0, 0))
                 else:
