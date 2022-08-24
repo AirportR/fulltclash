@@ -58,6 +58,7 @@ async def getsub_async(url: str, username: str, pwd: str, proxy=None):
 
 async def baipiao(client, message):
     global USER_TARGET
+    USER_TARGET = botmodule.init_bot.USER_TARGET
     try:
         if int(message.from_user.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
             await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")

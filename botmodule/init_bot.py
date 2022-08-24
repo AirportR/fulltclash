@@ -36,3 +36,9 @@ subp = subprocess.Popen(command.split(), encoding="utf-8")
 time.sleep(2)
 test_members = 0  # 正在测试的成员，如果为零则停止测试，否则一直测试
 logger.info("程序已启动!")
+
+
+def reloadUser():
+    global USER_TARGET
+    config.reload(issave=False)
+    USER_TARGET = config.getuser()
