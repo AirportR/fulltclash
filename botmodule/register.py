@@ -1,3 +1,4 @@
+import loguru
 import requests
 import random
 import urllib.parse
@@ -27,8 +28,13 @@ def getsub(url: str, username: str, pwd: str):
 
     domain = urllib.parse.urlparse(url).netloc
     data = {"email": username + "@qq.com", "password": pwd}
-    co = requests.post(url=url, data=data)
-    body = co.text
+    apiurl = 'https://{}/api/v1/passport/auth/register'.format(domain)
+    try:
+        co = requests.post(url=apiurl, data=data)
+        body = co.text
+    except Exception as e:
+        loguru.logger.error(str(e))
+        body = ""
     try:
         res = body.split('token":"')[1].split('","auth_data')[0]
     except IndexError:
