@@ -29,7 +29,10 @@ def getsub(url: str, username: str, pwd: str):
     data = {"email": username + "@qq.com", "password": pwd}
     co = requests.post(url=url, data=data)
     body = co.text
-    res = body.split('token":"')[1].split('","auth_data')[0]
+    try:
+        res = body.split('token":"')[1].split('","auth_data')[0]
+    except IndexError:
+        res = ''
     suburl = "https://{}/api/v1/client/subscribe?token=".format(domain) + res
     if len(res) < 1:
         return None
