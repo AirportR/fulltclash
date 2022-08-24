@@ -55,11 +55,11 @@ def loader(app: Client):
     async def help_and_start(client, message):
         await botmodule.helps(client, message)
 
-    @app.on_message(filters.command(["analyzeurl"]), group=10)
+    @app.on_message(filters.command(["analyzeurl", "topourl"]), group=10)
     async def analyzeurl(client, message):
         await botmodule.analyzeurl(client, message)
 
-    @app.on_message(filters.command(["analyze"]), group=11)
+    @app.on_message(filters.command(["analyze", "topo"]), group=11)
     async def analyze(client, message):
         await botmodule.analyze(client, message)
 
@@ -73,3 +73,6 @@ def loader(app: Client):
         r2()
         await message.reply("已重载配置")
 
+    @app.on_message(filters.command(["register", "baipiao"]), group=13)
+    async def regis(client, message):
+        await botmodule.register.baipiao(client, message)

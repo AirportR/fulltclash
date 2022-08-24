@@ -1,6 +1,6 @@
 from pyrogram.errors import RPCError
 from botmodule.init_bot import admin, config
-from botmodule.command import testurl
+from botmodule.command import test
 
 
 async def grant(client, message):
@@ -29,7 +29,7 @@ async def grant(client, message):
             print("授权id:", grant_id)
             config.add_user(grant_id)
             config.reload()
-            testurl.reloadUser()
+            test.reloadUser()
 
     except RPCError as r:
         print(r)
@@ -57,7 +57,7 @@ async def ungrant(client, message):
             try:
                 config.del_user(ungrant_id)
                 config.reload()
-                testurl.reloadUser()
+                test.reloadUser()
                 await client.send_message(chat_id=message.chat.id,
                                           text=ungrant_text,
                                           reply_to_message_id=message.reply_to_message.id)
