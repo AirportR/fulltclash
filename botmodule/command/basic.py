@@ -10,6 +10,7 @@ async def helps(client, message):
 /test <订阅名> [用户]进行一次流媒体测试测试
 /analyzeurl <订阅链接> [用户]临时下载订阅进行一次节点链路拓扑测试
 /analyze <订阅名> [用户]进行一次节点链路拓扑测试
+/register & /baipiao <注册地址> [用户]远程注册并返回一个订阅（必须是V2board且无邮箱验证）
 /grant <回复一个目标> [管理]授权一个目标
 /ungrant <回复一个目标> [管理]取消授权一个目标
 /user [管理]查看所有授权用户的id
