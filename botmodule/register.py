@@ -3,6 +3,9 @@ import random
 import urllib.parse
 
 from libs.cleaner import geturl
+import botmodule.init_bot
+
+USER_TARGET = botmodule.init_bot.USER_TARGET
 
 
 def random_value(length):
@@ -34,15 +37,15 @@ def getsub(url: str, username: str, pwd: str):
 
 
 async def baipiao(client, message):
-    # global USER_TARGET, test_members
-    # try:
-    #     if int(message.from_user.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
-    #         await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
-    #         return
-    # except AttributeError:
-    #     if int(message.sender_chat.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
-    #         await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
-    #         return
+    global USER_TARGET
+    try:
+        if int(message.from_user.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
+            await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
+            return
+    except AttributeError:
+        if int(message.sender_chat.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
+            await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
+            return
     back_message = await message.reply("正在尝试注册...")  # 发送提示
     regisurl = geturl(str(message.text))
     if regisurl:
@@ -56,9 +59,4 @@ async def baipiao(client, message):
     else:
         await back_message.edit_text("❌发生错误，请检查注册地址是否正确")
         return
-# if __name__ == '__main__':
-#     url = "https://feiniaoyun.xyz/api/v1/passport/auth/register"
-#     result = getsub(url, random_value(10), random_value(8))
-#     if result:
-#         print("获取临时订阅成功！ \n" + result)
-#     os.system('pause')
+
