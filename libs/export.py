@@ -361,8 +361,7 @@ class ExportTopo(ExportResult):
             return export_time
         else:
             print(export_time)
-            img.show()
-            # img.save(r"./results/Topo{}.png".format(export_time.replace(':', '-')))
+            img.save(r"./results/Topo{}.png".format(export_time.replace(':', '-')))
             return export_time
 
     def exportTopoOutbound(self, nodename: list = None, info: dict = None, img2_width: int = None):

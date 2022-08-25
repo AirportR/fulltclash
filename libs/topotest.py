@@ -10,8 +10,10 @@ from libs import cleaner, collector, sorter, check, proxys, export
 proxies = collector.proxies
 
 
+# async def inbound(file_path: str):
+
 async def topo(file_path: str):
-    info = {'地区': [], 'AS编号': [], '组织': []}
+    info = {'地区': [], 'AS编号': [], '组织': [], '入口ip段': []}
     cl = cleaner.ClashCleaner(file_path)
     co = collector.IPCollector()
     session = aiohttp.ClientSession()
@@ -37,6 +39,18 @@ async def topo(file_path: str):
             numcount = []
             for v in inboundinfo.values():
                 numcount.append(str(v))
+            new_hosts = []
+            for host in hosts:
+                if len(host) < 16:  # v4地址最大长度为15
+                    try:
+                        old_ip = host.split('.')[:2]
+                        new_ip = old_ip[0] + "." + old_ip[1] + ".*.*"
+                    except IndexError:
+                        new_ip = host
+                    new_hosts.append(new_ip)
+                else:
+                    new_hosts.append(host)
+            info.update({'入口ip段': new_hosts})
             info.update({'出口数量': numcount})
         return info, hosts, cl
 
