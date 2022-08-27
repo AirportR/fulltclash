@@ -178,7 +178,7 @@ async def test_old(client, message):
         await back_message.edit_text("程序已被强行中止")
 
 
-async def analyzeurl(client, message):
+async def analyzeurl(client, message, test_type="all"):
     global USER_TARGET, test_members
     try:
         if int(message.from_user.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
@@ -194,7 +194,7 @@ async def analyzeurl(client, message):
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
     try:
         await topotest.core(client, message, back_message=back_message, test_members=test_members,
-                            start_time=start_time)
+                            start_time=start_time, test_type=test_type)
         test_members -= 1
         ma.delsub(subname=start_time)
         ma.save(savePath='./clash/proxy.yaml')
@@ -212,7 +212,7 @@ async def analyzeurl(client, message):
         await back_message.edit_text("程序已被强行中止")
 
 
-async def analyze(client, message):
+async def analyze(client, message, test_type="all"):
     global USER_TARGET, test_members
     try:
         if int(message.from_user.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
@@ -239,7 +239,7 @@ async def analyze(client, message):
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
     try:
         await topotest.core(client, message, back_message=back_message, test_members=test_members,
-                            start_time=start_time, suburl=suburl)
+                            start_time=start_time, suburl=suburl, test_type=test_type)
         test_members -= 1
         ma.delsub(subname=start_time)
         ma.save(savePath='./clash/proxy.yaml')
@@ -255,3 +255,4 @@ async def analyze(client, message):
         await asyncio.sleep(e.value)  # Wait "value" seconds before continuing
     except KeyboardInterrupt:
         await back_message.edit_text("程序已被强行中止")
+

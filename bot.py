@@ -7,6 +7,11 @@ admin = init_bot.admin  # 管理员
 
 
 def loader(app: Client):
+    command_loader(app)
+    callback_loader(app)
+
+
+def command_loader(app: Client):
     @app.on_message(filters.command(["testurl"]))
     async def testurl(client, message):
         await botmodule.testurl(client, message)
@@ -76,3 +81,17 @@ def loader(app: Client):
     @app.on_message(filters.command(["register", "baipiao"]), group=13)
     async def regis(client, message):
         await botmodule.register.baipiao(client, message)
+
+    @app.on_message(filters.command(["inbound"]), group=14)
+    async def inbound(client, message):
+        await botmodule.analyze(client, message, test_type="inbound")
+
+    @app.on_message(filters.command(["inboundurl"]), group=15)
+    async def inbound(client, message):
+        await botmodule.analyzeurl(client, message, test_type="inbound")
+
+
+def callback_loader(app: Client):
+    @app.on_callback_query(filters.user(admin))
+    async def setting(client, callback_query):
+        await botmodule.setting(client, callback_query)

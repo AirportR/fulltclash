@@ -10,8 +10,6 @@ from libs import cleaner, collector, sorter, check, proxys, export
 proxies = collector.proxies
 
 
-# async def inbound(file_path: str):
-
 async def topo(file_path: str):
     info = {'地区': [], 'AS编号': [], '组织': [], '入口ip段': []}
     cl = cleaner.ClashCleaner(file_path)
@@ -20,7 +18,6 @@ async def topo(file_path: str):
     nodename, inboundinfo, cl = sorter.sort_nodename_topo(cl)
     if nodename and inboundinfo and cl:
         # 拿地址，已经转换了域名为ip,hosts变量去除了N/A
-        ipaddrs = cl.nodesAddr()
         hosts = list(inboundinfo.keys())
         # 创建任务并开始采集ip信息
         co.create_tasks(session=session, hosts=hosts, proxy=proxies)
@@ -55,7 +52,18 @@ async def topo(file_path: str):
         return info, hosts, cl
 
 
-async def core(client, message, back_message, test_members, start_time, suburl: str = None):
+async def core(client, message, back_message, test_members, start_time, suburl: str = None, test_type="all"):
+    """
+
+    :param client:
+    :param message:
+    :param back_message:
+    :param test_members:
+    :param start_time:
+    :param suburl:
+    :param test_type: 测试类型，有三种：[仅入口，仅出口，全部]，默认测试全部
+    :return:
+    """
     logger.info("当前序号:" + str(test_members))
     if await check.check_number(back_message, test_members):
         return
@@ -87,9 +95,15 @@ async def core(client, message, back_message, test_members, start_time, suburl: 
     ma.save('./clash/proxy.yaml')
     # 重载配置文件
     await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=1123)
+
     s1 = time.time()
     info1, hosts, cl = await topo('./clash/sub{}.yaml'.format(start_time))
+    wtime = "%.1f" % float(time.time() - s1)
     nodename = cl.nodesName()
+    if test_type == "inbound":
+        stime = export.ExportTopo(name=hosts, info=info1).exportTopoInbound()
+        await check.check_photo(message, back_message, 'Topo' + stime, len(hosts), wtime)
+        return
 
     # 启动链路拓扑测试
     try:
@@ -137,8 +151,11 @@ async def core(client, message, back_message, test_members, start_time, suburl: 
         # 计算测试消耗时间
         wtime = "%.1f" % float(time.time() - s1)
         # 生成图片
-        vvbhj, yug, image_width2 = export.ExportTopo().exportTopoOutbound(nodename=nodename, info=info2)
-        stime = export.ExportTopo(name=hosts, info=info1).exportTopoInbound(nodename, info2, img2_width=image_width2)
+        img_outbound, yug, image_width2 = export.ExportTopo().exportTopoOutbound(nodename=nodename, info=info2)
+        if test_type == "outbound":
+            stime = export.ExportTopo(name=nodename, info=info2).exportTopoOutbound()
+        else:
+            stime = export.ExportTopo(name=hosts, info=info1).exportTopoInbound(nodename, info2, img2_width=image_width2)
         # 发送回TG
         await check.check_photo(message, back_message, 'Topo' + stime, nodenum, wtime)
     except RPCError as r:

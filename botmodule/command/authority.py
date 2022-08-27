@@ -25,7 +25,6 @@ b1 = InlineKeyboardMarkup(
 async def invite(client, message):
     invite_text = f"🎯您好, {message.from_user.first_name} 为您创建了一个测试任务，请选择测试的类型:"
     try:
-        print(message.chat.id)
         if message.reply_to_message is None:
             await message.reply("请先用该指令回复一个目标")
         else:
