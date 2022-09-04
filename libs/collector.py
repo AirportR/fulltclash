@@ -6,6 +6,18 @@ from aiohttp.client_exceptions import ClientConnectorError
 from loguru import logger
 from libs import cleaner
 
+"""
+这是整个项目最为核心的功能模块之一 —> 采集器。它负责从网络上采集想要的数据。到现在，已经设计了：
+1、采集器基类（BaseCollector）。一个简单的采集器示例。
+2、IP采集器（IPCollector）。负责采集ip的相关信息
+3、订阅采集器（SubCollector）。负责从网络上获取订阅文件
+4、采集器（Collector）。负责各种流媒体解锁信息的采集
+5、一个批量测试延迟的函数，基于clash core
+需要注意的是，这些类/函数仅作采集工作，并不负责清洗。我们需要将拿到的数据给cleaner类清洗。
+
+** 开发建议 **
+如果你想自己添加一个流媒体测试项，建议继承Collector类，重写类中的create_tasks方法，以及自定义自己的流媒体测试函数 fetch_XXX()
+"""
 config = cleaner.ConfigManager()
 media_items = config.get_media_item()
 proxies = config.get_proxy()  # 代理
@@ -79,7 +91,7 @@ class IPCollector:
             logger.error(e)
             return None
 
-    async def fetch(self, session: aiohttp.ClientSession, proxy=None, host: str = None, reconnection=2):
+    async def fetch(self, session: aiohttp.ClientSession, proxy=None, host: str = None, reconnection=1):
         """
         获取ip地址信息
         :param session:

@@ -4,7 +4,9 @@ from pyrogram.errors import RPCError, FloodWait
 from loguru import logger
 from libs import cleaner, collector, export, proxys, check
 
-
+"""
+这个模块是流媒体测试的具体实现
+"""
 async def unit(test_items: list, delay: int):
     """
     以一个节点的所有测试项为一个基本单元unit,返回单个节点的测试结果

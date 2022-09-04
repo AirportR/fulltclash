@@ -6,7 +6,9 @@ from loguru import logger
 from pyrogram.errors import RPCError, FloodWait
 
 from libs import cleaner, collector, sorter, check, proxys, export
-
+"""
+这个模块是拓扑测试（出入口落地分析）的具体实现
+"""
 proxies = collector.proxies
 
 

@@ -1,6 +1,5 @@
 import re
 import socket
-
 import yaml
 from bs4 import BeautifulSoup
 from loguru import logger
@@ -654,11 +653,11 @@ class ReCleaner:
                 text = self.data['netflix2']
                 s = text.find('preferredLocale', 100000)
                 if s == -1:
-                    self._netflix_info.append("解锁(未知)")
+                    self._netflix_info.append("原生解锁(未知)")
                     logger.info("当前节点情况: " + str(self._netflix_info))
                     return self._netflix_info
                 region = text[s + 29:s + 31]
-                ntype = "解锁({})".format(region)
+                ntype = "原生解锁({})".format(region)
                 self._netflix_info.append(ntype)
                 logger.info("当前节点情况: " + str(self._netflix_info))
                 return self._netflix_info
@@ -666,11 +665,11 @@ class ReCleaner:
                 text = self.data['netflix2']
                 s = text.find('preferredLocale', 100000)
                 if s == -1:
-                    self._netflix_info.append("解锁(未知)")
+                    self._netflix_info.append("DNS解锁(未知)")
                     logger.info("当前节点情况: " + str(self._netflix_info))
                     return self._netflix_info
                 region = text[s + 29:s + 31]
-                ntype = "解锁({})".format(region)
+                ntype = "DNS解锁({})".format(region)
                 self._netflix_info.append(ntype)
                 logger.info("当前节点情况: " + str(self._netflix_info))
                 return self._netflix_info
@@ -680,9 +679,8 @@ class ReCleaner:
 
     def getyoutubeinfo(self):
         """
-
-                :return: str :解锁信息: (解锁、失败、N/A)
-                """
+        :return: str :解锁信息: (解锁、失败、N/A)
+        """
         try:
             if 'youtube' not in self.data:
                 logger.warning("采集器内无数据")

@@ -5,6 +5,10 @@ import async_timeout
 import requests
 from loguru import logger
 
+"""
+这个模块主要是一些对clash restful api的python实现
+"""
+
 
 # 切换节点
 def switchProxy_old(proxyName, proxyGroup, clashHost: str = "127.0.0.1", clashPort: int = 1123):

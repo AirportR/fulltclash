@@ -3,6 +3,10 @@ import re
 from pyrogram.errors import RPCError
 from loguru import logger
 
+"""
+这个模块主要是一些检查函数，用来验证某个值是否合法。一般是返回布尔值
+"""
+
 
 async def check_number(message, test_member, max_num=1):
     """

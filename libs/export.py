@@ -2,7 +2,16 @@ from PIL import Image, ImageDraw, ImageFont
 from pilmoji import Pilmoji
 import time
 
-__version__ = "3.2.3"  # 版本号
+"""
+这是将测试的结果输出为图片的模块。
+设计思路:
+1、本项目设计了一个ExportResult类，我们需要两组关键的数据进行初始化：基础数据、各种信息info。
+    其中基础数据一般是节点名，info是一个字典，每个字典的键是一个字符串，将是之后的各种测试项标题，如 类型、延迟RTT、Netflix、Youtube等等，
+    每个字典键所对应的值即为一个列表。
+2、何为基础数据？
+    基础数据决定了生成图片的高度（Height），它是列表，列表里面的数据一般是一组节点名，即有多少个节点就对应了info键值中的长度。
+"""
+__version__ = "3.2.4"  # 版本号
 
 
 def color_block(size: tuple, color_value):
@@ -10,7 +19,7 @@ def color_block(size: tuple, color_value):
     颜色块，颜色数值推荐用十六进制表示如: #ffffff 为白色
     :param size: tuple: (length,width)
     :param color_value: 颜色值
-    :return:
+    :return: Image
     """
     img_block = Image.new('RGB', size, color_value)
     return img_block
@@ -31,11 +40,15 @@ class ExportResult:
         self.__font = ImageFont.truetype(r"./resources/苹方黑体-准-简.ttf", self.front_size)
 
     def get_height(self):
+        """
+        获取图片高度
+        :return: int
+        """
         return (self.nodenum + 4) * 40
 
     def get_key_list(self):
         """
-        得到测试项名称
+        得到测试项名称，即字典里所有键的名称
         :return: list
         """
         key_list = []
@@ -77,8 +90,8 @@ class ExportResult:
         key_list = self.get_key_list()  # 得到每个测试项绘图的大小[100,80]
         width_list = []
         for i in key_list:
-            key_width = self.text_width(i)
-            value_width = self.text_maxwidth(self.info[i])
+            key_width = self.text_width(i)  # 键的长度
+            value_width = self.text_maxwidth(self.info[i])  # 键所对应值的长度
             max_width = max(key_width, value_width)
             max_width = max_width + 40
             width_list.append(max_width)
@@ -413,8 +426,8 @@ class ExportTopo(ExportResult):
                                font=fnt, fill=(0, 0, 0))
                 elif t1 == "节点名称":
                     pilmoji.text((width + 10, (t + 2) * 40),
-                               self.info[t1][t],
-                               font=fnt, fill=(0, 0, 0))
+                                 self.info[t1][t],
+                                 font=fnt, fill=(0, 0, 0))
                 else:
                     idraw.text((self.get_mid(width, width + info_list_length[i], self.info[t1][t]), (t + 2) * 40),
                                self.info[t1][t],
@@ -432,4 +445,6 @@ class ExportTopo(ExportResult):
             start_x = end
         if nodename is None and info is None:
             img.save(r"./results/Topo{}.png".format(export_time.replace(':', '-')))
+            print(export_time)
+            return export_time
         return img, image_height, image_width

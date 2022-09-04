@@ -2,6 +2,10 @@ from pyrogram import Client
 from pyrogram.errors import RPCError
 import asyncio
 
+"""
+一个TGbot初始化小脚本
+"""
+
 
 async def main():
     api_id = str(input("Please enter your api_id:"))
