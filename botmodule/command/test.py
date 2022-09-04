@@ -180,14 +180,16 @@ async def test_old(client, message):
 
 async def analyzeurl(client, message, test_type="all"):
     global USER_TARGET, test_members
-    try:
-        if int(message.from_user.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
-            await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
-            return
-    except AttributeError:
-        if int(message.sender_chat.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
-            await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
-            return
+    is_allow_visitor = False
+    if test_type != "inbound" and not is_allow_visitor:
+        try:
+            if int(message.from_user.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
+                await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
+                return
+        except AttributeError:
+            if int(message.sender_chat.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
+                await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
+                return
     back_message = await message.reply("╰(*°▽°*)╯节点链路拓扑测试进行中...")  # 发送提示
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
     test_members += 1

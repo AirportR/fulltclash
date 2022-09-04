@@ -67,8 +67,9 @@ async def core(client, message, back_message, test_members, start_time, suburl: 
     :return:
     """
     logger.info("当前序号:" + str(test_members))
-    if await check.check_number(back_message, test_members):
-        return
+    if test_type != "inbound":
+        if await check.check_number(back_message, test_members):
+            return
     if suburl is not None:
         url = suburl
     else:

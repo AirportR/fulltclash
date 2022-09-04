@@ -91,11 +91,11 @@ def command_loader(app: Client):
         await botmodule.analyzeurl(client, message, test_type="inbound")
 
     @app.on_message(filters.command(["outbound"]), group=14)
-    async def inbound(client, message):
+    async def outbound(client, message):
         await botmodule.analyze(client, message, test_type="outbound")
 
     @app.on_message(filters.command(["outboundurl"]), group=15)
-    async def inboundurl(client, message):
+    async def outboundurl(client, message):
         await botmodule.analyzeurl(client, message, test_type="outbound")
 
 
