@@ -8,7 +8,7 @@ from loguru import logger
 """
 
 
-async def check_number(message, test_member, max_num=1):
+async def check_number(message, test_member, max_num=4):
     """
     检查任务数量
     :param message: 消息对象

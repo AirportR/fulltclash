@@ -23,11 +23,13 @@ media_items = config.get_media_item()
 proxies = config.get_proxy()  # 代理
 
 
-def reload_config():
+def reload_config(media: list = None):
     global config, proxies, media_items
     config.reload(issave=False)
     proxies = config.get_proxy()
     media_items = config.get_media_item()
+    if media:
+        media_items = media
     print(media_items)
 
 

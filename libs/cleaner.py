@@ -16,7 +16,7 @@ class IPCleaner:
             logger.error(str(k))
             return None
         except TypeError:
-            logger.error("无法获取对应信息: " + str(key))
+            logger.warning("无法获取对应信息: " + str(key))
             return None
 
     def get_org(self):
@@ -511,10 +511,13 @@ config = ConfigManager()
 media_item = config.get_media_item()
 
 
-def reload_config():
+def reload_config(media: list = None):
     global config, media_item
     config.reload(issave=False)
-    media_item = config.get_media_item()
+    if media:
+        media_item = media
+    else:
+        media_item = config.get_media_item()
 
 
 class ReCleaner:

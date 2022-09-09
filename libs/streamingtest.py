@@ -7,6 +7,8 @@ from libs import cleaner, collector, export, proxys, check
 """
 这个模块是流媒体测试的具体实现
 """
+
+
 async def unit(test_items: list, delay: int):
     """
     以一个节点的所有测试项为一个基本单元unit,返回单个节点的测试结果
@@ -70,10 +72,24 @@ async def batch_test(message, nodename: list, delays: list, test_items: list, pr
     return info
 
 
-async def core(client, message, back_message, test_members, start_time, suburl: str = None):
+async def core(client, message, back_message, test_members, start_time, suburl: str = None, media_items: list = None):
+    """
+
+    :param client:
+    :param message:
+    :param back_message: 回复的消息对象
+    :param test_members: 测试成员人数
+    :param start_time: 任务生成时间
+    :param suburl: 订阅地址
+    :param media_items: 测试的流媒体选项
+    :return:
+    """
     logger.info("当前序号:" + str(test_members))
     info = {}  # 存放Netflix Youtube 等等
-    test_items = collector.media_items
+    if media_items is None:
+        test_items = collector.media_items
+    else:
+        test_items = media_items
     print(test_items)
     if await check.check_number(back_message, test_members):
         return

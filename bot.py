@@ -1,6 +1,7 @@
 from pyrogram import Client, filters
 
 import botmodule
+from libs.queue import q, bot_task_queue
 from botmodule import init_bot
 
 admin = init_bot.admin  # 管理员
@@ -11,10 +12,21 @@ def loader(app: Client):
     callback_loader(app)
 
 
+task_num = 0
+
+
 def command_loader(app: Client):
     @app.on_message(filters.command(["testurl"]))
     async def testurl(client, message):
-        await botmodule.testurl(client, message)
+        back_message = await message.reply("请选择想要启用的测试项:", reply_markup=botmodule.IKM)
+        # await botmodule.testurl(client, message)
+        global task_num
+        task_num += 1
+        mes = await message.reply("排队中,当前任务队列数量为: " + str(task_num))
+        await q.put(message)
+        await mes.edit_text("任务已提交")
+        await bot_task_queue(client, message, "testurl", q)
+        task_num -= 1
 
     @app.on_message(filters.command(["testurlold"]))
     async def testurl_old(client, message):
@@ -50,7 +62,14 @@ def command_loader(app: Client):
 
     @app.on_message(filters.command(["test"]), group=8)
     async def test(client, message):
-        await botmodule.test(client, message)
+        # await botmodule.test(client, message)
+        global task_num
+        task_num += 1
+        mes = await message.reply("排队中,当前任务队列数量为: " + str(task_num))
+        await q.put(message)
+        await mes.edit_text("任务已提交")
+        await bot_task_queue(client, message, "test", q)
+        task_num -= 1
 
     @app.on_message(filters.command(["testold"]), group=8)
     async def test_old(client, message):
@@ -62,11 +81,25 @@ def command_loader(app: Client):
 
     @app.on_message(filters.command(["analyzeurl", "topourl"]), group=10)
     async def analyzeurl(client, message):
-        await botmodule.analyzeurl(client, message)
+        # await botmodule.analyzeurl(client, message)
+        global task_num
+        task_num += 1
+        mes = await message.reply("排队中,当前任务队列数量为: " + str(task_num))
+        await q.put(message)
+        await mes.edit_text("任务已提交")
+        await bot_task_queue(client, message, "analyzeurl", q)
+        task_num -= 1
 
     @app.on_message(filters.command(["analyze", "topo"]), group=11)
     async def analyze(client, message):
-        await botmodule.analyze(client, message)
+        # await botmodule.analyze(client, message)
+        global task_num
+        task_num += 1
+        mes = await message.reply("排队中,当前任务队列数量为: " + str(task_num))
+        await q.put(message)
+        await mes.edit_text("任务已提交")
+        await bot_task_queue(client, message, "analyze", q)
+        task_num -= 1
 
     @app.on_message(filters.command(["reload"]) & filters.user(admin), group=12)
     async def reload_testmember(client, message):
@@ -92,14 +125,28 @@ def command_loader(app: Client):
 
     @app.on_message(filters.command(["outbound"]), group=14)
     async def outbound(client, message):
-        await botmodule.analyze(client, message, test_type="outbound")
+        # await botmodule.analyze(client, message, test_type="outbound")
+        global task_num
+        task_num += 1
+        mes = await message.reply("排队中,当前任务队列数量为: " + str(task_num))
+        await q.put(message)
+        await mes.edit_text("任务已提交")
+        await bot_task_queue(client, message, "outbound", q)
+        task_num -= 1
 
     @app.on_message(filters.command(["outboundurl"]), group=15)
     async def outboundurl(client, message):
-        await botmodule.analyzeurl(client, message, test_type="outbound")
+        # await botmodule.analyzeurl(client, message, test_type="outbound")
+        global task_num
+        task_num += 1
+        mes = await message.reply("排队中,当前任务队列数量为: " + str(task_num))
+        await q.put(message)
+        await mes.edit_text("任务已提交")
+        await bot_task_queue(client, message, "outboundurl", q)
+        task_num -= 1
 
 
 def callback_loader(app: Client):
-    @app.on_callback_query(filters.user(admin))
-    async def setting(client, callback_query):
+    @app.on_callback_query()
+    async def settings(client, callback_query):
         await botmodule.setting(client, callback_query)

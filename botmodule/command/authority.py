@@ -7,7 +7,7 @@ b1 = InlineKeyboardMarkup(
     [
         [  # 第一行
             InlineKeyboardButton(  # Generates a callback query when pressed
-                "📺 流媒体测试 📺", callback_data='1'
+                "📺 流媒体测试 📺", callback_data='✅Netflix'
             )
 
         ],
