@@ -22,7 +22,7 @@ dns:
   - https://dns.alidns.com/dns-query
   use-hosts: true
 external-controller: 127.0.0.1:1123
-ipv6: false
+ipv6: true
 log-level: info
 mixed-port: 1122
 mode: rule

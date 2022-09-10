@@ -1,11 +1,16 @@
+import asyncio
 from pyrogram import Client, filters
 
 import botmodule
+from botmodule import init_bot
 from libs.myqueue import q, bot_task_queue
 from libs.check import check_user as isuser
-from botmodule import init_bot
+from libs.collector import reload_config as r1
+from libs.cleaner import reload_config as r2
+
 
 admin = init_bot.admin  # 管理员
+task_num = 0  # 任务数
 
 
 def loader(app: Client):
@@ -13,22 +18,31 @@ def loader(app: Client):
     callback_loader(app)
 
 
-task_num = 0
+async def bot_put(client, message, put_type: str):
+    """
+    推送任务，bot推送反馈
+    :param client:
+    :param message:
+    :param put_type:
+    :return:
+    """
+    global task_num
+    task_num += 1
+    mes = await message.reply("排队中,前方队列任务数量为: " + str(task_num - 1))
+    await q.put(message)
+    await mes.edit_text("任务已提交")
+    await bot_task_queue(client, message, put_type, q)
+    task_num -= 1
+    await asyncio.sleep(10)
+    await mes.delete()
 
 
 def command_loader(app: Client):
     @app.on_message(filters.command(["testurl"]))
     async def testurl(client, message):
-        if isuser(message, botmodule.USER_TARGET):
-            back_message = await message.reply("请选择想要启用的测试项:", reply_markup=botmodule.IKM)
-            # await botmodule.testurl(client, message)
-            global task_num
-            task_num += 1
-            mes = await message.reply("排队中,当前任务队列数量为: " + str(task_num))
-            await q.put(message)
-            await mes.edit_text("任务已提交")
-            await bot_task_queue(client, message, "testurl", q)
-            task_num -= 1
+        if await isuser(message, botmodule.init_bot.reloadUser()):
+            # back_message = await message.reply("请选择想要启用的测试项:", reply_markup=botmodule.IKM)
+            await bot_put(client, message, "testurl")
 
     @app.on_message(filters.command(["testurlold"]))
     async def testurl_old(client, message):
@@ -64,14 +78,8 @@ def command_loader(app: Client):
 
     @app.on_message(filters.command(["test"]), group=8)
     async def test(client, message):
-        # await botmodule.test(client, message)
-        global task_num
-        task_num += 1
-        mes = await message.reply("排队中,当前任务队列数量为: " + str(task_num))
-        await q.put(message)
-        await mes.edit_text("任务已提交")
-        await bot_task_queue(client, message, "test", q)
-        task_num -= 1
+        if await isuser(message, botmodule.init_bot.reloadUser()):
+            await bot_put(client, message, "test")
 
     @app.on_message(filters.command(["testold"]), group=8)
     async def test_old(client, message):
@@ -83,30 +91,16 @@ def command_loader(app: Client):
 
     @app.on_message(filters.command(["analyzeurl", "topourl"]), group=10)
     async def analyzeurl(client, message):
-        # await botmodule.analyzeurl(client, message)
-        global task_num
-        task_num += 1
-        mes = await message.reply("排队中,当前任务队列数量为: " + str(task_num))
-        await q.put(message)
-        await mes.edit_text("任务已提交")
-        await bot_task_queue(client, message, "analyzeurl", q)
-        task_num -= 1
+        if await isuser(message, botmodule.init_bot.reloadUser()):
+            await bot_put(client, message, "analyzeurl")
 
     @app.on_message(filters.command(["analyze", "topo"]), group=11)
     async def analyze(client, message):
-        # await botmodule.analyze(client, message)
-        global task_num
-        task_num += 1
-        mes = await message.reply("排队中,当前任务队列数量为: " + str(task_num))
-        await q.put(message)
-        await mes.edit_text("任务已提交")
-        await bot_task_queue(client, message, "analyze", q)
-        task_num -= 1
+        if await isuser(message, botmodule.init_bot.reloadUser()):
+            await bot_put(client, message, "analyze")
 
     @app.on_message(filters.command(["reload"]) & filters.user(admin), group=12)
     async def reload_testmember(client, message):
-        from libs.collector import reload_config as r1
-        from libs.cleaner import reload_config as r2
         botmodule.reload_test_members()
         botmodule.reloadUser()
         r1()
@@ -119,33 +113,23 @@ def command_loader(app: Client):
 
     @app.on_message(filters.command(["inbound"]), group=14)
     async def inbound(client, message):
-        await botmodule.analyze(client, message, test_type="inbound")
+        if await isuser(message, botmodule.init_bot.reloadUser()):
+            await botmodule.analyze(client, message, test_type="inbound")
 
     @app.on_message(filters.command(["inboundurl"]), group=15)
     async def inboundurl(client, message):
-        await botmodule.analyzeurl(client, message, test_type="inbound")
+        if await isuser(message, botmodule.init_bot.reloadUser()):
+            await botmodule.analyzeurl(client, message, test_type="inbound")
 
     @app.on_message(filters.command(["outbound"]), group=14)
     async def outbound(client, message):
-        # await botmodule.analyze(client, message, test_type="outbound")
-        global task_num
-        task_num += 1
-        mes = await message.reply("排队中,当前任务队列数量为: " + str(task_num))
-        await q.put(message)
-        await mes.edit_text("任务已提交")
-        await bot_task_queue(client, message, "outbound", q)
-        task_num -= 1
+        if await isuser(message, botmodule.init_bot.reloadUser()):
+            await bot_put(client, message, "outbound")
 
     @app.on_message(filters.command(["outboundurl"]), group=15)
     async def outboundurl(client, message):
-        # await botmodule.analyzeurl(client, message, test_type="outbound")
-        global task_num
-        task_num += 1
-        mes = await message.reply("排队中,当前任务队列数量为: " + str(task_num))
-        await q.put(message)
-        await mes.edit_text("任务已提交")
-        await bot_task_queue(client, message, "outboundurl", q)
-        task_num -= 1
+        if await isuser(message, botmodule.init_bot.reloadUser()):
+            await bot_put(client, message, "outboundurl")
 
 
 def callback_loader(app: Client):

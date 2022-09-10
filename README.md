@@ -92,7 +92,7 @@ pip install -r requirements.txt
 
 ## 获取session文件
 
-您需要在项目文件目录下，放置一个已经登陆好的.session后缀文件，这个文件是程序生成的，形如： my_bot.seesion
+您需要在项目文件目录下，放置一个已经登陆好的.session后缀文件，这个文件是程序生成的，形如： my_bot.session
 
 方法1： 您可以参阅[这篇文档](https://docs.pyrogram.org/start/auth)，以快速获得后缀为 .session 的文件
 
@@ -107,10 +107,11 @@ python .\login.py
 
 这句话时，即可说明该session文件有效，否则无效。
 
-## 赋予clash核心执行权限
+## 赋予clash核心执行权限(Linux amd64)
 
+Windows系统无需此操作
 ```
-chmod +x 
+chmod +x ./resources/clash-linux-amd64
 ```
 
 
@@ -162,6 +163,7 @@ python .\main.py
 
 - [SSRSpeedN部分代码灵感](https://github.com/PauperZ/SSRSpeedN)
   
+- [流媒体解锁思路](https://github.com/lmc999/RegionRestrictionCheck)
 - 以下这些上游项目:
   
   - [Clash](https://github.com/Dreamacro/clash)

@@ -13,6 +13,7 @@ USER_TARGET = botmodule.init_bot.USER_TARGET
 def reloadUser():
     global USER_TARGET
     USER_TARGET = config.getuser()
+    return USER_TARGET
 
 
 def reload_test_members():
@@ -21,15 +22,7 @@ def reload_test_members():
 
 
 async def testurl(client, message):
-    global USER_TARGET, test_members
-    try:
-        if int(message.from_user.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
-            await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
-            return
-    except AttributeError:
-        if int(message.sender_chat.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
-            await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
-            return
+    global test_members
     back_message = await message.reply("╰(*°▽°*)╯流媒体测试进行中...")
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
     test_members += 1
@@ -55,15 +48,15 @@ async def testurl(client, message):
 
 
 async def test(client, message):
-    global USER_TARGET, test_members
-    try:
-        if int(message.from_user.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
-            await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
-            return
-    except AttributeError:
-        if int(message.sender_chat.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
-            await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
-            return
+    global test_members
+    # try:
+    #     if int(message.from_user.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
+    #         await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
+    #         return
+    # except AttributeError:
+    #     if int(message.sender_chat.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
+    #         await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
+    #         return
     back_message = await message.reply("╰(*°▽°*)╯流媒体测试进行中...")  # 发送提示
     arg = cleaner.ArgCleaner().getall(str(message.text))
     del arg[0]
@@ -146,7 +139,6 @@ async def test_old(client, message):
     back_message = await message.reply("╰(*°▽°*)╯流媒体测试进行中...")  # 发送提示
     arg = cleaner.ArgCleaner().getall(str(message.text))
     del arg[0]
-    suburl = ''
     if len(arg):
         suburl = config.get_sub(subname=arg[0])
     else:
@@ -179,17 +171,7 @@ async def test_old(client, message):
 
 
 async def analyzeurl(client, message, test_type="all"):
-    global USER_TARGET, test_members
-    is_allow_visitor = False
-    if test_type != "inbound" and not is_allow_visitor:
-        try:
-            if int(message.from_user.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
-                await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
-                return
-        except AttributeError:
-            if int(message.sender_chat.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
-                await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
-                return
+    global test_members
     back_message = await message.reply("╰(*°▽°*)╯节点链路拓扑测试进行中...")  # 发送提示
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
     test_members += 1
@@ -215,19 +197,10 @@ async def analyzeurl(client, message, test_type="all"):
 
 
 async def analyze(client, message, test_type="all"):
-    global USER_TARGET, test_members
-    try:
-        if int(message.from_user.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
-            await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
-            return
-    except AttributeError:
-        if int(message.sender_chat.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
-            await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
-            return
+    global test_members
     back_message = await message.reply("╰(*°▽°*)╯节点链路拓扑测试进行中...")  # 发送提示
     arg = cleaner.ArgCleaner().getall(str(message.text))
     del arg[0]
-    suburl = ''
     if len(arg):
         suburl = config.get_sub(subname=arg[0])
     else:
@@ -254,7 +227,6 @@ async def analyze(client, message, test_type="all"):
         )
     except FloodWait as e:
         test_members -= 1
-        await asyncio.sleep(e.value)  # Wait "value" seconds before continuing
+        await asyncio.sleep(e.value)
     except KeyboardInterrupt:
         await back_message.edit_text("程序已被强行中止")
-

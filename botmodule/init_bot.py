@@ -42,3 +42,4 @@ def reloadUser():
     global USER_TARGET
     config.reload(issave=False)
     USER_TARGET = config.getuser()
+    return USER_TARGET
