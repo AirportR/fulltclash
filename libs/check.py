@@ -8,6 +8,27 @@ from loguru import logger
 """
 
 
+async def check_user(message, USER_TARGET: list):
+    """
+    检查是否是用，如果是返回真
+    :param USER_TARGET: 用户列表
+    :param message: 消息对象
+    :return: bool
+    """
+    try:
+        if int(message.from_user.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
+            await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
+            return False
+        else:
+            return True
+    except AttributeError:
+        if int(message.sender_chat.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
+            await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
+            return False
+        else:
+            return True
+
+
 async def check_number(message, test_member, max_num=4):
     """
     检查任务数量

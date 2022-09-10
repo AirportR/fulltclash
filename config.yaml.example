@@ -11,5 +11,5 @@ item: # 流媒体测试项，决定你想要测哪个项,目前仅支持以下�
 # proxy: "host:端口" # 配置代理，用于下载获取订阅链接。订阅链接国内打不开可尝试开启（可选配置）,本机提供的代理可以这样填: '127.0.0.1:7890'
 # user: 12345678 #用户列表，/grant 命令授权的目标会保存在这（可选配置）
 # clash:
-#  path: './clash-linux-amd64' # clash核心的位置（可选配置）
-#  workpath: './clash' # clash的工作目录（可选配置）
+#  path: './resources/clash-linux-amd64' # clash核心的位置,此样例为linux-amd64配置样例，windows可以不配置该项（可选配置）
+#  workpath: './clash' # clash的工作目录，工作目录这里指的是clash读取配置文件的目录，请勿与操作系统上的概念混淆（可选配置）

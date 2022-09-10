@@ -107,7 +107,11 @@ python .\login.py
 
 这句话时，即可说明该session文件有效，否则无效。
 
+## 赋予clash核心执行权限
 
+```
+chmod +x 
+```
 
 
 ## 为bot进行相关配置

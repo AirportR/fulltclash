@@ -1,7 +1,8 @@
 from pyrogram import Client, filters
 
 import botmodule
-from libs.queue import q, bot_task_queue
+from libs.myqueue import q, bot_task_queue
+from libs.check import check_user as isuser
 from botmodule import init_bot
 
 admin = init_bot.admin  # 管理员
@@ -18,15 +19,16 @@ task_num = 0
 def command_loader(app: Client):
     @app.on_message(filters.command(["testurl"]))
     async def testurl(client, message):
-        back_message = await message.reply("请选择想要启用的测试项:", reply_markup=botmodule.IKM)
-        # await botmodule.testurl(client, message)
-        global task_num
-        task_num += 1
-        mes = await message.reply("排队中,当前任务队列数量为: " + str(task_num))
-        await q.put(message)
-        await mes.edit_text("任务已提交")
-        await bot_task_queue(client, message, "testurl", q)
-        task_num -= 1
+        if isuser(message, botmodule.USER_TARGET):
+            back_message = await message.reply("请选择想要启用的测试项:", reply_markup=botmodule.IKM)
+            # await botmodule.testurl(client, message)
+            global task_num
+            task_num += 1
+            mes = await message.reply("排队中,当前任务队列数量为: " + str(task_num))
+            await q.put(message)
+            await mes.edit_text("任务已提交")
+            await bot_task_queue(client, message, "testurl", q)
+            task_num -= 1
 
     @app.on_message(filters.command(["testurlold"]))
     async def testurl_old(client, message):
