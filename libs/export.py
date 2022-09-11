@@ -105,7 +105,7 @@ class ExportResult:
         img_width = 100  # 序号
         nodename_width = self.text_maxwidth(self.nodename)
         nodename_width = max(nodename_width, 420)
-        nodename_width = nodename_width + 60
+        nodename_width = nodename_width + 150
         infolist_width = self.key_value()
         info_width = 0
         for i in infolist_width:

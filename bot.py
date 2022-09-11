@@ -18,31 +18,6 @@ def loader(app: Client):
     callback_loader(app)
 
 
-async def bot_put(client, message, put_type: str, test_items: list = None):
-    """
-    推送任务，bot推送反馈
-    :param test_items:
-    :param client:
-    :param message:
-    :param put_type:
-    :return:
-    """
-    global task_num
-    task_num += 1
-    mes = await message.reply("排队中,前方队列任务数量为: " + str(task_num - 1))
-    await q.put(message)
-    if test_items:
-        logger.info("任务测试项为: " + str(test_items))
-        r1(test_items)
-        r2(test_items)
-    await asyncio.sleep(2)
-    await mes.edit_text("任务已提交")
-    await bot_task_queue(client, message, put_type, q)
-    task_num -= 1
-    await asyncio.sleep(10)
-    await mes.delete()
-
-
 def command_loader(app: Client):
     @app.on_message(filters.command(["testurl"]))
     async def testurl(client, message):
@@ -148,3 +123,29 @@ def callback_loader(app: Client):
             await asyncio.sleep(5)
             await message.delete()
             await bot_put(client, origin_message, test_type, test_items)
+
+
+async def bot_put(client, message, put_type: str, test_items: list = None):
+    """
+    推送任务，bot推送反馈
+    :param test_items:
+    :param client:
+    :param message:
+    :param put_type:
+    :return:
+    """
+    global task_num
+    task_num += 1
+    mes = await message.reply("排队中,前方队列任务数量为: " + str(task_num - 1))
+    await q.put(message)
+    if test_items is None:
+        test_items = []
+    logger.info("任务测试项为: " + str(test_items))
+    r1(test_items)
+    r2(test_items)
+    await asyncio.sleep(2)
+    await mes.edit_text("任务已提交")
+    await bot_task_queue(client, message, put_type, q)
+    task_num -= 1
+    await asyncio.sleep(10)
+    await mes.delete()

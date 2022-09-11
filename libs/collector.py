@@ -28,9 +28,10 @@ def reload_config(media: list = None):
     config.reload(issave=False)
     proxies = config.get_proxy()
     media_items = config.get_media_item()
-    if media:
+    if media is not None:
         media_items = media
-    #print(media_items)
+        #print(media_items)
+    # print(media_items)
 
 
 class BaseCollector:
@@ -216,29 +217,30 @@ class Collector:
         """
         items = media_items
         try:
-            task1 = asyncio.create_task(self.fetch_ip(session=session, proxy=proxy))
-            self.tasks.append(task1)
-            for item in items:
-                i = item.capitalize()
-                if i == "Netflix":
-                    task2 = asyncio.create_task(self.fetch_ninfo1(session, proxy=proxy))
-                    self.tasks.append(task2)
-                    task3 = asyncio.create_task(self.fetch_ninfo2(session, proxy=proxy))
-                    self.tasks.append(task3)
-                elif i == "Youtube":
-                    task4 = asyncio.create_task(self.fetch_youtube(session, proxy=proxy))
-                    self.tasks.append(task4)
-                elif i == "Disney" or i == "Disney+":
-                    task5 = asyncio.create_task(self.fetch_dis(session, proxy=proxy))
-                    self.tasks.append(task5)
-                elif i == "Bilibili":
-                    task6 = asyncio.create_task(self.fetch_bilibili(session, proxy=proxy))
-                    self.tasks.append(task6)
-                elif i == "Dazn":
-                    task7 = asyncio.create_task(self.fetch_dazn(session, proxy=proxy))
-                    self.tasks.append(task7)
-                else:
-                    pass
+            if len(items):
+                for item in items:
+                    i = item.capitalize()
+                    if i == "Netflix":
+                        task1 = asyncio.create_task(self.fetch_ip(session=session, proxy=proxy))
+                        self.tasks.append(task1)
+                        task2 = asyncio.create_task(self.fetch_ninfo1(session, proxy=proxy))
+                        self.tasks.append(task2)
+                        task3 = asyncio.create_task(self.fetch_ninfo2(session, proxy=proxy))
+                        self.tasks.append(task3)
+                    elif i == "Youtube":
+                        task4 = asyncio.create_task(self.fetch_youtube(session, proxy=proxy))
+                        self.tasks.append(task4)
+                    elif i == "Disney" or i == "Disney+":
+                        task5 = asyncio.create_task(self.fetch_dis(session, proxy=proxy))
+                        self.tasks.append(task5)
+                    elif i == "Bilibili":
+                        task6 = asyncio.create_task(self.fetch_bilibili(session, proxy=proxy))
+                        self.tasks.append(task6)
+                    elif i == "Dazn":
+                        task7 = asyncio.create_task(self.fetch_dazn(session, proxy=proxy))
+                        self.tasks.append(task7)
+                    else:
+                        pass
             return self.tasks
         except Exception as e:
             logger.error(e)

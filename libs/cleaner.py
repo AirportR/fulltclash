@@ -513,7 +513,7 @@ media_item = config.get_media_item()
 def reload_config(media: list = None):
     global config, media_item
     config.reload(issave=False)
-    if media:
+    if media is not None:
         media_item = media
     else:
         media_item = config.get_media_item()
