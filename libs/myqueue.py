@@ -1,4 +1,6 @@
 import asyncio
+
+import loguru
 from pyrogram import Client
 
 import botmodule
@@ -15,18 +17,26 @@ async def bot_task_queue(client: Client, message, task_type:str, qu: asyncio.Que
     :param qu:
     :return:
     """
-    if task_type == "test":
+    if "test" in task_type:
         await botmodule.test(client, message)
-    elif task_type == "testurl":
+    elif "testurl" in task_type:
         await botmodule.testurl(client, message)
-    elif task_type == "analyze":
+    elif "analyze" in task_type:
         await botmodule.analyze(client, message)
-    elif task_type == "analyzeurl":
+    elif "analyzeurl" in task_type:
         await botmodule.analyzeurl(client, message)
-    elif task_type == "outbound":
+    elif "outbound" in task_type:
         await botmodule.analyze(client, message, test_type="outbound")
-    elif task_type == "outboundurl":
+    elif "outboundurl" in task_type:
         await botmodule.analyzeurl(client, message, test_type="outbound")
+    else:
+        try:
+            m1 = await message.reply("⚠️未识别的测试类型，任务取消~")
+            await asyncio.sleep(10)
+            await m1.delete()
+            await message.delete
+        except Exception as e:
+            loguru.logger.warning(str(e))
     await qu.get()
     qu.task_done()
 

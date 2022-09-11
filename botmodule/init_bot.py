@@ -28,7 +28,7 @@ if admin is None:
     logger.error("获取管理员失败，将在5s后退出")
     time.sleep(5)
     sys.exit(1)
-
+USER_TARGET.extend(admin)
 logger.info("配置已加载")
 # 启动了一个clash常驻进程
 command = fr"{clash_path} -f {'./clash/proxy.yaml'} -d {clash_work_path}"
@@ -42,4 +42,5 @@ def reloadUser():
     global USER_TARGET
     config.reload(issave=False)
     USER_TARGET = config.getuser()
+    USER_TARGET.extend(admin)
     return USER_TARGET

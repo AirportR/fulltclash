@@ -4,6 +4,8 @@ from libs import cleaner
 """
 这个模块是一些排序的实现
 """
+
+
 def ping(ping: list, proxyname: list):
     """
     用ping值排序，值从低到高。

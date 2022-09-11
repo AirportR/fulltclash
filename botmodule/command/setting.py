@@ -1,10 +1,9 @@
+import loguru
 from pyrogram import types
 from pyrogram.types import BotCommand
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from botmodule import USER_TARGET
-from libs.collector import reload_config as r1
-from libs.cleaner import reload_config as r2
+
 
 b1 = InlineKeyboardButton("✅Netflix", callback_data='✅Netflix')
 b2 = InlineKeyboardButton("✅Youtube", callback_data='✅Youtube')
@@ -25,7 +24,7 @@ IKM = InlineKeyboardMarkup(
         [b8]
     ]
 )
-test_items = []
+# test_items = []
 
 
 async def setcommands(client, message):
@@ -40,7 +39,15 @@ async def setcommands(client, message):
         ], scope=my)
 
 
-async def setting(client, callback_query):
+async def test_setting(client, callback_query):
+    """
+    收到测试指令后对测试项进行动态调整
+    :param client:
+    :param callback_query:
+    :return: test_items, origin_message, message, test_type
+    """
+    message = None
+    test_items = []
     b11 = b1
     b22 = b2
     b33 = b3
@@ -49,20 +56,23 @@ async def setting(client, callback_query):
     b88 = b8
     buttonss = [b11, b22, b33, b44, b55, b88]
     text = "请选择想要启用的测试项:"
-    # print(callback_query)
-    mess_test = callback_query.message.reply_to_message
+    origin_message = callback_query.message.reply_to_message
+    try:
+        test_type = str(origin_message.text).split(" ")[0]
+    except:
+        test_type = "unknown"
+        loguru.logger.warning("test_type:" + test_type)
     callback_data = callback_query.data
     mess_id = callback_query.message.id
     chat_id = callback_query.message.chat.id
-    user_id = callback_query.from_user.id
-    try:
-        if int(callback_query.from_user.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
-            await callback_query.answer(f"不要乱动别人的操作哟👻", show_alert=True)
-            return
-    except AttributeError:
-        if int(callback_query.sender_chat.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
-            await callback_query.answer(f"不要乱动别人的操作哟👻", show_alert=True)
-            return
+    # try:
+    #     if int(callback_query.from_user.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
+    #         await callback_query.answer(f"不要乱动别人的操作哟👻", show_alert=True)
+    #         return test_items, origin_message, message, test_type
+    # except AttributeError:
+    #     if int(callback_query.sender_chat.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
+    #         await callback_query.answer(f"不要乱动别人的操作哟👻", show_alert=True)
+    #         return test_items, origin_message, message, test_type
     if "✅" in callback_data:
         for b in buttonss:
             if b.text == callback_data:
@@ -82,7 +92,7 @@ async def setting(client, callback_query):
                                                message_id=mess_id,
                                                text=text,
                                                reply_markup=IKM2)
-
+        return test_items, origin_message, message, test_type
     elif "❌" in callback_data:
         for b in buttonss:
             if b.text == callback_data:
@@ -102,20 +112,15 @@ async def setting(client, callback_query):
                                                message_id=mess_id,
                                                text=text,
                                                reply_markup=IKM2)
+        return test_items, origin_message, message, test_type
     elif "👌完成设置" in callback_data:
-        test_items.clear()
+        test_items = []
         for b in buttonss:
             if "✅" in b.text:
                 test_items.append(str(b.text)[1:])
         message = await client.edit_message_text(chat_id=chat_id,
                                                  message_id=mess_id,
-                                                 text="任务已提交~")
-        r1(test_items)
-        r2(test_items)
-        # if test_items:
-        #     await botmodule.testurl(client, message)
-        return test_items
+                                                 text="⌛正在提交任务~")
+        return test_items, origin_message, message, test_type
+    return test_items, origin_message, message, test_type
 
-
-async def task_begin(client, callback_query):
-    test_items, message = await setting(client, callback_query)

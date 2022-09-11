@@ -30,7 +30,7 @@ def reload_config(media: list = None):
     media_items = config.get_media_item()
     if media:
         media_items = media
-    print(media_items)
+    #print(media_items)
 
 
 class BaseCollector:

@@ -9,6 +9,28 @@ from loguru import logger
 """
 
 
+async def check_callback_master(callback_query, USER_TARGET: list):
+    username = None
+    try:
+        username = str(callback_query.from_user.username)
+    except Exception as e:
+        logger.info("无法获取该目标获取用户名" + str(e))
+    try:
+        if username:
+            if username not in USER_TARGET:
+                await callback_query.answer(f"不要乱动别人的操作哟👻", show_alert=True)
+                return True
+            else:
+                return False
+        if int(callback_query.from_user.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
+            await callback_query.answer(f"不要乱动别人的操作哟👻", show_alert=True)
+            return True
+    except AttributeError:
+        if int(callback_query.sender_chat.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
+            await callback_query.answer(f"不要乱动别人的操作哟👻", show_alert=True)
+            return True
+
+
 async def check_user(message, USER_TARGET: list):
     """
     检查是否是用，如果是返回真
@@ -17,9 +39,22 @@ async def check_user(message, USER_TARGET: list):
     :return: bool
     """
     is_allow_visitor = False
+    username = None
     if is_allow_visitor:
         return True
     try:
+        try:
+            username = str(message.from_user.username)
+        except Exception as e:
+            logger.info("无法获取该目标获取用户名" + str(e))
+        if username:
+            if username not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
+                m2 = await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
+                await asyncio.sleep(10)
+                await m2.delete()
+                return False
+            else:
+                return True
         if int(message.from_user.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
             m2 = await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
             await asyncio.sleep(10)

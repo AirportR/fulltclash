@@ -62,7 +62,7 @@ async def batch_test(message, nodename: list, delays: list, test_items: list, pr
         p_text = "%.2f" % cal
         # 判断进度条，每隔10%发送一次反馈，有效防止洪水等待(FloodWait)
         if cal >= sending_time:
-            sending_time += 10
+            sending_time += 20
             try:
                 await message.edit_text("╰(*°▽°*)╯流媒体测试进行中...\n\n" +
                                         "当前进度:\n" + p_text +
@@ -90,7 +90,7 @@ async def core(client, message, back_message, test_members, start_time, suburl: 
         test_items = collector.media_items
     else:
         test_items = media_items
-    print(test_items)
+    #print(test_items)
     if await check.check_number(back_message, test_members):
         return
     if suburl is not None:
