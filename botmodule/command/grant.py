@@ -1,3 +1,4 @@
+import loguru
 from pyrogram.errors import RPCError
 from botmodule.init_bot import admin, config, reloadUser
 from botmodule.command import test
@@ -26,7 +27,7 @@ async def grant(client, message):
                 grant_id = int(message.reply_to_message.from_user.id)
             except AttributeError:
                 grant_id = int(message.reply_to_message.sender_chat.id)
-            print("授权id:", grant_id)
+            loguru.logger.info("授权id:", grant_id)
             config.add_user(grant_id)
             config.reload()
             test.reloadUser()

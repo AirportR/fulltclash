@@ -385,8 +385,7 @@ class ConfigManager:
         添加授权用户
         """
         userlist = []
-
-        if user is list:
+        if type(user).__name__ == "list":
             for li in user:
                 userlist.append(li)
         else:

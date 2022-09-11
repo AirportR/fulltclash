@@ -6,10 +6,12 @@ from libs.cleaner import ConfigManager
 
 logger.add("./logs/fulltclash_{time}.log", rotation='7 days')
 config = ConfigManager()
-USER_TARGET = config.getuser()  # 这是用户列表，从配置文件读取
 clash_path = config.get_clash_path()  # 为clash核心运行路径, Windows系统需要加后缀名.exe
 clash_work_path = config.get_clash_work_path()  # clash工作路径
 admin = config.getAdmin()  # 管理员
+config.add_user(admin)
+config.reload()
+USER_TARGET = config.getuser()  # 这是用户列表，从配置文件读取
 logger.info("管理员名单加载:" + str(admin))
 # 你的机器人的用户名
 USERNAME = "@AirportRoster_bot"
@@ -28,7 +30,8 @@ if admin is None:
     logger.error("获取管理员失败，将在5s后退出")
     time.sleep(5)
     sys.exit(1)
-USER_TARGET.extend(admin)
+
+
 logger.info("配置已加载")
 # 启动了一个clash常驻进程
 command = fr"{clash_path} -f {'./clash/proxy.yaml'} -d {clash_work_path}"
@@ -42,5 +45,4 @@ def reloadUser():
     global USER_TARGET
     config.reload(issave=False)
     USER_TARGET = config.getuser()
-    USER_TARGET.extend(admin)
     return USER_TARGET
