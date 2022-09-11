@@ -8,7 +8,7 @@ import botmodule
 q = asyncio.Queue(maxsize=1)
 
 
-async def bot_task_queue(client: Client, message, task_type:str, qu: asyncio.Queue):
+async def bot_task_queue(client: Client, message, task_type: str, qu: asyncio.Queue):
     """
     一个简单的任务队列
     :param client:
@@ -17,15 +17,15 @@ async def bot_task_queue(client: Client, message, task_type:str, qu: asyncio.Que
     :param qu:
     :return:
     """
-    if "test" in task_type:
+    if "test" in task_type and "url" not in task_type:
         await botmodule.test(client, message)
     elif "testurl" in task_type:
         await botmodule.testurl(client, message)
-    elif "analyze" in task_type:
+    elif "analyze" in task_type and "url" not in task_type:
         await botmodule.analyze(client, message)
     elif "analyzeurl" in task_type:
         await botmodule.analyzeurl(client, message)
-    elif "outbound" in task_type:
+    elif "outbound" in task_type and "url" not in task_type:
         await botmodule.analyze(client, message, test_type="outbound")
     elif "outboundurl" in task_type:
         await botmodule.analyzeurl(client, message, test_type="outbound")
