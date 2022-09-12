@@ -65,14 +65,6 @@ async def test_setting(client, callback_query):
     callback_data = callback_query.data
     mess_id = callback_query.message.id
     chat_id = callback_query.message.chat.id
-    # try:
-    #     if int(callback_query.from_user.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
-    #         await callback_query.answer(f"不要乱动别人的操作哟👻", show_alert=True)
-    #         return test_items, origin_message, message, test_type
-    # except AttributeError:
-    #     if int(callback_query.sender_chat.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
-    #         await callback_query.answer(f"不要乱动别人的操作哟👻", show_alert=True)
-    #         return test_items, origin_message, message, test_type
     if "✅" in callback_data:
         for b in buttonss:
             if b.text == callback_data:

@@ -24,10 +24,6 @@ def command_loader(app: Client):
         if await isuser(message, botmodule.init_bot.reloadUser()):
             await message.reply("请选择想要启用的测试项:", reply_markup=botmodule.IKM, quote=True)
 
-    @app.on_message(filters.command(["testurlold"]))
-    async def testurl_old(client, message):
-        await botmodule.testurl_old(client, message)
-
     @app.on_message(filters.command(["invite"]) & filters.user(admin), group=1)
     async def invite(client, message):
         await botmodule.invite(client, message)
@@ -61,10 +57,6 @@ def command_loader(app: Client):
         if await isuser(message, botmodule.init_bot.reloadUser()):
             await message.reply("请选择想要启用的测试项:", reply_markup=botmodule.IKM, quote=True)
             # await bot_put(client, message, "test")
-
-    @app.on_message(filters.command(["testold"]), group=8)
-    async def test_old(client, message):
-        await botmodule.test_old(client, message)
 
     @app.on_message(filters.command(["help", "start"]), group=9)
     async def help_and_start(client, message):
