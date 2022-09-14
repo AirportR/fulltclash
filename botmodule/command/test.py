@@ -6,7 +6,6 @@ import botmodule.init_bot
 from libs import cleaner, topotest, streamingtest
 from botmodule.init_bot import config
 
-test_members = 0
 USER_TARGET = botmodule.init_bot.USER_TARGET
 
 
@@ -16,21 +15,13 @@ def reloadUser():
     return USER_TARGET
 
 
-def reload_test_members():
-    global test_members
-    test_members = 0
-
-
 async def testurl(client, message):
-    global test_members
     back_message = await message.reply("╰(*°▽°*)╯流媒体测试进行中...")
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
-    test_members += 1
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
     try:
-        await streamingtest.core(client, message, back_message=back_message, test_members=test_members,
+        await streamingtest.core(client, message, back_message=back_message,
                                  start_time=start_time)
-        test_members -= 1
         ma.delsub(subname=start_time)
         ma.save(savePath='./clash/proxy.yaml')
     except RPCError as r:
@@ -41,14 +32,12 @@ async def testurl(client, message):
             text="出错啦"
         )
     except FloodWait as e:
-        test_members -= 1
         await asyncio.sleep(e.value)  # Wait "value" seconds before continuing
     except KeyboardInterrupt:
         await back_message.edit_text("程序已被强行中止")
 
 
 async def test(client, message):
-    global test_members
     back_message = await message.reply("╰(*°▽°*)╯流媒体测试进行中...")  # 发送提示
     arg = cleaner.ArgCleaner().getall(str(message.text))
     del arg[0]
@@ -62,12 +51,10 @@ async def test(client, message):
         await back_message.edit_text("❌发生错误，请检查订阅文件")
         return
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
-    test_members += 1
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
     try:
-        await streamingtest.core(client, message, back_message=back_message, test_members=test_members,
+        await streamingtest.core(client, message, back_message=back_message,
                                  start_time=start_time, suburl=suburl)
-        test_members -= 1
         ma.delsub(subname=start_time)
         ma.save(savePath='./clash/proxy.yaml')
     except RPCError as r:
@@ -78,22 +65,18 @@ async def test(client, message):
             text="出错啦"
         )
     except FloodWait as e:
-        test_members -= 1
         await asyncio.sleep(e.value)  # Wait "value" seconds before continuing
     except KeyboardInterrupt:
         await back_message.edit_text("程序已被强行中止")
 
 
 async def analyzeurl(client, message, test_type="all"):
-    global test_members
     back_message = await message.reply("╰(*°▽°*)╯节点链路拓扑测试进行中...")  # 发送提示
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
-    test_members += 1
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
     try:
-        await topotest.core(client, message, back_message=back_message, test_members=test_members,
+        await topotest.core(client, message, back_message=back_message,
                             start_time=start_time, test_type=test_type)
-        test_members -= 1
         ma.delsub(subname=start_time)
         ma.save(savePath='./clash/proxy.yaml')
     except RPCError as r:
@@ -104,14 +87,12 @@ async def analyzeurl(client, message, test_type="all"):
             text="出错啦"
         )
     except FloodWait as e:
-        test_members -= 1
         await asyncio.sleep(e.value)  # Wait "value" seconds before continuing
     except KeyboardInterrupt:
         await back_message.edit_text("程序已被强行中止")
 
 
 async def analyze(client, message, test_type="all"):
-    global test_members
     back_message = await message.reply("╰(*°▽°*)╯节点链路拓扑测试进行中...")  # 发送提示
     arg = cleaner.ArgCleaner().getall(str(message.text))
     del arg[0]
@@ -124,12 +105,10 @@ async def analyze(client, message, test_type="all"):
         await back_message.edit_text("❌发生错误，请检查订阅文件")
         return
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
-    test_members += 1
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
     try:
-        await topotest.core(client, message, back_message=back_message, test_members=test_members,
+        await topotest.core(client, message, back_message=back_message,
                             start_time=start_time, suburl=suburl, test_type=test_type)
-        test_members -= 1
         ma.delsub(subname=start_time)
         ma.save(savePath='./clash/proxy.yaml')
     except RPCError as r:
@@ -140,7 +119,6 @@ async def analyze(client, message, test_type="all"):
             text="出错啦"
         )
     except FloodWait as e:
-        test_members -= 1
         await asyncio.sleep(e.value)
     except KeyboardInterrupt:
         await back_message.edit_text("程序已被强行中止")

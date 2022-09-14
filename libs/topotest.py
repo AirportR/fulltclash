@@ -54,22 +54,17 @@ async def topo(file_path: str):
         return info, hosts, cl
 
 
-async def core(client, message, back_message, test_members, start_time, suburl: str = None, test_type="all"):
+async def core(client, message, back_message, start_time, suburl: str = None, test_type="all"):
     """
 
     :param client:
     :param message:
     :param back_message:
-    :param test_members:
     :param start_time:
     :param suburl:
     :param test_type: 测试类型，有三种：[仅入口，仅出口，全部]，默认测试全部
     :return:
     """
-    logger.info("当前序号:" + str(test_members))
-    if test_type != "inbound":
-        if await check.check_number(back_message, test_members):
-            return
     if suburl is not None:
         url = suburl
     else:

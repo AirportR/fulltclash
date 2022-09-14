@@ -66,26 +66,22 @@ async def batch_test(message, nodename: list, delays: list, test_items: list, pr
     return info
 
 
-async def core(client, message, back_message, test_members, start_time, suburl: str = None, media_items: list = None):
+async def core(client, message, back_message, start_time, suburl: str = None, media_items: list = None):
     """
 
     :param client:
     :param message: 发起测试任务的对象
     :param back_message: 回复的消息对象
-    :param test_members: 测试成员人数
-    :param start_time: 任务生成时间
-    :param suburl: 订阅地址
+    :param start_time: 任务生成时间，取名用的
+    :param suburl: 订阅地址,没有则尝试从配置文件匹配
     :param media_items: 测试的流媒体选项
     :return:
     """
-    logger.info("当前序号:" + str(test_members))
     info = {}  # 存放Netflix Youtube 等等
     if media_items is None:
         test_items = collector.media_items
     else:
         test_items = media_items
-    if await check.check_number(back_message, test_members):
-        return
     if suburl is not None:
         url = suburl
     else:

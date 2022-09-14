@@ -11,7 +11,7 @@ import time
 2、何为基础数据？
     基础数据决定了生成图片的高度（Height），它是列表，列表里面的数据一般是一组节点名，即有多少个节点就对应了info键值中的长度。
 """
-__version__ = "3.3.0"  # 版本号
+__version__ = "3.3.1"  # 版本号
 
 
 def color_block(size: tuple, color_value):
@@ -320,7 +320,7 @@ class ExportTopo(ExportResult):
         title = list1[0]
         idraw.text((self.get_mid(0, image_width, title), 1), title, font=fnt, fill=(0, 0, 0))  # 标题
         # idraw.text((10, image_height - 75), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
-        pilmoji.text((10, image_height - 80), text=list1[1], font=fnt, fill=(0, 0, 0))
+        pilmoji.text((10, image_height - 80), text=list1[1], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
         idraw.text((10, image_height - 40), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
         # 绘制标签
         idraw.text((20, 40), '序号', font=fnt, fill=(0, 0, 0))  # 序号
@@ -401,7 +401,7 @@ class ExportTopo(ExportResult):
         title = list1[0]
         idraw.text((self.get_mid(0, image_width, title), 1), title, font=fnt, fill=(0, 0, 0))  # 标题
         # idraw.text((10, image_height - 75), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
-        pilmoji.text((10, image_height - 80), text=list1[1], font=fnt, fill=(0, 0, 0))
+        pilmoji.text((10, image_height - 80), text=list1[1], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
         idraw.text((10, image_height - 40), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
         # 绘制标签
         idraw.text((20, 40), '序号', font=fnt, fill=(0, 0, 0))  # 序号
@@ -427,7 +427,7 @@ class ExportTopo(ExportResult):
                 elif t1 == "节点名称":
                     pilmoji.text((width + 10, (t + 2) * 40),
                                  self.info[t1][t],
-                                 font=fnt, fill=(0, 0, 0))
+                                 font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
                 else:
                     idraw.text((self.get_mid(width, width + info_list_length[i], self.info[t1][t]), (t + 2) * 40),
                                self.info[t1][t],

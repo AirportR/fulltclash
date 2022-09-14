@@ -74,7 +74,6 @@ def command_loader(app: Client):
 
     @app.on_message(filters.command(["reload"]) & filters.user(admin), group=12)
     async def reload_testmember(client, message):
-        botmodule.reload_test_members()
         botmodule.reloadUser()
         r1()
         r2()
