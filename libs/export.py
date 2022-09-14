@@ -113,7 +113,7 @@ class ExportResult:
         img_width = img_width + nodename_width + info_width
         return img_width, nodename_width, infolist_width
 
-    def get_mid(self, start, end, str_name):
+    def get_mid(self, start, end, str_name: str):
         """
         居中对齐的起始位置
         :param start:
@@ -148,7 +148,7 @@ class ExportResult:
         title = list1[0]
         idraw.text((self.get_mid(0, image_width, title), 5), title, font=fnt, fill=(0, 0, 0))  # 标题
         # idraw.text((10, image_height - 75), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
-        pilmoji.text((10, image_height - 75), text=list1[1], font=fnt, fill=(0, 0, 0))
+        pilmoji.text((10, image_height - 75), text=list1[1], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 3))
         idraw.text((10, image_height - 35), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
         '''
         :绘制标签
@@ -171,7 +171,7 @@ class ExportResult:
             idraw.text((self.get_mid(0, 100, str(t + 1)), 40 * (t + 2)), text=str(t + 1), font=fnt, fill=(0, 0, 0))
             # 节点名称
             # idraw.text((110, 40 * (t + 2)), text=self.nodename[t], font=fnt, fill=(0, 0, 0))
-            pilmoji.text((110, 40 * (t + 2)), text=self.nodename[t], font=fnt, fill=(0, 0, 0))
+            pilmoji.text((110, 40 * (t + 2)), text=self.nodename[t], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
             width = 100 + nodename_width
             i = 0
             # 填充颜色块

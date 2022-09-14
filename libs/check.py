@@ -229,3 +229,25 @@ def checkIPv4(ip):
         if _ip.group(0) == ip:
             return True
     return False
+
+
+async def progress(message, prog, *args):
+    """
+    进度反馈，bot负责发送给TG前端
+    :param message:
+    :param prog: 已完成节点数量
+    :param send_number:
+    :param args:
+    :return:
+    """
+    try:
+        nodenum = args[0]
+        cal = args[1]
+        p_text = "╰(*°▽°*)╯流媒体测试进行中...\n\n当前进度:\n" + "%.2f" % cal + "%     [" + str(prog) + "/" + str(nodenum) + "]"
+        try:
+            await message.edit_text(p_text)  # 实时反馈进度
+        except RPCError as r:
+            logger.error(str(r))
+    except Exception as e:
+        logger.error(str(e))
+

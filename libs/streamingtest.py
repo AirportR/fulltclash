@@ -59,16 +59,10 @@ async def batch_test(message, nodename: list, delays: list, test_items: list, pr
             info[test_items[i]].append(res[i])
         progress += 1
         cal = progress / nodenum * 100
-        p_text = "%.2f" % cal
         # 判断进度条，每隔10%发送一次反馈，有效防止洪水等待(FloodWait)
-        if cal >= sending_time:
+        if cal > sending_time:
+            await check.progress(message, progress, nodenum, cal)
             sending_time += 20
-            try:
-                await message.edit_text("╰(*°▽°*)╯流媒体测试进行中...\n\n" +
-                                        "当前进度:\n" + p_text +
-                                        "%     [" + str(progress) + "/" + str(nodenum) + "]")  # 实时反馈进度
-            except RPCError as r:
-                logger.error(r)
     return info
 
 
@@ -76,7 +70,7 @@ async def core(client, message, back_message, test_members, start_time, suburl: 
     """
 
     :param client:
-    :param message:
+    :param message: 发起测试任务的对象
     :param back_message: 回复的消息对象
     :param test_members: 测试成员人数
     :param start_time: 任务生成时间
@@ -90,7 +84,6 @@ async def core(client, message, back_message, test_members, start_time, suburl: 
         test_items = collector.media_items
     else:
         test_items = media_items
-    #print(test_items)
     if await check.check_number(back_message, test_members):
         return
     if suburl is not None:
