@@ -20,7 +20,7 @@ class IPCleaner:
             return None
 
     def get_org(self):
-        org = self.get('organization')
+        org = self.get('asn_organization')
         if org:
             return org
         else:

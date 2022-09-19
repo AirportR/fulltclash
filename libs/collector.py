@@ -402,22 +402,47 @@ class Collector:
         :return:
         """
         try:
-            dis1 = await session.get(self.disneyurl1, proxy=proxy, timeout=5)
-            dis2 = await session.get(self.disneyurl2, proxy=proxy, timeout=5)
-            if dis1.status == 200 and dis2.status != 403:
+            if reconnection == 0:
+                dis1 = await session.get(self.disneyurl1, proxy=proxy, timeout=5)
                 text1 = await dis1.text()
-                index = str(text1).find('Region', 0, 400)
-                region = text1[index + 8:index + 10]
-                if index == -1:
-                    self.info['disney'] = "待解锁"
-                elif dis1.history:
-                    if 300 <= dis1.history[0].status <= 399:
-                        self.info['disney'] = "待解({})".format(region)
+                dis1.close()
+                if dis1.status == 200:
+                    # text1 = await dis1.text()
+                    index = str(text1).find('Region', 0, 400)
+                    region = text1[index + 8:index + 10]
+                    if index == -1:
+                        self.info['disney'] = "待解锁"
+                    elif dis1.history:
+                        if 300 <= dis1.history[0].status <= 399:
+                            self.info['disney'] = "待解({})".format(region)
+                    else:
+                        self.info['disney'] = "解锁({})".format(region)
+                    logger.info("disney+ 成功访问(轻检测，检测结果准确率下降)")
+                elif 399 < dis1.status:
+                    self.info['disney'] = "N/A"
+                    logger.info(f"disney+ 访问错误 {dis1.status}")
                 else:
-                    self.info['disney'] = "解锁({})".format(region)
+                    self.info['disney'] = "失败"
             else:
-                self.info['disney'] = "失败"
-            logger.info("disney+ 成功访问")
+                dis1 = await session.get(self.disneyurl1, proxy=proxy, timeout=5)
+                text1 = await dis1.text()
+                dis1.close()
+                dis2 = await session.get(self.disneyurl2, proxy=proxy, timeout=5)
+                if dis1.status == 200 and dis2.status != 403:
+                    # text1 = await dis1.text()
+                    index = str(text1).find('Region', 0, 400)
+                    region = text1[index + 8:index + 10]
+                    if index == -1:
+                        self.info['disney'] = "待解锁"
+                    elif dis1.history:
+                        if 300 <= dis1.history[0].status <= 399:
+                            self.info['disney'] = "待解({})".format(region)
+                    else:
+                        self.info['disney'] = "解锁({})".format(region)
+                else:
+                    self.info['disney'] = "失败"
+                logger.info("disney+ 成功访问")
+                dis2.close()
         except ClientConnectorError as c:
             logger.warning("disney+请求发生错误:" + str(c))
             if reconnection != 0:
