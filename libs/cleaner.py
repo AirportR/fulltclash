@@ -548,6 +548,10 @@ class ReCleaner:
             elif i == "Dazn":
                 dazn = self.get_dazn_info()
                 info['Dazn'] = dazn
+            elif i == "Hbomax":
+                from addons import hbomax
+                hbomaxinfo = hbomax.get_hbomax_info(self)
+                info['Hbomax'] = hbomaxinfo
             else:
                 pass
         return info
@@ -569,10 +573,10 @@ class ReCleaner:
                 except KeyError as k:
                     logger.error(str(k))
                     return "N/A"
-                if isAllowed == False:
+                if not isAllowed:
                     logger.info("Dazn状态: " + "失败")
                     return "失败"
-                elif isAllowed == True:
+                elif isAllowed:
                     if region:
                         countrycode = region.upper()
                         logger.info("Dazn状态: " + "解锁({})".format(countrycode))

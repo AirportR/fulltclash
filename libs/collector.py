@@ -30,7 +30,7 @@ def reload_config(media: list = None):
     media_items = config.get_media_item()
     if media is not None:
         media_items = media
-        #print(media_items)
+        # print(media_items)
     # print(media_items)
 
 
@@ -239,6 +239,9 @@ class Collector:
                     elif i == "Dazn":
                         task7 = asyncio.create_task(self.fetch_dazn(session, proxy=proxy))
                         self.tasks.append(task7)
+                    elif i == "Hbomax":
+                        from addons import hbomax
+                        self.tasks.append(hbomax.task(self, session, proxy=proxy))
                     else:
                         pass
             return self.tasks
@@ -246,6 +249,7 @@ class Collector:
             logger.error(e)
             return None
 
+    # async def fetch_hbomax(self, session: aiohttp.ClientSession, proxy=None, reconnection=2):
     async def fetch_bilibili(self, session: aiohttp.ClientSession, flag=1, proxy=None, reconnection=2):
         """
         bilibili解锁测试，先测仅限台湾地区的限定资源，再测港澳台的限定资源
@@ -492,13 +496,6 @@ class Collector:
             return self.info
         except Exception as e:
             logger.error(e)
-            self.info['ip'] = "N/A"
-            self.info['netflix1'] = None
-            self.info['netflix2'] = None
-            self.info['youtube'] = None
-            self.info['ne_status_code1'] = None
-            self.info['ne_status_code2'] = None
-            self.info['youtube_status_code'] = None
             return self.info
 
 
