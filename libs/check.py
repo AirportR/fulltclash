@@ -38,13 +38,15 @@ async def check_callback_master(callback_query, USER_TARGET: list):
             return True
 
 
-async def check_user(message, USER_TARGET: list):
+async def check_user(message, USER_TARGET: list, isalert=True):
     """
-    检查是否是用，如果是返回真
+    检查是否是用户，如果是返回真
+    :param isalert: 是否发送反馈给bot前端
     :param USER_TARGET: 用户列表
     :param message: 消息对象
     :return: bool
     """
+    await asyncio.sleep(0.1)
     is_allow_visitor = False
     username = None
     if is_allow_visitor:
@@ -57,9 +59,10 @@ async def check_user(message, USER_TARGET: list):
         if username:
             if username not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
                 if int(message.from_user.id) not in USER_TARGET:
-                    m2 = await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
-                    await asyncio.sleep(10)
-                    await m2.delete()
+                    if isalert:
+                        m2 = await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
+                        await asyncio.sleep(10)
+                        await m2.delete()
                     return False
                 else:
                     return True
@@ -67,17 +70,19 @@ async def check_user(message, USER_TARGET: list):
                 return True
         else:
             if int(message.from_user.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
-                m2 = await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
-                await asyncio.sleep(10)
-                await m2.delete()
+                if isalert:
+                    m2 = await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
+                    await asyncio.sleep(10)
+                    await m2.delete()
                 return False
             else:
                 return True
     except AttributeError:
         if int(message.sender_chat.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
-            m2 = await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
-            await asyncio.sleep(10)
-            await m2.delete()
+            if isalert:
+                m2 = await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
+                await asyncio.sleep(10)
+                await m2.delete()
             return False
         else:
             return True
@@ -250,4 +255,3 @@ async def progress(message, prog, *args):
             logger.error(str(r))
     except Exception as e:
         logger.error(str(e))
-

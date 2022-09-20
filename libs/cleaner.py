@@ -246,11 +246,11 @@ class ConfigManager:
     #         for i in range(level):
     #             arg = string[i]
     #             return self.config
-    def getAdmin(self):
+    def getAdmin(self) -> list:
         try:
             return self.config['admin']
         except KeyError:
-            return None
+            return []
 
     def getuser(self):
         try:

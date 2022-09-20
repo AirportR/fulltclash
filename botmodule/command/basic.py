@@ -1,8 +1,36 @@
+import asyncio
+
+from loguru import logger
+
+from libs.check import check_user
+from botmodule import init_bot
+
 from pyrogram.errors import RPCError
 
+tourist_text = """
+    欢迎使用FullTclash bot,目前可用命令有:
 
-async def helps(client, message):
-    send_text = """
+/help & /start [游客]获取帮助菜单
+/inboundurl <订阅链接> [游客]临时下载订阅仅作入口分析
+
+如有使用问题加入频道 @FullTClash 交流
+"""
+user_text = """
+    欢迎使用FullTclash bot,目前可用命令有:
+
+/help & /start [游客]获取帮助菜单
+/inboundurl <订阅链接> [游客]临时下载订阅仅作入口分析
+/testurl <订阅链接> [用户]临时下载订阅进行一次流媒体测试
+/test <订阅名> [用户]进行一次流媒体测试测试
+/analyzeurl <订阅链接> [用户]临时下载订阅进行一次节点链路拓扑测试
+/analyze <订阅名> [用户]进行一次节点链路拓扑测试
+/inbound <订阅名> [用户]仅作入口分析
+/register & /baipiao <注册地址> [用户]远程注册并返回一个订阅（必须是V2board且无邮箱验证）
+
+如有使用问题加入频道 @FullTClash 交流
+"""
+
+admin_text = """
     欢迎使用FullTclash bot,目前可用命令有:
 
 /help & /start [游客]获取帮助菜单
@@ -24,7 +52,22 @@ async def helps(client, message):
 
 如有使用问题加入频道 @FullTClash 交流
     """
+
+
+async def helps(client, message):
+    USER_TARGET = init_bot.USER_TARGET
+    admin = init_bot.admin
+
+    if await check_user(message, admin, isalert=False):
+        send_text = admin_text
+    else:
+        if await check_user(message, USER_TARGET, isalert=False):
+            send_text = user_text
+        else:
+            send_text = tourist_text
     try:
-        await message.reply(send_text)
+        back_message = await message.reply(send_text)
+        await asyncio.sleep(30)
+        await back_message.delete()
     except RPCError as r:
-        print(r)
+        logger.error(str(r))
