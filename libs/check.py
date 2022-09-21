@@ -197,8 +197,8 @@ async def check_photo(message, back_message, name, nodenum, wtime):
     :return:
     """
     try:
-        if name is None:
-            m2 = await back_message.edit_text("⚠️生成图片失败,可能原因:节点名称包含国旗⚠️\n")
+        if name == '':
+            m2 = await back_message.edit_text("⚠️生成图片失败,可能原因: 节点过多/网络不稳定")
             await asyncio.sleep(10)
             await m2.delete()
         else:

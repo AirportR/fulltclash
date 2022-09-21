@@ -1,5 +1,7 @@
 import asyncio
 import time
+
+import requests.exceptions
 from pyrogram.errors import RPCError, FloodWait
 from loguru import logger
 from libs import cleaner, collector, export, proxys, check
@@ -127,9 +129,15 @@ async def core(client, message, back_message, start_time, suburl: str = None, me
         wtime = "%.1f" % float(time.time() - s1)
         info['wtime'] = wtime
         # 生成图片
-        stime = export.ExportResult(nodename=nodename, info=info).exportUnlock()
-        # 发送回TG
-        await check.check_photo(message, back_message, stime, nodenum, wtime)
+        try:
+            stime = export.ExportResult(nodename=nodename, info=info).exportUnlock()
+            # 发送回TG
+            await check.check_photo(message, back_message, stime, nodenum, wtime)
+        except requests.exceptions.ConnectionError:
+            # 出现这个异常大概率是因为 pilmoji这个库抽风了
+            stime = ''
+            # 遇到错误就发送错误信息给TG
+            await check.check_photo(message, back_message, stime, nodenum, wtime)
     except RPCError as r:
         logger.error(r)
         await back_message.edit_message_text("出错啦")

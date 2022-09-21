@@ -242,14 +242,16 @@ class Collector:
                     elif i == "Hbomax":
                         from addons import hbomax
                         self.tasks.append(hbomax.task(self, session, proxy=proxy))
+                    elif i == "Bahamut":
+                        from addons import bahamut
+                        self.tasks.append(bahamut.task(self, session, proxy=proxy))
                     else:
                         pass
             return self.tasks
         except Exception as e:
             logger.error(e)
-            return None
+            return []
 
-    # async def fetch_hbomax(self, session: aiohttp.ClientSession, proxy=None, reconnection=2):
     async def fetch_bilibili(self, session: aiohttp.ClientSession, flag=1, proxy=None, reconnection=2):
         """
         bilibili解锁测试，先测仅限台湾地区的限定资源，再测港澳台的限定资源

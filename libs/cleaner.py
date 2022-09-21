@@ -552,6 +552,9 @@ class ReCleaner:
                 from addons import hbomax
                 hbomaxinfo = hbomax.get_hbomax_info(self)
                 info['Hbomax'] = hbomaxinfo
+            elif i == "Bahamut":
+                from addons import bahamut
+                info['Bahamut'] = bahamut.get_bahamut_info(self)
             else:
                 pass
         return info

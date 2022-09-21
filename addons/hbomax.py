@@ -5,10 +5,10 @@ from aiohttp import ClientConnectorError
 from loguru import logger
 from pyrogram.types import InlineKeyboardButton
 
-hbomax_url = "https://www.hbomax.com/"
-
 
 # collector section
+hbomax_url = "https://www.hbomax.com/"
+
 
 async def fetch_hbomax(Collector, session: aiohttp.ClientSession, proxy=None, reconnection=2):
     """

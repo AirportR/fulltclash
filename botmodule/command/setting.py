@@ -3,6 +3,7 @@ from pyrogram import types
 from pyrogram.types import BotCommand
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from addons.hbomax import b9
+from addons.bahamut import b10
 b1 = InlineKeyboardButton("✅Netflix", callback_data='✅Netflix')
 b2 = InlineKeyboardButton("✅Youtube", callback_data='✅Youtube')
 b3 = InlineKeyboardButton("✅Disney+", callback_data='✅Disney+')
@@ -11,20 +12,18 @@ b5 = InlineKeyboardButton("✅Dazn", callback_data='✅Dazn')
 b6 = InlineKeyboardButton("🔒节点类型", callback_data='🔒节点类型')
 b7 = InlineKeyboardButton("🔒延迟RTT", callback_data='🔒延迟RTT')
 b8 = InlineKeyboardButton("👌完成设置", callback_data='👌完成设置')
-buttons = [b1, b2, b3, b4, b5, b8, b9]
+buttons = [b1, b2, b3, b4, b5, b8, b9, b10]
 IKM = InlineKeyboardMarkup(
     [
         # 第一行
         [b1, b2, b3],
         # 第二行
         [b4, b5, b9],
+        [b10],
         [b6, b7],
         [b8]
     ]
 )
-
-
-# test_items = []
 
 
 async def setcommands(client, message):
@@ -48,14 +47,14 @@ async def test_setting(client, callback_query):
     """
     message = None
     test_items = []
-    b11 = b1
-    b22 = b2
-    b33 = b3
-    b44 = b4
-    b55 = b5
-    b88 = b8
-    b99 = b9
-    buttonss = [b11, b22, b33, b44, b55, b88, b99]
+    # b11 = b1
+    # b22 = b2
+    # b33 = b3
+    # b44 = b4
+    # b55 = b5
+    # b88 = b8
+    # b99 = b9
+    buttonss = [b1, b2, b3, b4, b5, b8, b9, b10]
     text = "请选择想要启用的测试项:"
     origin_message = callback_query.message.reply_to_message
     try:
@@ -74,11 +73,12 @@ async def test_setting(client, callback_query):
                 IKM2 = InlineKeyboardMarkup(
                     [
                         # 第一行
-                        [b11, b22, b33],
+                        [b1, b2, b3],
                         # 第二行
-                        [b44, b55, b99],
+                        [b4, b5, b9],
+                        [b10],
                         [b6, b7],
-                        [b88]
+                        [b8]
                     ]
                 )
                 await client.edit_message_text(chat_id=chat_id,
@@ -94,11 +94,12 @@ async def test_setting(client, callback_query):
                 IKM2 = InlineKeyboardMarkup(
                     [
                         # 第一行
-                        [b11, b22, b33],
+                        [b1, b2, b3],
                         # 第二行
-                        [b44, b55, b99],
+                        [b4, b5, b9],
+                        [b10],
                         [b6, b7],
-                        [b88]
+                        [b8]
                     ]
                 )
                 await client.edit_message_text(chat_id=chat_id,
