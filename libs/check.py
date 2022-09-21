@@ -202,7 +202,7 @@ async def check_photo(message, back_message, name, nodenum, wtime):
             await asyncio.sleep(10)
             await m2.delete()
         else:
-            if nodenum > 25:
+            if nodenum:
                 await message.reply_document(r"./results/{}.png".format(name),
                                              caption="⏱️总共耗时: {}s".format(wtime))
             else:
