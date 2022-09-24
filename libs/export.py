@@ -11,7 +11,7 @@ import time
 2、何为基础数据？
     基础数据决定了生成图片的高度（Height），它是列表，列表里面的数据一般是一组节点名，即有多少个节点就对应了info键值中的长度。
 """
-__version__ = "3.3.2"  # 版本号
+__version__ = "3.3.3"  # 版本号
 
 
 def color_block(size: tuple, color_value):
@@ -171,7 +171,8 @@ class ExportResult:
             idraw.text((self.get_mid(0, 100, str(t + 1)), 40 * (t + 2)), text=str(t + 1), font=fnt, fill=(0, 0, 0))
             # 节点名称
             # idraw.text((110, 40 * (t + 2)), text=self.nodename[t], font=fnt, fill=(0, 0, 0))
-            pilmoji.text((110, 40 * (t + 2)), text=self.nodename[t], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
+            pilmoji.text((110, 40 * (t + 2)), text=self.nodename[t], font=fnt, fill=(0, 0, 0),
+                         emoji_position_offset=(0, 6))
             width = 100 + nodename_width
             i = 0
             # 填充颜色块
@@ -448,3 +449,114 @@ class ExportTopo(ExportResult):
             print(export_time)
             return export_time
         return img, image_height, image_width
+
+
+class ExportSpeed(ExportResult):
+    def __init__(self, name: list = None, info: dict = None):
+        super().__init__({}, [])
+        self.wtime = info.pop('wtime', "-1")
+        self.thread = str(info.pop('线程', ''))
+        self.traffic = "%.1f" % info.pop('消耗流量', '')
+        self.speedblock = info.pop('速度变化', [])
+        self.info = info
+        self.nodename = name
+        self.nodenum = len(name)
+        self.front_size = 30
+        self.__font = ImageFont.truetype(r"./resources/苹方黑体-准-简.ttf", self.front_size)
+
+    def exportImage(self):
+        fnt = self.__font
+        image_width, nodename_width, info_list_length = self.get_width()
+        image_height = self.get_height()
+        key_list = self.get_key_list()
+        img = Image.new("RGB", (image_width, image_height), (255, 255, 255))
+        pilmoji = Pilmoji(img)  # emoji表情修复
+        # 绘制色块
+        bkg = Image.new('RGB', (image_width, 80), (234, 234, 234))  # 首尾部填充
+        img.paste(bkg, (0, 0))
+        img.paste(bkg, (0, image_height - 80))
+        idraw = ImageDraw.Draw(img)
+        # 绘制标题栏与结尾栏
+        export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
+        list1 = ["FullTclash - 速度测试",
+                 f"版本:{__version__}     ⏱️总共耗时: {self.wtime}s   消耗流量: {self.traffic}MB   线程: {self.thread} ",
+                 "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time)]
+        export_time = export_time.replace(':', '-')
+        title = list1[0]
+        idraw.text((self.get_mid(0, image_width, title), 5), title, font=fnt, fill=(0, 0, 0))  # 标题
+        # idraw.text((10, image_height - 75), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
+        pilmoji.text((10, image_height - 75), text=list1[1], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 3))
+        idraw.text((10, image_height - 35), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
+
+        # 绘制标签
+        idraw.text((20, 40), '序号', font=fnt, fill=(0, 0, 0))  # 序号
+        idraw.text((self.get_mid(100, nodename_width + 100, '节点名称'), 40), '节点名称', font=fnt, fill=(0, 0, 0))  # 节点名称
+        start_x = 100 + nodename_width
+        m = 0  # 记录测试项数目
+        for i in info_list_length:
+            x = start_x
+            end = start_x + i
+            idraw.text((self.get_mid(x, end, key_list[m]), 40), key_list[m], font=fnt, fill=(0, 0, 0))
+            start_x = end
+            m = m + 1
+        '''
+        :内容填充
+        '''
+        for t in range(self.nodenum):
+            # 序号
+            idraw.text((self.get_mid(0, 100, str(t + 1)), 40 * (t + 2)), text=str(t + 1), font=fnt, fill=(0, 0, 0))
+            # 节点名称
+            # idraw.text((110, 40 * (t + 2)), text=self.nodename[t], font=fnt, fill=(0, 0, 0))
+            pilmoji.text((110, 40 * (t + 2)), text=self.nodename[t], font=fnt, fill=(0, 0, 0),
+                         emoji_position_offset=(0, 6))
+            width = 100 + nodename_width
+            i = 0
+            # 填充颜色块
+            c_block = {'成功': '#bee47e', '失败': '#ee6b73', 'N/A': '#8d8b8e', '待解锁': '#dcc7e1'}
+            for t1 in key_list:
+                if '解锁' in self.info[t1][t] and '待' not in self.info[t1][t]:
+                    block = color_block((info_list_length[i], 40), color_value=c_block['成功'])
+                    img.paste(block, (width, 40 * (t + 2)))
+                elif '失败' in self.info[t1][t]:
+                    block = color_block((info_list_length[i], 40), color_value=c_block['失败'])
+                    img.paste(block, (width, 40 * (t + 2)))
+                elif '待解' in self.info[t1][t]:
+                    block = color_block((info_list_length[i], 40), color_value=c_block['待解锁'])
+                    img.paste(block, (width, 40 * (t + 2)))
+                elif 'N/A' in self.info[t1][t]:
+                    block = color_block((info_list_length[i], 40), color_value=c_block['N/A'])
+                    img.paste(block, (width, 40 * (t + 2)))
+                else:
+                    pass
+                width += info_list_length[i]
+                i += 1
+            width = 100 + nodename_width
+            i = 0
+            for t2 in key_list:
+                if t2 == "平均速度" or t2 == "最大速度":
+                    idraw.text((self.get_mid(width, width + info_list_length[i], self.info[t2][t]), (t + 2) * 40),
+                               self.info[t2][t],
+                               font=fnt, fill=(0, 0, 0))
+                else:
+                    idraw.text((self.get_mid(width, width + info_list_length[i], self.info[t2][t]), (t + 2) * 40),
+                               self.info[t2][t],
+                               font=fnt, fill=(0, 0, 0))
+                width += info_list_length[i]
+                i += 1
+        '''
+        :添加横竖线条
+        '''
+        # 绘制横线
+        for t in range(self.nodenum + 3):
+            idraw.line([(0, 40 * (t + 1)), (image_width, 40 * (t + 1))], fill="#e1e1e1", width=1)
+        # 绘制竖线
+        idraw.line([(100, 40), (100, 80)], fill="#e1e1e1", width=2)
+        start_x = 100 + nodename_width
+        for i in info_list_length:
+            x = start_x
+            end = start_x + i
+            idraw.line([(x, 40), (x, image_height - 80)], fill="#e1e1e1", width=2)
+            start_x = end
+        print(export_time)
+        img.save(r"./results/{}.png".format(export_time.replace(':', '-')))
+        return export_time

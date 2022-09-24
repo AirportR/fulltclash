@@ -103,6 +103,16 @@ def command_loader(app: Client):
         if await isuser(message, botmodule.init_bot.reloadUser()):
             await bot_put(client, message, "outboundurl")
 
+    @app.on_message(filters.command(["speed"]), group=16)
+    async def speed(client, message):
+        if await isuser(message, botmodule.init_bot.reloadUser()):
+            await bot_put(client, message, "speed")
+
+    @app.on_message(filters.command(["speedurl"]), group=17)
+    async def speedurl(client, message):
+        if await isuser(message, botmodule.init_bot.reloadUser()):
+            await bot_put(client, message, "speedurl")
+
 
 def callback_loader(app: Client):
     @app.on_callback_query()
