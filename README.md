@@ -26,6 +26,10 @@ FullTclash bot 是承载其测试任务的Telegram 机器人（以下简称bot�
 - Bilibili
 
 - Dazn
+
+- Hbomax
+
+- Bahamut
   
 
 以及clash 延迟测试和链路拓扑测试（节点出入口分析）。
@@ -61,6 +65,8 @@ FullTclash bot 是承载其测试任务的Telegram 机器人（以下简称bot�
 - Python 3.5 以上
   
 - aiohttp>=3.8.1
+
+- aiohttp_socks>=0.7.1
   
 - async_timeout>=4.0.2
   
