@@ -512,20 +512,31 @@ class ExportSpeed(ExportResult):
             width = 100 + nodename_width
             i = 0
             # 填充颜色块
-            c_block = {'成功': '#bee47e', '失败': '#ee6b73', 'N/A': '#8d8b8e', '待解锁': '#dcc7e1'}
+            c_block = {'山矾': '#f5f3f2', '葭灰1': '#beb1aa', '桃夭5': '#f6bec8', '长春10': '#dc6b82', '牙绯20': '#c35c5d', '丹雘100': '#c8161d', '东方既白50': '#8ba3c7'}
             for t1 in key_list:
-                if '解锁' in self.info[t1][t] and '待' not in self.info[t1][t]:
-                    block = color_block((info_list_length[i], 40), color_value=c_block['成功'])
-                    img.paste(block, (width, 40 * (t + 2)))
-                elif '失败' in self.info[t1][t]:
-                    block = color_block((info_list_length[i], 40), color_value=c_block['失败'])
-                    img.paste(block, (width, 40 * (t + 2)))
-                elif '待解' in self.info[t1][t]:
-                    block = color_block((info_list_length[i], 40), color_value=c_block['待解锁'])
-                    img.paste(block, (width, 40 * (t + 2)))
-                elif 'N/A' in self.info[t1][t]:
-                    block = color_block((info_list_length[i], 40), color_value=c_block['N/A'])
-                    img.paste(block, (width, 40 * (t + 2)))
+                if t1 == "平均速度" or t1 == "最大速度":
+                    speedvalue = float(self.info[t1][t][:-2])
+                    if 0 <= speedvalue < 1:
+                        block = color_block((info_list_length[i], 40), color_value=c_block['山矾'])
+                        img.paste(block, (width, 40 * (t + 2)))
+                    elif 1 <= speedvalue < 5:
+                        block = color_block((info_list_length[i], 40), color_value=c_block['葭灰1'])
+                        img.paste(block, (width, 40 * (t + 2)))
+                    elif 5 <= speedvalue < 10:
+                        block = color_block((info_list_length[i], 40), color_value=c_block['桃夭5'])
+                        img.paste(block, (width, 40 * (t + 2)))
+                    elif 10 <= speedvalue < 20:
+                        block = color_block((info_list_length[i], 40), color_value=c_block['长春10'])
+                        img.paste(block, (width, 40 * (t + 2)))
+                    elif 20 <= speedvalue < 50:
+                        block = color_block((info_list_length[i], 40), color_value=c_block['牙绯20'])
+                        img.paste(block, (width, 40 * (t + 2)))
+                    elif 50 <= speedvalue < 100:
+                        block = color_block((info_list_length[i], 40), color_value=c_block['东方既白50'])
+                        img.paste(block, (width, 40 * (t + 2)))
+                    elif 100 <= speedvalue:
+                        block = color_block((info_list_length[i], 40), color_value=c_block['丹雘100'])
+                        img.paste(block, (width, 40 * (t + 2)))
                 else:
                     pass
                 width += info_list_length[i]
