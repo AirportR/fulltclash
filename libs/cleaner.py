@@ -233,19 +233,9 @@ class ConfigManager:
                 yaml.dump(di, fp)
             self.config = {}
 
-    # def get(self, string: tuple):
-    #     """
-    #     获取对应键的值，比如要获取 admin键的值，那么string参数传入(admin,)
-    #     要获取clash键下workpath键的值,那么string参数传入(clash,workpath)
-    #     :param string:
-    #     :param level:
-    #     :return:
-    #     """
-    #     level = len(string)
-    #     try:
-    #         for i in range(level):
-    #             arg = string[i]
-    #             return self.config
+    def getColor(self):
+        return self.config.get('color', {})
+
     def getAdmin(self) -> list:
         try:
             return self.config['admin']
@@ -703,7 +693,7 @@ class ReCleaner:
                     text = self.data['youtube']
                     s = text.find('contentRegion', 14000, 16000)
                     if s == -1:
-                        return "失败"
+                        return "解锁(未知)"
                     region = text[s + 16:s + 18]
                     logger.info("Youtube解锁地区: " + region)
                     return "解锁({})".format(region)

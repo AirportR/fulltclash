@@ -1,6 +1,7 @@
 from PIL import Image, ImageDraw, ImageFont
 from pilmoji import Pilmoji
 import time
+from libs.cleaner import ConfigManager
 
 """
 这是将测试的结果输出为图片的模块。
@@ -452,8 +453,19 @@ class ExportTopo(ExportResult):
 
 
 class ExportSpeed(ExportResult):
-    def __init__(self, name: list = None, info: dict = None):
+    def __init__(self, name: list = None, info: dict = None, config: ConfigManager = None):
+        """
+        速度测试图输出
+        :param name:
+        :param info:
+        :param config: 传入configmanager对象
+        """
         super().__init__({}, [])
+        if config:
+            self.config = config
+        else:
+            self.config = ConfigManager()
+        self.color = self.config.getColor().get('speed', [])
         self.wtime = info.pop('wtime', "-1")
         self.thread = str(info.pop('线程', ''))
         self.traffic = "%.1f" % info.pop('消耗流量', '')
@@ -463,6 +475,32 @@ class ExportSpeed(ExportResult):
         self.nodenum = len(name)
         self.front_size = 30
         self.__font = ImageFont.truetype(r"./resources/苹方黑体-准-简.ttf", self.front_size)
+
+    @property
+    def interval(self):
+        interval_list = []
+        for c in self.color:
+            interval_list.append(c.get('label', 0))
+        a = list(set(interval_list))  # 去重加排序
+        a.sort()
+        while len(a) < 7:
+            a.append(99999)
+        if len(a) > 7:
+            return a[:7]
+        else:
+            return a
+
+    @property
+    def colorvalue(self):
+        color_list = []
+        for c in self.color:
+            color_list.append(c.get('value', '#f5f3f2'))
+        while len(color_list) < 7:
+            color_list.append('#f5f3f2')
+        if len(color_list) > 7:
+            return color_list[:7]
+        else:
+            return color_list
 
     def exportImage(self):
         fnt = self.__font
@@ -502,6 +540,13 @@ class ExportSpeed(ExportResult):
         '''
         :内容填充
         '''
+        if self.color:
+            colorvalue = self.colorvalue
+            interval = self.interval
+        else:
+            # 默认值
+            colorvalue = ["#f5f3f2", "#beb1aa", "#f6bec8", "#dc6b82", "#c35c5d", "#8ba3c7", "#c8161d"]
+            interval = [0, 1, 5, 10, 20, 60, 100]
         for t in range(self.nodenum):
             # 序号
             idraw.text((self.get_mid(0, 100, str(t + 1)), 40 * (t + 2)), text=str(t + 1), font=fnt, fill=(0, 0, 0))
@@ -512,35 +557,36 @@ class ExportSpeed(ExportResult):
             width = 100 + nodename_width
             i = 0
             # 填充颜色块
-            c_block = {'山矾': '#f5f3f2', '葭灰1': '#beb1aa', '桃夭5': '#f6bec8', '长春10': '#dc6b82', '牙绯20': '#c35c5d', '丹雘100': '#c8161d', '东方既白50': '#8ba3c7'}
             for t1 in key_list:
+
                 if t1 == "平均速度" or t1 == "最大速度":
                     speedvalue = float(self.info[t1][t][:-2])
-                    if 0 <= speedvalue < 1:
-                        block = color_block((info_list_length[i], 40), color_value=c_block['山矾'])
+                    if interval[0] <= speedvalue < interval[1]:
+                        block = color_block((info_list_length[i], 40), color_value=colorvalue[0])
                         img.paste(block, (width, 40 * (t + 2)))
-                    elif 1 <= speedvalue < 5:
-                        block = color_block((info_list_length[i], 40), color_value=c_block['葭灰1'])
+                    elif interval[1] <= speedvalue < interval[2]:
+                        block = color_block((info_list_length[i], 40), color_value=colorvalue[1])
                         img.paste(block, (width, 40 * (t + 2)))
-                    elif 5 <= speedvalue < 10:
-                        block = color_block((info_list_length[i], 40), color_value=c_block['桃夭5'])
+                    elif interval[2] <= speedvalue < interval[3]:
+                        block = color_block((info_list_length[i], 40), color_value=colorvalue[2])
                         img.paste(block, (width, 40 * (t + 2)))
-                    elif 10 <= speedvalue < 20:
-                        block = color_block((info_list_length[i], 40), color_value=c_block['长春10'])
+                    elif interval[3] <= speedvalue < interval[4]:
+                        block = color_block((info_list_length[i], 40), color_value=colorvalue[3])
                         img.paste(block, (width, 40 * (t + 2)))
-                    elif 20 <= speedvalue < 50:
-                        block = color_block((info_list_length[i], 40), color_value=c_block['牙绯20'])
+                    elif interval[4] <= speedvalue < interval[5]:
+                        block = color_block((info_list_length[i], 40), color_value=colorvalue[4])
                         img.paste(block, (width, 40 * (t + 2)))
-                    elif 50 <= speedvalue < 100:
-                        block = color_block((info_list_length[i], 40), color_value=c_block['东方既白50'])
+                    elif interval[5] <= speedvalue < interval[6]:
+                        block = color_block((info_list_length[i], 40), color_value=colorvalue[5])
                         img.paste(block, (width, 40 * (t + 2)))
-                    elif 100 <= speedvalue:
-                        block = color_block((info_list_length[i], 40), color_value=c_block['丹雘100'])
+                    elif interval[6] <= speedvalue:
+                        block = color_block((info_list_length[i], 40), color_value=colorvalue[6])
                         img.paste(block, (width, 40 * (t + 2)))
                 else:
                     pass
                 width += info_list_length[i]
                 i += 1
+            # 填充字符
             width = 100 + nodename_width
             i = 0
             for t2 in key_list:
