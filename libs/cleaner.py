@@ -26,6 +26,13 @@ class IPCleaner:
         else:
             return ""
 
+    def get_ip(self):
+        ip = self.get('ip')
+        if ip:
+            return ip
+        else:
+            return ""
+
     def get_country_code(self):
         region_code = self.get('country_code')
         if region_code:

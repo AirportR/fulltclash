@@ -139,12 +139,24 @@ async def core(client, message, back_message, start_time, suburl: str = None, te
             country_code = []
             asn = []
             org = []
+            ipaddr = []
             for j in res:
                 ipcl = cleaner.IPCleaner(j)
                 country_code.append(ipcl.get_country_code())
                 asn.append(str(ipcl.get_asn()))
                 org.append(ipcl.get_org())
-            info2.update({'地区': country_code, 'AS编号': asn, '组织': org})
+                ip = ipcl.get_ip()
+                if len(ip) < 16:  # v4地址最大长度为15
+                    try:
+                        old_ip = ip.split('.')
+                        new_ip = "*.*.*." + old_ip[-1]
+                    except IndexError:
+                        new_ip = ip
+                    ipaddr.append(new_ip)
+                else:
+                    ipaddr.append("?")
+
+            info2.update({'地区': country_code, 'AS编号': asn, '组织': org, '出口ip': ipaddr})
             info2.update({'节点名称': nodename})
         # 计算测试消耗时间
         wtime = "%.1f" % float(time.time() - s1)
