@@ -62,6 +62,10 @@ def command_loader(app: Client):
     async def help_and_start(client, message):
         await botmodule.helps(client, message)
 
+    @app.on_message(filters.command(["version"]), group=9)
+    async def print_version(client, message):
+        await botmodule.version(client, message)
+
     @app.on_message(filters.command(["analyzeurl", "topourl"]), group=10)
     async def analyzeurl(client, message):
         if await isuser(message, botmodule.init_bot.reloadUser()):
