@@ -240,6 +240,9 @@ class ConfigManager:
                 yaml.dump(di, fp)
             self.config = {}
 
+    def getFont(self):
+        return self.config.get('font', "./resources/苹方黑体-准-简.ttf")
+
     def getColor(self):
         return self.config.get('color', {})
 

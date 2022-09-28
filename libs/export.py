@@ -38,7 +38,8 @@ class ExportResult:
         self.info = info
         self.nodenum = len(nodename)
         self.front_size = 30
-        self.__font = ImageFont.truetype(r"./resources/苹方黑体-准-简.ttf", self.front_size)
+        self.config = ConfigManager()
+        self.__font = ImageFont.truetype(self.config.getFont(), self.front_size)
 
     def get_height(self):
         """
@@ -240,7 +241,8 @@ class ExportTopo(ExportResult):
         else:
             self.info = info
         self.front_size = 30
-        self.__font = ImageFont.truetype(r"./resources/苹方黑体-准-简.ttf", self.front_size)
+        self.config = ConfigManager()
+        self.__font = ImageFont.truetype(self.config.getFont(), self.front_size)
 
     def get_width(self, compare: int = None):
         """
@@ -474,7 +476,8 @@ class ExportSpeed(ExportResult):
         self.nodename = name
         self.nodenum = len(name)
         self.front_size = 30
-        self.__font = ImageFont.truetype(r"./resources/苹方黑体-准-简.ttf", self.front_size)
+        self.config = ConfigManager()
+        self.__font = ImageFont.truetype(self.config.getFont(), self.front_size)
 
     @property
     def interval(self):
