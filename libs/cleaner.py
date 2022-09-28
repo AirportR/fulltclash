@@ -260,12 +260,20 @@ class ConfigManager:
         try:
             return self.config['proxyport']
         except KeyError:
-            logger.info("获取代理端口失败")
+            logger.info("获取代理端口失败(旧版)")
             return None
 
-    def get_proxy(self):
+    def get_proxy(self, isjoint=True):
+        """
+
+        :param isjoint: 是否拼接代理
+        :return:
+        """
         try:
-            return 'http://' + str(self.config['proxy'])
+            if isjoint:
+                return 'http://' + str(self.config['proxy'])
+            else:
+                return str(self.config['proxy'])
         except KeyError:
             # logger.info("当前未启用代理配置")
             return None

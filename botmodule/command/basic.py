@@ -1,11 +1,9 @@
 import asyncio
 
 from loguru import logger
-
+from pyrogram.errors import RPCError
 from libs.check import check_user
 from botmodule import init_bot
-
-from pyrogram.errors import RPCError
 
 tourist_text = """
     欢迎使用FullTclash bot,目前可用命令有:
