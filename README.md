@@ -99,7 +99,7 @@ pip install -r requirements.txt
 
 方法1： 您可以参阅[这篇文档](https://docs.pyrogram.org/start/auth)，以快速获得后缀为 .session 的文件
 
-方法2： 项目中./libs文件夹下有一个文件名为 login.py ，可以通过指令运行它：
+方法2： 项目根目录下有一个文件名为 login.py ，可以通过指令运行它：
 
 ```
 python .\login.py
@@ -133,7 +133,7 @@ chmod +x ./resources/clash-linux-amd64
   
   如果是在中国大陆地区使用，则程序需要代理才能连接上Telegram服务器。在config.yaml中写入如下信息： 
 ```
-  proxyport: 7890
+  proxy: 127.0.0.1:7890 #替换成自己的代理地址和端口
 ```
   
 ## 开始启动
@@ -141,10 +141,10 @@ chmod +x ./resources/clash-linux-amd64
 在项目目录下运行以下指令
 
 ```
-python .\main.py
+python main.py
 ```
 
-如果什么反应都没有，请按 Ctrl + C 一次，出现“程序已启动!”字样就说明在运行了.
+等待初始化操作，出现“程序已启动!”字样就说明在运行了.
 运行之后和bot私聊命令：
 
 /testurl 订阅地址(clash配置格式)
@@ -152,7 +152,8 @@ python .\main.py
 
 /help 可查看所有命令说明
 
-  
+## 为程序设置进程守护(Linux)
+由于Linux系统特性，关闭ssh连接后，前台程序会被关闭。您需要设置进程守护，才能在后台不间断地运行程序。具体方法Google搜索即可。
 
 # 交流探讨
 
