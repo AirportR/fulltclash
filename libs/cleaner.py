@@ -87,7 +87,7 @@ class ClashCleaner:
             return len(self.yaml['proxies'])
         except TypeError:
             logger.warning("读取节点信息失败！")
-            return None
+            return 0
 
     def nodesName(self):
         """

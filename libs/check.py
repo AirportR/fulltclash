@@ -155,11 +155,12 @@ async def check_nodes(message, nodenum, args: tuple, max_num=300):
     :param args: 若干信息
     :return: bool
     """
-    if nodenum is None:
+    if not nodenum:
         try:
             m2 = await message.edit_text("❌发生错误，请检查订阅文件")
             await asyncio.sleep(10)
             await m2.delete()
+            return True
         except RPCError as r:
             logger.error(r)
     for arg in args:

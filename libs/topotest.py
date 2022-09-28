@@ -85,6 +85,7 @@ async def core(client, message, back_message, start_time, suburl: str = None, te
             nodenum = cl.nodesCount()
     except Exception as e:
         logger.error(e)
+        nodenum = 0
     # 检查获得的数据
     if await check.check_nodes(back_message, nodenum, ()):
         return

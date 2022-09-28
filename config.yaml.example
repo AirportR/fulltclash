@@ -26,4 +26,13 @@ item: # 流媒体测试项，决定你想要测哪个项,目前仅支持以下�
 #  - { label: 20, name: '鸢尾', value: '#1988AE' }
 #  - { label: 60, name: '甸子', value: '#238BBC' }
 #  - { label: 100, name: '景泰', value: '#2A73AC' }
+# delay: #延迟单位: ms
+#  - { label: 1, name: '云水', value: '#B4C3D0' }
+#  - { label: 100, name: '晴山', value: '#91AEC4' }
+#  - { label: 200, name: '秋波', value: '#8BB8CB' }
+#  - { label: 300, name: '天韵', value: '#5796B3' }
+#  - { label: 500, name: '鸢尾', value: '#1988AE' }
+#  - { label: 1000, name: '甸子', value: '#238BBC' }
+#  - { label: 2000, name: '景泰', value: '#2A73AC' }
+#  - { label: 99999, name: '景泰', value: '#8d8b8e' }  #第八个为超时，label无用
 
