@@ -12,7 +12,7 @@ from libs.cleaner import ConfigManager
 2、何为基础数据？
     基础数据决定了生成图片的高度（Height），它是列表，列表里面的数据一般是一组节点名，即有多少个节点就对应了info键值中的长度。
 """
-__version__ = "3.3.5"  # 版本号
+__version__ = "3.3.6"  # 版本号
 
 
 def color_block(size: tuple, color_value):
@@ -528,6 +528,7 @@ class ExportSpeed(ExportResult):
         else:
             self.config = ConfigManager()
         self.color = self.config.getColor().get('speed', [])
+        self.emoji = self.config.config.get('emoji', False)
         self.wtime = info.pop('wtime', "-1")
         self.thread = str(info.pop('线程', ''))
         self.traffic = "%.1f" % info.pop('消耗流量', '')
@@ -585,8 +586,10 @@ class ExportSpeed(ExportResult):
         export_time = export_time.replace(':', '-')
         title = list1[0]
         idraw.text((self.get_mid(0, image_width, title), 5), title, font=fnt, fill=(0, 0, 0))  # 标题
-        # idraw.text((10, image_height - 75), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
-        pilmoji.text((10, image_height - 75), text=list1[1], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 3))
+        if self.emoji:
+            pilmoji.text((10, image_height - 75), text=list1[1], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 3))
+        else:
+            idraw.text((10, image_height - 75), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
         idraw.text((10, image_height - 35), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
 
         # 绘制标签
@@ -614,9 +617,11 @@ class ExportSpeed(ExportResult):
             # 序号
             idraw.text((self.get_mid(0, 100, str(t + 1)), 40 * (t + 2)), text=str(t + 1), font=fnt, fill=(0, 0, 0))
             # 节点名称
-            # idraw.text((110, 40 * (t + 2)), text=self.nodename[t], font=fnt, fill=(0, 0, 0))
-            pilmoji.text((110, 40 * (t + 2)), text=self.nodename[t], font=fnt, fill=(0, 0, 0),
-                         emoji_position_offset=(0, 6))
+            if self.emoji:
+                pilmoji.text((110, 40 * (t + 2)), text=self.nodename[t], font=fnt, fill=(0, 0, 0),
+                             emoji_position_offset=(0, 6))
+            else:
+                idraw.text((110, 40 * (t + 2)), text=self.nodename[t], font=fnt, fill=(0, 0, 0))
             width = 100 + nodename_width
             i = 0
             # 填充颜色块

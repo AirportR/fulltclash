@@ -41,3 +41,14 @@
 #  - { label: 32, name: '紫2', value: '#c26cff' }
 #  - { label: 40, name: '天蓝', value: '#66c0ff' }
 #  - { label: 50, name: '蓝', value: '#666fff' }
+
+#Group4 杰尼龟测速频道miaoko配色
+#color:
+# speed: # 刚刚好有七个颜色，多一个少一个可能会有奇怪的效果。注意缩进。
+#  - { label: 0, name: '1', value: '#fae0e4' }
+#  - { label: 12.5, name: '2', value: '#f7cad0' }
+#  - { label: 25, name: '3', value: '#f9bec7' }
+#  - { label: 50, name: '4', value: '#ff85a1' }
+#  - { label: 100, name: '5', value: '#ff7096' }
+#  - { label: 150, name: '6', value: '#ff5c8a' }
+#  - { label: 200, name: '7', value: '#ff477e' }

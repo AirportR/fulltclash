@@ -85,7 +85,8 @@ def command_loader(app: Client):
 
     @app.on_message(filters.command(["register", "baipiao"]), group=13)
     async def regis(client, message):
-        await botmodule.register.baipiao(client, message)
+        if await isuser(message, botmodule.init_bot.reloadUser()):
+            await botmodule.register.baipiao(client, message)
 
     @app.on_message(filters.command(["inbound"]), group=14)
     async def inbound(client, message):

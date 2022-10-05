@@ -234,6 +234,8 @@ async def core(client, message, back_message, start_time, suburl: str = None):
         wtime = "%.1f" % float(time.time() - s1)
         info['wtime'] = wtime
         info['线程'] = 4
+        cl1 = cleaner.ConfigManager(configpath=r"./results/{}.yaml".format(start_time.replace(':', '-')),data=info)
+        cl1.save(r"./results/{}.yaml".format(start_time.replace(':', '-')))
         try:
             stime = export.ExportSpeed(name=nodename, info=info).exportImage()
             # 发送回TG

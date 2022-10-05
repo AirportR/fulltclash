@@ -222,7 +222,7 @@ class ConfigManager:
     配置清洗
     """
 
-    def __init__(self, configpath="./config.yaml"):
+    def __init__(self, configpath="./config.yaml", data: dict = None):
         """
 
         """
@@ -232,13 +232,16 @@ class ConfigManager:
                 self.config = yaml.load(fp, Loader=yaml.FullLoader)
                 self.yaml.update(self.config)
         except FileNotFoundError:
-            logger.warning("未发现配置文件，自动生成中......")
             self.config = None
         if self.config is None:
             di = {'loader': "Success"}
             with open(configpath, "w+", encoding="UTF-8") as fp:
                 yaml.dump(di, fp)
             self.config = {}
+        if data:
+            with open(configpath, "w+", encoding="UTF-8") as fp:
+                yaml.dump(data, fp)
+            self.yaml = data
 
     def getFont(self):
         return self.config.get('font', "./resources/苹方黑体-准-简.ttf")
