@@ -98,7 +98,7 @@ class Speedtest:
 
 async def fetch(self, url: str, host: str, port: int, buffer: int):
     try:
-        logger.info(f"Fetching {url} via {host}:{port}.")
+        # logger.info(f"Fetching {url} via {host}:{port}.")
         async with aiohttp.ClientSession(
                 headers={"User-Agent": "curl/11.45.14"},
                 connector=ProxyConnector(host=host, port=port),
@@ -149,7 +149,7 @@ async def start(
 
 # ----------------------------------------------------------------------------------------------------------------------
 # 以下为 另一部分
-async def batch_speed(message, nodename: list, delays: list, proxygroup='auto'):
+async def batch_speed(message, nodename: list, proxygroup='auto'):
     info = {}
     progress = 0
     sending_time = 0
@@ -185,7 +185,7 @@ async def batch_speed(message, nodename: list, delays: list, proxygroup='auto'):
     return info
 
 
-async def core(client, message, back_message, start_time, suburl: str = None):
+async def core(message, back_message, start_time, suburl: str = None):
     info = {}
     if suburl is not None:
         url = suburl
@@ -225,7 +225,7 @@ async def core(client, message, back_message, start_time, suburl: str = None):
     rtt = check.check_rtt(old_rtt, nodenum)
     print("延迟:", rtt)
     try:
-        speedinfo = await batch_speed(back_message, nodename, delays=rtt)
+        speedinfo = await batch_speed(back_message, nodename)
         info['类型'] = nodetype
         info['延迟RTT'] = rtt
         info.update(speedinfo)

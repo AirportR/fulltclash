@@ -20,7 +20,7 @@ async def testurl(client, message):
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
     try:
-        await streamingtest.core(client, message, back_message=back_message,
+        await streamingtest.core(message, back_message=back_message,
                                  start_time=start_time)
         ma.delsub(subname=start_time)
         ma.save(savePath='./clash/proxy.yaml')
@@ -53,7 +53,7 @@ async def test(client, message):
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
     try:
-        await streamingtest.core(client, message, back_message=back_message,
+        await streamingtest.core(message, back_message=back_message,
                                  start_time=start_time, suburl=suburl)
         ma.delsub(subname=start_time)
         ma.save(savePath='./clash/proxy.yaml')
@@ -129,7 +129,7 @@ async def speedurl(client, message):
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
     try:
-        await speedtest.core(client, message, back_message=back_message,
+        await speedtest.core(message, back_message=back_message,
                              start_time=start_time)
         ma.delsub(subname=start_time)
         ma.save(savePath='./clash/proxy.yaml')
@@ -162,7 +162,7 @@ async def speed(client, message):
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
     try:
-        await speedtest.core(client, message, back_message=back_message,
+        await speedtest.core(message, back_message=back_message,
                              start_time=start_time, suburl=suburl)
         ma.delsub(subname=start_time)
         ma.save(savePath='./clash/proxy.yaml')

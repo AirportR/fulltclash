@@ -99,6 +99,9 @@ async def core(client, message, back_message, start_time, suburl: str = None, te
     info1, hosts, cl = await topo('./clash/sub{}.yaml'.format(start_time))
     wtime = "%.1f" % float(time.time() - s1)
     nodename = cl.nodesName()
+    cl2 = cleaner.ConfigManager(configpath=r"./results/Topo{}-inbound.yaml".format(start_time.replace(':', '-')),
+                                data=info1)
+    cl2.save(r"./results/Topo{}-inbound.yaml".format(start_time.replace(':', '-')))
     if test_type == "inbound":
         stime = export.ExportTopo(name=hosts, info=info1).exportTopoInbound()
         await check.check_photo(message, back_message, 'Topo' + stime, len(hosts), wtime)
@@ -161,6 +164,10 @@ async def core(client, message, back_message, start_time, suburl: str = None, te
             info2.update({'节点名称': nodename})
         # 计算测试消耗时间
         wtime = "%.1f" % float(time.time() - s1)
+
+        cl1 = cleaner.ConfigManager(configpath=r"./results/Topo{}-outbound.yaml".format(start_time.replace(':', '-')), data=info2)
+        cl1.save(r"./results/Topo{}-outbound.yaml".format(start_time.replace(':', '-')))
+
         # 生成图片
         img_outbound, yug, image_width2 = export.ExportTopo().exportTopoOutbound(nodename=nodename, info=info2)
         if test_type == "outbound":

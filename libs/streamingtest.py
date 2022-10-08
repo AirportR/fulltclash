@@ -68,10 +68,9 @@ async def batch_test(message, nodename: list, delays: list, test_items: list, pr
     return info
 
 
-async def core(client, message, back_message, start_time, suburl: str = None, media_items: list = None):
+async def core(message, back_message, start_time, suburl: str = None, media_items: list = None):
     """
 
-    :param client:
     :param message: 发起测试任务的对象
     :param back_message: 回复的消息对象
     :param start_time: 任务生成时间，取名用的
@@ -131,6 +130,11 @@ async def core(client, message, back_message, start_time, suburl: str = None, me
         # 计算测试消耗时间
         wtime = "%.1f" % float(time.time() - s1)
         info['wtime'] = wtime
+        # 保存结果
+        print(info)
+
+        cl1 = cleaner.ConfigManager(configpath=r"./results/{}.yaml".format(start_time.replace(':', '-')), data=info)
+        cl1.save(r"./results/{}.yaml".format(start_time.replace(':', '-')))
         # 生成图片
         try:
             stime = export.ExportResult(nodename=nodename, info=info).exportUnlock()
@@ -149,5 +153,6 @@ async def core(client, message, back_message, start_time, suburl: str = None, me
     except FloodWait as e:
         logger.error(str(e))
         await asyncio.sleep(e.value)
-
+    finally:
+        return info
 

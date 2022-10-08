@@ -2,6 +2,7 @@ from PIL import Image, ImageDraw, ImageFont
 from pilmoji import Pilmoji
 import time
 from libs.cleaner import ConfigManager
+from libs.emoji_custom import TwitterPediaSource
 
 """
 这是将测试的结果输出为图片的模块。
@@ -13,6 +14,7 @@ from libs.cleaner import ConfigManager
     基础数据决定了生成图片的高度（Height），它是列表，列表里面的数据一般是一组节点名，即有多少个节点就对应了info键值中的长度。
 """
 __version__ = "3.3.6"  # 版本号
+custom_source = TwitterPediaSource
 
 
 def color_block(size: tuple, color_value):
@@ -163,7 +165,7 @@ class ExportResult:
         image_height = self.get_height()
         key_list = self.get_key_list()
         img = Image.new("RGB", (image_width, image_height), (255, 255, 255))
-        pilmoji = Pilmoji(img)  # emoji表情修复
+        pilmoji = Pilmoji(img, source=custom_source)  # emoji表情修复
         # 绘制色块
         bkg = Image.new('RGB', (image_width, 80), (234, 234, 234))  # 首尾部填充
         img.paste(bkg, (0, 0))
@@ -370,7 +372,7 @@ class ExportTopo(ExportResult):
         image_height = self.get_height()
         key_list = self.get_key_list()
         img = Image.new("RGB", (image_width, image_height), (255, 255, 255))
-        pilmoji = Pilmoji(img)  # emoji表情修复
+        pilmoji = Pilmoji(img, source=custom_source)  # emoji表情修复
         # 绘制色块
         bkg = Image.new('RGB', (image_width, 80), (234, 234, 234))  # 首尾部填充
         img.paste(bkg, (0, 0))
@@ -572,7 +574,7 @@ class ExportSpeed(ExportResult):
         image_height = self.get_height()
         key_list = self.get_key_list()
         img = Image.new("RGB", (image_width, image_height), (255, 255, 255))
-        pilmoji = Pilmoji(img)  # emoji表情修复
+        pilmoji = Pilmoji(img, source=custom_source)  # emoji表情修复
         # 绘制色块
         bkg = Image.new('RGB', (image_width, 80), (234, 234, 234))  # 首尾部填充
         img.paste(bkg, (0, 0))
