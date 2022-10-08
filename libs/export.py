@@ -14,7 +14,7 @@ from libs.emoji_custom import TwitterPediaSource
     基础数据决定了生成图片的高度（Height），它是列表，列表里面的数据一般是一组节点名，即有多少个节点就对应了info键值中的长度。
 """
 __version__ = "3.3.6"  # 版本号
-custom_source = TwitterPediaSource
+custom_source = TwitterPediaSource # 自定义emoji风格
 
 
 def color_block(size: tuple, color_value):
@@ -530,7 +530,7 @@ class ExportSpeed(ExportResult):
         else:
             self.config = ConfigManager()
         self.color = self.config.getColor().get('speed', [])
-        self.emoji = self.config.config.get('emoji', False)
+        self.emoji = self.config.config.get('emoji', True)  # 是否启用emoji，若否，则在输出图片时emoji将无法正常显示
         self.wtime = info.pop('wtime', "-1")
         self.thread = str(info.pop('线程', ''))
         self.traffic = "%.1f" % info.pop('消耗流量', '')
