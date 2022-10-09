@@ -1,10 +1,9 @@
 import asyncio
 import time
 
-import requests.exceptions
 from pyrogram.errors import RPCError, FloodWait
 from loguru import logger
-from libs import cleaner, collector, export, proxys, check
+from libs import cleaner, collector, proxys, check
 
 """
 这个模块是流媒体测试的具体实现
@@ -89,13 +88,13 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
         text = str(message.text)
         url = cleaner.geturl(text)
         if await check.check_url(back_message, url):
-            return
+            return info
     print(url)
     # 订阅采集
     sub = collector.SubCollector(suburl=url)
     subconfig = await sub.getSubConfig(save_path='./clash/sub{}.yaml'.format(start_time))
     if await check.check_sub(back_message, subconfig):
-        return
+        return info
     try:
         # 启动订阅清洗
         with open('./clash/sub{}.yaml'.format(start_time), "r", encoding="UTF-8") as fp:
@@ -110,7 +109,7 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
         nodenum = None
     # 检查获得的数据
     if await check.check_nodes(back_message, nodenum, (nodename, nodetype,)):
-        return
+        return info
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
     ma.addsub(subname=start_time, subpath='./sub{}.yaml'.format(start_time))
     ma.save('./clash/proxy.yaml')
@@ -135,16 +134,6 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
         # 保存结果
         cl1 = cleaner.ConfigManager(configpath=r"./results/{}.yaml".format(start_time.replace(':', '-')), data=info)
         cl1.save(r"./results/{}.yaml".format(start_time.replace(':', '-')))
-        # 生成图片
-        try:
-            stime = export.ExportResult(nodename=nodename, info=info).exportUnlock()
-            # 发送回TG
-            await check.check_photo(message, back_message, stime, nodenum, wtime)
-        except requests.exceptions.ConnectionError:
-            # 出现这个异常大概率是因为 pilmoji这个库抽风了
-            stime = ''
-            # 遇到错误就发送错误信息给TG
-            await check.check_photo(message, back_message, stime, nodenum, wtime)
     except RPCError as r:
         logger.error(r)
         await back_message.edit_message_text("出错啦")
@@ -155,4 +144,3 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
         await asyncio.sleep(e.value)
     finally:
         return info
-

@@ -160,8 +160,7 @@ class ExportResult:
         return xpath
 
     def exportUnlock(self):
-        wtime = self.info['wtime']
-        del self.info['wtime']
+        wtime = self.info.pop('wtime', "0")
         fnt = self.__font
         image_width, nodename_width, info_list_length = self.get_width()
         image_height = self.get_height()
@@ -445,10 +444,9 @@ class ExportTopo(ExportResult):
             return export_time
 
     def exportTopoOutbound(self, nodename: list = None, info: dict = None, img2_width: int = None):
-        # wtime = self.info['wtime']
+        wtime = self.info.pop('wtime', '未知')
         if nodename and info:
             self.__init__(nodename, info)
-        wtime = "未知"
         fnt = self.__font
         image_width, info_list_length = self.get_width(compare=img2_width)
         image_height = self.get_height()

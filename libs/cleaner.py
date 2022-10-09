@@ -266,7 +266,6 @@ class ConfigManager:
         try:
             return self.config['proxyport']
         except KeyError:
-            logger.info("获取代理端口失败(旧版)")
             return None
 
     def get_proxy(self, isjoint=True):
@@ -281,14 +280,13 @@ class ConfigManager:
             else:
                 return str(self.config['proxy'])
         except KeyError:
-            # logger.info("当前未启用代理配置")
             return None
 
     def get_media_item(self):
         try:
             return self.config['item']
         except KeyError:
-            logger.error("获取测试项失败，将采用默认测试项：[Netflix,Youtube,Disney,Bilibili,Dazn]")
+            #logger.error("获取测试项失败，将采用默认测试项：[Netflix,Youtube,Disney,Bilibili,Dazn]")
             return ['Netflix', 'Youtube', 'Disney', 'Bilibili', 'Dazn']
 
     def get_clash_work_path(self):

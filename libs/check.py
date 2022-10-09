@@ -187,11 +187,10 @@ async def check_nodes(message, nodenum, args: tuple, max_num=300):
         return False
 
 
-async def check_photo(message, back_message, name, nodenum, wtime):
+async def check_photo(message, back_message, name, wtime):
     """
     检查图片是否生成成功
     :param wtime: 消耗时间
-    :param nodenum: 节点数量
     :param message: 消息对象
     :param back_message: 消息对象
     :param name: 图片名
@@ -203,12 +202,8 @@ async def check_photo(message, back_message, name, nodenum, wtime):
             await asyncio.sleep(10)
             await m2.delete()
         else:
-            if nodenum:
-                await message.reply_document(r"./results/{}.png".format(name),
-                                             caption="⏱️总共耗时: {}s".format(wtime))
-            else:
-                await message.reply_photo(r"./results/{}.png".format(name),
-                                          caption="⏱️总共耗时: {}s".format(wtime))
+            await message.reply_document(r"./results/{}.png".format(name),
+                                         caption="⏱️总共耗时: {}s".format(wtime))
             await back_message.delete()
             await message.delete()
     except RPCError as r:
@@ -229,7 +224,7 @@ def checkIPv4(ip):
     :param ip:
     :return:
     """
-    r = re.compile(r"\b((?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(?:(?<!\.)\b|\.)){4}")
+    r = re.compile(r"\b((?:25[0-5]|2[0-4]\d|[01]?\d\d?)(?:(?<!\.)\b|\.)){4}")
     _ip = r.match(ip)
     if _ip:
         if _ip.group(0) == ip:
@@ -242,7 +237,6 @@ async def progress(message, prog, *args):
     进度反馈，bot负责发送给TG前端
     :param message:
     :param prog: 已完成节点数量
-    :param send_number:
     :param args:
     :return:
     """
