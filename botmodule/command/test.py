@@ -156,6 +156,8 @@ async def analyze(_, message, test_type="all"):
         message.reply(str(r))
     except KeyboardInterrupt:
         await back_message.edit_text("程序已被强行中止")
+    except Exception as e:
+        logger.error(e)
 
 
 async def speedurl(_, message):

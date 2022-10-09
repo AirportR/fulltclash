@@ -444,7 +444,7 @@ class ExportTopo(ExportResult):
             return export_time
 
     def exportTopoOutbound(self, nodename: list = None, info: dict = None, img2_width: int = None):
-        wtime = self.info.pop('wtime', '未知')
+        wtime = info.pop('wtime', '未知')
         if nodename and info:
             self.__init__(nodename, info)
         fnt = self.__font
