@@ -163,6 +163,8 @@ async def batch_speed(message, nodename: list, proxygroup='auto'):
     for name in nodename:
         proxys.switchProxy_old(proxyName=name, proxyGroup=proxygroup, clashPort=1123)
         udptype, _, _, _, _ = nat_type_test('127.0.0.1', proxyport=1122)
+        if udptype is None:
+            udptype = "Unknown"
         res = await start(asyncio.Semaphore(4), "127.0.0.1", 1122, 4096, 4)
         avgspeed = "%.2f" % (res[0] / 1024 / 1024) + "MB"
         maxspeed = "%.2f" % (res[1] / 1024 / 1024) + "MB"
