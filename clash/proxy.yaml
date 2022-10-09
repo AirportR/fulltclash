@@ -32,15 +32,7 @@ proxy-groups:
   type: select
   use:
   - Default
-  - 2022-10-09T22-59-03
 proxy-providers:
-  2022-10-09T22-59-03:
-    health-check:
-      enable: true
-      interval: 600
-      url: http://www.gstatic.com/generate_204
-    path: ./sub2022-10-09T22-59-03.yaml
-    type: file
   Default:
     health-check:
       enable: true
