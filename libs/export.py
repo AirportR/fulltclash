@@ -14,7 +14,7 @@ from libs.emoji_custom import TwitterPediaSource
     基础数据决定了生成图片的高度（Height），它是列表，列表里面的数据一般是一组节点名，即有多少个节点就对应了info键值中的长度。
 """
 __version__ = "3.3.6"  # 版本号
-custom_source = TwitterPediaSource # 自定义emoji风格
+custom_source = TwitterPediaSource  # 自定义emoji风格
 
 
 def color_block(size: tuple, color_value):
@@ -35,10 +35,12 @@ class ExportResult:
 
     def __init__(self, info: dict, nodename: list = None):
         self.version = __version__
-        self.nodename = nodename
-        self.origin_info = info
+        self.basedata = info.pop('节点名称', nodename)
         self.info = info
-        self.nodenum = len(nodename)
+        if self.basedata:
+            self.nodenum = len(self.basedata)
+        else:
+            self.nodenum = 0
         self.front_size = 30
         self.config = ConfigManager()
         self.color = self.config.getColor().get('delay', [])
@@ -134,7 +136,7 @@ class ExportResult:
         :return:
         """
         img_width = 100  # 序号
-        nodename_width = self.text_maxwidth(self.nodename)
+        nodename_width = self.text_maxwidth(self.basedata)
         nodename_width = max(nodename_width, 420)
         nodename_width = nodename_width + 150
         infolist_width = self.key_value()
@@ -209,7 +211,7 @@ class ExportResult:
             idraw.text((self.get_mid(0, 100, str(t + 1)), 40 * (t + 2)), text=str(t + 1), font=fnt, fill=(0, 0, 0))
             # 节点名称
             # idraw.text((110, 40 * (t + 2)), text=self.nodename[t], font=fnt, fill=(0, 0, 0))
-            pilmoji.text((110, 40 * (t + 2)), text=self.nodename[t], font=fnt, fill=(0, 0, 0),
+            pilmoji.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
                          emoji_position_offset=(0, 6))
             width = 100 + nodename_width
             i = 0
@@ -291,17 +293,16 @@ class ExportTopo(ExportResult):
     """
 
     def __init__(self, name: list = None, info: dict = None):
-        super().__init__({}, [])
-        if name is None:
-            self.nodenum = 0
-            self.nodename = []
-        else:
-            self.nodename = name
-            self.nodenum = len(name)
+        super().__init__({})
         if info is None:
             self.info = {}
         else:
             self.info = info
+        if name is None:
+            self.basedata = self.info.get('地区', [])
+        else:
+            self.basedata = self.info.get('地区', name)
+        self.nodenum = len(self.basedata)
         self.front_size = 30
         self.config = ConfigManager()
         self.__font = ImageFont.truetype(self.config.getFont(), self.front_size)
@@ -381,7 +382,7 @@ class ExportTopo(ExportResult):
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
         list1 = ["FullTclash - 节点拓扑分析", "版本:{}     ⏱️总共耗时: {}".format(__version__, wtime),
-                 "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time)]
+                 "测试时间: {}  测试结果仅供参考".format(export_time)]
         export_time = export_time.replace(':', '-')
         title = list1[0]
         idraw.text((self.get_mid(0, image_width, title), 1), title, font=fnt, fill=(0, 0, 0))  # 标题
@@ -517,27 +518,27 @@ class ExportTopo(ExportResult):
 
 
 class ExportSpeed(ExportResult):
-    def __init__(self, name: list = None, info: dict = None, config: ConfigManager = None):
+    def __init__(self, name: list = None, info: dict = None):
         """
         速度测试图输出
         :param name:
         :param info:
-        :param config: 传入configmanager对象
         """
         super().__init__({}, [])
-        if config:
-            self.config = config
-        else:
-            self.config = ConfigManager()
+        self.config = ConfigManager()
         self.color = self.config.getColor().get('speed', [])
         self.emoji = self.config.config.get('emoji', True)  # 是否启用emoji，若否，则在输出图片时emoji将无法正常显示
+        if info is None: info = {}
         self.wtime = info.pop('wtime', "-1")
         self.thread = str(info.pop('线程', ''))
         self.traffic = "%.1f" % info.pop('消耗流量', '')
         self.speedblock = info.pop('速度变化', [])
         self.info = info
-        self.nodename = name
-        self.nodenum = len(name)
+        self.basedata = info.pop('节点名称', name)
+        if self.basedata:
+            self.nodenum = len(self.basedata)
+        else:
+            self.nodenum = 0
         self.front_size = 30
         self.config = ConfigManager()
         self.__font = ImageFont.truetype(self.config.getFont(), self.front_size)
@@ -620,10 +621,10 @@ class ExportSpeed(ExportResult):
             idraw.text((self.get_mid(0, 100, str(t + 1)), 40 * (t + 2)), text=str(t + 1), font=fnt, fill=(0, 0, 0))
             # 节点名称
             if self.emoji:
-                pilmoji.text((110, 40 * (t + 2)), text=self.nodename[t], font=fnt, fill=(0, 0, 0),
+                pilmoji.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
                              emoji_position_offset=(0, 6))
             else:
-                idraw.text((110, 40 * (t + 2)), text=self.nodename[t], font=fnt, fill=(0, 0, 0))
+                idraw.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0))
             width = 100 + nodename_width
             i = 0
             # 填充颜色块

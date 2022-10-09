@@ -116,12 +116,14 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
     ma.save('./clash/proxy.yaml')
     # 重载配置文件
     await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=1123)
+    logger.info("开始测试延迟...")
     s1 = time.time()
     old_rtt = await collector.delay_providers(providername=start_time)
     rtt = check.check_rtt(old_rtt, nodenum)
     print("延迟:", rtt)
     # 启动流媒体测试
     try:
+        info['节点名称'] = nodename
         test_info = await batch_test(back_message, nodename, rtt, test_items=test_items)
         info['类型'] = nodetype
         info['延迟RTT'] = rtt
@@ -131,8 +133,6 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
         wtime = "%.1f" % float(time.time() - s1)
         info['wtime'] = wtime
         # 保存结果
-        print(info)
-
         cl1 = cleaner.ConfigManager(configpath=r"./results/{}.yaml".format(start_time.replace(':', '-')), data=info)
         cl1.save(r"./results/{}.yaml".format(start_time.replace(':', '-')))
         # 生成图片

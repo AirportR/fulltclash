@@ -226,6 +226,7 @@ async def core(message, back_message, start_time, suburl: str = None):
     print("延迟:", rtt)
     try:
         speedinfo = await batch_speed(back_message, nodename)
+        info['节点名称'] = nodename
         info['类型'] = nodetype
         info['延迟RTT'] = rtt
         info.update(speedinfo)

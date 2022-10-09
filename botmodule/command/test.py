@@ -20,8 +20,9 @@ async def testurl(client, message):
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
     try:
-        await streamingtest.core(message, back_message=back_message,
-                                 start_time=start_time)
+        info = await streamingtest.core(message, back_message=back_message,
+                                        start_time=start_time)
+        print(info)
         ma.delsub(subname=start_time)
         ma.save(savePath='./clash/proxy.yaml')
     except RPCError as r:
@@ -53,8 +54,9 @@ async def test(client, message):
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
     try:
-        await streamingtest.core(message, back_message=back_message,
-                                 start_time=start_time, suburl=suburl)
+        info = await streamingtest.core(message, back_message=back_message,
+                                        start_time=start_time, suburl=suburl)
+        print(info)
         ma.delsub(subname=start_time)
         ma.save(savePath='./clash/proxy.yaml')
     except RPCError as r:

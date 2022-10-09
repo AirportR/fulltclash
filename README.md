@@ -66,33 +66,33 @@ FullTclash bot 是承载其测试任务的Telegram 机器人（以下简称bot�
 
 ## 环境准备
 
-- Python 3.5 以上
+- Python 3.6 以上
   
-- aiohttp>=3.8.1
-
-- aiohttp_socks>=0.7.1
-  
-- async_timeout>=4.0.2
-  
-- beautifulsoup4>=4.11.1
-  
-- Pillow>=9.2.0
-  
-- pilmoji>=2.0.1
-  
-- Pyrogram>=2.0.26
-  
-- PyYAML>=6.0
-  
-- requests>=2.26.0
+- 以及各种相关包依赖
   
 
-您可以用以下命令，在当前项目目录下运行以快速安装环境(Windows)：
+您可以用以下命令，在当前项目目录下运行以快速安装环境：
+
+Windows:
 
 ```
 pip install -r requirements.txt
 ```
 
+Linux:
+```
+pip3 install -r requirements.txt
+```
+
+## 拉取源码
+
+方法1：直接下载（不会有人不知道在哪下吧？）
+
+方法2：使用git（Linux推荐，方便更新），首先安装git，然后拉取仓库。以下指令为 Ubuntu 发行版作示例，Windows自行解决。
+```
+apt install -y git && git clone https://github.com/AirportR/FullTclash.git && cd FullTclash
+```
+此方法在中国大陆可能需要代理加速，请自行解决。
 ## 获取session文件
 
 您需要在项目文件目录下，放置一个已经登陆好的.session后缀文件，这个文件是程序生成的，形如： my_bot.session
@@ -110,7 +110,7 @@ python .\login.py
 
 这句话时，即可说明该session文件有效，否则无效。
 
-## 赋予clash核心执行权限(Linux amd64)
+## 赋予clash核心执行权限 (Linux)
 
 Windows系统无需此操作
 ```
