@@ -73,7 +73,7 @@ async def core(message, back_message, start_time, suburl: str = None, test_type=
         text = str(message.text)
         url = cleaner.geturl(text)
         if await check.check_url(back_message, url):
-            return
+            return info1, info2
     print(url)
     # 订阅采集
     sub = collector.SubCollector(suburl=url)
