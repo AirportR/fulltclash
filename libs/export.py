@@ -1,8 +1,11 @@
+import PIL
+from loguru import logger
 from PIL import Image, ImageDraw, ImageFont
 from pilmoji import Pilmoji
+from pilmoji.source import Twemoji
 import time
 from libs.cleaner import ConfigManager
-from libs.emoji_custom import TwitterPediaSource
+from addons.emoji_custom import TwitterPediaSource
 
 """
 这是将测试的结果输出为图片的模块。
@@ -14,7 +17,7 @@ from libs.emoji_custom import TwitterPediaSource
     基础数据决定了生成图片的高度（Height），它是列表，列表里面的数据一般是一组节点名，即有多少个节点就对应了info键值中的长度。
 """
 __version__ = "3.3.6"  # 版本号
-custom_source = TwitterPediaSource  # 自定义emoji风格
+custom_source = TwitterPediaSource  # 自定义emoji风格 TwitterPediaSource
 
 
 def color_block(size: tuple, color_value):
@@ -210,8 +213,15 @@ class ExportResult:
             idraw.text((self.get_mid(0, 100, str(t + 1)), 40 * (t + 2)), text=str(t + 1), font=fnt, fill=(0, 0, 0))
             # 节点名称
             # idraw.text((110, 40 * (t + 2)), text=self.nodename[t], font=fnt, fill=(0, 0, 0))
-            pilmoji.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
-                         emoji_position_offset=(0, 6))
+            try:
+                # 自定义emoji源可能出错，所以捕捉了异常
+                pilmoji.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
+                             emoji_position_offset=(0, 6))
+            except PIL.UnidentifiedImageError:
+                logger.warning("无效符号:" + self.basedata[t])
+                pilmoji2 = Pilmoji(img, source=Twemoji)
+                pilmoji2.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
+                              emoji_position_offset=(0, 6))
             width = 100 + nodename_width
             i = 0
             # 填充颜色块
