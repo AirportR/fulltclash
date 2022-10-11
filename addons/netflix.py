@@ -25,7 +25,6 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
             res = await session.get(netflix_url1, proxy=proxy, timeout=5)
             if res.status == 200:  # 解锁非自制
                 text = await res.text()
-                res.close()
                 try:
                     locate = text.find("preferredLocale")  # 定位到关键标签
                     if locate > 0:
@@ -38,24 +37,23 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
                     logger.error(e)
                     Collector.info['netflix_new'] = "N/A"
             else:
-                await fetch_netflix_new(Collector, session, flag=flag + 1, proxy=proxy, reconnection=2)
+                await fetch_netflix_new(Collector, session, flag=flag + 1, proxy=proxy, reconnection=reconnection)
         elif flag == 2:
             res = await session.get(netflix_url2, proxy=proxy, timeout=5)
             if res.status == 200:  # 解锁自制
                 Collector.info['netflix_new'] = "自制"
             else:
                 Collector.info['netflix_new'] = "失败"
-            res.close()
         else:
             return
     except ClientConnectorError as c:
         logger.warning("Netflix请求发生错误:" + str(c))
         if reconnection != 0:
-            await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=2)
+            await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection-1)
     except asyncio.exceptions.TimeoutError:
         logger.warning("Netflix请求超时，正在重新发送请求......")
         if reconnection != 0:
-            await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=2)
+            await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection-1)
 
 
 def task(Collector, session, proxy):
