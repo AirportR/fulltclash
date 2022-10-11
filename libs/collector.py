@@ -245,6 +245,9 @@ class Collector:
                     elif i == "Bahamut":
                         from addons import bahamut
                         self.tasks.append(bahamut.task(self, session, proxy=proxy))
+                    elif i == "Netflix(新)":
+                        from addons import netflix
+                        self.tasks.append((netflix.task(self, session, proxy=proxy)))
                     else:
                         pass
             return self.tasks
@@ -321,7 +324,7 @@ class Collector:
             self.info['ip'] = None
             return self.info
         except Exception as e:
-            logger.error(e)
+            logger.error(str(e))
 
     async def fetch_ninfo1(self, session: aiohttp.ClientSession, proxy=None, reconnection=2):
         """

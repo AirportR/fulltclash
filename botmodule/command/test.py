@@ -140,7 +140,7 @@ async def analyze(_, message, test_type="all"):
                 img_outbound, yug, image_width2 = export.ExportTopo().exportTopoOutbound(nodename=None,
                                                                                          info=info2)
                 wtime = info2.get('wtime', '未知')
-                if test_type == "outbound":
+                if test_type == "outbound":  # todo 修复出图
                     stime = export.ExportTopo(name=None, info=info2).exportTopoOutbound()
                 else:
                     stime = export.ExportTopo(name=None, info=info1).exportTopoInbound(info2.get('节点名称', []), info2,

@@ -286,7 +286,7 @@ class ConfigManager:
         try:
             return self.config['item']
         except KeyError:
-            #logger.error("获取测试项失败，将采用默认测试项：[Netflix,Youtube,Disney,Bilibili,Dazn]")
+            # logger.error("获取测试项失败，将采用默认测试项：[Netflix,Youtube,Disney,Bilibili,Dazn]")
             return ['Netflix', 'Youtube', 'Disney', 'Bilibili', 'Dazn']
 
     def get_clash_work_path(self):
@@ -537,35 +537,41 @@ class ReCleaner:
     def get_all(self):
         info = {}
         items = media_item
-        for item in items:
-            i = item.capitalize()
-            if i == "Netflix":
-                nf = self.getnetflixinfo()
-                info['Netflix'] = nf[len(nf) - 1]
-            elif i == "Youtube":
-                you = self.getyoutubeinfo()
-                info['Youtube'] = you
-            elif i == "Disney":
-                dis = self.getDisneyinfo()
-                info['Disney'] = dis
-            elif i == "Disney+":
-                dis = self.getDisneyinfo()
-                info['Disney+'] = dis
-            elif i == "Bilibili":
-                bili = self.get_bilibili_info()
-                info['Bilibili'] = bili
-            elif i == "Dazn":
-                dazn = self.get_dazn_info()
-                info['Dazn'] = dazn
-            elif i == "Hbomax":
-                from addons import hbomax
-                hbomaxinfo = hbomax.get_hbomax_info(self)
-                info['Hbomax'] = hbomaxinfo
-            elif i == "Bahamut":
-                from addons import bahamut
-                info['Bahamut'] = bahamut.get_bahamut_info(self)
-            else:
-                pass
+        try:
+            for item in items:
+                i = item.capitalize()
+                if i == "Netflix":
+                    nf = self.getnetflixinfo()
+                    info['Netflix'] = nf[len(nf) - 1]
+                elif i == "Youtube":
+                    you = self.getyoutubeinfo()
+                    info['Youtube'] = you
+                elif i == "Disney":
+                    dis = self.getDisneyinfo()
+                    info['Disney'] = dis
+                elif i == "Disney+":
+                    dis = self.getDisneyinfo()
+                    info['Disney+'] = dis
+                elif i == "Bilibili":
+                    bili = self.get_bilibili_info()
+                    info['Bilibili'] = bili
+                elif i == "Dazn":
+                    dazn = self.get_dazn_info()
+                    info['Dazn'] = dazn
+                elif i == "Hbomax":
+                    from addons import hbomax
+                    hbomaxinfo = hbomax.get_hbomax_info(self)
+                    info['Hbomax'] = hbomaxinfo
+                elif i == "Bahamut":
+                    from addons import bahamut
+                    info['Bahamut'] = bahamut.get_bahamut_info(self)
+                elif i == "Netflix(新)":
+                    from addons import netflix
+                    info['Netflix(新)'] = netflix.get_netflix_info_new(self)
+                else:
+                    pass
+        except Exception as e:
+            logger.error(str(e))
         return info
 
     def get_dazn_info(self):

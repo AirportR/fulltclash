@@ -162,6 +162,7 @@ class ExportResult:
         xpath = mid_xpath - strname_width / 2
         return xpath
 
+    @logger.catch
     def exportUnlock(self):
         wtime = self.info.pop('wtime', "0")
         fnt = self.__font
@@ -374,6 +375,7 @@ class ExportTopo(ExportResult):
             key_list.append(i)
         return key_list
 
+    @logger.catch
     def exportTopoInbound(self, nodename: list = None, info2: dict = None, img2_width: int = None):
         # wtime = self.info['wtime']
         wtime = "未知"
@@ -453,6 +455,7 @@ class ExportTopo(ExportResult):
             img.save(r"./results/Topo{}.png".format(export_time.replace(':', '-')))
             return export_time
 
+    @logger.catch
     def exportTopoOutbound(self, nodename: list = None, info: dict = None, img2_width: int = None):
         wtime = info.pop('wtime', '未知')
         if nodename and info:
@@ -577,6 +580,7 @@ class ExportSpeed(ExportResult):
         else:
             return color_list
 
+    @logger.catch
     def exportImage(self):
         fnt = self.__font
         image_width, nodename_width, info_list_length = self.get_width()
