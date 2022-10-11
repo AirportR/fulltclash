@@ -25,6 +25,7 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
             res = await session.get(netflix_url1, proxy=proxy, timeout=5)
             if res.status == 200:  # 解锁非自制
                 text = await res.text()
+                res.close()
                 try:
                     locate = text.find("preferredLocale")  # 定位到关键标签
                     if locate > 0:
@@ -44,6 +45,7 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
                 Collector.info['netflix_new'] = "自制"
             else:
                 Collector.info['netflix_new'] = "失败"
+            res.close()
         else:
             return
     except ClientConnectorError as c:
