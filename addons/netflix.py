@@ -22,28 +22,28 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
     """
     try:
         if flag == 1:
-            res = await session.get(netflix_url1, proxy=proxy, timeout=5)
-            if res.status == 200:  # 解锁非自制
-                text = await res.text()
-                try:
-                    locate = text.find("preferredLocale")  # 定位到关键标签
-                    if locate > 0:
-                        region = text[locate + 29:locate + 31]
-                        Collector.info['netflix_new'] = f"解锁({region})"
-                    else:
-                        region = "未知"
-                        Collector.info['netflix_new'] = f"解锁({region})"
-                except Exception as e:
-                    logger.error(e)
-                    Collector.info['netflix_new'] = "N/A"
-            else:
-                await fetch_netflix_new(Collector, session, flag=flag + 1, proxy=proxy, reconnection=reconnection)
+            async with session.get(netflix_url1, proxy=proxy, timeout=5) as res:
+                if res.status == 200:  # 解锁非自制
+                    text = await res.text()
+                    try:
+                        locate = text.find("preferredLocale")  # 定位到关键标签
+                        if locate > 0:
+                            region = text[locate + 29:locate + 31]
+                            Collector.info['netflix_new'] = f"解锁({region})"
+                        else:
+                            region = "未知"
+                            Collector.info['netflix_new'] = f"解锁({region})"
+                    except Exception as e:
+                        logger.error(e)
+                        Collector.info['netflix_new'] = "N/A"
+                else:
+                    await fetch_netflix_new(Collector, session, flag=flag + 1, proxy=proxy, reconnection=reconnection)
         elif flag == 2:
-            res = await session.get(netflix_url2, proxy=proxy, timeout=5)
-            if res.status == 200:  # 解锁自制
-                Collector.info['netflix_new'] = "自制"
-            else:
-                Collector.info['netflix_new'] = "失败"
+            async with session.get(netflix_url2, proxy=proxy, timeout=5) as res:
+                if res.status == 200:  # 解锁自制
+                    Collector.info['netflix_new'] = "自制"
+                else:
+                    Collector.info['netflix_new'] = "失败"
         else:
             return
     except ClientConnectorError as c:

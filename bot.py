@@ -142,16 +142,20 @@ async def bot_put(client, message, put_type: str, test_items: list = None):
     """
     global task_num
     task_num += 1
-    mes = await message.reply("排队中,前方队列任务数量为: " + str(task_num - 1))
-    await q.put(message)
-    if test_items is None:
-        test_items = []
-    logger.info("任务测试项为: " + str(test_items))
-    r1(test_items)
-    r2(test_items)
-    await asyncio.sleep(2)
-    await mes.edit_text("任务已提交")
-    await bot_task_queue(client, message, put_type, q)
-    task_num -= 1
-    await asyncio.sleep(10)
-    await mes.delete()
+    try:
+        if test_items is None:
+            test_items = []
+        logger.info("任务测试项为: " + str(test_items))
+        mes = await message.reply("排队中,前方队列任务数量为: " + str(task_num - 1))
+        await q.put(message)
+        r1(test_items)
+        r2(test_items)
+        await mes.edit_text("任务已提交")
+        await bot_task_queue(client, message, put_type, q)
+        task_num -= 1
+        await asyncio.sleep(10)
+        await mes.delete()
+    except AttributeError as a:
+        logger.error(str(a))
+    except Exception as e:
+        logger.error(str(e))

@@ -542,7 +542,7 @@ class ExportSpeed(ExportResult):
         if info is None: info = {}
         self.wtime = info.pop('wtime', "-1")
         self.thread = str(info.pop('线程', ''))
-        self.traffic = "%.1f" % info.pop('消耗流量', '')
+        self.traffic = "%.1f" % info.pop('消耗流量', 0)
         self.speedblock = info.pop('速度变化', [])
         self.info = info
         self.basedata = info.pop('节点名称', name)
