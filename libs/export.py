@@ -503,9 +503,16 @@ class ExportTopo(ExportResult):
                                self.info[t1][t],
                                font=fnt, fill=(0, 0, 0))
                 elif t1 == "节点名称":
-                    pilmoji.text((width + 10, (t + 2) * 40),
-                                 self.info[t1][t],
-                                 font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
+                    try:
+                        pilmoji.text((width + 10, (t + 2) * 40),
+                                     self.info[t1][t],
+                                     font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
+                    except PIL.UnidentifiedImageError:
+                        logger.warning("无效符号:" + self.basedata[t])
+                        pilmoji2 = Pilmoji(img, source=Twemoji)
+                        pilmoji2.text((width + 10, (t + 2) * 40),
+                                      self.info[t1][t],
+                                      font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
                 else:
                     idraw.text((self.get_mid(width, width + info_list_length[i], self.info[t1][t]), (t + 2) * 40),
                                self.info[t1][t],
@@ -634,8 +641,15 @@ class ExportSpeed(ExportResult):
             idraw.text((self.get_mid(0, 100, str(t + 1)), 40 * (t + 2)), text=str(t + 1), font=fnt, fill=(0, 0, 0))
             # 节点名称
             if self.emoji:
-                pilmoji.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
-                             emoji_position_offset=(0, 6))
+                try:
+                    # 自定义emoji源可能出错，所以捕捉了异常
+                    pilmoji.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
+                                 emoji_position_offset=(0, 6))
+                except PIL.UnidentifiedImageError:
+                    logger.warning("无效符号:" + self.basedata[t])
+                    pilmoji2 = Pilmoji(img, source=Twemoji)
+                    pilmoji2.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
+                                  emoji_position_offset=(0, 6))
             else:
                 idraw.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0))
             width = 100 + nodename_width
