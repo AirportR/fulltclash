@@ -458,7 +458,7 @@ class ExportTopo(ExportResult):
     @logger.catch
     def exportTopoOutbound(self, nodename: list = None, info: dict = None, img2_width: int = None):
         wtime = info.pop('wtime', '未知')
-        if nodename and info:
+        if nodename or info:
             self.__init__(nodename, info)
         fnt = self.__font
         image_width, info_list_length = self.get_width(compare=img2_width)
@@ -539,7 +539,8 @@ class ExportSpeed(ExportResult):
         self.config = ConfigManager()
         self.color = self.config.getColor().get('speed', [])
         self.emoji = self.config.config.get('emoji', True)  # 是否启用emoji，若否，则在输出图片时emoji将无法正常显示
-        if info is None: info = {}
+        if info is None:
+            info = {}
         self.wtime = info.pop('wtime', "-1")
         self.thread = str(info.pop('线程', ''))
         self.traffic = "%.1f" % info.pop('消耗流量', 0)

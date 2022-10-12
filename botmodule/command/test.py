@@ -35,8 +35,8 @@ async def testurl(_, message):
         message.reply(str(r))
     except FloodWait as e:
         await asyncio.sleep(e.value)
-    except KeyboardInterrupt:
-        await back_message.edit_text("程序已被强行中止")
+    except Exception as e:
+        logger.error(e)
 
 
 async def test(_, message):
@@ -69,8 +69,8 @@ async def test(_, message):
         message.reply(str(r))
     except FloodWait as e:
         await asyncio.sleep(e.value)  # Wait "value" seconds before continuing
-    except KeyboardInterrupt:
-        await back_message.edit_text("程序已被强行中止")
+    except Exception as e:
+        logger.error(e)
 
 
 async def analyzeurl(_, message, test_type="all"):
@@ -107,8 +107,8 @@ async def analyzeurl(_, message, test_type="all"):
         message.reply(str(r))
     except FloodWait as e:
         await asyncio.sleep(e.value)
-    except KeyboardInterrupt:
-        await back_message.edit_text("程序已被强行中止")
+    except Exception as e:
+        logger.error(e)
 
 
 async def analyze(_, message, test_type="all"):
@@ -140,7 +140,7 @@ async def analyze(_, message, test_type="all"):
                 img_outbound, yug, image_width2 = export.ExportTopo().exportTopoOutbound(nodename=None,
                                                                                          info=info2)
                 wtime = info2.get('wtime', '未知')
-                if test_type == "outbound":  # todo 修复出图
+                if test_type == "outbound":
                     stime = export.ExportTopo(name=None, info=info2).exportTopoOutbound()
                 else:
                     stime = export.ExportTopo(name=None, info=info1).exportTopoInbound(info2.get('节点名称', []), info2,
@@ -178,8 +178,8 @@ async def speedurl(_, message):
         message.reply(str(r))
     except FloodWait as e:
         await asyncio.sleep(e.value)
-    except KeyboardInterrupt:
-        await back_message.edit_text("程序已被强行中止")
+    except Exception as e:
+        logger.error(e)
 
 
 async def speed(_, message):
@@ -210,5 +210,5 @@ async def speed(_, message):
         message.reply(str(r))
     except FloodWait as e:
         await asyncio.sleep(e.value)
-    except KeyboardInterrupt:
-        await back_message.edit_text("程序已被强行中止")
+    except Exception as e:
+        logger.error(e)

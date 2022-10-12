@@ -1,12 +1,13 @@
 import asyncio
 
-import loguru
+from loguru import logger
 from pyrogram import types
 from pyrogram.types import BotCommand
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from addons.hbomax import b9
 from addons.bahamut import b10
 from addons.netflix import button as b11
+
 b1 = InlineKeyboardButton("✅Netflix", callback_data='✅Netflix')
 b2 = InlineKeyboardButton("✅Youtube", callback_data='✅Youtube')
 b3 = InlineKeyboardButton("✅Disney+", callback_data='✅Disney+')
@@ -44,6 +45,7 @@ async def setcommands(client):
         ], scope=my)
 
 
+@logger.catch()
 async def test_setting(client, callback_query):
     """
     收到测试指令后对测试项进行动态调整
@@ -63,12 +65,15 @@ async def test_setting(client, callback_query):
         test_type = str(origin_message.text).split(" ")[0]
     except Exception as e:
         test_type = "unknown"
-        loguru.logger.info("test_type:" + test_type)
-        loguru.logger.warning(str(e))
+        logger.info("test_type:" + test_type)
+        logger.warning(str(e))
     if origin_message is None:
-        await client.edit_message_text(chat_id=chat_id,
-                                       message_id=mess_id,
-                                       text="⚠️无法获取发起该任务的源消息，任务已取消~")
+        logger.warning("⚠️无法获取发起该任务的源消息，任务已取消~")
+        m2 = await client.edit_message_text(chat_id=chat_id,
+                                            message_id=mess_id,
+                                            text="⚠️无法获取发起该任务的源消息，任务已取消~")
+        await asyncio.sleep(10)
+        await m2.delete()
         return test_items, origin_message, message, test_type
     if "✅" in callback_data:
         for b in buttonss:
