@@ -23,6 +23,7 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
     try:
         if flag == 1:
             async with session.get(netflix_url1, proxy=proxy, timeout=5) as res:
+                print("n1状态: ", res.status)
                 if res.status == 200:  # 解锁非自制
                     text = await res.text()
                     try:
@@ -40,6 +41,7 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
                     await fetch_netflix_new(Collector, session, flag=flag + 1, proxy=proxy, reconnection=reconnection)
         elif flag == 2:
             async with session.get(netflix_url2, proxy=proxy, timeout=5) as res:
+                print("n2状态: ", res.status)
                 if res.status == 200:  # 解锁自制
                     Collector.info['netflix_new'] = "自制"
                 else:
