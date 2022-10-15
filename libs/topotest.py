@@ -5,7 +5,8 @@ import aiohttp
 from loguru import logger
 from pyrogram.errors import RPCError, FloodWait
 
-from libs import cleaner, collector, sorter, check, proxys, export
+from libs import cleaner, collector, sorter, check, proxys
+
 """
 这个模块是拓扑测试（出入口落地分析）的具体实现
 """
@@ -54,10 +55,9 @@ async def topo(file_path: str):
         return info, hosts, cl
 
 
-async def core(client, message, back_message, start_time, suburl: str = None, test_type="all"):
+async def core(message, back_message, start_time, suburl: str = None, test_type="all"):
     """
 
-    :param client:
     :param message:
     :param back_message:
     :param start_time:
@@ -65,19 +65,21 @@ async def core(client, message, back_message, start_time, suburl: str = None, te
     :param test_type: 测试类型，有三种：[仅入口，仅出口，全部]，默认测试全部
     :return:
     """
+    info1 = {}
+    info2 = {}
     if suburl is not None:
         url = suburl
     else:
         text = str(message.text)
         url = cleaner.geturl(text)
         if await check.check_url(back_message, url):
-            return
+            return info1, info2
     print(url)
     # 订阅采集
     sub = collector.SubCollector(suburl=url)
     subconfig = await sub.getSubConfig(save_path='./clash/sub{}.yaml'.format(start_time))
     if await check.check_sub(back_message, subconfig):
-        return
+        return info1, info2
     try:
         # 启动订阅清洗
         with open('./clash/sub{}.yaml'.format(start_time), "r", encoding="UTF-8") as fp:
@@ -88,7 +90,7 @@ async def core(client, message, back_message, start_time, suburl: str = None, te
         nodenum = 0
     # 检查获得的数据
     if await check.check_nodes(back_message, nodenum, ()):
-        return
+        return info1, info2
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
     ma.addsub(subname=start_time, subpath='./sub{}.yaml'.format(start_time))
     ma.save('./clash/proxy.yaml')
@@ -97,12 +99,12 @@ async def core(client, message, back_message, start_time, suburl: str = None, te
 
     s1 = time.time()
     info1, hosts, cl = await topo('./clash/sub{}.yaml'.format(start_time))
-    wtime = "%.1f" % float(time.time() - s1)
     nodename = cl.nodesName()
+    cl2 = cleaner.ConfigManager(configpath=r"./results/Topo{}-inbound.yaml".format(start_time.replace(':', '-')),
+                                data=info1)
+    cl2.save(r"./results/Topo{}-inbound.yaml".format(start_time.replace(':', '-')))
     if test_type == "inbound":
-        stime = export.ExportTopo(name=hosts, info=info1).exportTopoInbound()
-        await check.check_photo(message, back_message, 'Topo' + stime, len(hosts), wtime)
-        return
+        return info1, info2
 
     # 启动链路拓扑测试
     try:
@@ -161,14 +163,11 @@ async def core(client, message, back_message, start_time, suburl: str = None, te
             info2.update({'节点名称': nodename})
         # 计算测试消耗时间
         wtime = "%.1f" % float(time.time() - s1)
-        # 生成图片
-        img_outbound, yug, image_width2 = export.ExportTopo().exportTopoOutbound(nodename=nodename, info=info2)
-        if test_type == "outbound":
-            stime = export.ExportTopo(name=nodename, info=info2).exportTopoOutbound()
-        else:
-            stime = export.ExportTopo(name=hosts, info=info1).exportTopoInbound(nodename, info2, img2_width=image_width2)
-        # 发送回TG
-        await check.check_photo(message, back_message, 'Topo' + stime, nodenum, wtime)
+        info2.update({'wtime': wtime})
+        cl1 = cleaner.ConfigManager(configpath=r"./results/Topo{}-outbound.yaml".format(start_time.replace(':', '-')),
+                                    data=info2)
+        cl1.save(r"./results/Topo{}-outbound.yaml".format(start_time.replace(':', '-')))
+
     except RPCError as r:
         logger.error(r)
         await back_message.edit_message_text("出错啦")
@@ -180,3 +179,5 @@ async def core(client, message, back_message, start_time, suburl: str = None, te
     except Exception as e:
         logger.error(str(e))
         await message.reply(str(e))
+    finally:
+        return info1, info2

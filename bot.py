@@ -20,7 +20,7 @@ def loader(app: Client):
 
 def command_loader(app: Client):
     @app.on_message(filters.command(["testurl"]))
-    async def testurl(client, message):
+    async def testurl(_, message):
         if await isuser(message, botmodule.init_bot.reloadUser()):
             await message.reply("请选择想要启用的测试项:", reply_markup=botmodule.IKM, quote=True)
 
@@ -53,7 +53,7 @@ def command_loader(app: Client):
         await botmodule.sub(client, message)
 
     @app.on_message(filters.command(["test"]), group=8)
-    async def test(client, message):
+    async def test(_, message):
         if await isuser(message, botmodule.init_bot.reloadUser()):
             await message.reply("请选择想要启用的测试项:", reply_markup=botmodule.IKM, quote=True)
             # await bot_put(client, message, "test")
@@ -77,7 +77,7 @@ def command_loader(app: Client):
             await bot_put(client, message, "analyze")
 
     @app.on_message(filters.command(["reload"]) & filters.user(admin), group=12)
-    async def reload_testmember(client, message):
+    async def reload_testmember(_, message):
         botmodule.reloadUser()
         r1()
         r2()
@@ -85,7 +85,8 @@ def command_loader(app: Client):
 
     @app.on_message(filters.command(["register", "baipiao"]), group=13)
     async def regis(client, message):
-        await botmodule.register.baipiao(client, message)
+        if await isuser(message, botmodule.init_bot.reloadUser()):
+            await botmodule.register.baipiao(client, message)
 
     @app.on_message(filters.command(["inbound"]), group=14)
     async def inbound(client, message):
@@ -141,16 +142,20 @@ async def bot_put(client, message, put_type: str, test_items: list = None):
     """
     global task_num
     task_num += 1
-    mes = await message.reply("排队中,前方队列任务数量为: " + str(task_num - 1))
-    await q.put(message)
-    if test_items is None:
-        test_items = []
-    logger.info("任务测试项为: " + str(test_items))
-    r1(test_items)
-    r2(test_items)
-    await asyncio.sleep(2)
-    await mes.edit_text("任务已提交")
-    await bot_task_queue(client, message, put_type, q)
-    task_num -= 1
-    await asyncio.sleep(10)
-    await mes.delete()
+    try:
+        if test_items is None:
+            test_items = []
+        logger.info("任务测试项为: " + str(test_items))
+        mes = await message.reply("排队中,前方队列任务数量为: " + str(task_num - 1))
+        await q.put(message)
+        r1(test_items)
+        r2(test_items)
+        await mes.edit_text("任务已提交")
+        await bot_task_queue(client, message, put_type, q)
+        task_num -= 1
+        await asyncio.sleep(10)
+        await mes.delete()
+    except AttributeError as a:
+        logger.error(str(a))
+    except Exception as e:
+        logger.error(str(e))

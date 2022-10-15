@@ -2,14 +2,17 @@
 
 基于clash 核心运作的、进行全量订阅测试的telegram机器人
 
-# 最近更新(3.3.5)
-- 配置文件优化，代理相关配置统一为proxy键值对，旧版代理配置proxyport仍旧可用，但已废弃。推荐使用proxy配置，proxyport配置在启动时会发出警告。
-- 节点分析新增出口ip显示，用于判断复用节点，ip仅显示最后一位。
-- 优化help指令，不同权限组看到的内容不同。
-- 新增 /version 指令用于查询当前版本信息
-- 自定义字体。可通过在配置文件添加 font键值对自定义你喜欢的字体，具体案例查看配置模板。
-- 新增延迟配色。可通过配置文件修改想要的配色。具体使用方法查看config.yaml.example
-- 修复部分不合法的输入，会导致任务无限阻塞的bug。
+# 最近更新(3.3.7)
+
+- 新增Netflix新检测方法，优化新版奈飞检测逻辑。
+- bot的操作界面优化。新增节点存活率、御三家（Netflix、disney+、Youtube）按钮，新增取消任务按钮。
+- 优化 login.py 文件。现如今不会强制要求输入代理（之前必须提供代理）。
+- 修复bot因任务源消息被群组管理员删除导致崩溃的问题。
+- 修复speedtest绘图偶现出错问题。
+- 修复UDP类型检测偶现失败问题。
+- 修复emoji源中，部分emoji不全导致生成图片出错的问题
+- 修复节点拓扑测试生成图片宽度不一致的问题
+- 移动 emoji_custom.py 到 ./addons 目录中，因为它更像一个插件功能。
 
 
 历史更新请到TG频道查看: 
@@ -66,33 +69,33 @@ FullTclash bot 是承载其测试任务的Telegram 机器人（以下简称bot�
 
 ## 环境准备
 
-- Python 3.5 以上
+- Python 3.6 以上
   
-- aiohttp>=3.8.1
-
-- aiohttp_socks>=0.7.1
-  
-- async_timeout>=4.0.2
-  
-- beautifulsoup4>=4.11.1
-  
-- Pillow>=9.2.0
-  
-- pilmoji>=2.0.1
-  
-- Pyrogram>=2.0.26
-  
-- PyYAML>=6.0
-  
-- requests>=2.26.0
+- 以及各种相关包依赖
   
 
-您可以用以下命令，在当前项目目录下运行以快速安装环境(Windows)：
+您可以用以下命令，在当前项目目录下运行以快速安装环境：
+
+Windows:
 
 ```
 pip install -r requirements.txt
 ```
 
+Linux:
+```
+pip3 install -r requirements.txt
+```
+
+## 拉取源码
+
+方法1：直接下载（不会有人不知道在哪下吧？）
+
+方法2：使用git（Linux推荐，方便更新），首先安装git，然后拉取仓库。以下指令为 Ubuntu 发行版作示例，Windows自行解决。
+```
+apt install -y git && git clone https://github.com/AirportR/FullTclash.git && cd FullTclash
+```
+此方法在中国大陆可能需要代理加速，请自行解决。
 ## 获取session文件
 
 您需要在项目文件目录下，放置一个已经登陆好的.session后缀文件，这个文件是程序生成的，形如： my_bot.session
@@ -110,7 +113,7 @@ python .\login.py
 
 这句话时，即可说明该session文件有效，否则无效。
 
-## 赋予clash核心执行权限(Linux amd64)
+## 赋予clash核心执行权限 (Linux)
 
 Windows系统无需此操作
 ```

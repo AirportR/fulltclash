@@ -1,7 +1,11 @@
+import PIL
+from loguru import logger
 from PIL import Image, ImageDraw, ImageFont
 from pilmoji import Pilmoji
+from pilmoji.source import Twemoji
 import time
 from libs.cleaner import ConfigManager
+from addons.emoji_custom import TwitterPediaSource
 
 """
 这是将测试的结果输出为图片的模块。
@@ -12,7 +16,8 @@ from libs.cleaner import ConfigManager
 2、何为基础数据？
     基础数据决定了生成图片的高度（Height），它是列表，列表里面的数据一般是一组节点名，即有多少个节点就对应了info键值中的长度。
 """
-__version__ = "3.3.5"  # 版本号
+__version__ = "3.3.7"  # 版本号
+custom_source = TwitterPediaSource  # 自定义emoji风格 TwitterPediaSource
 
 
 def color_block(size: tuple, color_value):
@@ -33,10 +38,12 @@ class ExportResult:
 
     def __init__(self, info: dict, nodename: list = None):
         self.version = __version__
-        self.nodename = nodename
-        self.origin_info = info
+        self.basedata = info.pop('节点名称', nodename)
         self.info = info
-        self.nodenum = len(nodename)
+        if self.basedata:
+            self.nodenum = len(self.basedata)
+        else:
+            self.nodenum = 0
         self.front_size = 30
         self.config = ConfigManager()
         self.color = self.config.getColor().get('delay', [])
@@ -132,7 +139,7 @@ class ExportResult:
         :return:
         """
         img_width = 100  # 序号
-        nodename_width = self.text_maxwidth(self.nodename)
+        nodename_width = self.text_maxwidth(self.basedata)
         nodename_width = max(nodename_width, 420)
         nodename_width = nodename_width + 150
         infolist_width = self.key_value()
@@ -155,15 +162,15 @@ class ExportResult:
         xpath = mid_xpath - strname_width / 2
         return xpath
 
+    @logger.catch
     def exportUnlock(self):
-        wtime = self.info['wtime']
-        del self.info['wtime']
+        wtime = self.info.pop('wtime', "0")
         fnt = self.__font
         image_width, nodename_width, info_list_length = self.get_width()
         image_height = self.get_height()
         key_list = self.get_key_list()
         img = Image.new("RGB", (image_width, image_height), (255, 255, 255))
-        pilmoji = Pilmoji(img)  # emoji表情修复
+        pilmoji = Pilmoji(img, source=custom_source)  # emoji表情修复
         # 绘制色块
         bkg = Image.new('RGB', (image_width, 80), (234, 234, 234))  # 首尾部填充
         img.paste(bkg, (0, 0))
@@ -207,8 +214,15 @@ class ExportResult:
             idraw.text((self.get_mid(0, 100, str(t + 1)), 40 * (t + 2)), text=str(t + 1), font=fnt, fill=(0, 0, 0))
             # 节点名称
             # idraw.text((110, 40 * (t + 2)), text=self.nodename[t], font=fnt, fill=(0, 0, 0))
-            pilmoji.text((110, 40 * (t + 2)), text=self.nodename[t], font=fnt, fill=(0, 0, 0),
-                         emoji_position_offset=(0, 6))
+            try:
+                # 自定义emoji源可能出错，所以捕捉了异常
+                pilmoji.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
+                             emoji_position_offset=(0, 6))
+            except PIL.UnidentifiedImageError:
+                logger.warning("无效符号:" + self.basedata[t])
+                pilmoji2 = Pilmoji(img, source=Twemoji)
+                pilmoji2.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
+                              emoji_position_offset=(0, 6))
             width = 100 + nodename_width
             i = 0
             # 填充颜色块
@@ -289,17 +303,16 @@ class ExportTopo(ExportResult):
     """
 
     def __init__(self, name: list = None, info: dict = None):
-        super().__init__({}, [])
-        if name is None:
-            self.nodenum = 0
-            self.nodename = []
-        else:
-            self.nodename = name
-            self.nodenum = len(name)
+        super().__init__({})
         if info is None:
             self.info = {}
         else:
             self.info = info
+        if name is None:
+            self.basedata = self.info.get('地区', [])
+        else:
+            self.basedata = self.info.get('地区', name)
+        self.nodenum = len(self.basedata)
         self.front_size = 30
         self.config = ConfigManager()
         self.__font = ImageFont.truetype(self.config.getFont(), self.front_size)
@@ -362,6 +375,7 @@ class ExportTopo(ExportResult):
             key_list.append(i)
         return key_list
 
+    @logger.catch
     def exportTopoInbound(self, nodename: list = None, info2: dict = None, img2_width: int = None):
         # wtime = self.info['wtime']
         wtime = "未知"
@@ -370,7 +384,7 @@ class ExportTopo(ExportResult):
         image_height = self.get_height()
         key_list = self.get_key_list()
         img = Image.new("RGB", (image_width, image_height), (255, 255, 255))
-        pilmoji = Pilmoji(img)  # emoji表情修复
+        pilmoji = Pilmoji(img, source=custom_source)  # emoji表情修复
         # 绘制色块
         bkg = Image.new('RGB', (image_width, 80), (234, 234, 234))  # 首尾部填充
         img.paste(bkg, (0, 0))
@@ -379,7 +393,7 @@ class ExportTopo(ExportResult):
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
         list1 = ["FullTclash - 节点拓扑分析", "版本:{}     ⏱️总共耗时: {}".format(__version__, wtime),
-                 "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time)]
+                 "测试时间: {}  测试结果仅供参考".format(export_time)]
         export_time = export_time.replace(':', '-')
         title = list1[0]
         idraw.text((self.get_mid(0, image_width, title), 1), title, font=fnt, fill=(0, 0, 0))  # 标题
@@ -441,11 +455,11 @@ class ExportTopo(ExportResult):
             img.save(r"./results/Topo{}.png".format(export_time.replace(':', '-')))
             return export_time
 
+    @logger.catch
     def exportTopoOutbound(self, nodename: list = None, info: dict = None, img2_width: int = None):
-        # wtime = self.info['wtime']
-        if nodename and info:
+        wtime = info.pop('wtime', '未知')
+        if nodename or info:
             self.__init__(nodename, info)
-        wtime = "未知"
         fnt = self.__font
         image_width, info_list_length = self.get_width(compare=img2_width)
         image_height = self.get_height()
@@ -489,9 +503,16 @@ class ExportTopo(ExportResult):
                                self.info[t1][t],
                                font=fnt, fill=(0, 0, 0))
                 elif t1 == "节点名称":
-                    pilmoji.text((width + 10, (t + 2) * 40),
-                                 self.info[t1][t],
-                                 font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
+                    try:
+                        pilmoji.text((width + 10, (t + 2) * 40),
+                                     self.info[t1][t],
+                                     font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
+                    except PIL.UnidentifiedImageError:
+                        logger.warning("无效符号:" + self.basedata[t])
+                        pilmoji2 = Pilmoji(img, source=Twemoji)
+                        pilmoji2.text((width + 10, (t + 2) * 40),
+                                      self.info[t1][t],
+                                      font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
                 else:
                     idraw.text((self.get_mid(width, width + info_list_length[i], self.info[t1][t]), (t + 2) * 40),
                                self.info[t1][t],
@@ -515,26 +536,28 @@ class ExportTopo(ExportResult):
 
 
 class ExportSpeed(ExportResult):
-    def __init__(self, name: list = None, info: dict = None, config: ConfigManager = None):
+    def __init__(self, name: list = None, info: dict = None):
         """
         速度测试图输出
         :param name:
         :param info:
-        :param config: 传入configmanager对象
         """
         super().__init__({}, [])
-        if config:
-            self.config = config
-        else:
-            self.config = ConfigManager()
+        self.config = ConfigManager()
         self.color = self.config.getColor().get('speed', [])
+        self.emoji = self.config.config.get('emoji', True)  # 是否启用emoji，若否，则在输出图片时emoji将无法正常显示
+        if info is None:
+            info = {}
         self.wtime = info.pop('wtime', "-1")
         self.thread = str(info.pop('线程', ''))
-        self.traffic = "%.1f" % info.pop('消耗流量', '')
+        self.traffic = "%.1f" % info.pop('消耗流量', 0)
         self.speedblock = info.pop('速度变化', [])
         self.info = info
-        self.nodename = name
-        self.nodenum = len(name)
+        self.basedata = info.pop('节点名称', name)
+        if self.basedata:
+            self.nodenum = len(self.basedata)
+        else:
+            self.nodenum = 0
         self.front_size = 30
         self.config = ConfigManager()
         self.__font = ImageFont.truetype(self.config.getFont(), self.front_size)
@@ -565,13 +588,14 @@ class ExportSpeed(ExportResult):
         else:
             return color_list
 
+    @logger.catch
     def exportImage(self):
         fnt = self.__font
         image_width, nodename_width, info_list_length = self.get_width()
         image_height = self.get_height()
         key_list = self.get_key_list()
         img = Image.new("RGB", (image_width, image_height), (255, 255, 255))
-        pilmoji = Pilmoji(img)  # emoji表情修复
+        pilmoji = Pilmoji(img, source=custom_source)  # emoji表情修复
         # 绘制色块
         bkg = Image.new('RGB', (image_width, 80), (234, 234, 234))  # 首尾部填充
         img.paste(bkg, (0, 0))
@@ -585,8 +609,10 @@ class ExportSpeed(ExportResult):
         export_time = export_time.replace(':', '-')
         title = list1[0]
         idraw.text((self.get_mid(0, image_width, title), 5), title, font=fnt, fill=(0, 0, 0))  # 标题
-        # idraw.text((10, image_height - 75), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
-        pilmoji.text((10, image_height - 75), text=list1[1], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 3))
+        if self.emoji:
+            pilmoji.text((10, image_height - 75), text=list1[1], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 3))
+        else:
+            idraw.text((10, image_height - 75), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
         idraw.text((10, image_height - 35), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
 
         # 绘制标签
@@ -614,9 +640,18 @@ class ExportSpeed(ExportResult):
             # 序号
             idraw.text((self.get_mid(0, 100, str(t + 1)), 40 * (t + 2)), text=str(t + 1), font=fnt, fill=(0, 0, 0))
             # 节点名称
-            # idraw.text((110, 40 * (t + 2)), text=self.nodename[t], font=fnt, fill=(0, 0, 0))
-            pilmoji.text((110, 40 * (t + 2)), text=self.nodename[t], font=fnt, fill=(0, 0, 0),
-                         emoji_position_offset=(0, 6))
+            if self.emoji:
+                try:
+                    # 自定义emoji源可能出错，所以捕捉了异常
+                    pilmoji.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
+                                 emoji_position_offset=(0, 6))
+                except PIL.UnidentifiedImageError:
+                    logger.warning("无效符号:" + self.basedata[t])
+                    pilmoji2 = Pilmoji(img, source=Twemoji)
+                    pilmoji2.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
+                                  emoji_position_offset=(0, 6))
+            else:
+                idraw.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0))
             width = 100 + nodename_width
             i = 0
             # 填充颜色块

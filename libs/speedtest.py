@@ -1,16 +1,17 @@
 import asyncio
 import contextlib
 import copy
+import socket
 import time
 from typing import Union
 
 import aiohttp
-import requests
+import socks
 from aiohttp_socks import ProxyConnector
 from loguru import logger
 from pyrogram.errors import RPCError
-
-from libs import cleaner, check, collector, proxys, export
+from libs import cleaner, check, collector, proxys
+from addons import pynat
 
 # ----------------------------------------------------------------------------------------------------------------------
 """
@@ -23,7 +24,8 @@ author: https://github.com/Oreomeow
 class Speedtest:
     def __init__(self):
         self._stopped = False
-        self.speedurl = "https://dl.google.com/dl/android/studio/install/3.4.1.0/android-studio-ide-183.5522156-windows.exe"
+        self.speedurl = "https://dl.google.com/dl/android/studio/install/3.4.1.0/android-studio-ide-183.5522156" \
+                        "-windows.exe"
         self.result = []
         self._total_red = 0
         self._delta_red = 0
@@ -98,7 +100,7 @@ class Speedtest:
 
 async def fetch(self, url: str, host: str, port: int, buffer: int):
     try:
-        logger.info(f"Fetching {url} via {host}:{port}.")
+        # logger.info(f"Fetching {url} via {host}:{port}.")
         async with aiohttp.ClientSession(
                 headers={"User-Agent": "curl/11.45.14"},
                 connector=ProxyConnector(host=host, port=port),
@@ -149,24 +151,27 @@ async def start(
 
 # ----------------------------------------------------------------------------------------------------------------------
 # 以下为 另一部分
-async def batch_speed(message, nodename: list, delays: list, proxygroup='auto'):
+async def batch_speed(message, nodename: list, proxygroup='auto'):
     info = {}
     progress = 0
     sending_time = 0
     nodenum = len(nodename)
-    test_items = ["平均速度", "最大速度", "速度变化"]
+    test_items = ["平均速度", "最大速度", "速度变化", "UDP类型"]
     for item in test_items:
         info[item] = []
     info["消耗流量"] = 0  # 单位:MB
     for name in nodename:
         proxys.switchProxy_old(proxyName=name, proxyGroup=proxygroup, clashPort=1123)
+        udptype, _, _, _, _ = nat_type_test('127.0.0.1', proxyport=1122)
+        if udptype is None:
+            udptype = "Unknown"
         res = await start(asyncio.Semaphore(4), "127.0.0.1", 1122, 4096, 4)
         avgspeed = "%.2f" % (res[0] / 1024 / 1024) + "MB"
         maxspeed = "%.2f" % (res[1] / 1024 / 1024) + "MB"
         speedresult = res[2]
         traffic_used = float("%.2f" % (res[3] / 1024 / 1024))
         info["消耗流量"] += traffic_used
-        res2 = [avgspeed, maxspeed, speedresult]
+        res2 = [avgspeed, maxspeed, speedresult, udptype]
         for i in range(len(test_items)):
             info[test_items[i]].append(res2[i])
 
@@ -185,7 +190,38 @@ async def batch_speed(message, nodename: list, delays: list, proxygroup='auto'):
     return info
 
 
-async def core(client, message, back_message, start_time, suburl: str = None):
+async def batch_udp(message, nodename: list, proxygroup='auto'):
+    info = {}
+    progress = 0
+    sending_time = 0
+    nodenum = len(nodename)
+    test_items = ["UDP类型"]
+    for item in test_items:
+        info[item] = []
+    info["消耗流量"] = 0  # 单位:MB
+    for name in nodename:
+        proxys.switchProxy_old(proxyName=name, proxyGroup=proxygroup, clashPort=1123)
+        udptype, _, _, _, _ = nat_type_test('127.0.0.1', proxyport=1122)
+        res2 = [udptype]
+        for i in range(len(test_items)):
+            info[test_items[i]].append(res2[i])
+
+        progress += 1
+        cal = progress / nodenum * 100
+        p_text = "%.2f" % cal
+        # 判断进度条，每隔10%发送一次反馈，有效防止洪水等待(FloodWait)
+        if cal >= sending_time:
+            sending_time += 10
+            try:
+                await message.edit_text("╰(*°▽°*)╯UDP类型测试进行中...\n\n" +
+                                        "当前进度:\n" + p_text +
+                                        "%     [" + str(progress) + "/" + str(nodenum) + "]")  # 实时反馈进度
+            except RPCError as r:
+                logger.error(r)
+    return info
+
+
+async def core(message, back_message, start_time, suburl: str = None):
     info = {}
     if suburl is not None:
         url = suburl
@@ -193,13 +229,13 @@ async def core(client, message, back_message, start_time, suburl: str = None):
         text = str(message.text)
         url = cleaner.geturl(text)
         if await check.check_url(back_message, url):
-            return
+            return info
     print(url)
     # 订阅采集
     sub = collector.SubCollector(suburl=url)
     subconfig = await sub.getSubConfig(save_path='./clash/sub{}.yaml'.format(start_time))
     if await check.check_sub(back_message, subconfig):
-        return
+        return info
     try:
         # 启动订阅清洗
         with open('./clash/sub{}.yaml'.format(start_time), "r", encoding="UTF-8") as fp:
@@ -214,18 +250,20 @@ async def core(client, message, back_message, start_time, suburl: str = None):
         nodetype = None
     # 检查获得的数据
     if await check.check_nodes(back_message, nodenum, (nodename, nodetype,)):
-        return
+        return info
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
     ma.addsub(subname=start_time, subpath='./sub{}.yaml'.format(start_time))
     ma.save('./clash/proxy.yaml')
     # 重载配置文件
     await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=1123)
+    logger.info("开始测试延迟...")
     s1 = time.time()
     old_rtt = await collector.delay_providers(providername=start_time)
     rtt = check.check_rtt(old_rtt, nodenum)
     print("延迟:", rtt)
     try:
-        speedinfo = await batch_speed(back_message, nodename, delays=rtt)
+        speedinfo = await batch_speed(back_message, nodename)
+        info['节点名称'] = nodename
         info['类型'] = nodetype
         info['延迟RTT'] = rtt
         info.update(speedinfo)
@@ -234,14 +272,41 @@ async def core(client, message, back_message, start_time, suburl: str = None):
         wtime = "%.1f" % float(time.time() - s1)
         info['wtime'] = wtime
         info['线程'] = 4
-        try:
-            stime = export.ExportSpeed(name=nodename, info=info).exportImage()
-            # 发送回TG
-            await check.check_photo(message, back_message, stime, nodenum, wtime)
-        except requests.exceptions.ConnectionError:
-            # 出现这个异常大概率是因为 pilmoji这个库抽风了
-            stime = ''
-            # 遇到错误就发送错误信息给TG
-            await check.check_photo(message, back_message, stime, nodenum, wtime)
+        cl1 = cleaner.ConfigManager(configpath=r"./results/{}.yaml".format(start_time.replace(':', '-')), data=info)
+        cl1.save(r"./results/{}.yaml".format(start_time.replace(':', '-')))
     except Exception as e:
         logger.error(e)
+    finally:
+        return info
+
+
+def nat_type_test(proxyaddr=None, proxyport=None):
+    mysocket = socks.socksocket(type=socket.SOCK_DGRAM)
+    mysocket.set_proxy(socks.PROXY_TYPE_SOCKS5, addr=proxyaddr, port=proxyport)
+    _sport = 54320
+    try:
+        logger.info("Performing UDP NAT Type Test.")
+        t, eip, eport, sip = pynat.get_ip_info(
+            source_ip="0.0.0.0",
+            source_port=_sport,
+            include_internal=True,
+            sock=mysocket,
+        )
+        return t, eip, eport, sip, _sport
+    except (socket.gaierror, TypeError, ConnectionError) as e:
+        logger.error(f"NAT Type Test: {repr(e)}")
+        return None, None, None, None, None
+    except Exception as e:
+        logger.exception(e)
+        return None, None, None, None, None
+    finally:
+        mysocket.close()
+
+# if __name__ == "__main__":
+#     topology, ext_ip, ext_port, source_ip, sport = nat_type_test('127.0.0.1', 1111)
+#     print(
+#         "Network type:",
+#         topology,
+#         f"\nInternal address: {source_ip}:{sport}",
+#         f"\nExternal address: {ext_ip}:{ext_port}",
+#     )

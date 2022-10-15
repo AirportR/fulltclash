@@ -43,4 +43,3 @@ async def bot_task_queue(client: Client, message, task_type: str, qu: asyncio.Qu
             loguru.logger.warning(str(e))
     await qu.get()
     qu.task_done()
-

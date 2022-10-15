@@ -222,7 +222,7 @@ class ConfigManager:
     配置清洗
     """
 
-    def __init__(self, configpath="./config.yaml"):
+    def __init__(self, configpath="./config.yaml", data: dict = None):
         """
 
         """
@@ -232,13 +232,16 @@ class ConfigManager:
                 self.config = yaml.load(fp, Loader=yaml.FullLoader)
                 self.yaml.update(self.config)
         except FileNotFoundError:
-            logger.warning("未发现配置文件，自动生成中......")
             self.config = None
         if self.config is None:
             di = {'loader': "Success"}
             with open(configpath, "w+", encoding="UTF-8") as fp:
                 yaml.dump(di, fp)
             self.config = {}
+        if data:
+            with open(configpath, "w+", encoding="UTF-8") as fp:
+                yaml.dump(data, fp)
+            self.yaml = data
 
     def getFont(self):
         return self.config.get('font', "./resources/苹方黑体-准-简.ttf")
@@ -263,7 +266,6 @@ class ConfigManager:
         try:
             return self.config['proxyport']
         except KeyError:
-            logger.info("获取代理端口失败(旧版)")
             return None
 
     def get_proxy(self, isjoint=True):
@@ -278,14 +280,13 @@ class ConfigManager:
             else:
                 return str(self.config['proxy'])
         except KeyError:
-            # logger.info("当前未启用代理配置")
             return None
 
     def get_media_item(self):
         try:
             return self.config['item']
         except KeyError:
-            logger.error("获取测试项失败，将采用默认测试项：[Netflix,Youtube,Disney,Bilibili,Dazn]")
+            # logger.error("获取测试项失败，将采用默认测试项：[Netflix,Youtube,Disney,Bilibili,Dazn]")
             return ['Netflix', 'Youtube', 'Disney', 'Bilibili', 'Dazn']
 
     def get_clash_work_path(self):
@@ -536,35 +537,41 @@ class ReCleaner:
     def get_all(self):
         info = {}
         items = media_item
-        for item in items:
-            i = item.capitalize()
-            if i == "Netflix":
-                nf = self.getnetflixinfo()
-                info['Netflix'] = nf[len(nf) - 1]
-            elif i == "Youtube":
-                you = self.getyoutubeinfo()
-                info['Youtube'] = you
-            elif i == "Disney":
-                dis = self.getDisneyinfo()
-                info['Disney'] = dis
-            elif i == "Disney+":
-                dis = self.getDisneyinfo()
-                info['Disney+'] = dis
-            elif i == "Bilibili":
-                bili = self.get_bilibili_info()
-                info['Bilibili'] = bili
-            elif i == "Dazn":
-                dazn = self.get_dazn_info()
-                info['Dazn'] = dazn
-            elif i == "Hbomax":
-                from addons import hbomax
-                hbomaxinfo = hbomax.get_hbomax_info(self)
-                info['Hbomax'] = hbomaxinfo
-            elif i == "Bahamut":
-                from addons import bahamut
-                info['Bahamut'] = bahamut.get_bahamut_info(self)
-            else:
-                pass
+        try:
+            for item in items:
+                i = item.capitalize()
+                if i == "Netflix":
+                    nf = self.getnetflixinfo()
+                    info['Netflix'] = nf[len(nf) - 1]
+                elif i == "Youtube":
+                    you = self.getyoutubeinfo()
+                    info['Youtube'] = you
+                elif i == "Disney":
+                    dis = self.getDisneyinfo()
+                    info['Disney'] = dis
+                elif i == "Disney+":
+                    dis = self.getDisneyinfo()
+                    info['Disney+'] = dis
+                elif i == "Bilibili":
+                    bili = self.get_bilibili_info()
+                    info['Bilibili'] = bili
+                elif i == "Dazn":
+                    dazn = self.get_dazn_info()
+                    info['Dazn'] = dazn
+                elif i == "Hbomax":
+                    from addons import hbomax
+                    hbomaxinfo = hbomax.get_hbomax_info(self)
+                    info['Hbomax'] = hbomaxinfo
+                elif i == "Bahamut":
+                    from addons import bahamut
+                    info['Bahamut'] = bahamut.get_bahamut_info(self)
+                elif i == "Netflix(新)":
+                    from addons import netflix
+                    info['Netflix(新)'] = netflix.get_netflix_info_new(self)
+                else:
+                    pass
+        except Exception as e:
+            logger.error(str(e))
         return info
 
     def get_dazn_info(self):
