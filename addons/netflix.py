@@ -84,3 +84,14 @@ def get_netflix_info_new(ReCleaner):
 # bot_setting_board
 
 button = InlineKeyboardButton("✅Netflix(新)", callback_data='✅Netflix(新)')
+
+if __name__ == "__main__":
+    "this is a demo"
+    from libs.collector import Collector, media_items
+    media_items.clear()
+    media_items.append("Netflix(新)")
+    cl = Collector()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(cl.start(proxy=None))
+    print(cl.info)
