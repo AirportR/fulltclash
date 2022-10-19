@@ -187,11 +187,10 @@ class Collector:
         self.session = None
         self.tasks = []
         self._headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
-                          'Chrome/102.0.5005.63 Safari/537.36'}
+            'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
+                          "Chrome/106.0.0.0 Safari/537.36"}
         self._headers_json = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
-                          'Chrome/102.0.5005.63 Safari/537.36', "Content-Type": 'application/json'}
+            'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36", "Content-Type": 'application/json'}
         self.netflixurl1 = "https://www.netflix.com/title/70242311"
         self.netflixurl2 = "https://www.netflix.com/title/70143836"
         self.ipurl = "https://api.ip.sb/geoip"
