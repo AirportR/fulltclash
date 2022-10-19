@@ -10,7 +10,7 @@ netflix_url1 = "https://www.netflix.com/title/70143836"  # 非自制
 netflix_url2 = "https://www.netflix.com/title/70242311"  # 自制
 
 
-async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, proxy=None, reconnection=2):
+async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, proxy=None, reconnection=5):
     """
     新版Netflix检测
     :param flag:
@@ -23,7 +23,7 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
     try:
         if flag == 1:
             async with session.get(netflix_url1, proxy=proxy, timeout=5) as res:
-                print("n1状态: ", res.status)
+                logger.info("非自制剧状态: " + str(res.status))
                 if res.status == 200:  # 解锁非自制
                     text = await res.text()
                     try:
@@ -37,13 +37,23 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
                     except Exception as e:
                         logger.error(e)
                         Collector.info['netflix_new'] = "N/A"
+                elif res.status == 403:
+                    if reconnection == 0:
+                        logger.info("不支持非自制剧，正在检测自制剧...")
+                        await fetch_netflix_new(Collector, session, flag=flag + 1, proxy=proxy, reconnection=5)
+                    await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection-1)
                 else:
+                    logger.info("不支持非自制剧，正在检测自制剧...")
                     await fetch_netflix_new(Collector, session, flag=flag + 1, proxy=proxy, reconnection=reconnection)
         elif flag == 2:
             async with session.get(netflix_url2, proxy=proxy, timeout=5) as res:
-                print("n2状态: ", res.status)
+                logger.info("自制剧状态: " + str(res.status))
                 if res.status == 200:  # 解锁自制
                     Collector.info['netflix_new'] = "自制"
+                elif res.status == 403:
+                    if reconnection == 0:
+                        Collector.info['netflix_new'] = "失败"
+                    await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection-1)
                 else:
                     Collector.info['netflix_new'] = "失败"
         else:
@@ -51,11 +61,11 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
     except ClientConnectorError as c:
         logger.warning("Netflix请求发生错误:" + str(c))
         if reconnection != 0:
-            await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection-1)
+            await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection - 1)
     except asyncio.exceptions.TimeoutError:
         logger.warning("Netflix请求超时，正在重新发送请求......")
         if reconnection != 0:
-            await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection-1)
+            await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection - 1)
 
 
 def task(Collector, session, proxy):
@@ -87,11 +97,16 @@ button = InlineKeyboardButton("✅Netflix(新)", callback_data='✅Netflix(新)'
 
 if __name__ == "__main__":
     "this is a demo"
-    from libs.collector import Collector, media_items
+    import sys
+    import os
+
+    sys.path.append(os.path.abspath(os.path.join(os.getcwd(), os.pardir)))
+    from libs.collector import Collector as CL, media_items
+
     media_items.clear()
     media_items.append("Netflix(新)")
-    cl = Collector()
+    cl = CL()
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    loop.run_until_complete(cl.start(proxy=None))
+    loop.run_until_complete(cl.start(proxy="http://127.0.0.1:1111"))
     print(cl.info)
