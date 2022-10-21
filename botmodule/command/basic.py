@@ -67,7 +67,7 @@ admin_text = f"""
     """
 
 
-async def version(client, message):
+async def version(_, message):
     try:
         back_message = await message.reply(f"FullTclash版本: {__version__}")
         await asyncio.sleep(30)
@@ -76,7 +76,7 @@ async def version(client, message):
         logger.error(str(r))
 
 
-async def helps(client, message):
+async def helps(_, message):
     USER_TARGET = init_bot.USER_TARGET
     admin = init_bot.admin
 

@@ -21,6 +21,10 @@ try:
     proxy_host = _proxy[0]
     proxy_port = _proxy[1]
     logger.info("当前代理设置为: " + proxy_host + ":" + proxy_port)
+except AttributeError as attr:
+    logger.info(str(attr))
+    proxy_host = None
+    proxy_port = None
 except Exception as e:
     logger.error(str(e))
     proxy_host = None
