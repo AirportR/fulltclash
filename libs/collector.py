@@ -2,6 +2,7 @@ import asyncio
 import json
 import aiohttp
 import async_timeout
+from urllib.parse import quote
 from aiohttp.client_exceptions import ClientConnectorError
 from loguru import logger
 from libs import cleaner
@@ -135,7 +136,14 @@ class SubCollector(BaseCollector):
         super().__init__()
         self.text = None
         self._headers = {'User-Agent': 'clash'}  # 这个请求头是获取流量信息的关键
+        self.subconvertor = config.config.get('subconvertor', {})
+        self.cvt_enable = self.subconvertor.get('enable', False)
         self.url = suburl
+        self.codeurl = quote(suburl, 'utf-8')
+        self.host = str(self.subconvertor.get('host', '127.0.0.1:25500'))
+        self.cvt_url = f"http://{self.host}/sub?target=clash&new_name=true&url={self.codeurl}"
+        # #&insert=false&config" \ "=https%3A%2F%2Fraw.githubusercontent.com%2FACL4SSR%2FACL4SSR%2Fmaster%2FClash
+        # %2Fconfig" \ "%2FACL4SSR_Online.ini"
 
     async def start(self, proxy=None):
         try:
@@ -162,9 +170,12 @@ class SubCollector(BaseCollector):
         :return: 获得一个文件: sub.yaml, bool : True or False
         """
         _headers = {'User-Agent': 'clash'}
+        suburl = self.cvt_url if self.cvt_enable else self.url
+        cvt_text = r"subconvertor状态: {}".format("已启用" if self.cvt_enable else "未启用")
+        logger.info(cvt_text)
         try:
             async with aiohttp.ClientSession(headers=_headers) as session:
-                async with session.get(self.url, proxy=proxy, timeout=10) as response:
+                async with session.get(suburl, proxy=proxy, timeout=20) as response:
                     if response.status == 200:
                         with open(save_path, 'wb+') as fd:
                             while True:
@@ -190,7 +201,8 @@ class Collector:
             'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                           "Chrome/106.0.0.0 Safari/537.36"}
         self._headers_json = {
-            'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36", "Content-Type": 'application/json'}
+            'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
+                          "Chrome/106.0.0.0 Safari/537.36", "Content-Type": 'application/json'}
         self.netflixurl1 = "https://www.netflix.com/title/70242311"
         self.netflixurl2 = "https://www.netflix.com/title/70143836"
         self.ipurl = "https://api.ip.sb/geoip"
@@ -495,7 +507,7 @@ class Collector:
             session = aiohttp.ClientSession(headers=self._headers)
             tasks = self.create_tasks(session, proxy=proxy)
             if tasks:
-                done, pending = await asyncio.wait(tasks)
+                await asyncio.wait(tasks)
             await session.close()
             return self.info
         except Exception as e:
