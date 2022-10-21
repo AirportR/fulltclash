@@ -1,5 +1,7 @@
 import asyncio
 import json
+import time
+
 import aiohttp
 import async_timeout
 from urllib.parse import quote
@@ -155,12 +157,38 @@ class SubCollector(BaseCollector):
             logger.error(e)
             return None
 
-    async def getSubTraffic(self, proxy=None):
+    @logger.catch()
+    async def getSubTraffic(self, proxy=proxies):
         """
         获取订阅内的流量
         :return: str
         """
-        return await self.start(proxy=proxy)
+        _headers = {'User-Agent': 'clash'}
+        try:
+            async with aiohttp.ClientSession(headers=_headers) as session:
+                async with session.get(self.url, proxy=proxy, timeout=10) as response:
+                    info = response.headers.get('subscription-userinfo', "")
+                    info = info.replace(';', '').split(' ')
+                    info2 = {'upload': 0, 'download': 0, 'total': 0, 'expire': 0}
+                    for i in info:
+                        try:
+                            i1 = i.split('=')
+                            info2[i1[0]] = float(i1[1]) if i1[1] else 0
+                        except IndexError:
+                            pass
+                    logger.info(str(info2))
+                    traffic_up = info2.get('upload', 0) / 1024 / 1024 / 1024
+                    traffic_download = info2.get('download', 0) / 1024 / 1024 / 1024
+                    traffic_use = traffic_up + traffic_download
+                    traffic_total = info2.get('total', 0) / 1024 / 1024 / 1024
+                    expire_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(info2.get('expire', time.time())))
+                    return [traffic_up, traffic_download, traffic_use, traffic_total, expire_time]
+        except asyncio.exceptions.TimeoutError:
+            logger.info("获取订阅超时")
+            return []
+        except ClientConnectorError as c:
+            logger.warning(c)
+            return []
 
     async def getSubConfig(self, save_path: str, proxy=proxies):
         """
