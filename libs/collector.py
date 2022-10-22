@@ -134,6 +134,7 @@ class SubCollector(BaseCollector):
     订阅采集器，默认采集clash配置文件
     """
 
+    @logger.catch()
     def __init__(self, suburl: str):
         super().__init__()
         self.text = None
@@ -144,8 +145,10 @@ class SubCollector(BaseCollector):
         self.codeurl = quote(suburl, 'utf-8')
         self.host = str(self.subconvertor.get('host', '127.0.0.1:25500'))
         self.cvt_url = f"http://{self.host}/sub?target=clash&new_name=true&url={self.codeurl}"
-        # #&insert=false&config" \ "=https%3A%2F%2Fraw.githubusercontent.com%2FACL4SSR%2FACL4SSR%2Fmaster%2FClash
-        # %2Fconfig" \ "%2FACL4SSR_Online.ini"
+        self.sub_remote_config = self.subconvertor.get('remoteconfig', '')
+        if self.sub_remote_config:
+            self.sub_remote_config = quote(self.sub_remote_config, 'utf-8')
+            self.cvt_url = self.cvt_url + "&config=" + self.sub_remote_config
 
     async def start(self, proxy=None):
         try:
@@ -166,7 +169,7 @@ class SubCollector(BaseCollector):
         _headers = {'User-Agent': 'clash'}
         try:
             async with aiohttp.ClientSession(headers=_headers) as session:
-                async with session.get(self.url, proxy=proxy, timeout=10) as response:
+                async with session.get(self.url, proxy=proxy, timeout=20) as response:
                     info = response.headers.get('subscription-userinfo', "")
                     info = info.replace(';', '').split(' ')
                     info2 = {'upload': 0, 'download': 0, 'total': 0, 'expire': 0}
@@ -182,7 +185,7 @@ class SubCollector(BaseCollector):
                     traffic_use = traffic_up + traffic_download
                     traffic_total = info2.get('total', 0) / 1024 / 1024 / 1024
                     expire_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(info2.get('expire', time.time())))
-                    return [traffic_up, traffic_download, traffic_use, traffic_total, expire_time]
+                return [traffic_up, traffic_download, traffic_use, traffic_total, expire_time]
         except asyncio.exceptions.TimeoutError:
             logger.info("获取订阅超时")
             return []

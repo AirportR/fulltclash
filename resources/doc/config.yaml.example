@@ -14,6 +14,7 @@ item: # 流媒体测试项，决定你想要测哪个项,目前仅支持以下�
 #subconvertor: #订阅转换
 # enable: true #是否启用
 # host: '127.0.0.1:25500' #域名或者ip加端口
+# remoteconfig: "https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online.ini" #远程配置
 #speedfile: "https://dl.google.com/dl/android/studio/install/3.4.1.0/android-studio-ide-183.5522156-windows.exe" #自定义测速文件
 #speedthread: 4 #测速线程
 #user: 12345678 #用户列表，/grant 命令授权的目标会保存在这（可选配置）
