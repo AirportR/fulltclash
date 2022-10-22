@@ -199,12 +199,13 @@ async def speed(_, message):
     try:
         info = await speedtest.core(message, back_message=back_message,
                                     start_time=start_time, suburl=suburl)
-        wtime = info.get('wtime', "-1")
-        stime = export.ExportSpeed(name=None, info=info).exportImage()
-        # 发送回TG
-        await check.check_photo(message, back_message, stime, wtime)
-        ma.delsub(subname=start_time)
-        ma.save(savePath='./clash/proxy.yaml')
+        if info:
+            wtime = info.get('wtime', "-1")
+            stime = export.ExportSpeed(name=None, info=info).exportImage()
+            # 发送回TG
+            await check.check_photo(message, back_message, stime, wtime)
+            ma.delsub(subname=start_time)
+            ma.save(savePath='./clash/proxy.yaml')
     except RPCError as r:
         logger.error(str(r))
         message.reply(str(r))
