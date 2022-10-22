@@ -11,9 +11,11 @@ item: # 流媒体测试项，决定你想要测哪个项,目前仅支持以下�
 #- 'Bahamut'
 #proxyport: 7890 # 此为旧版代理设置，用于TGbot通讯，现已不推荐使用。
 #proxy: "host:端口" # 配置代理，用于下载获取订阅链接，TGbot通讯等。订阅链接国内打不开可尝试开启（可选配置）,本机提供的代理可以这样填: '127.0.0.1:7890'
-#subconvertor:
-# enable: true
-# host: '127.0.0.1:25535'
+#subconvertor: #订阅转换
+# enable: true #是否启用
+# host: '127.0.0.1:25500' #域名或者ip加端口
+#speedfile: "https://dl.google.com/dl/android/studio/install/3.4.1.0/android-studio-ide-183.5522156-windows.exe" #自定义测速文件
+#speedthread: 4 #测速线程
 #user: 12345678 #用户列表，/grant 命令授权的目标会保存在这（可选配置）
 #emoji: true # 是否启用emoji，若否，则在输出图片时emoji将无法正常显示。关闭该项可解决部分图片生成失败的问题。（可选配置）
 #clash:
