@@ -41,6 +41,7 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
                     if reconnection == 0:
                         logger.info("不支持非自制剧，正在检测自制剧...")
                         await fetch_netflix_new(Collector, session, flag=flag + 1, proxy=proxy, reconnection=5)
+                        return
                     await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection-1)
                 else:
                     logger.info("不支持非自制剧，正在检测自制剧...")
@@ -53,6 +54,7 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
                 elif res.status == 403:
                     if reconnection == 0:
                         Collector.info['netflix_new'] = "失败"
+                        return
                     await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection-1)
                 else:
                     Collector.info['netflix_new'] = "失败"
