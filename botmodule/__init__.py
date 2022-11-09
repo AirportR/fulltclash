@@ -6,5 +6,6 @@ from botmodule.command.basic import *
 from botmodule.command.setting import *
 from botmodule import register
 from botmodule import subinfo
+from botmodule import debug_interface as di
 
 

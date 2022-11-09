@@ -7,7 +7,7 @@ from botmodule import init_bot
 from libs.export import __version__
 
 tourist_text = f"""
-    欢迎使用FullTclash bot,目前可用命令有:
+    欢迎使用FullTclash bot,目前可用指令有:
 
 /help & /start [游客]获取帮助菜单
 /version [游客]输出版本信息({__version__})
@@ -40,7 +40,7 @@ user_text = f"""
 """
 
 admin_text = f"""
-    欢迎使用FullTclash bot,目前可用命令有:
+    欢迎使用FullTclash bot,目前可用指令有:
 
 基础指令
 /help & /start [游客]获取帮助菜单

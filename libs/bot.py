@@ -122,6 +122,10 @@ def command_loader(app: Client):
     async def subinfo(client, message):
         await botmodule.subinfo.getSubInfo(client, message)
 
+    @app.on_message(filters.command(["map"]) & filters.user(admin), group=19)
+    async def debug(client, message):
+        await botmodule.di.debug_interface(client, message)
+
 
 def callback_loader(app: Client):
     @app.on_callback_query()
