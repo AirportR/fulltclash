@@ -5,6 +5,6 @@ from botmodule.command.authority import *
 from botmodule.command.basic import *
 from botmodule.command.setting import *
 from botmodule import register
-
+from botmodule import subinfo
 
 

@@ -11,6 +11,7 @@ tourist_text = f"""
 
 /help & /start [游客]获取帮助菜单
 /version [游客]输出版本信息({__version__})
+/traffic & /subinfo & /流量查询 & /流量 <订阅链接> [游客]获取流量信息
 /inboundurl <订阅链接> [游客/用户]临时下载订阅仅作入口分析(需管理员开启)
 
 如有使用问题加入频道 @FullTClash 交流
@@ -21,6 +22,7 @@ user_text = f"""
 基础指令
 /help & /start [游客]获取帮助菜单
 /version [游客]输出版本信息({__version__})
+/traffic & /subinfo & /流量查询 & /流量 <订阅链接> [游客]获取流量信息
 
 测试指令
 /test <订阅名> [用户]进行流媒体测试
@@ -43,6 +45,7 @@ admin_text = f"""
 基础指令
 /help & /start [游客]获取帮助菜单
 /version [游客]输出版本信息({__version__})
+/traffic & /subinfo & /流量查询 & /流量 <订阅链接> [游客]获取流量信息
 
 测试指令
 /test <订阅名> [用户]进行流媒体测试
@@ -67,7 +70,7 @@ admin_text = f"""
     """
 
 
-async def version(client, message):
+async def version(_, message):
     try:
         back_message = await message.reply(f"FullTclash版本: {__version__}")
         await asyncio.sleep(30)
@@ -76,7 +79,7 @@ async def version(client, message):
         logger.error(str(r))
 
 
-async def helps(client, message):
+async def helps(_, message):
     USER_TARGET = init_bot.USER_TARGET
     admin = init_bot.admin
 

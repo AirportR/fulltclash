@@ -68,12 +68,11 @@ async def test_setting(client, callback_query):
         logger.info("test_type:" + test_type)
         logger.warning(str(e))
     if origin_message is None:
-        logger.warning("⚠️无法获取发起该任务的源消息，任务已取消~")
-        m2 = await client.edit_message_text(chat_id=chat_id,
-                                            message_id=mess_id,
-                                            text="⚠️无法获取发起该任务的源消息，任务已取消~")
-        await asyncio.sleep(10)
-        await m2.delete()
+        logger.warning("⚠️无法获取发起该任务的源消息")
+        await client.edit_message_text(chat_id=chat_id,
+                                       message_id=mess_id,
+                                       text="⚠️无法获取发起该任务的源消息")
+        await asyncio.sleep(1)
         return test_items, origin_message, message, test_type
     if "✅" in callback_data:
         for b in buttonss:

@@ -23,9 +23,11 @@ author: https://github.com/Oreomeow
 # 部分内容已被修改  Some codes has been modified
 class Speedtest:
     def __init__(self):
+        self._config = cleaner.ConfigManager()
         self._stopped = False
-        self.speedurl = "https://dl.google.com/dl/android/studio/install/3.4.1.0/android-studio-ide-183.5522156" \
-                        "-windows.exe"
+        self.speedurl = self.config.get('speedfile',
+                                        "https://dl.google.com/dl/android/studio/install/3.4.1.0/android-studio-ide-183.5522156-windows.exe")
+        self._thread = self.config.get('speedthread', 4)
         self.result = []
         self._total_red = 0
         self._delta_red = 0
@@ -33,6 +35,14 @@ class Speedtest:
         self._statistics_time = 0
         self._time_used = 0
         self._count = 0
+
+    @property
+    def thread(self):
+        return self._thread
+
+    @property
+    def config(self):
+        return self._config.config
 
     @property
     def stopped(self) -> bool:
@@ -53,15 +63,6 @@ class Speedtest:
     @property
     def max_speed(self) -> Union[int, float]:
         tmp_speed_list = self.speed_list
-        # tmp_speed_list.sort()
-        # max_speed: Union[int, float] = 0
-        # if len(tmp_speed_list) > 12:
-        #     msum = 0
-        #     for i in range(12, len(tmp_speed_list) - 2):
-        #         msum += tmp_speed_list[i]
-        #         max_speed = msum / (len(tmp_speed_list) - 2 - 12)
-        # else:
-        #     max_speed = self._total_red / self._time_used
         return max(tmp_speed_list)
 
     async def record(self, received: Union[int, float]):
@@ -121,20 +122,21 @@ async def fetch(self, url: str, host: str, port: int, buffer: int):
 
 
 async def start(
-        download_semaphore: asyncio.Semaphore,
         proxy_host: str,
         proxy_port: int,
         buffer: int,
-        workers: int,
+        workers: int = 0,
 ) -> tuple:
+    download_semaphore = asyncio.Semaphore(workers if workers else Speedtest().thread)
     async with download_semaphore:
         st = Speedtest()
         url = st.speedurl
         # logger.debug(f"Url: {url}")
-        logger.info(f"Running st_async, workers: {workers}.")
+        thread = workers if workers else st.thread
+        logger.info(f"Running st_async, workers: {thread}.")
         tasks = [
             asyncio.create_task(fetch(st, url, proxy_host, proxy_port, buffer))
-            for _ in range(workers)
+            for _ in range(thread)
         ]
         await asyncio.wait(tasks)
         st.show_progress_full()
@@ -165,7 +167,7 @@ async def batch_speed(message, nodename: list, proxygroup='auto'):
         udptype, _, _, _, _ = nat_type_test('127.0.0.1', proxyport=1122)
         if udptype is None:
             udptype = "Unknown"
-        res = await start(asyncio.Semaphore(4), "127.0.0.1", 1122, 4096, 4)
+        res = await start("127.0.0.1", 1122, 4096)
         avgspeed = "%.2f" % (res[0] / 1024 / 1024) + "MB"
         maxspeed = "%.2f" % (res[1] / 1024 / 1024) + "MB"
         speedresult = res[2]
@@ -271,7 +273,7 @@ async def core(message, back_message, start_time, suburl: str = None):
         # 计算测试消耗时间
         wtime = "%.1f" % float(time.time() - s1)
         info['wtime'] = wtime
-        info['线程'] = 4
+        info['线程'] = collector.config.config.get('speedthread', 4)
         cl1 = cleaner.ConfigManager(configpath=r"./results/{}.yaml".format(start_time.replace(':', '-')), data=info)
         cl1.save(r"./results/{}.yaml".format(start_time.replace(':', '-')))
     except Exception as e:

@@ -2,21 +2,17 @@
 
 基于clash 核心运作的、进行全量订阅测试的telegram机器人
 
-# 最近更新(3.3.8)
+# 最近更新(3.3.7)
 
-
-- 新增支持自定义测速文件、线程数。在config.yaml.example中查看配置样例。
-- 新增订阅流量查询。可用指令：/subinfo /traffic /流量查询 + <订阅链接> 即可发起查询。
-- 初步支持subconvertor(订阅转换)。在config.yaml.example中查看配置样例。支持远程拉取配置。
-- 新增文档，放置在./resources/doc中
-- 修复近期以来netflix检测失效问题。
-- 更新了内部采集器的通用请求头。
-- 更新 /help 指令，新增 /subinfo 使用方法。 
-- 将获取订阅的超时时间从10秒改为20秒。
-- 优化proxy.yaml的DNS配置，并添加了命中苹果、微软的域名规则。
-- 优化初始化bot时的日志信息。
-- 移动config.yaml.example 到 ./resources/doc 中。
-- 移动 bot.py 到 ./libs 。
+- 新增Netflix新检测方法，优化新版奈飞检测逻辑。
+- bot的操作界面优化。新增节点存活率、御三家（Netflix、disney+、Youtube）按钮，新增取消任务按钮。
+- 优化 login.py 文件。现如今不会强制要求输入代理（之前必须提供代理）。
+- 修复bot因任务源消息被群组管理员删除导致崩溃的问题。
+- 修复speedtest绘图偶现出错问题。
+- 修复UDP类型检测偶现失败问题。
+- 修复emoji源中，部分emoji不全导致生成图片出错的问题
+- 修复节点拓扑测试生成图片宽度不一致的问题
+- 移动 emoji_custom.py 到 ./addons 目录中，因为它更像一个插件功能。
 
 
 历史更新请到TG频道查看: 

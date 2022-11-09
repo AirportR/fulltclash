@@ -118,6 +118,10 @@ def command_loader(app: Client):
         if await isuser(message, botmodule.init_bot.reloadUser()):
             await bot_put(client, message, "speedurl")
 
+    @app.on_message(filters.command(["subinfo", "traffic", "流量", "流量信息", "流量查询"]), group=18)
+    async def subinfo(client, message):
+        await botmodule.subinfo.getSubInfo(client, message)
+
 
 def callback_loader(app: Client):
     @app.on_callback_query()

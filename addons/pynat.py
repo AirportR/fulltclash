@@ -49,10 +49,10 @@ BLOCKED = "Blocked"
 OPEN = "Open"
 UDP_FIREWALL = "UDP Firewall"
 # NAT topologies
-FULL_CONE = "FullCone全锥型"
+FULL_CONE = "FullCone"
 RESTRICTED_CONE = "Restricted-cone"
 RESTRICTED_PORT = "Restricted-port"
-SYMMETRIC = "Symmetric对称型"
+SYMMETRIC = "Symmetric"
 
 # Stun message types
 BIND_REQUEST_MSG = b"\x00\x01"

@@ -56,7 +56,7 @@ async def getsub_async(url: str, username: str, pwd: str, proxy=None):
             return str(e)
 
 
-async def baipiao(client, message):
+async def baipiao(_, message):
     back_message = await message.reply("正在尝试注册...")  # 发送提示
     regisurl = geturl(str(message.text))
     if regisurl:

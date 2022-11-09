@@ -10,10 +10,12 @@ from libs import cleaner, collector, proxys, check
 """
 
 
-async def unit(test_items: list, delay: int):
+async def unit(test_items: list, delay: int, host="127.0.0.1", port=1122):
     """
     以一个节点的所有测试项为一个基本单元unit,返回单个节点的测试结果
-    :param test_items:
+    :param port: 代理端口
+    :param host: 代理主机名
+    :param test_items: [Netflix,disney+,etc...]
     :param delay: 节点延迟，可选参数，若为0，则测试项全部返回N/A
     :return: list 返回test_items对应顺序的信息
     """
@@ -24,7 +26,7 @@ async def unit(test_items: list, delay: int):
         return info
     else:
         cl = collector.Collector()
-        re1 = await cl.start(proxy="http://127.0.0.1:{}".format(1122))
+        re1 = await cl.start(proxy=f"http://{host}:{port}")
         cnr = cleaner.ReCleaner(re1)
         old_info = cnr.get_all()
         for item in test_items:
@@ -144,3 +146,7 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
         await asyncio.sleep(e.value)
     finally:
         return info
+
+
+if __name__ == "__main__":
+    print("this is a demo")

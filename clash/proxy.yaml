@@ -40,13 +40,15 @@ proxy-providers:
 rules:
 - DOMAIN-SUFFIX,google.com,auto
 - DOMAIN-KEYWORD,google,auto
+- DOMAIN,google.com,auto
 - DOMAIN-SUFFIX,bilibili.com,auto
 - DOMAIN-KEYWORD,bilibili,auto
-- DOMAIN,google.com,auto
 - DOMAIN,bilibili.com,auto
+- DOMAIN-SUFFIX,microsoft.com,auto
+- DOMAIN-SUFFIX,cachefly.net,auto
+- DOMAIN-SUFFIX,apple.com,auto
+- DOMAIN-SUFFIX,cdn-apple.com,auto
 - SRC-IP-CIDR,192.168.1.201/32,DIRECT
 - IP-CIDR,127.0.0.0/8,DIRECT
 - GEOIP,CN,DIRECT
-- DST-PORT,80,DIRECT
-- SRC-PORT,7777,DIRECT
 - MATCH,auto

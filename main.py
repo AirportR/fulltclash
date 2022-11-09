@@ -1,5 +1,5 @@
 from pyrogram import Client
-import bot
+from libs import bot
 from botmodule import init_bot
 
 
