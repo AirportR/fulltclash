@@ -274,14 +274,14 @@ class Collector:
             if len(items):
                 for item in items:
                     i = item.capitalize()
-                    if i == "Netflix":
-                        task1 = asyncio.create_task(self.fetch_ip(session=session, proxy=proxy))
-                        self.tasks.append(task1)
-                        task2 = asyncio.create_task(self.fetch_ninfo1(session, proxy=proxy))
-                        self.tasks.append(task2)
-                        task3 = asyncio.create_task(self.fetch_ninfo2(session, proxy=proxy))
-                        self.tasks.append(task3)
-                    elif i == "Youtube":
+                    # if i == "Netflix":
+                    #     task1 = asyncio.create_task(self.fetch_ip(session=session, proxy=proxy))
+                    #     self.tasks.append(task1)
+                    #     task2 = asyncio.create_task(self.fetch_ninfo1(session, proxy=proxy))
+                    #     self.tasks.append(task2)
+                    #     task3 = asyncio.create_task(self.fetch_ninfo2(session, proxy=proxy))
+                    #     self.tasks.append(task3) # 旧奈飞测试，已废弃
+                    if i == "Youtube":
                         task4 = asyncio.create_task(self.fetch_youtube(session, proxy=proxy))
                         self.tasks.append(task4)
                     elif i == "Disney" or i == "Disney+":
@@ -299,9 +299,12 @@ class Collector:
                     elif i == "Bahamut":
                         from addons import bahamut
                         self.tasks.append(bahamut.task(self, session, proxy=proxy))
-                    elif i == "Netflix(新)":
+                    elif i == "Netflix":
                         from addons import netflix
                         self.tasks.append((netflix.task(self, session, proxy=proxy)))
+                    elif i == "Abema":
+                        from addons import abema
+                        self.tasks.append((abema.task(self, session, proxy=proxy)))
                     else:
                         pass
             return self.tasks

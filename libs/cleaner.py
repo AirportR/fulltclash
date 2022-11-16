@@ -539,10 +539,10 @@ class ReCleaner:
         try:
             for item in items:
                 i = item.capitalize()
-                if i == "Netflix":
-                    nf = self.getnetflixinfo()
-                    info['Netflix'] = nf[len(nf) - 1]
-                elif i == "Youtube":
+                # if i == "Netflix":
+                #     nf = self.getnetflixinfo()
+                #     info['Netflix'] = nf[len(nf) - 1] #旧奈飞测试，已废弃
+                if i == "Youtube":
                     you = self.getyoutubeinfo()
                     info['Youtube'] = you
                 elif i == "Disney":
@@ -564,9 +564,12 @@ class ReCleaner:
                 elif i == "Bahamut":
                     from addons import bahamut
                     info['Bahamut'] = bahamut.get_bahamut_info(self)
-                elif i == "Netflix(新)":
+                elif i == "Netflix":
                     from addons import netflix
-                    info['Netflix(新)'] = netflix.get_netflix_info_new(self)
+                    info['Netflix'] = netflix.get_netflix_info_new(self)
+                elif i == "Abema":
+                    from addons import abema
+                    info['Abema'] = abema.get_abema_info(self)
                 else:
                     pass
         except Exception as e:

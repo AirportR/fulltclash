@@ -6,7 +6,7 @@ from pyrogram.types import BotCommand
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from addons.hbomax import b9
 from addons.bahamut import b10
-from addons.netflix import button as b11
+from addons.abema import button as b12
 
 b1 = InlineKeyboardButton("✅Netflix", callback_data='✅Netflix')
 b2 = InlineKeyboardButton("✅Youtube", callback_data='✅Youtube')
@@ -19,14 +19,14 @@ b8 = InlineKeyboardButton("👌完成设置", callback_data='👌完成设置')
 yusanjia = InlineKeyboardButton("御三家(N-Y-D)", callback_data='御三家(N-Y-D)')
 b_cancel = InlineKeyboardButton("👋点错了，给我取消", callback_data='👋点错了，给我取消')
 b_alive = InlineKeyboardButton("节点存活率", callback_data="节点存活率")
-buttons = [b1, b2, b3, b4, b5, b8, b9, b10, b11]
+buttons = [b1, b2, b3, b4, b5, b8, b9, b10, b12]
 IKM = InlineKeyboardMarkup(
     [
         # 第一行
         [b1, b2, b3],
         # 第二行
         [b4, b5, b9],
-        [b10, b11],
+        [b10, b12],
         [yusanjia, b_alive],
         [b_cancel, b8]
     ]
@@ -104,7 +104,7 @@ async def test_setting(client, callback_query):
         return test_items, origin_message, message, test_type
     elif "御三家(N-Y-D)" in callback_data:
         test_items.clear()
-        test_items.extend(['Netflix(新)', 'Youtube', 'Disney+'])
+        test_items.extend(['Netflix', 'Youtube', 'Disney+'])
         message = await client.edit_message_text(chat_id=chat_id,
                                                  message_id=mess_id,
                                                  text="⌛正在提交任务~")

@@ -84,7 +84,7 @@ def get_netflix_info_new(ReCleaner):
             logger.warning("采集器内无数据")
             return "N/A"
         else:
-            logger.info("netflix (新)解锁：" + str(ReCleaner.data.get('netflix_new', "N/A")))
+            logger.info("netflix解锁：" + str(ReCleaner.data.get('netflix_new', "N/A")))
             return ReCleaner.data.get('netflix_new', "N/A")
     except Exception as e:
         logger.error(e)
@@ -93,7 +93,7 @@ def get_netflix_info_new(ReCleaner):
 
 # bot_setting_board
 
-button = InlineKeyboardButton("✅Netflix(新)", callback_data='✅Netflix(新)')
+button = InlineKeyboardButton("✅Netflix", callback_data='✅Netflix')
 
 if __name__ == "__main__":
     "this is a demo"
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     from libs.collector import Collector as CL, media_items
 
     media_items.clear()
-    media_items.append("Netflix(新)")
+    media_items.append("Netflix")
     cl = CL()
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
