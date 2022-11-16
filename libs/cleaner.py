@@ -710,18 +710,20 @@ class ReCleaner:
                 logger.warning("采集器内无数据")
                 return "N/A"
             else:
-                if "is not available" in self.data['youtube']:
+                text = self.data['youtube']
+                if text.find('Premium is not available in your country') != -1 or text.find('manageSubscriptionButton') == -1:
                     return "失败"
-                elif "YouTube Music 在您所在区域无法使用" in self.data['youtube']:
-                    return "失败"
+                if text.find('www.google.cn') != -1:
+                    return "失败(CN)"
                 elif self.data['youtube_status_code'] == 200:
-                    text = self.data['youtube']
-                    s = text.find('contentRegion', 14000, 16000)
-                    if s == -1:
-                        return "解锁(未知)"
-                    region = text[s + 16:s + 18]
-                    logger.info("Youtube解锁地区: " + region)
-                    return "解锁({})".format(region)
+                    idx = text.find('"countryCode"')
+                    region = text[idx:idx+17].replace('"countryCode":"',"")
+                    if idx == -1 and text.find('manageSubscriptionButton') != -1:
+                        region = "US"
+                    elif region == "":
+                        region == "未知"
+                    logger.info(f"Youtube解锁地区: {region}")
+                    return f"解锁({region})"
                 else:
                     return "N/A"
         except Exception as e:

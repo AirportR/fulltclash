@@ -237,7 +237,19 @@ class Collector:
         self.netflixurl1 = "https://www.netflix.com/title/70242311"
         self.netflixurl2 = "https://www.netflix.com/title/70143836"
         self.ipurl = "https://api.ip.sb/geoip"
-        self.youtubeurl = "https://music.youtube.com"
+        self.youtubeurl = "https://www.youtube.com/premium"
+        self.youtubeHeaders = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.87 Safari/537.36',
+            'Accept-Language': 'en'
+        }
+        self.youtubeCookie = {
+            'YSC': 'BiCUU3-5Gdk',
+            'CONSENT': 'YES+cb.20220301-11-p0.en+FX+700',
+            'GPS': '1',
+            'VISITOR_INFO1_LIVE': '4VwPMkB7W5A',
+            '_gcl_au': '1.1.1809531354.1646633279',
+            'PREF': 'tz=Asia.Shanghai'
+        }
         self.info = {}
         self.disneyurl1 = "https://www.disneyplus.com/"
         self.disneyurl2 = "https://global.edge.bamgrid.com/token"
@@ -427,8 +439,9 @@ class Collector:
         :param proxy:
         :return:
         """
+        
         try:
-            youtube = await session.get(self.youtubeurl, proxy=proxy, timeout=5)
+            youtube = await session.get(self.youtubeurl, proxy=proxy, timeout=5, headers=self.youtubeHeaders, cookies=self.youtubeCookie)
             if youtube.status is not None:
                 self.info['youtube'] = await youtube.text()
                 self.info['youtube_status_code'] = youtube.status
