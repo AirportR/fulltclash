@@ -55,12 +55,12 @@ async def test_setting(client, callback_query):
     """
     message = None
     test_items = []
-    buttonss = [b1, b2, b3, b4, b5, b8, b9, b10, b11, yusanjia]
     text = "请选择想要启用的测试项:"
     callback_data = callback_query.data
     mess_id = callback_query.message.id
     chat_id = callback_query.message.chat.id
     origin_message = callback_query.message.reply_to_message
+    inline_keyboard = callback_query.message.reply_markup.inline_keyboard
     try:
         test_type = str(origin_message.text).split(" ")[0]
     except Exception as e:
@@ -75,46 +75,32 @@ async def test_setting(client, callback_query):
         await asyncio.sleep(1)
         return test_items, origin_message, message, test_type
     if "✅" in callback_data:
-        for b in buttonss:
-            if b.text == callback_data:
-                b.text = b.text.replace("✅", "❌")
-                b.callback_data = b.text
-                IKM2 = InlineKeyboardMarkup(
-                    [
-                        # 第一行
-                        [b1, b2, b3],
-                        # 第二行
-                        [b4, b5, b9],
-                        [b10, b11],
-                        [yusanjia, b_alive],
-                        [b_cancel, b8]
-                    ]
-                )
-                await client.edit_message_text(chat_id=chat_id,
-                                               message_id=mess_id,
-                                               text=text,
-                                               reply_markup=IKM2)
+        for b_1 in inline_keyboard:
+            for b in b_1:
+                if b.text == callback_data:
+                    b.text = b.text.replace("✅", "❌")
+                    b.callback_data = b.text
+                    IKM2 = InlineKeyboardMarkup(
+                        inline_keyboard
+                    )
+                    await client.edit_message_text(chat_id=chat_id,
+                                                   message_id=mess_id,
+                                                   text=text,
+                                                   reply_markup=IKM2)
         return test_items, origin_message, message, test_type
     elif "❌" in callback_data:
-        for b in buttonss:
-            if b.text == callback_data:
-                b.text = b.text.replace("❌", "✅")
-                b.callback_data = b.text
-                IKM2 = InlineKeyboardMarkup(
-                    [
-                        # 第一行
-                        [b1, b2, b3],
-                        # 第二行
-                        [b4, b5, b9],
-                        [b10, b11],
-                        [yusanjia, b_alive],
-                        [b_cancel, b8]
-                    ]
-                )
-                await client.edit_message_text(chat_id=chat_id,
-                                               message_id=mess_id,
-                                               text=text,
-                                               reply_markup=IKM2)
+        for b_1 in inline_keyboard:
+            for b in b_1:
+                if b.text == callback_data:
+                    b.text = b.text.replace("❌", "✅")
+                    b.callback_data = b.text
+                    IKM2 = InlineKeyboardMarkup(
+                        inline_keyboard
+                    )
+                    await client.edit_message_text(chat_id=chat_id,
+                                                   message_id=mess_id,
+                                                   text=text,
+                                                   reply_markup=IKM2)
         return test_items, origin_message, message, test_type
     elif "御三家(N-Y-D)" in callback_data:
         test_items.clear()
@@ -137,9 +123,10 @@ async def test_setting(client, callback_query):
         return test_items, origin_message, message, test_type
     elif "👌完成设置" in callback_data:
         test_items = []
-        for b in buttonss:
-            if "✅" in b.text:
-                test_items.append(str(b.text)[1:])
+        for b_1 in inline_keyboard:
+            for b in b_1:
+                if "✅" in b.text:
+                    test_items.append(str(b.text)[1:])
         message = await client.edit_message_text(chat_id=chat_id,
                                                  message_id=mess_id,
                                                  text="⌛正在提交任务~")

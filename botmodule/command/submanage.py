@@ -4,7 +4,7 @@ from libs import cleaner
 from botmodule.init_bot import config
 
 
-async def sub(client, message):
+async def sub(_, message):
     subinfo = config.get_sub()
     try:
         await message.reply(str(subinfo))
@@ -12,7 +12,7 @@ async def sub(client, message):
         print(r)
 
 
-async def new(client, message):
+async def new(_, message):
     arg = cleaner.ArgCleaner().getall(str(message.text))
     if len(arg) < 3:
         await message.reply("请输入正确的格式，如： /new <订阅地址> <订阅名称>")
@@ -30,7 +30,7 @@ async def new(client, message):
             print("错误")
 
 
-async def remove(client, message):
+async def remove(_, message):
     arg = cleaner.ArgCleaner().getall(str(message.text))
     try:
         del arg[0]

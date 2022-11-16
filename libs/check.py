@@ -9,33 +9,38 @@ from loguru import logger
 """
 
 
-async def check_callback_master(callback_query, USER_TARGET: list):
-    username = None
-    try:
-        username = str(callback_query.from_user.username)
-    except Exception as e:
-        logger.info("无法获取该目标获取用户名" + str(e))
-    try:
-        if username:
-            if username not in USER_TARGET:
-                if int(callback_query.from_user.id) not in USER_TARGET:
-                    await callback_query.answer(f"不要乱动别人的操作哟👻", show_alert=True)
-                    return True
-                else:
-                    return False
-            else:
-                return False
-        else:
-            if int(callback_query.from_user.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
-                await callback_query.answer(f"不要乱动别人的操作哟👻", show_alert=True)
-                return True
-            else:
-                return False
+async def check_callback_master(callback_query, USER_TARGET=None, strict: bool = True):
+    """
 
-    except AttributeError:
-        if int(callback_query.sender_chat.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
+    :param callback_query: 回调数据结构
+    :param USER_TARGET: 用户名单
+    :param strict: 严格模式，如果为true,则每个任务的内联键盘只有任务的发起者能操作，若为false，则所有用户都能操作内联键盘。
+    :return:
+    """
+    master = []
+    if USER_TARGET and not strict:
+        master.extend(USER_TARGET)
+
+    try:
+        master.append(callback_query.message.reply_to_message.from_user.id)  # 发起测试任务的用户id
+        if int(callback_query.from_user.id) not in master:
             await callback_query.answer(f"不要乱动别人的操作哟👻", show_alert=True)
             return True
+        else:
+            return False
+
+    except AttributeError:
+        master.append(callback_query.message.reply_to_message.sender_chat.id)
+        if int(callback_query.from_user.id) in master:  # 如果不在USER_TARGET名单是不会有权限的
+            return False
+        if str(callback_query.from_user.username) in master:
+            return False
+        else:
+            await callback_query.answer(f"不要乱动别人的操作哟👻", show_alert=True)
+            return True
+    except Exception as e:
+        logger.error(str(e))
+        return True
 
 
 async def check_user(message, USER_TARGET: list, isalert=True):
