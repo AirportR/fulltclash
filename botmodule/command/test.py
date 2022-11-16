@@ -7,6 +7,7 @@ from libs import cleaner, topotest, streamingtest, speedtest, export, check
 from botmodule.init_bot import config
 
 USER_TARGET = botmodule.init_bot.USER_TARGET
+coresum = botmodule.init_bot.corenum
 
 
 def reloadUser():
@@ -15,13 +16,14 @@ def reloadUser():
     return USER_TARGET
 
 
+@logger.catch()
 async def testurl(_, message):
     back_message = await message.reply("╰(*°▽°*)╯流媒体测试进行中...")
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
     try:
         info = await streamingtest.core(message, back_message=back_message,
-                                        start_time=start_time)
+                                        start_time=start_time, thread=coresum)
         if info:
             wtime = info.get('wtime', "-1")
             # 生成图片
@@ -39,6 +41,7 @@ async def testurl(_, message):
         logger.error(e)
 
 
+@logger.catch()
 async def test(_, message):
     back_message = await message.reply("╰(*°▽°*)╯流媒体测试进行中...")  # 发送提示
     arg = cleaner.ArgCleaner().getall(str(message.text))
@@ -55,7 +58,7 @@ async def test(_, message):
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
     try:
         info = await streamingtest.core(message, back_message=back_message,
-                                        start_time=start_time, suburl=suburl)
+                                        start_time=start_time, suburl=suburl, thread=coresum)
         if info:
             wtime = info.get('wtime', "-1")
             # 生成图片
@@ -73,6 +76,7 @@ async def test(_, message):
         logger.error(e)
 
 
+@logger.catch()
 async def analyzeurl(_, message, test_type="all"):
     back_message = await message.reply("╰(*°▽°*)╯节点链路拓扑测试进行中...")  # 发送提示
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
@@ -111,6 +115,7 @@ async def analyzeurl(_, message, test_type="all"):
         logger.error(e)
 
 
+@logger.catch()
 async def analyze(_, message, test_type="all"):
     back_message = await message.reply("╰(*°▽°*)╯节点链路拓扑测试进行中...")  # 发送提示
     arg = cleaner.ArgCleaner().getall(str(message.text))
@@ -160,6 +165,7 @@ async def analyze(_, message, test_type="all"):
         logger.error(e)
 
 
+@logger.catch()
 async def speedurl(_, message):
     back_message = await message.reply("╰(*°▽°*)╯速度测试进行中...")  # 发送提示
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
@@ -182,6 +188,7 @@ async def speedurl(_, message):
         logger.error(e)
 
 
+@logger.catch()
 async def speed(_, message):
     back_message = await message.reply("╰(*°▽°*)╯速度测试进行中...")  # 发送提示
     arg = cleaner.ArgCleaner().getall(str(message.text))

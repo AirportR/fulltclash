@@ -69,9 +69,94 @@ async def batch_test(message, nodename: list, delays: list, test_items: list, pr
     return info
 
 
-async def core(message, back_message, start_time, suburl: str = None, media_items: list = None):
+async def batch_test_pro(message, nodename: list, delays: list, test_items: list, pool: dict, proxygroup='auto'):
+    info = {}
+    progress = 0
+    sending_time = 0
+    host = pool.get('host', [])
+    port = pool.get('port', [])
+    psize = len(port)
+    nodenum = len(nodename)
+    tasks = []
+    for item in test_items:
+        info[item] = []
+    logger.info("接受任务数量: {} 线程数: {}".format(nodenum, psize))
+    if psize <= 0:
+        logger.error("无可用的代理程序接口")
+        return None
+    if nodenum < psize:
+        for i in range(len(port[:nodenum])):
+            proxys.switchProxy_old(proxyName=nodename[i], proxyGroup=proxygroup, clashHost=host[i],
+                                   clashPort=port[i] + 1)
+            task = asyncio.create_task(unit(test_items, delays[i], host=host[i], port=port[i]))
+            tasks.append(task)
+        done = await asyncio.gather(*tasks)
+
+        # 简单处理一下数据
+        res = []
+        for j in range(len(test_items)):
+            res.clear()
+            for d in done:
+                res.append(d[j])
+            info[test_items[j]].extend(res)
+        logger.info(str(info))
+    else:
+        subbatch = nodenum // psize
+
+        for s in range(subbatch):
+            logger.info("当前批次: " + str(s + 1))
+            tasks.clear()
+            for i in range(psize):
+                proxys.switchProxy_old(proxyName=nodename[s * psize + i], proxyGroup=proxygroup, clashHost=host[i],
+                                       clashPort=port[i] + 1)
+
+                task = asyncio.create_task(unit(test_items, delays[s * psize + i], host=host[i], port=port[i]))
+                tasks.append(task)
+            done = await asyncio.gather(*tasks)
+
+            # 反馈进度
+
+            progress += psize
+            cal = progress / nodenum * 100
+            # 判断进度条，每隔10%发送一次反馈，有效防止洪水等待(FloodWait)
+            if cal > sending_time:
+                await check.progress(message, progress, nodenum, cal)
+                sending_time += 20
+            # 简单处理一下数据
+            res = []
+            for j in range(len(test_items)):
+                res.clear()
+                for d in done:
+                    res.append(d[j])
+                info[test_items[j]].extend(res)
+        if nodenum % psize != 0:
+            tasks.clear()
+            logger.info("最后批次: " + str(subbatch + 1))
+            for i in range(nodenum % psize):
+                proxys.switchProxy_old(proxyName=nodename[subbatch * psize + i], proxyGroup=proxygroup,
+                                       clashHost=host[i],
+                                       clashPort=port[i] + 1)
+                task = asyncio.create_task(unit(test_items, delays[subbatch * psize + i], host=host[i], port=port[i]))
+                tasks.append(task)
+            done = await asyncio.gather(*tasks)
+
+            res = []
+            for j in range(len(test_items)):
+                res.clear()
+                for d in done:
+                    res.append(d[j])
+                info[test_items[j]].extend(res)
+        # 最终进度条
+        if nodenum % psize != 0:
+            await check.progress(message, nodenum, nodenum, 100)
+        logger.info(str(info))
+        return info
+
+
+async def core(message, back_message, start_time, suburl: str = None, media_items: list = None, thread: int = 1):
     """
 
+    :param thread: 测试线程
     :param message: 发起测试任务的对象
     :param back_message: 回复的消息对象
     :param start_time: 任务生成时间，取名用的
@@ -91,6 +176,8 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
         url = cleaner.geturl(text)
         if await check.check_url(back_message, url):
             return info
+    pool = {'host': ['127.0.0.1' for _ in range(thread)],
+            'port': [1124 + t * 2 for t in range(thread)]}
     print(url)
     # 订阅采集
     sub = collector.SubCollector(suburl=url)
@@ -117,6 +204,16 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
     ma.save('./clash/proxy.yaml')
     # 重载配置文件
     await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=1123)
+    try:
+        if nodenum < len(pool.get('port', [])):
+            for i in pool.get('port', [])[:nodenum]:
+                await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=i + 1)
+        else:
+            for i in pool.get('port', []):
+                await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=i + 1)
+    except Exception as e:
+        logger.error(str(e))
+        return info
     logger.info("开始测试延迟...")
     s1 = time.time()
     old_rtt = await collector.delay_providers(providername=start_time)
@@ -125,9 +222,10 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
     # 启动流媒体测试
     try:
         info['节点名称'] = nodename
-        test_info = await batch_test(back_message, nodename, rtt, test_items=test_items)
         info['类型'] = nodetype
         info['延迟RTT'] = rtt
+        test_info = await batch_test_pro(back_message, nodename, rtt, test_items, pool)
+        # test_info = await batch_test(back_message, nodename, rtt, test_items=test_items)
         info.update(test_info)
         info = cleaner.ResultCleaner(info).start()
         # 计算测试消耗时间
@@ -150,3 +248,22 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
 
 if __name__ == "__main__":
     print("this is a demo")
+    import sys
+    import os
+
+    sys.path.append(os.path.abspath(os.path.join(os.getcwd(), os.pardir)))
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+
+    async def test():
+        await batch_test_pro(['🇭🇰 HKG-01', '🇭🇰 HKG-02', '🇭🇰 HKG-03', '🇭🇰 HKG-04', '🇭🇰 HKG-05', '🇭🇰 HKG-06',
+                              '🇸🇬 SGP-01', '🇸🇬 SGP-02', '🇸🇬 SGP-03', '🇸🇬 SGP-04', '🇯🇵 JPN-01'],
+                             [122 for _ in range(11)],
+                             ['Netflix', 'Youtube', "disney"],
+                             {'host': ['127.0.0.1' for _ in range(4)],
+                              'port': [1124, 1126, 1128, 1130]},
+                             'ETON')
+
+
+    loop.run_until_complete(test())

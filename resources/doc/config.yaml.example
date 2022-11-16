@@ -22,6 +22,7 @@ item: # 流媒体测试项，决定你想要测哪个项,目前仅支持以下�
 #clash:
 # path: './resources/clash-linux-amd64' # clash核心的位置,此样例为linux-amd64配置样例，windows可以不配置该项（可选配置）
 # workpath: './clash' # clash的工作目录，工作目录这里指的是clash读取配置文件的目录，请勿与操作系统上的概念混淆（可选配置）
+# core: 4 # 核心数，数量越多测试速度越快，但代价是内存会大量占用(每个核心大概10M)，自己的机子多少内存自己平衡
 #font: './resources/苹方黑体-准-简.ttf' #自定义字体，这里填字体的路径
 # 以下是颜色配置，其中speed是速度相关,name为颜色名字，value为颜色值，目前仅支持十六进制，label是颜色对应的速度区间（单位MB）,不用动，只需改value值，其他项是为了做区分。
 #color:

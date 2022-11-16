@@ -9,7 +9,7 @@ from loguru import logger
 """
 
 
-async def check_callback_master(callback_query, USER_TARGET=None, strict: bool = True):
+async def check_callback_master(callback_query, USER_TARGET=None, strict: bool = False):
     """
 
     :param callback_query: 回调数据结构

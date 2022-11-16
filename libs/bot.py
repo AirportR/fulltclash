@@ -134,7 +134,7 @@ def callback_loader(app: Client):
             return
         test_items, origin_message, message, test_type = await botmodule.test_setting(client, callback_query)
         if message:
-            await asyncio.sleep(5)
+            await asyncio.sleep(3)
             await message.delete()
             await bot_put(client, origin_message, test_type, test_items)
 

@@ -10,7 +10,7 @@ netflix_url1 = "https://www.netflix.com/title/70143836"  # 非自制
 netflix_url2 = "https://www.netflix.com/title/70242311"  # 自制
 
 
-async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, proxy=None, reconnection=5):
+async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, proxy=None, reconnection=10):
     """
     新版Netflix检测
     :param flag:
@@ -22,8 +22,7 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
     """
     try:
         if flag == 1:
-            async with session.get(netflix_url1, proxy=proxy, timeout=5) as res:
-                logger.info("非自制剧状态: " + str(res.status))
+            async with session.get(netflix_url1, proxy=proxy, timeout=8) as res:
                 if res.status == 200:  # 解锁非自制
                     text = await res.text()
                     try:
@@ -48,7 +47,6 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
                     await fetch_netflix_new(Collector, session, flag=flag + 1, proxy=proxy, reconnection=reconnection)
         elif flag == 2:
             async with session.get(netflix_url2, proxy=proxy, timeout=5) as res:
-                logger.info("自制剧状态: " + str(res.status))
                 if res.status == 200:  # 解锁自制
                     Collector.info['netflix_new'] = "自制"
                 elif res.status == 403:

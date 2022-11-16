@@ -2,6 +2,8 @@ import subprocess
 import sys
 import time
 from loguru import logger
+
+from libs import proxys
 from libs.cleaner import ConfigManager
 
 logger.add("./logs/fulltclash_{time}.log", rotation='7 days')
@@ -58,6 +60,8 @@ command = fr"{clash_path} -f {'./clash/proxy.yaml'} -d {clash_work_path}"
 subp = subprocess.Popen(command.split(), encoding="utf-8")
 time.sleep(2)
 logger.info("程序已启动!")
+corenum = config.config.get('clash', {}).get('core', 1)
+proxys.batch_start([1124 + i*2 for i in range(corenum)])
 
 
 def reloadUser():
