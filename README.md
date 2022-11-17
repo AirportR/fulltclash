@@ -2,21 +2,14 @@
 
 基于clash 核心运作的、进行全量订阅测试的telegram机器人
 
-# 最近更新(3.3.8)
+# 最近更新(3.4.0)
 
 
-- 新增支持自定义测速文件、线程数。在config.yaml.example中查看配置样例。
-- 新增订阅流量查询。可用指令：/subinfo /traffic /流量查询 + <订阅链接> 即可发起查询。
-- 初步支持subconvertor(订阅转换)。在config.yaml.example中查看配置样例。支持远程拉取配置。
-- 新增文档，放置在./resources/doc中
-- 修复近期以来netflix检测失效问题。
-- 更新了内部采集器的通用请求头。
-- 更新 /help 指令，新增 /subinfo 使用方法。 
-- 将获取订阅的超时时间从10秒改为20秒。
-- 优化proxy.yaml的DNS配置，并添加了命中苹果、微软的域名规则。
-- 优化初始化bot时的日志信息。
-- 移动config.yaml.example 到 ./resources/doc 中。
-- 移动 bot.py 到 ./libs 。
+- 新增Abema、BBCiplayer、PCR（公主链接）测试项
+- 修复绘图模块偶现bug
+- 优化流媒体测试代码结构
+- bot内联键盘优化，增加镜像翻转，节省时间。
+
 
 
 历史更新请到TG频道查看: 
