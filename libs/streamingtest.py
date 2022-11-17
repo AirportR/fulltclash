@@ -30,7 +30,7 @@ async def unit(test_items: list, delay: int, host="127.0.0.1", port=1122):
         cnr = cleaner.ReCleaner(re1)
         old_info = cnr.get_all()
         for item in test_items:
-            i = item.capitalize()
+            i = item.capitalize() if item != "BBC" else item
             try:
                 info.append(old_info[i])
             except KeyError:
@@ -84,6 +84,7 @@ async def batch_test_pro(message, nodename: list, delays: list, test_items: list
     if psize <= 0:
         logger.error("无可用的代理程序接口")
         return None
+    await check.progress(message, 0, nodenum, 0)
     if nodenum < psize:
         for i in range(len(port[:nodenum])):
             proxys.switchProxy_old(proxyName=nodename[i], proxyGroup=proxygroup, clashHost=host[i],
@@ -215,6 +216,7 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
         logger.error(str(e))
         return info
     logger.info("开始测试延迟...")
+    await back_message.edit_text(f"正在测试延迟... \n\n{nodenum}个节点")
     s1 = time.time()
     old_rtt = await collector.delay_providers(providername=start_time)
     rtt = check.check_rtt(old_rtt, nodenum)
@@ -236,7 +238,7 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
         cl1.save(r"./results/{}.yaml".format(start_time.replace(':', '-')))
     except RPCError as r:
         logger.error(r)
-        await back_message.edit_message_text("出错啦")
+        await back_message.edit_text("出错啦")
     except KeyboardInterrupt:
         await message.reply("程序已被强行中止")
     except FloodWait as e:
