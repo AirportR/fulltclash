@@ -7,6 +7,8 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from addons.hbomax import b9
 from addons.bahamut import b10
 from addons.abema import button as b12
+from addons.bbciplayer import button as b13
+from addons.pcrjp import button as b14
 
 b1 = InlineKeyboardButton("✅Netflix", callback_data='✅Netflix')
 b2 = InlineKeyboardButton("✅Youtube", callback_data='✅Youtube')
@@ -16,19 +18,21 @@ b5 = InlineKeyboardButton("✅Dazn", callback_data='✅Dazn')
 b6 = InlineKeyboardButton("🔒节点类型", callback_data='🔒节点类型')
 b7 = InlineKeyboardButton("🔒延迟RTT", callback_data='🔒延迟RTT')
 b8 = InlineKeyboardButton("👌完成设置", callback_data='👌完成设置')
+b_reverse = InlineKeyboardButton("🪞选项翻转", callback_data='🪞选项翻转')
 yusanjia = InlineKeyboardButton("御三家(N-Y-D)", callback_data='御三家(N-Y-D)')
 b_cancel = InlineKeyboardButton("👋点错了，给我取消", callback_data='👋点错了，给我取消')
 b_alive = InlineKeyboardButton("节点存活率", callback_data="节点存活率")
-buttons = [b1, b2, b3, b4, b5, b8, b9, b10, b12]
+buttons = [b1, b2, b3, b4, b5, b8, b9, b10, b12, b13, b14]
 IKM = InlineKeyboardMarkup(
     [
         # 第一行
         [b1, b2, b3],
         # 第二行
         [b4, b5, b9],
-        [b10, b12],
+        [b10, b12, b13, b14],
         [yusanjia, b_alive],
-        [b_cancel, b8]
+        [b_cancel, b_reverse],
+        [b8]
     ]
 )
 
@@ -102,6 +106,24 @@ async def test_setting(client, callback_query):
                                                    text=text,
                                                    reply_markup=IKM2)
         return test_items, origin_message, message, test_type
+    elif "🪞选项翻转" in callback_data:
+        for b_1 in inline_keyboard:
+            for b in b_1:
+                if "❌" in b.text:
+                    b.text = b.text.replace("❌", "✅")
+                    b.callback_data = b.text
+
+                elif "✅" in b.text:
+                    b.text = b.text.replace("✅", "❌")
+                    b.callback_data = b.text
+        IKM2 = InlineKeyboardMarkup(
+            inline_keyboard
+        )
+        await client.edit_message_text(chat_id=chat_id,
+                                       message_id=mess_id,
+                                       text=text,
+                                       reply_markup=IKM2)
+        return test_items, origin_message, message, test_type
     elif "御三家(N-Y-D)" in callback_data:
         test_items.clear()
         test_items.extend(['Netflix', 'Youtube', 'Disney+'])
@@ -131,4 +153,5 @@ async def test_setting(client, callback_query):
                                                  message_id=mess_id,
                                                  text="⌛正在提交任务~")
         return test_items, origin_message, message, test_type
+
     return test_items, origin_message, message, test_type
