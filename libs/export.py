@@ -228,7 +228,7 @@ class ExportResult:
             # 填充颜色块
             c_block = {'成功': '#bee47e', '失败': '#ee6b73', 'N/A': '#8d8b8e', '待解锁': '#dcc7e1'}
             for t1 in key_list:
-                if '解锁' in self.info[t1][t] and '待' not in self.info[t1][t]:
+                if '解锁' in self.info[t1][t] and '待' not in self.info[t1][t] and t1 != "延迟RTT":
                     block = color_block((info_list_length[i], 40), color_value=c_block['成功'])
                     img.paste(block, (width, 40 * (t + 2)))
                 elif '失败' in self.info[t1][t]:
