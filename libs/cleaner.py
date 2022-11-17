@@ -570,6 +570,12 @@ class ReCleaner:
                 elif i == "Abema":
                     from addons import abema
                     info['Abema'] = abema.get_abema_info(self)
+                elif i == "Bbc":
+                    from addons import bbciplayer
+                    info['BBC'] = bbciplayer.get_bbc_info(self)
+                elif i == "公主链接":
+                    from addons import pcrjp
+                    info['公主链接'] = pcrjp.get_pcr_info(self)
                 else:
                     pass
         except Exception as e:
@@ -873,7 +879,6 @@ def batch_domain2ip(host: list):
     :param host: 一个列表
     :return:
     """
-    old = host
     ipaddrs = []
     for h in host:
         if type(h).__name__ == 'dict':

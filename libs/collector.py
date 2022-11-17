@@ -301,10 +301,16 @@ class Collector:
                         self.tasks.append(bahamut.task(self, session, proxy=proxy))
                     elif i == "Netflix":
                         from addons import netflix
-                        self.tasks.append((netflix.task(self, session, proxy=proxy)))
+                        self.tasks.append(netflix.task(self, session, proxy=proxy))
                     elif i == "Abema":
                         from addons import abema
-                        self.tasks.append((abema.task(self, session, proxy=proxy)))
+                        self.tasks.append(abema.task(self, session, proxy=proxy))
+                    elif i == "Bbc":
+                        from addons import bbciplayer
+                        self.tasks.append(bbciplayer.task(self, session, proxy=proxy))
+                    elif i == "公主链接":
+                        from addons import pcrjp
+                        self.tasks.append((pcrjp.task(self, session, proxy=proxy)))
                     else:
                         pass
             return self.tasks
@@ -442,9 +448,10 @@ class Collector:
         :param proxy:
         :return:
         """
-        
+
         try:
-            youtube = await session.get(self.youtubeurl, proxy=proxy, timeout=5, headers=self.youtubeHeaders, cookies=self.youtubeCookie)
+            youtube = await session.get(self.youtubeurl, proxy=proxy, timeout=5, headers=self.youtubeHeaders,
+                                        cookies=self.youtubeCookie)
             if youtube.status is not None:
                 self.info['youtube'] = await youtube.text()
                 self.info['youtube_status_code'] = youtube.status
