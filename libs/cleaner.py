@@ -576,6 +576,15 @@ class ReCleaner:
                 elif i == "公主链接":
                     from addons import pcrjp
                     info['公主链接'] = pcrjp.get_pcr_info(self)
+                elif i == "Primevideo":
+                    from addons import primevideo
+                    info['Primevideo'] = primevideo.get_primevideo_info(self)
+                elif i == "Myvideo":
+                    from addons import myvideo
+                    info['Myvideo'] = myvideo.get_myvideo_info(self)
+                elif i == "Catchplay":
+                    from addons import catchplay
+                    info['Catchplay'] = catchplay.get_catchplay_info(self)
                 else:
                     pass
         except Exception as e:

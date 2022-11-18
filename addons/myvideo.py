@@ -6,12 +6,12 @@ from loguru import logger
 from pyrogram.types import InlineKeyboardButton
 
 # collector section
-bbcurl = "https://open.live.bbc.co.uk/mediaselector/6/select/version/2.0/mediaset/pc/vpid/bbc_one_london/format/json/jsfunc/JS_callbacks0"
+myvideourl = "https://www.myvideo.net.tw/serviceAreaBlock.do"
 
 
-async def fetch_bbciplayer(Collector, session: aiohttp.ClientSession, proxy=None, reconnection=2):
+async def fetch_myvideo(Collector, session: aiohttp.ClientSession, proxy=None, reconnection=2):
     """
-    bbciplayer检测
+    Myvideo检测
     :param Collector: 采集器
     :param session:
     :param proxy:
@@ -19,41 +19,41 @@ async def fetch_bbciplayer(Collector, session: aiohttp.ClientSession, proxy=None
     :return:
     """
     try:
-        async with session.get(bbcurl, proxy=proxy, timeout=5) as res:
+        async with session.get(myvideourl, proxy=proxy, timeout=5) as res:
             if res.status == 200:
                 resdata = await res.text()
-                issupport = resdata.find('geolocation')
-                Collector.info['BBC'] = "失败" if issupport > 0 else "解锁"
+                index = resdata.find('很抱歉，MyVideo僅提供台灣IP使用')
+                Collector.info['myvideo'] = "失败" if index > 0 else "解锁"
             else:
-                Collector.info['BBC'] = "N/A"
+                Collector.info['myvideo'] = "N/A"
     except ClientConnectorError as c:
-        logger.warning("BBCiplayer请求发生错误:" + str(c))
+        logger.warning("myvideo请求发生错误:" + str(c))
         if reconnection != 0:
-            await fetch_bbciplayer(Collector, session, proxy=proxy, reconnection=reconnection - 1)
+            await fetch_myvideo(Collector, session, proxy=proxy, reconnection=reconnection - 1)
     except asyncio.exceptions.TimeoutError:
-        logger.warning("BBCiplayer请求超时，正在重新发送请求......")
+        logger.warning("myvideo请求超时，正在重新发送请求......")
         if reconnection != 0:
-            await fetch_bbciplayer(Collector, session, proxy=proxy, reconnection=reconnection - 1)
+            await fetch_myvideo(Collector, session, proxy=proxy, reconnection=reconnection - 1)
 
 
 def task(Collector, session, proxy):
-    return asyncio.create_task(fetch_bbciplayer(Collector, session, proxy=proxy))
+    return asyncio.create_task(fetch_myvideo(Collector, session, proxy=proxy))
 
 
 # cleaner section
-def get_bbc_info(ReCleaner):
+def get_myvideo_info(ReCleaner):
     """
-    获得bbc_iplayer解锁信息
+    获得myvideo解锁信息
     :param ReCleaner:
     :return: str: 解锁信息: [解锁、失败、N/A]
     """
     try:
-        if 'BBC' not in ReCleaner.data:
+        if 'myvideo' not in ReCleaner.data:
             logger.warning("采集器内无数据")
             return "N/A"
         else:
-            logger.info("BBC解锁：" + str(ReCleaner.data.get('BBC', "N/A")))
-            return ReCleaner.data.get('BBC', "N/A")
+            logger.info("myvideo解锁：" + str(ReCleaner.data.get('myvideo', "N/A")))
+            return ReCleaner.data.get('myvideo', "N/A")
     except Exception as e:
         logger.error(e)
         return "N/A"
@@ -61,7 +61,7 @@ def get_bbc_info(ReCleaner):
 
 # bot_setting_board
 
-button = InlineKeyboardButton("✅BBC", callback_data='✅BBC')
+button = InlineKeyboardButton("✅Myvideo", callback_data='✅Myvideo')
 
 if __name__ == "__main__":
     "this is a test demo"
@@ -72,7 +72,7 @@ if __name__ == "__main__":
     from libs.collector import Collector as CL, media_items
 
     media_items.clear()
-    media_items.append("BBC")
+    media_items.append("myvideo")
     cl = CL()
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)

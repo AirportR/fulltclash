@@ -310,7 +310,16 @@ class Collector:
                         self.tasks.append(bbciplayer.task(self, session, proxy=proxy))
                     elif i == "公主链接":
                         from addons import pcrjp
-                        self.tasks.append((pcrjp.task(self, session, proxy=proxy)))
+                        self.tasks.append(pcrjp.task(self, session, proxy=proxy))
+                    elif i == "Primevideo":
+                        from addons import primevideo
+                        self.tasks.append(primevideo.task(self, session, proxy=proxy))
+                    elif i == "Myvideo":
+                        from addons import myvideo
+                        self.tasks.append(myvideo.task(self, session, proxy=proxy))
+                    elif i == "Catchplay":
+                        from addons import catchplay
+                        self.tasks.append(catchplay.task(self, session, proxy=proxy))
                     else:
                         pass
             return self.tasks
