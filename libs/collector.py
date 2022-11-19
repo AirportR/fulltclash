@@ -193,7 +193,7 @@ class SubCollector(BaseCollector):
             logger.warning(c)
             return []
 
-    async def getSubConfig(self, save_path: str, proxy=proxies):
+    async def getSubConfig(self, save_path: str, proxy=None):
         """
         获取订阅配置文件
         :param save_path: 订阅保存路径
