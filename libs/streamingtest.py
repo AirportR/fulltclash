@@ -69,6 +69,7 @@ async def batch_test(message, nodename: list, delays: list, test_items: list, pr
     return info
 
 
+@logger.catch()
 async def batch_test_pro(message, nodename: list, delays: list, test_items: list, pool: dict, proxygroup='auto'):
     info = {}
     progress = 0
@@ -83,7 +84,7 @@ async def batch_test_pro(message, nodename: list, delays: list, test_items: list
     logger.info("接受任务数量: {} 线程数: {}".format(nodenum, psize))
     if psize <= 0:
         logger.error("无可用的代理程序接口")
-        return None
+        return {}
     await check.progress(message, 0, nodenum, 0)
     if nodenum < psize:
         for i in range(len(port[:nodenum])):
@@ -101,6 +102,7 @@ async def batch_test_pro(message, nodename: list, delays: list, test_items: list
                 res.append(d[j])
             info[test_items[j]].extend(res)
         logger.info(str(info))
+        return info
     else:
         subbatch = nodenum // psize
 
@@ -130,6 +132,7 @@ async def batch_test_pro(message, nodename: list, delays: list, test_items: list
                 for d in done:
                     res.append(d[j])
                 info[test_items[j]].extend(res)
+
         if nodenum % psize != 0:
             tasks.clear()
             logger.info("最后批次: " + str(subbatch + 1))
@@ -154,6 +157,7 @@ async def batch_test_pro(message, nodename: list, delays: list, test_items: list
         return info
 
 
+@logger.catch()
 async def core(message, back_message, start_time, suburl: str = None, media_items: list = None, thread: int = 1):
     """
 
