@@ -16,7 +16,7 @@ from addons.emoji_custom import TwitterPediaSource
 2、何为基础数据？
     基础数据决定了生成图片的高度（Height），它是列表，列表里面的数据一般是一组节点名，即有多少个节点就对应了info键值中的长度。
 """
-__version__ = "3.4.0"  # 版本号
+__version__ = "3.4.1"  # 版本号
 custom_source = TwitterPediaSource  # 自定义emoji风格 TwitterPediaSource
 
 
@@ -313,6 +313,7 @@ class ExportTopo(ExportResult):
             self.basedata = self.info.get('地区', [])
         else:
             self.basedata = self.info.get('地区', name)
+        self.wtime = self.info.pop('wtime', "未知")
         self.nodenum = len(self.basedata)
         self.front_size = 30
         self.config = ConfigManager()
@@ -378,8 +379,6 @@ class ExportTopo(ExportResult):
 
     @logger.catch
     def exportTopoInbound(self, nodename: list = None, info2: dict = None, img2_width: int = None):
-        # wtime = self.info['wtime']
-        wtime = "未知"
         fnt = self.__font
         image_width, info_list_length = self.get_width(compare=img2_width)
         image_height = self.get_height()
@@ -393,7 +392,7 @@ class ExportTopo(ExportResult):
         idraw = ImageDraw.Draw(img)
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
-        list1 = ["FullTclash - 节点拓扑分析", "版本:{}     ⏱️总共耗时: {}".format(__version__, wtime),
+        list1 = ["FullTclash - 节点拓扑分析", "版本:{}     ⏱️总共耗时: {}s".format(__version__, self.wtime),
                  "测试时间: {}  测试结果仅供参考".format(export_time)]
         export_time = export_time.replace(':', '-')
         title = list1[0]
@@ -458,7 +457,6 @@ class ExportTopo(ExportResult):
 
     @logger.catch
     def exportTopoOutbound(self, nodename: list = None, info: dict = None, img2_width: int = None):
-        wtime = info.pop('wtime', '未知')
         if nodename or info:
             self.__init__(nodename, info)
         fnt = self.__font
@@ -474,7 +472,7 @@ class ExportTopo(ExportResult):
         idraw = ImageDraw.Draw(img)
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
-        list1 = ["出口（提示:出口数量顺数即为每个入口对应节点）", "版本:{}     ⏱️总共耗时: {}".format(__version__, wtime),
+        list1 = ["出口（提示:出口数量顺数即为每个入口对应节点）", "版本:{}     ⏱️总共耗时: {}s".format(__version__, self.wtime),
                  "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time)]
         export_time = export_time.replace(':', '-')
         title = list1[0]
