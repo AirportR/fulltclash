@@ -16,35 +16,80 @@ class IPCleaner:
             logger.error(str(k))
             return None
         except TypeError:
-            logger.warning("无法获取对应信息: " + str(key))
+            # logger.warning("无法获取对应信息: " + str(key))
             return None
 
-    def get_org(self):
-        org = self.get('asn_organization')
+    def get_org(self, style="ip-api.com"):
+        """
+
+        :param style: 各种api的域名选择风格
+        :return:
+        """
+        if style == "ip.sb":
+            org = self.get('asn_organization')
+        elif style == "ip-api.com":
+            org = self.get('isp')
+        else:
+            org = ""
         if org:
             return org
         else:
             return ""
 
-    def get_ip(self):
-        ip = self.get('ip')
+    def get_ip(self, style="ip-api.com"):
+        ip = ""
+        if style == "ip-api.com":
+            ip = self.get('query')
+        elif style == "ip.sb":
+            ip = self.get('ip')
+        else:
+            pass
         if ip:
             return ip
         else:
             return ""
 
-    def get_country_code(self):
-        region_code = self.get('country_code')
+    def get_country_code(self, style="ip-api.com"):
+        region_code = ""
+        if style == "ip-api.com":
+            region_code = self.get('countryCode')
+        elif style == "ip.sb":
+            region_code = self.get('country_code')
+        else:
+            pass
         if region_code:
             return region_code
         else:
             return ""
 
-    def get_asn(self):
-        asn = self.get('asn')
-        if asn:
-            return asn
+    def get_city(self, style="ip-api.com"):
+        city = ""
+        if style == "ip-api.com":
+            city = self.get('city')
+        elif style == "ip.sb":
+            city = self.get('city')
         else:
+            pass
+        if city:
+            return city
+        else:
+            return ""
+
+    def get_asn(self, style="ip-api.com"):
+        asn = ""
+        try:
+            if style == "ip-api.com":
+                asn = self.get('as').split(' ')[0]
+            elif style == "ip.sb":
+                asn = self.get('asn')
+            else:
+                pass
+            if asn:
+                return asn
+            else:
+                return "0"
+        except Exception as e:
+            # logger.warning(str(e))
             return "0"
 
 
@@ -728,13 +773,14 @@ class ReCleaner:
                 return "N/A"
             else:
                 text = self.data['youtube']
-                if text.find('Premium is not available in your country') != -1 or text.find('manageSubscriptionButton') == -1:
+                if text.find('Premium is not available in your country') != -1 or text.find(
+                        'manageSubscriptionButton') == -1:
                     return "失败"
                 if text.find('www.google.cn') != -1:
                     return "失败(CN)"
                 elif self.data['youtube_status_code'] == 200:
                     idx = text.find('"countryCode"')
-                    region = text[idx:idx+17].replace('"countryCode":"',"")
+                    region = text[idx:idx + 17].replace('"countryCode":"', "")
                     if idx == -1 and text.find('manageSubscriptionButton') != -1:
                         region = "US"
                     elif region == "":

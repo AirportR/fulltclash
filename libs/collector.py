@@ -5,7 +5,7 @@ import time
 import aiohttp
 import async_timeout
 from urllib.parse import quote
-from aiohttp.client_exceptions import ClientConnectorError
+from aiohttp.client_exceptions import ClientConnectorError, ContentTypeError
 from loguru import logger
 from libs import cleaner
 
@@ -58,11 +58,14 @@ class BaseCollector:
 
 class IPCollector:
     def __init__(self):
-        self.tasks = None
+        self.tasks = []
         self._headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
                           'Chrome/102.0.5005.63 Safari/537.36'}
-        self.url = "https://api.ip.sb/geoip/"
+        self.url1 = "https://api.ip.sb/geoip/"
+        self.url2 = "http://ip-api.com/json/"
+        self.style = "ip-api.com"  # api来源风格 这个值取二级域名
+        self.url = self.url2 if self.style == "ip-api.com" else self.url1
 
     def create_tasks(self, session: aiohttp.ClientSession, hosts: list = None, proxy=None):
         """
@@ -76,11 +79,28 @@ class IPCollector:
         if hosts is None:
             task = asyncio.create_task(self.fetch(session, proxy=proxy))
             tasks.append(task)
+        elif type(hosts).__name__ == "str":
+            tasks.append(asyncio.create_task(self.fetch(session, proxy=proxy, host=hosts)))
         else:
             for ip in hosts:
                 task = asyncio.create_task(self.fetch(session, proxy=proxy, host=ip))
                 tasks.append(task)
-        self.tasks = tasks
+        self.tasks.extend(tasks)
+
+    async def batch(self, hosts, proxyhost: list, proxyport: list):
+        try:
+            session = aiohttp.ClientSession()
+            length = min(len(proxyhost), len(proxyport))
+            for i in range(length):
+                self.create_tasks(session=session, hosts=None, proxy=f"http://{proxyhost[i]}:{proxyport[i]}")
+            resdata = await self.start()
+            if resdata is None:
+                resdata = []
+            await session.close()
+            return resdata
+        except Exception as e:
+            logger.error(str(e))
+            return []
 
     async def start(self):
         """
@@ -110,10 +130,10 @@ class IPCollector:
             return None
         try:
             if host:
-                resp = await session.get(self.url + host, proxy=proxy, timeout=10)
+                resp = await session.get(self.url + host, proxy=proxy, timeout=12)
                 return await resp.json()
             else:
-                resp = await session.get(self.url, proxy=proxy, timeout=10)
+                resp = await session.get(self.url, proxy=proxy, timeout=12)
                 return await resp.json()
         except ClientConnectorError as c:
             logger.warning("ip查询请求发生错误:" + str(c))
@@ -127,6 +147,11 @@ class IPCollector:
                 await self.fetch(session=session, proxy=proxy, host=host, reconnection=reconnection - 1)
             else:
                 return None
+        except ContentTypeError:
+            return None
+        except Exception as e:
+            logger.info(str(e))
+            return None
 
 
 class SubCollector(BaseCollector):
