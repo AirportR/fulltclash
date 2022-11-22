@@ -85,7 +85,7 @@ async def batch_test_pro(message, nodename: list, delays: list, test_items: list
     if psize <= 0:
         logger.error("无可用的代理程序接口")
         return {}
-    await check.progress(message, 0, nodenum, 0)
+    await check.progress(message, 0, nodenum, 0, "╰(*°▽°*)╯流媒体测试进行中...")
     if nodenum < psize:
         for i in range(len(port[:nodenum])):
             proxys.switchProxy_old(proxyName=nodename[i], proxyGroup=proxygroup, clashHost=host[i],
@@ -123,7 +123,7 @@ async def batch_test_pro(message, nodename: list, delays: list, test_items: list
             cal = progress / nodenum * 100
             # 判断进度条，每隔10%发送一次反馈，有效防止洪水等待(FloodWait)
             if cal > sending_time:
-                await check.progress(message, progress, nodenum, cal)
+                await check.progress(message, progress, nodenum, cal, "╰(*°▽°*)╯流媒体测试进行中...")
                 sending_time += 20
             # 简单处理一下数据
             res = []
@@ -152,7 +152,7 @@ async def batch_test_pro(message, nodename: list, delays: list, test_items: list
                 info[test_items[j]].extend(res)
         # 最终进度条
         if nodenum % psize != 0:
-            await check.progress(message, nodenum, nodenum, 100)
+            await check.progress(message, nodenum, nodenum, 100, "╰(*°▽°*)╯流媒体测试进行中...")
         logger.info(str(info))
         return info
 
@@ -263,13 +263,6 @@ if __name__ == "__main__":
 
 
     async def test():
-        await batch_test_pro(['🇭🇰 HKG-01', '🇭🇰 HKG-02', '🇭🇰 HKG-03', '🇭🇰 HKG-04', '🇭🇰 HKG-05', '🇭🇰 HKG-06',
-                              '🇸🇬 SGP-01', '🇸🇬 SGP-02', '🇸🇬 SGP-03', '🇸🇬 SGP-04', '🇯🇵 JPN-01'],
-                             [122 for _ in range(11)],
-                             ['Netflix', 'Youtube', "disney"],
-                             {'host': ['127.0.0.1' for _ in range(4)],
-                              'port': [1124, 1126, 1128, 1130]},
-                             'ETON')
-
+        pass
 
     loop.run_until_complete(test())

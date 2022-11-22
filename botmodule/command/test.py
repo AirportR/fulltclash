@@ -83,20 +83,21 @@ async def analyzeurl(_, message, test_type="all"):
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
     try:
         info1, info2 = await topotest.core(message, back_message=back_message,
-                                           start_time=start_time, test_type=test_type)
+                                           start_time=start_time, test_type=test_type, thread=coresum)
         if info1:
             if test_type == "inbound":
+                wtime = info1.get('wtime', "未知")
                 stime = export.ExportTopo(name=None, info=info1).exportTopoInbound()
-                await check.check_photo(message, back_message, 'Topo' + stime, info1.pop('wtime', "未知"))
+                await check.check_photo(message, back_message, 'Topo' + stime, wtime)
                 ma.delsub(subname=start_time)
                 ma.save(savePath='./clash/proxy.yaml')
                 return
             if info2:
                 # 生成图片
                 wtime = info2.get('wtime', "未知")
-                img_outbound, yug, image_width2 = export.ExportTopo().exportTopoOutbound(nodename=None,
-                                                                                         info=info2)
-
+                clone_info2 = {}
+                clone_info2.update(info2)
+                img_outbound, yug, image_width2 = export.ExportTopo().exportTopoOutbound(nodename=None, info=clone_info2)
                 if test_type == "outbound":
                     stime = export.ExportTopo(name=None, info=info2).exportTopoOutbound()
                 else:
@@ -132,19 +133,21 @@ async def analyze(_, message, test_type="all"):
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
     try:
         info1, info2 = await topotest.core(message, back_message=back_message,
-                                           start_time=start_time, suburl=suburl, test_type=test_type)
+                                           start_time=start_time, suburl=suburl, test_type=test_type, thread=coresum)
         if info1:
             # 生成图片
             if test_type == "inbound":
+                wtime = info1.get('wtime', "未知")
                 stime = export.ExportTopo(name=None, info=info1).exportTopoInbound()
-                await check.check_photo(message, back_message, 'Topo' + stime, info1.get('wtime', "未知"))
+                await check.check_photo(message, back_message, 'Topo' + stime, wtime)
                 ma.delsub(subname=start_time)
                 ma.save(savePath='./clash/proxy.yaml')
                 return
             if info2:
-                img_outbound, yug, image_width2 = export.ExportTopo().exportTopoOutbound(nodename=None,
-                                                                                         info=info2)
                 wtime = info2.get('wtime', '未知')
+                clone_info2 = {}
+                clone_info2.update(info2)
+                img_outbound, yug, image_width2 = export.ExportTopo().exportTopoOutbound(nodename=None, info=clone_info2)
                 if test_type == "outbound":
                     stime = export.ExportTopo(name=None, info=info2).exportTopoOutbound()
                 else:
