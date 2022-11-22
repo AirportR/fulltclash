@@ -248,7 +248,11 @@ async def progress(message, prog, *args):
     try:
         nodenum = args[0]
         cal = args[1]
-        p_text = "╰(*°▽°*)╯流媒体测试进行中...\n\n当前进度:\n" + "%.2f" % cal + "%     [" + str(prog) + "/" + str(nodenum) + "]"
+        try:
+            subtext = args[2]
+        except IndexError:
+            subtext = ""
+        p_text = f"{subtext}\n\n当前进度:\n" + "%.2f" % cal + "%     [" + str(prog) + "/" + str(nodenum) + "]"
         try:
             await message.edit_text(p_text)  # 实时反馈进度
         except RPCError as r:

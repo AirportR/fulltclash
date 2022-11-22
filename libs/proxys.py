@@ -104,11 +104,12 @@ def batch_start(portlist: list, proxy_file_path="./clash/proxy.yaml"):
         clashconf.changeClashPort(port=portlist[i])
         clashconf.changeClashEC(ec="127.0.0.1:" + str(ecport[i]))
         clashconf.save(proxy_file_path)
-        start_client(path=config.get_clash_path(), workpath=config.get_clash_work_path(),config=proxy_file_path)
+        start_client(path=config.get_clash_path(), workpath=config.get_clash_work_path(), config=proxy_file_path)
     clashconf = ClashCleaner(proxy_file_path)
     clashconf.changeClashPort(port=1122)
     clashconf.changeClashEC(ec="127.0.0.1:1123")
     clashconf.save(proxy_file_path)
+
 
 if __name__ == "__main__":
     loop = asyncio.new_event_loop()
@@ -116,7 +117,8 @@ if __name__ == "__main__":
 
 
     async def test():
-        await batch_start([1124, 1126, 1128, 1130], r"C:\Users\86133\Desktop\1.yml")
+        pass
+        # await batch_start([1124, 1126, 1128, 1130],)
 
 
     loop.run_until_complete(test())
