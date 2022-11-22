@@ -62,10 +62,14 @@ class IPCollector:
         self._headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
                           'Chrome/102.0.5005.63 Safari/537.36'}
-        self.url1 = "https://api.ip.sb/geoip/"
-        self.url2 = "http://ip-api.com/json/"
-        self.style = "ip-api.com"  # api来源风格 这个值取二级域名
-        self.url = self.url2 if self.style == "ip-api.com" else self.url1
+        self.style = config.config.get('geoip-api', 'ip-api.com')  # api来源风格 这个值取二级域名
+        self.url = self.get_style_url()
+
+    def get_style_url(self):
+        if self.style == "ip-api.com":
+            return "http://ip-api.com/json/"
+        elif self.style == "ip.sb":
+            return "https://api.ip.sb/geoip/"
 
     def create_tasks(self, session: aiohttp.ClientSession, hosts: list = None, proxy=None):
         """
@@ -87,7 +91,7 @@ class IPCollector:
                 tasks.append(task)
         self.tasks.extend(tasks)
 
-    async def batch(self, hosts, proxyhost: list, proxyport: list):
+    async def batch(self, proxyhost: list, proxyport: list):
         try:
             session = aiohttp.ClientSession()
             length = min(len(proxyhost), len(proxyport))
@@ -218,7 +222,7 @@ class SubCollector(BaseCollector):
             logger.warning(c)
             return []
 
-    async def getSubConfig(self, save_path: str, proxy=None):
+    async def getSubConfig(self, save_path: str, proxy=proxies):
         """
         获取订阅配置文件
         :param save_path: 订阅保存路径

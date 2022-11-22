@@ -74,7 +74,7 @@ async def batch_topo(message, nodename: list, pool: dict, proxygroup='auto'):
             proxys.switchProxy_old(proxyName=nodename[i], proxyGroup=proxygroup, clashHost=host[i],
                                    clashPort=port[i] + 1)
         ipcol = collector.IPCollector()
-        sub_res = await ipcol.batch(nodename, proxyhost=host[:nodenum], proxyport=port[:nodenum])
+        sub_res = await ipcol.batch(proxyhost=host[:nodenum], proxyport=port[:nodenum])
         resdata.extend(sub_res)
         return resdata
     else:
@@ -85,7 +85,7 @@ async def batch_topo(message, nodename: list, pool: dict, proxygroup='auto'):
                 proxys.switchProxy_old(proxyName=nodename[s * psize + i], proxyGroup=proxygroup, clashHost=host[i],
                                        clashPort=port[i] + 1)
             ipcol = collector.IPCollector()
-            sub_res = await ipcol.batch(nodename[s * psize:(s + 1) * psize], proxyhost=host, proxyport=port)
+            sub_res = await ipcol.batch(proxyhost=host, proxyport=port)
             resdata.extend(sub_res)
             # 反馈进度
 
@@ -98,8 +98,11 @@ async def batch_topo(message, nodename: list, pool: dict, proxygroup='auto'):
 
         if nodenum % psize != 0:
             logger.info("最后批次: " + str(subbatch + 1))
+            for i in range(nodenum % psize):
+                proxys.switchProxy_old(proxyName=nodename[subbatch * psize + i], proxyGroup=proxygroup, clashHost=host[i],
+                                       clashPort=port[i] + 1)
             ipcol = collector.IPCollector()
-            sub_res = await ipcol.batch(nodename[subbatch * psize:], proxyhost=host[:nodenum % psize],
+            sub_res = await ipcol.batch(proxyhost=host[:nodenum % psize],
                                         proxyport=port[:nodenum % psize])
             resdata.extend(sub_res)
 

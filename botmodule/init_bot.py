@@ -19,7 +19,7 @@ logger.info("管理员名单加载:" + str(admin))
 USERNAME = "@xxxx_bot"
 port = config.get_proxy_port()
 try:
-    _proxy = config.get_proxy(isjoint=False).split(':')
+    _proxy = config.get_bot_proxy(isjoint=False).split(':')
     proxy_host = _proxy[0]
     proxy_port = _proxy[1]
     logger.info("当前代理设置为: " + proxy_host + ":" + proxy_port)

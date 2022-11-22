@@ -8,6 +8,7 @@ from loguru import logger
 class IPCleaner:
     def __init__(self, data):
         self._data = data
+        self.style = config.config.get('geoip-api', 'ip-api.com')
 
     def get(self, key):
         try:
@@ -19,15 +20,14 @@ class IPCleaner:
             # logger.warning("无法获取对应信息: " + str(key))
             return None
 
-    def get_org(self, style="ip-api.com"):
+    def get_org(self):
         """
-
-        :param style: 各种api的域名选择风格
+        获取组织
         :return:
         """
-        if style == "ip.sb":
+        if self.style == "ip.sb":
             org = self.get('asn_organization')
-        elif style == "ip-api.com":
+        elif self.style == "ip-api.com":
             org = self.get('isp')
         else:
             org = ""
@@ -36,11 +36,11 @@ class IPCleaner:
         else:
             return ""
 
-    def get_ip(self, style="ip-api.com"):
+    def get_ip(self):
         ip = ""
-        if style == "ip-api.com":
+        if self.style == "ip-api.com":
             ip = self.get('query')
-        elif style == "ip.sb":
+        elif self.style == "ip.sb":
             ip = self.get('ip')
         else:
             pass
@@ -49,11 +49,11 @@ class IPCleaner:
         else:
             return ""
 
-    def get_country_code(self, style="ip-api.com"):
+    def get_country_code(self):
         region_code = ""
-        if style == "ip-api.com":
+        if self.style == "ip-api.com":
             region_code = self.get('countryCode')
-        elif style == "ip.sb":
+        elif self.style == "ip.sb":
             region_code = self.get('country_code')
         else:
             pass
@@ -62,11 +62,11 @@ class IPCleaner:
         else:
             return ""
 
-    def get_city(self, style="ip-api.com"):
+    def get_city(self):
         city = ""
-        if style == "ip-api.com":
+        if self.style == "ip-api.com":
             city = self.get('city')
-        elif style == "ip.sb":
+        elif self.style == "ip.sb":
             city = self.get('city')
         else:
             pass
@@ -75,12 +75,12 @@ class IPCleaner:
         else:
             return ""
 
-    def get_asn(self, style="ip-api.com"):
+    def get_asn(self):
         asn = ""
         try:
-            if style == "ip-api.com":
+            if self.style == "ip-api.com":
                 asn = self.get('as').split(' ')[0]
-            elif style == "ip.sb":
+            elif self.style == "ip.sb":
                 asn = self.get('asn')
             else:
                 pass
@@ -309,6 +309,20 @@ class ConfigManager:
     def get_proxy_port(self):
         try:
             return self.config['proxyport']
+        except KeyError:
+            return None
+
+    def get_bot_proxy(self, isjoint=True):
+        """
+
+        :param isjoint: 是否拼接代理
+        :return:
+        """
+        try:
+            if isjoint:
+                return 'http://' + self.config.get('bot', {}).get('proxy', None)
+            else:
+                return self.config.get('bot', {}).get('proxy', None)
         except KeyError:
             return None
 
