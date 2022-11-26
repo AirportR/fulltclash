@@ -4,14 +4,15 @@ from loguru import logger
 from pyrogram import types
 from pyrogram.types import BotCommand
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from addons.hbomax import b9
-from addons.bahamut import b10
-from addons.abema import button as b12
-from addons.bbciplayer import button as b13
-from addons.pcrjp import button as b14
-from addons.primevideo import button as b15
-from addons.myvideo import button as b16
-from addons.catchplay import button as b17
+from addons.unlockTest.hbomax import b9
+from addons.unlockTest.bahamut import b10
+from addons.unlockTest.abema import button as b12
+from addons.unlockTest.bbciplayer import button as b13
+from addons.unlockTest.pcrjp import button as b14
+from addons.unlockTest.primevideo import button as b15
+from addons.unlockTest.myvideo import button as b16
+from addons.unlockTest.catchplay import button as b17
+from addons.unlockTest.viu import button as b18
 
 b1 = InlineKeyboardButton("✅Netflix", callback_data='✅Netflix')
 b2 = InlineKeyboardButton("✅Youtube", callback_data='✅Youtube')
@@ -25,7 +26,7 @@ b_reverse = InlineKeyboardButton("🪞选项翻转", callback_data='🪞选项�
 yusanjia = InlineKeyboardButton("御三家(N-Y-D)", callback_data='御三家(N-Y-D)')
 b_cancel = InlineKeyboardButton("👋点错了，给我取消", callback_data='👋点错了，给我取消')
 b_alive = InlineKeyboardButton("节点存活率", callback_data="节点存活率")
-buttons = [b1, b2, b3, b4, b5, b8, b9, b10, b12, b13, b14, b15, b16, b17]
+buttons = [b1, b2, b3, b4, b5, b8, b9, b10, b12, b13, b14, b15, b16, b17, b18]
 IKM = InlineKeyboardMarkup(
     [
         # 第一行
@@ -34,7 +35,7 @@ IKM = InlineKeyboardMarkup(
         [b4, b5, b9],
         [b10, b12, b13],
         [b14, b15, b16],
-        [b17],
+        [b17, b18],
         [yusanjia, b_alive],
         [b_cancel, b_reverse],
         [b8]
