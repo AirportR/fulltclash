@@ -617,33 +617,36 @@ class ReCleaner:
                     dazn = self.get_dazn_info()
                     info['Dazn'] = dazn
                 elif i == "Hbomax":
-                    from addons import hbomax
+                    from addons.unlockTest import hbomax
                     hbomaxinfo = hbomax.get_hbomax_info(self)
                     info['Hbomax'] = hbomaxinfo
                 elif i == "Bahamut":
-                    from addons import bahamut
+                    from addons.unlockTest import bahamut
                     info['Bahamut'] = bahamut.get_bahamut_info(self)
                 elif i == "Netflix":
-                    from addons import netflix
+                    from addons.unlockTest import netflix
                     info['Netflix'] = netflix.get_netflix_info_new(self)
                 elif i == "Abema":
-                    from addons import abema
+                    from addons.unlockTest import abema
                     info['Abema'] = abema.get_abema_info(self)
                 elif i == "Bbc":
-                    from addons import bbciplayer
+                    from addons.unlockTest import bbciplayer
                     info['BBC'] = bbciplayer.get_bbc_info(self)
                 elif i == "公主链接":
-                    from addons import pcrjp
+                    from addons.unlockTest import pcrjp
                     info['公主链接'] = pcrjp.get_pcr_info(self)
                 elif i == "Primevideo":
-                    from addons import primevideo
+                    from addons.unlockTest import primevideo
                     info['Primevideo'] = primevideo.get_primevideo_info(self)
                 elif i == "Myvideo":
-                    from addons import myvideo
+                    from addons.unlockTest import myvideo
                     info['Myvideo'] = myvideo.get_myvideo_info(self)
                 elif i == "Catchplay":
-                    from addons import catchplay
+                    from addons.unlockTest import catchplay
                     info['Catchplay'] = catchplay.get_catchplay_info(self)
+                elif i == "Viu":
+                    from addons.unlockTest import viu
+                    info['Viu'] = viu.get_viu_info(self)
                 else:
                     pass
         except Exception as e:
