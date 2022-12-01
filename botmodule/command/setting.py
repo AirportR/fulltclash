@@ -13,6 +13,7 @@ from addons.unlockTest.primevideo import button as b15
 from addons.unlockTest.myvideo import button as b16
 from addons.unlockTest.catchplay import button as b17
 from addons.unlockTest.viu import button as b18
+from addons.ip_risk import button as b19
 
 b1 = InlineKeyboardButton("✅Netflix", callback_data='✅Netflix')
 b2 = InlineKeyboardButton("✅Youtube", callback_data='✅Youtube')
@@ -26,7 +27,7 @@ b_reverse = InlineKeyboardButton("🪞选项翻转", callback_data='🪞选项�
 yusanjia = InlineKeyboardButton("御三家(N-Y-D)", callback_data='御三家(N-Y-D)')
 b_cancel = InlineKeyboardButton("👋点错了，给我取消", callback_data='👋点错了，给我取消')
 b_alive = InlineKeyboardButton("节点存活率", callback_data="节点存活率")
-buttons = [b1, b2, b3, b4, b5, b8, b9, b10, b12, b13, b14, b15, b16, b17, b18]
+buttons = [b1, b2, b3, b4, b5, b8, b9, b10, b12, b13, b14, b15, b16, b17, b18, b19]
 IKM = InlineKeyboardMarkup(
     [
         # 第一行
@@ -35,7 +36,7 @@ IKM = InlineKeyboardMarkup(
         [b4, b5, b9],
         [b10, b12, b13],
         [b14, b15, b16],
-        [b17, b18],
+        [b17, b19, b18],
         [yusanjia, b_alive],
         [b_cancel, b_reverse],
         [b8]
@@ -155,6 +156,8 @@ async def test_setting(client, callback_query):
             for b in b_1:
                 if "✅" in b.text:
                     test_items.append(str(b.text)[1:])
+                # elif b.text == "✅落地IP风险":
+                #     test_items.append("iprisk")
         message = await client.edit_message_text(chat_id=chat_id,
                                                  message_id=mess_id,
                                                  text="⌛正在提交任务~")

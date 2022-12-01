@@ -352,6 +352,9 @@ class Collector:
                     elif i == "Viu":
                         from addons.unlockTest import viu
                         self.tasks.append(viu.task(self, session, proxy=proxy))
+                    elif i == "Iprisk" or i == "落地ip风险":
+                        from addons import ip_risk
+                        self.tasks.append(ip_risk.task(self, session, proxy=proxy))
                     else:
                         pass
             return self.tasks

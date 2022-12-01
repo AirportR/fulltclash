@@ -85,7 +85,7 @@ async def batch_test_pro(message, nodename: list, delays: list, test_items: list
     if psize <= 0:
         logger.error("无可用的代理程序接口")
         return {}
-    await check.progress(message, 0, nodenum, 0, "╰(*°▽°*)╯流媒体测试进行中...")
+    await check.progress(message, 0, nodenum, 0, "╰(*°▽°*)╯联通性测试进行中...")
     if nodenum < psize:
         for i in range(len(port[:nodenum])):
             proxys.switchProxy_old(proxyName=nodename[i], proxyGroup=proxygroup, clashHost=host[i],
@@ -123,7 +123,7 @@ async def batch_test_pro(message, nodename: list, delays: list, test_items: list
             cal = progress / nodenum * 100
             # 判断进度条，每隔10%发送一次反馈，有效防止洪水等待(FloodWait)
             if cal > sending_time:
-                await check.progress(message, progress, nodenum, cal, "╰(*°▽°*)╯流媒体测试进行中...")
+                await check.progress(message, progress, nodenum, cal, "╰(*°▽°*)╯联通性测试进行中...")
                 sending_time += 20
             # 简单处理一下数据
             res = []
@@ -152,7 +152,7 @@ async def batch_test_pro(message, nodename: list, delays: list, test_items: list
                 info[test_items[j]].extend(res)
         # 最终进度条
         if nodenum % psize != 0:
-            await check.progress(message, nodenum, nodenum, 100, "╰(*°▽°*)╯流媒体测试进行中...")
+            await check.progress(message, nodenum, nodenum, 100, "╰(*°▽°*)╯联通性测试进行中...")
         logger.info(str(info))
         return info
 
