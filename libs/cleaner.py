@@ -647,6 +647,9 @@ class ReCleaner:
                 elif i == "Viu":
                     from addons.unlockTest import viu
                     info['Viu'] = viu.get_viu_info(self)
+                elif i == "Iprisk" or i == "落地ip风险":
+                    from addons import ip_risk
+                    info['落地ip风险'] = ip_risk.get_iprisk_info(self)
                 else:
                     pass
         except Exception as e:
