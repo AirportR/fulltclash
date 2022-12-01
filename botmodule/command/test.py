@@ -43,7 +43,7 @@ async def testurl(_, message):
 
 @logger.catch()
 async def test(_, message):
-    back_message = await message.reply("╰(*°▽°*)╯流媒体测试进行中...")  # 发送提示
+    back_message = await message.reply("╰(*°▽°*)╯联通性测试进行中...")  # 发送提示
     arg = cleaner.ArgCleaner().getall(str(message.text))
     del arg[0]
     if len(arg):
