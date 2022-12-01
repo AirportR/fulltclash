@@ -71,8 +71,8 @@ def get_iprisk_info(ReCleaner):
             index2 = info_pre.find("}")
             info_str2 = info_pre[:index2+1] if index2 > 0 else "{}"
             info = json.loads(info_str2)
-            score = info.get('score', '无').capitalize()
-            risk = info.get('risk', '无')
+            score = info.get('score', '无')
+            risk = info.get('risk', '无').capitalize()
             return risk + f"({score})"
     except Exception as e:
         logger.error(e)
