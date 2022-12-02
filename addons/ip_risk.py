@@ -30,7 +30,6 @@ async def fetch_ip_risk(Collector, session: aiohttp.ClientSession, proxy=None, r
         else:
             Collector.info['iprisk'] = "N/A"
             return
-        print(url)
         async with session.get(url, proxy=proxy, timeout=5) as res:
             if res.status == 200:
                 data = await res.text()
