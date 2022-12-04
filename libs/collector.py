@@ -164,19 +164,26 @@ class SubCollector(BaseCollector):
     """
 
     @logger.catch()
-    def __init__(self, suburl: str):
+    def __init__(self, suburl: str, include: str = '', exclude: str = ''):
         super().__init__()
         self.text = None
         self._headers = {'User-Agent': 'clash'}  # 这个请求头是获取流量信息的关键
         self.subconvertor = config.config.get('subconvertor', {})
         self.cvt_enable = self.subconvertor.get('enable', False)
         self.url = suburl
-        self.codeurl = quote(suburl, 'utf-8')
+        self.codeurl = quote(suburl, encoding='utf-8')
+        self.code_include = quote(include, encoding='utf-8')
+        self.code_exclude = quote(exclude, encoding='utf-8')
         self.host = str(self.subconvertor.get('host', '127.0.0.1:25500'))
-        self.cvt_url = f"http://{self.host}/sub?target=clash&new_name=true&url={self.codeurl}"
+        self.cvt_url = f"http://{self.host}/sub?target=clash&new_name=true&url={self.codeurl}&include={self.code_include}&exclude={self.code_exclude}&emoji=true"
         self.sub_remote_config = self.subconvertor.get('remoteconfig', '')
+        self.config_include = quote(self.subconvertor.get('include', ''), encoding='utf-8')  # 这两个
+        self.config_exclude = quote(self.subconvertor.get('exclude', ''), encoding='utf-8')
+        print(f"配置文件过滤,包含：{self.config_include} 排除：{self.config_exclude}")
+        if self.config_include or self.config_exclude:
+            self.cvt_url = f"http://{self.host}/sub?target=clash&new_name=true&url={self.cvt_url}&include={self.code_include}&exclude={self.code_exclude}&emoji=true"
         if self.sub_remote_config:
-            self.sub_remote_config = quote(self.sub_remote_config, 'utf-8')
+            self.sub_remote_config = quote(self.sub_remote_config, encoding='utf-8')
             self.cvt_url = self.cvt_url + "&config=" + self.sub_remote_config
 
     async def start(self, proxy=None):

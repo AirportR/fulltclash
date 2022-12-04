@@ -40,6 +40,9 @@ class ExportResult:
         self.version = __version__
         self.basedata = info.pop('节点名称', nodename)
         self.info = info
+        self.filter = self.info.pop('filter', {})
+        self.filter_include = self.filter.get('include', '')
+        self.filter_exclude = self.filter.get('exclude', '')
         if self.basedata:
             self.nodenum = len(self.basedata)
         else:
@@ -178,7 +181,7 @@ class ExportResult:
         idraw = ImageDraw.Draw(img)
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
-        list1 = ["FullTclash - 联通性测试", "版本:{}     ⏱️总共耗时: {}s".format(__version__, wtime),
+        list1 = ["FullTclash - 联通性测试", f"版本:{__version__}   ⏱️总共耗时: {wtime}s  过滤器: {self.filter_include} <-> {self.filter_exclude}",
                  "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time)]
         export_time = export_time.replace(':', '-')
         title = list1[0]
@@ -548,6 +551,9 @@ class ExportSpeed(ExportResult):
         if info is None:
             info = {}
         self.wtime = info.pop('wtime', "-1")
+        self.filter = info.pop('filter', {})
+        self.filter_include = self.filter.get('include', '')
+        self.filter_exclude = self.filter.get('exclude', '')
         self.thread = str(info.pop('线程', ''))
         self.traffic = "%.1f" % info.pop('消耗流量', 0)
         self.speedblock = info.pop('速度变化', [])
@@ -603,7 +609,7 @@ class ExportSpeed(ExportResult):
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
         list1 = ["FullTclash - 速度测试",
-                 f"版本:{__version__}     ⏱️总共耗时: {self.wtime}s   消耗流量: {self.traffic}MB   线程: {self.thread} ",
+                 f"版本:{__version__}     ⏱️总共耗时: {self.wtime}s   消耗流量: {self.traffic}MB   线程: {self.thread}  过滤器: {self.filter_include} <-> {self.filter_exclude}",
                  "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time)]
         export_time = export_time.replace(':', '-')
         title = list1[0]

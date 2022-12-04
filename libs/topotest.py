@@ -125,18 +125,32 @@ async def core(message, back_message, start_time, suburl: str = None, test_type=
     """
     info1 = {}
     info2 = {}
+    include_text = ''
+    exclude_text = ''
     if suburl is not None:
         url = suburl
+        text = str(message.text)
+        texts = text.split(' ')
+        if len(texts) > 2:
+            include_text = texts[2]
+        if len(texts) > 3:
+            exclude_text = texts[3]
     else:
         text = str(message.text)
         url = cleaner.geturl(text)
+        texts = text.split(' ')
+        if len(texts) > 2:
+            include_text = texts[2]
+        if len(texts) > 3:
+            exclude_text = texts[3]
         if await check.check_url(back_message, url):
             return info1, info2
     print(url)
     pool = {'host': ['127.0.0.1' for _ in range(thread)],
             'port': [1124 + t * 2 for t in range(thread)]}
     # 订阅采集
-    sub = collector.SubCollector(suburl=url)
+    logger.info(f"过滤器: 包含: [{include_text}], 排除: [{exclude_text}]")
+    sub = collector.SubCollector(suburl=url, include=include_text, exclude=exclude_text)
     subconfig = await sub.getSubConfig(save_path='./clash/sub{}.yaml'.format(start_time))
     if await check.check_sub(back_message, subconfig):
         return info1, info2
