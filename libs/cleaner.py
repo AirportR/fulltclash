@@ -261,6 +261,7 @@ class ClashCleaner:
             yaml.dump(self.yaml, fp)
 
 
+@logger.catch()
 class ConfigManager:
     """
     配置清洗
@@ -271,21 +272,21 @@ class ConfigManager:
 
         """
         self.yaml = {}
+        self.config = None
         flag = 0
         try:
             with open(configpath, "r", encoding="UTF-8") as fp:
                 self.config = yaml.load(fp, Loader=yaml.FullLoader)
                 self.yaml.update(self.config)
         except FileNotFoundError:
-            if flag == 0:
+            if flag == 0 and configpath == "./resources/config.yaml":
                 flag += 1
                 logger.warning("无法在 ./resources/ 下找到 config.yaml 配置文件，正在尝试寻找旧目录 ./config.yaml")
                 with open('./config.yaml', "r", encoding="UTF-8") as fp1:
                     self.config = yaml.load(fp1, Loader=yaml.FullLoader)
                     self.yaml.update(self.config)
-            elif flag == 1:
+            elif flag > 1:
                 logger.warning("无法找到配置文件，正在初始化...")
-                self.config = None
         if self.config is None:
             di = {'loader': "Success"}
             with open(configpath, "w+", encoding="UTF-8") as fp:
@@ -724,6 +725,7 @@ class ReCleaner:
         except Exception as e:
             logger.error(e)
             return "N/A"
+
     # 以下为旧版奈飞测试，灵感来自 SSRSpeedN ，现已废弃。如果有人看到这段消息，可以删掉这段代码了。
     # def getnetflixinfo(self):
     #     """
