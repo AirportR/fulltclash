@@ -499,7 +499,7 @@ class ConfigManager:
             logger.error("删除失败")
 
     @logger.catch
-    def save(self, savePath: str = "./config.yaml"):
+    def save(self, savePath: str = "./resources/config.yaml"):
         with open(savePath, "w+", encoding="UTF-8") as fp:
             try:
                 yaml.dump(self.yaml, fp)
@@ -509,7 +509,7 @@ class ConfigManager:
                 return False
 
     @logger.catch
-    def reload(self, configpath="./config.yaml", issave=True):
+    def reload(self, configpath="./resources/config.yaml", issave=True):
         if issave:
             if self.save(savePath=configpath):
                 try:
