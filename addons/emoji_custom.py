@@ -26,7 +26,7 @@ class EmojiPediaSource(pilmoji.source.DiscordEmojiSourceMixin):
         if self.STYLE is None:
             raise TypeError("STYLE class variable unfilled.")
 
-        name = demojize(emoji).strip(":️").replace("_", "-")
+        name = demojize(emoji).strip(":️").replace("_", "-").replace("-&-", "-").replace(".", "")
         if name[0].isupper():
             name = f"flag-{name.lower()}"
         uni = re.sub(
