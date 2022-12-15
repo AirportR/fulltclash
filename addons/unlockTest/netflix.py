@@ -7,7 +7,7 @@ from pyrogram.types import InlineKeyboardButton
 from libs.collector import config
 
 # collector section
-netflix_url1 = config.config.get('netflixurl', "https://www.netflix.com/title/70143836")  # 非自制
+netflix_url1 = config.config.get('netflixurl', "https://www.netflix.com/title/80113701")  # 非自制
 netflix_url2 = "https://www.netflix.com/title/70242311"  # 自制
 
 
