@@ -4,7 +4,7 @@ dns:
   default-nameserver:
   - 119.29.29.29
   - 223.5.5.5
-  enable: true
+  enable: false
   enhanced-mode: redir-host
   fallback:
   - https://208.67.222.222/dns-query

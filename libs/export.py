@@ -16,7 +16,7 @@ from addons.emoji_custom import TwitterPediaSource
 2、何为基础数据？
     基础数据决定了生成图片的高度（Height），它是列表，列表里面的数据一般是一组节点名，即有多少个节点就对应了info键值中的长度。
 """
-__version__ = "3.4.0"  # 版本号
+__version__ = "3.4.2"  # 版本号
 custom_source = TwitterPediaSource  # 自定义emoji风格 TwitterPediaSource
 
 
@@ -40,6 +40,9 @@ class ExportResult:
         self.version = __version__
         self.basedata = info.pop('节点名称', nodename)
         self.info = info
+        self.filter = self.info.pop('filter', {})
+        self.filter_include = self.filter.get('include', '')
+        self.filter_exclude = self.filter.get('exclude', '')
         if self.basedata:
             self.nodenum = len(self.basedata)
         else:
@@ -178,7 +181,7 @@ class ExportResult:
         idraw = ImageDraw.Draw(img)
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
-        list1 = ["FullTclash - 流媒体测试", "版本:{}     ⏱️总共耗时: {}s".format(__version__, wtime),
+        list1 = ["FullTclash - 联通性测试", f"版本:{__version__}   ⏱️总共耗时: {wtime}s  过滤器: {self.filter_include} <-> {self.filter_exclude}",
                  "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time)]
         export_time = export_time.replace(':', '-')
         title = list1[0]
@@ -228,19 +231,7 @@ class ExportResult:
             # 填充颜色块
             c_block = {'成功': '#bee47e', '失败': '#ee6b73', 'N/A': '#8d8b8e', '待解锁': '#dcc7e1'}
             for t1 in key_list:
-                if '解锁' in self.info[t1][t] and '待' not in self.info[t1][t] and t1 != "延迟RTT":
-                    block = color_block((info_list_length[i], 40), color_value=c_block['成功'])
-                    img.paste(block, (width, 40 * (t + 2)))
-                elif '失败' in self.info[t1][t]:
-                    block = color_block((info_list_length[i], 40), color_value=c_block['失败'])
-                    img.paste(block, (width, 40 * (t + 2)))
-                elif '待解' in self.info[t1][t]:
-                    block = color_block((info_list_length[i], 40), color_value=c_block['待解锁'])
-                    img.paste(block, (width, 40 * (t + 2)))
-                elif 'N/A' in self.info[t1][t]:
-                    block = color_block((info_list_length[i], 40), color_value=c_block['N/A'])
-                    img.paste(block, (width, 40 * (t + 2)))
-                elif "延迟RTT" == t1:
+                if "延迟RTT" == t1:
                     rtt = float(self.info[t1][t][:-2])
                     if interval[0] < rtt < interval[1]:
                         block = color_block((info_list_length[i], 40), color_value=colorvalue[0])
@@ -266,6 +257,19 @@ class ExportResult:
                     elif rtt == 0:
                         block = color_block((info_list_length[i], 40), color_value=colorvalue[7])
                         img.paste(block, (width, 40 * (t + 2)))
+                elif '解锁' in self.info[t1][t] and '待' not in self.info[t1][t]:
+                    block = color_block((info_list_length[i], 40), color_value=c_block['成功'])
+                    img.paste(block, (width, 40 * (t + 2)))
+                elif '失败' in self.info[t1][t]:
+                    block = color_block((info_list_length[i], 40), color_value=c_block['失败'])
+                    img.paste(block, (width, 40 * (t + 2)))
+                elif '待解' in self.info[t1][t]:
+                    block = color_block((info_list_length[i], 40), color_value=c_block['待解锁'])
+                    img.paste(block, (width, 40 * (t + 2)))
+                elif 'N/A' in self.info[t1][t]:
+                    block = color_block((info_list_length[i], 40), color_value=c_block['N/A'])
+                    img.paste(block, (width, 40 * (t + 2)))
+
                 else:
                     pass
                 width += info_list_length[i]
@@ -312,6 +316,7 @@ class ExportTopo(ExportResult):
             self.basedata = self.info.get('地区', [])
         else:
             self.basedata = self.info.get('地区', name)
+        self.wtime = self.info.pop('wtime', "未知")
         self.nodenum = len(self.basedata)
         self.front_size = 30
         self.config = ConfigManager()
@@ -377,8 +382,6 @@ class ExportTopo(ExportResult):
 
     @logger.catch
     def exportTopoInbound(self, nodename: list = None, info2: dict = None, img2_width: int = None):
-        # wtime = self.info['wtime']
-        wtime = "未知"
         fnt = self.__font
         image_width, info_list_length = self.get_width(compare=img2_width)
         image_height = self.get_height()
@@ -392,7 +395,7 @@ class ExportTopo(ExportResult):
         idraw = ImageDraw.Draw(img)
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
-        list1 = ["FullTclash - 节点拓扑分析", "版本:{}     ⏱️总共耗时: {}".format(__version__, wtime),
+        list1 = ["FullTclash - 节点拓扑分析", "版本:{}     ⏱️总共耗时: {}s".format(__version__, self.wtime),
                  "测试时间: {}  测试结果仅供参考".format(export_time)]
         export_time = export_time.replace(':', '-')
         title = list1[0]
@@ -457,7 +460,6 @@ class ExportTopo(ExportResult):
 
     @logger.catch
     def exportTopoOutbound(self, nodename: list = None, info: dict = None, img2_width: int = None):
-        wtime = info.pop('wtime', '未知')
         if nodename or info:
             self.__init__(nodename, info)
         fnt = self.__font
@@ -473,7 +475,7 @@ class ExportTopo(ExportResult):
         idraw = ImageDraw.Draw(img)
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
-        list1 = ["出口（提示:出口数量顺数即为每个入口对应节点）", "版本:{}     ⏱️总共耗时: {}".format(__version__, wtime),
+        list1 = ["出口（提示:出口数量顺数即为每个入口对应节点）", "版本:{}     ⏱️总共耗时: {}s".format(__version__, self.wtime),
                  "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time)]
         export_time = export_time.replace(':', '-')
         title = list1[0]
@@ -549,6 +551,9 @@ class ExportSpeed(ExportResult):
         if info is None:
             info = {}
         self.wtime = info.pop('wtime', "-1")
+        self.filter = info.pop('filter', {})
+        self.filter_include = self.filter.get('include', '')
+        self.filter_exclude = self.filter.get('exclude', '')
         self.thread = str(info.pop('线程', ''))
         self.traffic = "%.1f" % info.pop('消耗流量', 0)
         self.speedblock = info.pop('速度变化', [])
@@ -604,7 +609,7 @@ class ExportSpeed(ExportResult):
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
         list1 = ["FullTclash - 速度测试",
-                 f"版本:{__version__}     ⏱️总共耗时: {self.wtime}s   消耗流量: {self.traffic}MB   线程: {self.thread} ",
+                 f"版本:{__version__}     ⏱️总共耗时: {self.wtime}s   消耗流量: {self.traffic}MB   线程: {self.thread}  过滤器: {self.filter_include} <-> {self.filter_exclude}",
                  "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time)]
         export_time = export_time.replace(':', '-')
         title = list1[0]

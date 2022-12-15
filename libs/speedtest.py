@@ -225,16 +225,30 @@ async def batch_udp(message, nodename: list, proxygroup='auto'):
 
 async def core(message, back_message, start_time, suburl: str = None):
     info = {}
+    include_text = ''
+    exclude_text = ''
     if suburl is not None:
         url = suburl
+        text = str(message.text)
+        texts = text.split(' ')
+        if len(texts) > 2:
+            include_text = texts[2]
+        if len(texts) > 3:
+            exclude_text = texts[3]
     else:
         text = str(message.text)
+        texts = text.split(' ')
+        if len(texts) > 2:
+            include_text = texts[2]
+        if len(texts) > 3:
+            exclude_text = texts[3]
         url = cleaner.geturl(text)
         if await check.check_url(back_message, url):
             return info
     print(url)
     # 订阅采集
-    sub = collector.SubCollector(suburl=url)
+    logger.info(f"过滤器: 包含: [{include_text}], 排除: [{exclude_text}]")
+    sub = collector.SubCollector(suburl=url, include=include_text, exclude=exclude_text)
     subconfig = await sub.getSubConfig(save_path='./clash/sub{}.yaml'.format(start_time))
     if await check.check_sub(back_message, subconfig):
         return info
@@ -274,6 +288,8 @@ async def core(message, back_message, start_time, suburl: str = None):
         wtime = "%.1f" % float(time.time() - s1)
         info['wtime'] = wtime
         info['线程'] = collector.config.config.get('speedthread', 4)
+        # 过滤器内容
+        info['filter'] = {'include': include_text, 'exclude': exclude_text}
         cl1 = cleaner.ConfigManager(configpath=r"./results/{}.yaml".format(start_time.replace(':', '-')), data=info)
         cl1.save(r"./results/{}.yaml".format(start_time.replace(':', '-')))
     except Exception as e:

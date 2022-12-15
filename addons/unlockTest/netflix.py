@@ -4,9 +4,10 @@ import aiohttp
 from aiohttp import ClientConnectorError
 from loguru import logger
 from pyrogram.types import InlineKeyboardButton
+from libs.collector import config
 
 # collector section
-netflix_url1 = "https://www.netflix.com/title/70143836"  # 非自制
+netflix_url1 = config.config.get('netflixurl', "https://www.netflix.com/title/80113701")  # 非自制
 netflix_url2 = "https://www.netflix.com/title/70242311"  # 自制
 
 
@@ -41,7 +42,7 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
                         logger.info("不支持非自制剧，正在检测自制剧...")
                         await fetch_netflix_new(Collector, session, flag=flag + 1, proxy=proxy, reconnection=5)
                         return
-                    await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection-1)
+                    await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection - 1)
                 else:
                     logger.info("不支持非自制剧，正在检测自制剧...")
                     await fetch_netflix_new(Collector, session, flag=flag + 1, proxy=proxy, reconnection=reconnection)
@@ -53,7 +54,7 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
                     if reconnection == 0:
                         Collector.info['netflix_new'] = "失败"
                         return
-                    await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection-1)
+                    await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection - 1)
                 else:
                     Collector.info['netflix_new'] = "失败"
         else:

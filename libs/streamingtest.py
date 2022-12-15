@@ -69,6 +69,7 @@ async def batch_test(message, nodename: list, delays: list, test_items: list, pr
     return info
 
 
+@logger.catch()
 async def batch_test_pro(message, nodename: list, delays: list, test_items: list, pool: dict, proxygroup='auto'):
     info = {}
     progress = 0
@@ -83,8 +84,8 @@ async def batch_test_pro(message, nodename: list, delays: list, test_items: list
     logger.info("接受任务数量: {} 线程数: {}".format(nodenum, psize))
     if psize <= 0:
         logger.error("无可用的代理程序接口")
-        return None
-    await check.progress(message, 0, nodenum, 0)
+        return {}
+    await check.progress(message, 0, nodenum, 0, "╰(*°▽°*)╯联通性测试进行中...")
     if nodenum < psize:
         for i in range(len(port[:nodenum])):
             proxys.switchProxy_old(proxyName=nodename[i], proxyGroup=proxygroup, clashHost=host[i],
@@ -101,6 +102,7 @@ async def batch_test_pro(message, nodename: list, delays: list, test_items: list
                 res.append(d[j])
             info[test_items[j]].extend(res)
         logger.info(str(info))
+        return info
     else:
         subbatch = nodenum // psize
 
@@ -121,7 +123,7 @@ async def batch_test_pro(message, nodename: list, delays: list, test_items: list
             cal = progress / nodenum * 100
             # 判断进度条，每隔10%发送一次反馈，有效防止洪水等待(FloodWait)
             if cal > sending_time:
-                await check.progress(message, progress, nodenum, cal)
+                await check.progress(message, progress, nodenum, cal, "╰(*°▽°*)╯联通性测试进行中...")
                 sending_time += 20
             # 简单处理一下数据
             res = []
@@ -130,6 +132,7 @@ async def batch_test_pro(message, nodename: list, delays: list, test_items: list
                 for d in done:
                     res.append(d[j])
                 info[test_items[j]].extend(res)
+
         if nodenum % psize != 0:
             tasks.clear()
             logger.info("最后批次: " + str(subbatch + 1))
@@ -149,11 +152,12 @@ async def batch_test_pro(message, nodename: list, delays: list, test_items: list
                 info[test_items[j]].extend(res)
         # 最终进度条
         if nodenum % psize != 0:
-            await check.progress(message, nodenum, nodenum, 100)
+            await check.progress(message, nodenum, nodenum, 100, "╰(*°▽°*)╯联通性测试进行中...")
         logger.info(str(info))
         return info
 
 
+@logger.catch()
 async def core(message, back_message, start_time, suburl: str = None, media_items: list = None, thread: int = 1):
     """
 
@@ -166,14 +170,27 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
     :return:
     """
     info = {}  # 存放Netflix Youtube 等等
+    include_text = ''
+    exclude_text = ''
     if media_items is None:
         test_items = collector.media_items
     else:
         test_items = media_items
     if suburl is not None:
         url = suburl
+        text = str(message.text)
+        texts = text.split(' ')
+        if len(texts) > 2:
+            include_text = texts[2]
+        if len(texts) > 3:
+            exclude_text = texts[3]
     else:
         text = str(message.text)
+        texts = text.split(' ')
+        if len(texts) > 2:
+            include_text = texts[2]
+        if len(texts) > 3:
+            exclude_text = texts[3]
         url = cleaner.geturl(text)
         if await check.check_url(back_message, url):
             return info
@@ -181,7 +198,8 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
             'port': [1124 + t * 2 for t in range(thread)]}
     print(url)
     # 订阅采集
-    sub = collector.SubCollector(suburl=url)
+    logger.info(f"过滤器: 包含: [{include_text}], 排除: [{exclude_text}]")
+    sub = collector.SubCollector(suburl=url, include=include_text, exclude=exclude_text)
     subconfig = await sub.getSubConfig(save_path='./clash/sub{}.yaml'.format(start_time))
     if await check.check_sub(back_message, subconfig):
         return info
@@ -233,6 +251,8 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
         # 计算测试消耗时间
         wtime = "%.1f" % float(time.time() - s1)
         info['wtime'] = wtime
+        # 过滤器内容
+        info['filter'] = {'include': include_text, 'exclude': exclude_text}
         # 保存结果
         cl1 = cleaner.ConfigManager(configpath=r"./results/{}.yaml".format(start_time.replace(':', '-')), data=info)
         cl1.save(r"./results/{}.yaml".format(start_time.replace(':', '-')))
@@ -259,13 +279,6 @@ if __name__ == "__main__":
 
 
     async def test():
-        await batch_test_pro(['🇭🇰 HKG-01', '🇭🇰 HKG-02', '🇭🇰 HKG-03', '🇭🇰 HKG-04', '🇭🇰 HKG-05', '🇭🇰 HKG-06',
-                              '🇸🇬 SGP-01', '🇸🇬 SGP-02', '🇸🇬 SGP-03', '🇸🇬 SGP-04', '🇯🇵 JPN-01'],
-                             [122 for _ in range(11)],
-                             ['Netflix', 'Youtube', "disney"],
-                             {'host': ['127.0.0.1' for _ in range(4)],
-                              'port': [1124, 1126, 1128, 1130]},
-                             'ETON')
-
+        pass
 
     loop.run_until_complete(test())

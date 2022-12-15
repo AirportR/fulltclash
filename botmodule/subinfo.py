@@ -13,6 +13,7 @@ async def getSubInfo(_, message):
             await back_message.edit_text("使用方法: /traffic & /subinfo & /流量查询 + <订阅链接>")
             return
         subcl = SubCollector(url)
+        subcl.cvt_enable = False
         subinfo = await subcl.getSubTraffic()
         if subinfo:
             rs = subinfo[3] - subinfo[2]  # 剩余流量

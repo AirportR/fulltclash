@@ -5,7 +5,7 @@ import time
 import aiohttp
 import async_timeout
 from urllib.parse import quote
-from aiohttp.client_exceptions import ClientConnectorError
+from aiohttp.client_exceptions import ClientConnectorError, ContentTypeError
 from loguru import logger
 from libs import cleaner
 
@@ -58,11 +58,18 @@ class BaseCollector:
 
 class IPCollector:
     def __init__(self):
-        self.tasks = None
+        self.tasks = []
         self._headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
                           'Chrome/102.0.5005.63 Safari/537.36'}
-        self.url = "https://api.ip.sb/geoip/"
+        self.style = config.config.get('geoip-api', 'ip-api.com')  # api来源风格 这个值取二级域名
+        self.url = self.get_style_url()
+
+    def get_style_url(self):
+        if self.style == "ip-api.com":
+            return "http://ip-api.com/json/"
+        elif self.style == "ip.sb":
+            return "https://api.ip.sb/geoip/"
 
     def create_tasks(self, session: aiohttp.ClientSession, hosts: list = None, proxy=None):
         """
@@ -76,11 +83,28 @@ class IPCollector:
         if hosts is None:
             task = asyncio.create_task(self.fetch(session, proxy=proxy))
             tasks.append(task)
+        elif type(hosts).__name__ == "str":
+            tasks.append(asyncio.create_task(self.fetch(session, proxy=proxy, host=hosts)))
         else:
             for ip in hosts:
                 task = asyncio.create_task(self.fetch(session, proxy=proxy, host=ip))
                 tasks.append(task)
-        self.tasks = tasks
+        self.tasks.extend(tasks)
+
+    async def batch(self, proxyhost: list, proxyport: list):
+        try:
+            session = aiohttp.ClientSession()
+            length = min(len(proxyhost), len(proxyport))
+            for i in range(length):
+                self.create_tasks(session=session, hosts=None, proxy=f"http://{proxyhost[i]}:{proxyport[i]}")
+            resdata = await self.start()
+            if resdata is None:
+                resdata = []
+            await session.close()
+            return resdata
+        except Exception as e:
+            logger.error(str(e))
+            return []
 
     async def start(self):
         """
@@ -110,10 +134,10 @@ class IPCollector:
             return None
         try:
             if host:
-                resp = await session.get(self.url + host, proxy=proxy, timeout=10)
+                resp = await session.get(self.url + host, proxy=proxy, timeout=12)
                 return await resp.json()
             else:
-                resp = await session.get(self.url, proxy=proxy, timeout=10)
+                resp = await session.get(self.url, proxy=proxy, timeout=12)
                 return await resp.json()
         except ClientConnectorError as c:
             logger.warning("ip查询请求发生错误:" + str(c))
@@ -127,6 +151,11 @@ class IPCollector:
                 await self.fetch(session=session, proxy=proxy, host=host, reconnection=reconnection - 1)
             else:
                 return None
+        except ContentTypeError:
+            return None
+        except Exception as e:
+            logger.info(str(e))
+            return None
 
 
 class SubCollector(BaseCollector):
@@ -135,19 +164,26 @@ class SubCollector(BaseCollector):
     """
 
     @logger.catch()
-    def __init__(self, suburl: str):
+    def __init__(self, suburl: str, include: str = '', exclude: str = ''):
         super().__init__()
         self.text = None
         self._headers = {'User-Agent': 'clash'}  # 这个请求头是获取流量信息的关键
         self.subconvertor = config.config.get('subconvertor', {})
         self.cvt_enable = self.subconvertor.get('enable', False)
         self.url = suburl
-        self.codeurl = quote(suburl, 'utf-8')
+        self.codeurl = quote(suburl, encoding='utf-8')
+        self.code_include = quote(include, encoding='utf-8')
+        self.code_exclude = quote(exclude, encoding='utf-8')
         self.host = str(self.subconvertor.get('host', '127.0.0.1:25500'))
-        self.cvt_url = f"http://{self.host}/sub?target=clash&new_name=true&url={self.codeurl}"
+        self.cvt_url = f"http://{self.host}/sub?target=clash&new_name=true&url={self.codeurl}&include={self.code_include}&exclude={self.code_exclude}&emoji=true"
         self.sub_remote_config = self.subconvertor.get('remoteconfig', '')
+        self.config_include = quote(self.subconvertor.get('include', ''), encoding='utf-8')  # 这两个
+        self.config_exclude = quote(self.subconvertor.get('exclude', ''), encoding='utf-8')
+        print(f"配置文件过滤,包含：{self.config_include} 排除：{self.config_exclude}")
+        if self.config_include or self.config_exclude:
+            self.cvt_url = f"http://{self.host}/sub?target=clash&new_name=true&url={self.cvt_url}&include={self.code_include}&exclude={self.code_exclude}&emoji=true"
         if self.sub_remote_config:
-            self.sub_remote_config = quote(self.sub_remote_config, 'utf-8')
+            self.sub_remote_config = quote(self.sub_remote_config, encoding='utf-8')
             self.cvt_url = self.cvt_url + "&config=" + self.sub_remote_config
 
     async def start(self, proxy=None):
@@ -193,7 +229,7 @@ class SubCollector(BaseCollector):
             logger.warning(c)
             return []
 
-    async def getSubConfig(self, save_path: str, proxy=None):
+    async def getSubConfig(self, save_path: str, proxy=proxies):
         """
         获取订阅配置文件
         :param save_path: 订阅保存路径
@@ -294,32 +330,38 @@ class Collector:
                         task7 = asyncio.create_task(self.fetch_dazn(session, proxy=proxy))
                         self.tasks.append(task7)
                     elif i == "Hbomax":
-                        from addons import hbomax
+                        from addons.unlockTest import hbomax
                         self.tasks.append(hbomax.task(self, session, proxy=proxy))
                     elif i == "Bahamut":
-                        from addons import bahamut
+                        from addons.unlockTest import bahamut
                         self.tasks.append(bahamut.task(self, session, proxy=proxy))
                     elif i == "Netflix":
-                        from addons import netflix
+                        from addons.unlockTest import netflix
                         self.tasks.append(netflix.task(self, session, proxy=proxy))
                     elif i == "Abema":
-                        from addons import abema
+                        from addons.unlockTest import abema
                         self.tasks.append(abema.task(self, session, proxy=proxy))
                     elif i == "Bbc":
-                        from addons import bbciplayer
+                        from addons.unlockTest import bbciplayer
                         self.tasks.append(bbciplayer.task(self, session, proxy=proxy))
                     elif i == "公主链接":
-                        from addons import pcrjp
+                        from addons.unlockTest import pcrjp
                         self.tasks.append(pcrjp.task(self, session, proxy=proxy))
                     elif i == "Primevideo":
-                        from addons import primevideo
+                        from addons.unlockTest import primevideo
                         self.tasks.append(primevideo.task(self, session, proxy=proxy))
                     elif i == "Myvideo":
-                        from addons import myvideo
+                        from addons.unlockTest import myvideo
                         self.tasks.append(myvideo.task(self, session, proxy=proxy))
                     elif i == "Catchplay":
-                        from addons import catchplay
+                        from addons.unlockTest import catchplay
                         self.tasks.append(catchplay.task(self, session, proxy=proxy))
+                    elif i == "Viu":
+                        from addons.unlockTest import viu
+                        self.tasks.append(viu.task(self, session, proxy=proxy))
+                    elif i == "Iprisk" or i == "落地ip风险":
+                        from addons import ip_risk
+                        self.tasks.append(ip_risk.task(self, session, proxy=proxy))
                     else:
                         pass
             return self.tasks
