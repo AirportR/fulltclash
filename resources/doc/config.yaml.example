@@ -9,6 +9,7 @@ item: # 流媒体测试项，决定你想要测哪个项,目前仅支持以下�
 #- 'Dazn' # Dazn 一般测试得很难看，默认不开启，想开启该项将该行最前面的#号删除即可。
 #- 'Hbomax'
 #- 'Bahamut'
+#netflixurl: "https://www.netflix.com/title/80113701"  #自定义奈飞非自制剧检测网页，注意在更换此链接时请确保是非自制的链接。
 #proxyport: 7890 # 此为旧版代理设置，用于TGbot通讯，现已不推荐使用。
 #bot:
 # proxy: "host:端口" #socks5代理，已和下面的proxy单独分离，请勿混用
