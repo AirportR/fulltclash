@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import time
 from pyrogram.errors import RPCError, FloodWait
 from loguru import logger
@@ -18,7 +19,7 @@ def reloadUser():
 
 @logger.catch()
 async def testurl(_, message):
-    back_message = await message.reply("╰(*°▽°*)╯流媒体测试进行中...")
+    back_message = await message.reply("╰(*°▽°*)╯联通性测试进行中...")
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
     try:
@@ -47,12 +48,23 @@ async def test(_, message):
     arg = cleaner.ArgCleaner().getall(str(message.text))
     del arg[0]
     if len(arg):
-        suburl = config.get_sub(subname=arg[0])
+        suburl = config.get_sub(subname=arg[0]).get('url', None)
     else:
         await back_message.edit_text("❌找不到该任务名称，请检查参数是否正确")
+        await asyncio.sleep(10)
+        await back_message.delete()
         return
     if suburl is None:
         await back_message.edit_text("❌找不到该任务名称，请检查参数是否正确")
+        await asyncio.sleep(10)
+        await back_message.delete()
+        return
+    subpwd = config.get_sub(subname=arg[0]).get('password', '')
+    pwd = arg[3] if len(arg) > 3 else arg[0]
+    if hashlib.sha256(pwd.encode("utf-8")).hexdigest() != subpwd:
+        await back_message.edit_text('❌访问密码错误')
+        await asyncio.sleep(10)
+        await back_message.delete()
         return
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
@@ -122,12 +134,23 @@ async def analyze(_, message, test_type="all"):
     arg = cleaner.ArgCleaner().getall(str(message.text))
     del arg[0]
     if len(arg):
-        suburl = config.get_sub(subname=arg[0])
+        suburl = config.get_sub(subname=arg[0]).get('url', None)
     else:
         await back_message.edit_text("❌找不到该任务名称，请检查参数是否正确")
+        await asyncio.sleep(10)
+        await back_message.delete()
         return
     if suburl is None:
         await back_message.edit_text("❌❌找不到该任务名称，请检查参数是否正确")
+        await asyncio.sleep(10)
+        await back_message.delete()
+        return
+    subpwd = config.get_sub(subname=arg[0]).get('password', '')
+    pwd = arg[3] if len(arg) > 3 else arg[0]
+    if hashlib.sha256(pwd.encode("utf-8")).hexdigest() != subpwd:
+        await back_message.edit_text('❌访问密码错误')
+        await asyncio.sleep(10)
+        await back_message.delete()
         return
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
@@ -194,7 +217,7 @@ async def speedurl(_, message):
 @logger.catch()
 async def speed(_, message):
     back_message = await message.reply("╰(*°▽°*)╯速度测试进行中...")  # 发送提示
-    arg = cleaner.ArgCleaner().getall(str(message.text))
+    arg = cleaner.ArgCleaner().getall(str(message.text)).get('url', None)
     del arg[0]
     if len(arg):
         suburl = config.get_sub(subname=arg[0])
@@ -203,6 +226,13 @@ async def speed(_, message):
         return
     if suburl is None:
         await back_message.edit_text("❌找不到该任务名称，请检查参数是否正确")
+        return
+    subpwd = config.get_sub(subname=arg[0]).get('password', '')
+    pwd = arg[3] if len(arg) > 3 else arg[0]
+    if hashlib.sha256(pwd.encode("utf-8")).hexdigest() != subpwd:
+        await back_message.edit_text('❌访问密码错误')
+        await asyncio.sleep(10)
+        await back_message.delete()
         return
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
