@@ -126,6 +126,10 @@ def command_loader(app: Client):
     async def debug(client, message):
         await botmodule.di.debug_interface(client, message)
 
+    @app.on_message(filters.command(["delay"]), group=20)
+    async def delay(client, message):
+        if await isuser(message, botmodule.init_bot.reloadUser()):
+            await bot_put(client, message, "delay")
 
 def callback_loader(app: Client):
     @app.on_callback_query()
