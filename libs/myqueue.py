@@ -33,6 +33,8 @@ async def bot_task_queue(client: Client, message, task_type: str, qu: asyncio.Qu
         await botmodule.speed(client, message)
     elif "speedurl" in task_type:
         await botmodule.speedurl(client, message)
+    elif "delay" in task_type and "url" not in task_type:
+        await botmodule.test(client, message)
     else:
         try:
             m1 = await message.reply("⚠️未识别的测试类型，任务取消~")
