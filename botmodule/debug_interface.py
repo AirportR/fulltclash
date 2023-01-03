@@ -6,7 +6,7 @@ from libs.cleaner import ConfigManager
 @logger.catch()
 async def debug_interface(_, message):
     config = ConfigManager().config
-    name = config.get('bot', '')
+    name = config.get('bot', {}).get('name', 'bot')
     name = name.replace('@', '')
     text = str(message.text).replace(f'/map@{name} ', '')
     text = text.replace('/map ', '')

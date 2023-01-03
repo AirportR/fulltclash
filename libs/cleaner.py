@@ -404,9 +404,9 @@ class ConfigManager:
                 return {}
         else:
             try:
-                return self.config['subinfo'][subname]
+                return self.config.get('subinfo', {}).get(subname, {})
             except KeyError:
-                return None
+                return {}
 
     @logger.catch
     def add(self, data: dict, key):

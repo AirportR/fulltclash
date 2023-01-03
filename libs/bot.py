@@ -40,17 +40,19 @@ def command_loader(app: Client):
     async def user(client, message):
         await botmodule.user(client, message)
 
-    @app.on_message(filters.command(["new"]) & filters.user(admin), group=5)
+    @app.on_message(filters.command(["new"]), group=5)
     async def new(client, message):
-        await botmodule.new(client, message)
+        if await isuser(message, botmodule.init_bot.reloadUser()):
+            await botmodule.new(client, message)
 
     @app.on_message(filters.command(["remove"]) & filters.user(admin), group=6)
     async def remove(client, message):
         await botmodule.remove(client, message)
 
-    @app.on_message(filters.command(["sub"]) & filters.user(admin), group=7)
+    @app.on_message(filters.command(["sub"]), group=7)
     async def sub(client, message):
-        await botmodule.sub(client, message)
+        if await isuser(message, botmodule.init_bot.reloadUser()):
+            await botmodule.sub(client, message)
 
     @app.on_message(filters.command(["test"]), group=8)
     async def test(_, message):

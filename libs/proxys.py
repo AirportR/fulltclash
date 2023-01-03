@@ -80,7 +80,6 @@ async def reloadConfig(filePath: str, clashHost: str = "127.0.0.1", clashPort: i
 
 def start_client(path: str, workpath: str = "./clash", config: str = './clash/proxy.yaml', ):
     # 启动了一个clash常驻进程
-    print(ClashCleaner(config).yaml.get("mixed-port", 0))
     command = fr"{path} -f {config} -d {workpath}"
     subprocess.Popen(command.split(), encoding="utf-8")
     sleep(2)
