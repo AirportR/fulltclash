@@ -642,9 +642,9 @@ class ReCleaner:
                 elif i == "Bbc":
                     from addons.unlockTest import bbciplayer
                     info['BBC'] = bbciplayer.get_bbc_info(self)
-                elif i == "公主链接":
+                elif i == "公主连结":
                     from addons.unlockTest import pcrjp
-                    info['公主链接'] = pcrjp.get_pcr_info(self)
+                    info['公主连结'] = pcrjp.get_pcr_info(self)
                 elif i == "Primevideo":
                     from addons.unlockTest import primevideo
                     info['Primevideo'] = primevideo.get_primevideo_info(self)
@@ -660,11 +660,31 @@ class ReCleaner:
                 elif i == "Iprisk" or i == "落地ip风险":
                     from addons import ip_risk
                     info['落地ip风险'] = ip_risk.get_iprisk_info(self)
+                elif i == "Steam货币":
+                    from addons.unlockTest import steam
+                    info['Steam货币'] = steam.get_steam_info(self)
+                elif item == "HTTP延迟":
+                    info['HTTP延迟'] = self.get_https_rtt()
                 else:
                     pass
         except Exception as e:
             logger.error(str(e))
         return info
+
+    def get_https_rtt(self):
+        """
+        获取http(s)协议延迟
+        :return: int
+        """
+        try:
+            if 'HTTP延迟' not in self.data and 'HTTPS延迟' not in self.data:
+                logger.warning("采集器内无数据: HTTP延迟")
+                return 0
+            else:
+                return self.data.get('HTTP延迟', 0)
+        except Exception as e:
+            logger.error(str(e))
+            return 0
 
     def get_dazn_info(self):
         """

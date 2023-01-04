@@ -344,7 +344,7 @@ class Collector:
                     elif i == "Bbc":
                         from addons.unlockTest import bbciplayer
                         self.tasks.append(bbciplayer.task(self, session, proxy=proxy))
-                    elif i == "公主链接":
+                    elif i == "公主连结":
                         from addons.unlockTest import pcrjp
                         self.tasks.append(pcrjp.task(self, session, proxy=proxy))
                     elif i == "Primevideo":
@@ -362,6 +362,11 @@ class Collector:
                     elif i == "Iprisk" or i == "落地ip风险":
                         from addons import ip_risk
                         self.tasks.append(ip_risk.task(self, session, proxy=proxy))
+                    elif i == "Steam货币":
+                        from addons.unlockTest import steam
+                        self.tasks.append(steam.task(self, session, proxy=proxy))
+                    elif item == "HTTP延迟":
+                        self.tasks.append(delay_https_task(self, session, proxy=proxy))
                     else:
                         pass
             return self.tasks
@@ -698,3 +703,59 @@ async def batch_delay(proxyname: list, session: aiohttp.ClientSession = None,
     except Exception as e:
         logger.error(e)
         return None
+
+
+async def delay_https(session: aiohttp.ClientSession, proxy=None, testurl="http://www.gstatic.com/generate_204",
+                      timeout=10):
+    _headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
+                      'Chrome/102.0.5005.63 Safari/537.36'
+    }
+    try:
+        s1 = time.time()
+        async with session.get(url=testurl, proxy=proxy, headers=_headers,
+                               timeout=timeout) as r:
+            if r.status == 204:
+                delay1 = time.time() - s1
+                # print(delay1)
+                return delay1
+            else:
+                return 0
+    except Exception as e:
+        logger.error(str(e))
+        return 0
+
+
+async def delay_https_task(collector=None, session: aiohttp.ClientSession = None, proxy=None, times=5):
+    if session is None:
+        async with aiohttp.ClientSession() as session:
+            tasks = [asyncio.create_task(delay_https(session=session, proxy=proxy)) for _ in range(times)]
+            result = await asyncio.gather(*tasks)
+            sum_num = [r for r in result if r != 0]
+            http_delay = sum(sum_num) / len(sum_num) if len(sum_num) else 0
+            http_delay = "%.0fms" % (http_delay * 1000)
+            # print("http平均延迟:", http_delay)
+            if collector is not None:
+                collector.info['HTTP延迟'] = http_delay
+            return http_delay
+    else:
+        tasks = [asyncio.create_task(delay_https(session=session, proxy=proxy)) for _ in range(times)]
+        result = await asyncio.gather(*tasks)
+        sum_num = [r for r in result if r != 0]
+        http_delay = sum(sum_num) / len(sum_num) if len(sum_num) else 0
+        http_delay = "%.0fms" % (http_delay * 1000)
+        # print("http平均延迟:", http_delay)
+        if collector is not None:
+            collector.info['HTTP延迟'] = http_delay
+        return http_delay
+
+
+if __name__ == "__main__":
+    "this is a test demo"
+    import sys
+    import os
+
+    sys.path.append(os.path.abspath(os.path.join(os.getcwd(), os.pardir)))
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(delay_https_task())

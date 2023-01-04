@@ -20,9 +20,13 @@ async def unit(test_items: list, delay: int, host="127.0.0.1", port=1122):
     :return: list 返回test_items对应顺序的信息
     """
     info = []
-    if delay == 0:
-        for _ in test_items:
-            info.append("N/A")
+    delay2 = await collector.delay_https_task(proxy=f"http://{host}:{port}", times=1)
+    if delay == 0 and delay2 == 0:
+        for t in test_items:
+            if t == "HTTP延迟":
+                info.append("0ms")
+            else:
+                info.append("N/A")
         return info
     else:
         cl = collector.Collector()
@@ -30,7 +34,7 @@ async def unit(test_items: list, delay: int, host="127.0.0.1", port=1122):
         cnr = cleaner.ReCleaner(re1)
         old_info = cnr.get_all()
         for item in test_items:
-            i = item.capitalize() if item != "BBC" else item
+            i = item.capitalize() if item != "BBC" and item != "HTTP延迟" else item
             try:
                 info.append(old_info[i])
             except KeyError:
@@ -280,5 +284,6 @@ if __name__ == "__main__":
 
     async def test():
         pass
+
 
     loop.run_until_complete(test())

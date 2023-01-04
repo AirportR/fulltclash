@@ -14,6 +14,7 @@ from addons.unlockTest.myvideo import button as b16
 from addons.unlockTest.catchplay import button as b17
 from addons.unlockTest.viu import button as b18
 from addons.ip_risk import button as b19
+from addons.unlockTest.steam import button as b20
 
 b1 = InlineKeyboardButton("✅Netflix", callback_data='✅Netflix')
 b2 = InlineKeyboardButton("✅Youtube", callback_data='✅Youtube')
@@ -23,20 +24,23 @@ b5 = InlineKeyboardButton("✅Dazn", callback_data='✅Dazn')
 b6 = InlineKeyboardButton("🔒节点类型", callback_data='🔒节点类型')
 b7 = InlineKeyboardButton("🔒延迟RTT", callback_data='🔒延迟RTT')
 b8 = InlineKeyboardButton("👌完成设置", callback_data='👌完成设置')
+http_rtt = InlineKeyboardButton("✅HTTP延迟", callback_data='✅HTTP延迟')
 b_reverse = InlineKeyboardButton("🪞选项翻转", callback_data='🪞选项翻转')
 yusanjia = InlineKeyboardButton("御三家(N-Y-D)", callback_data='御三家(N-Y-D)')
 b_cancel = InlineKeyboardButton("👋点错了，给我取消", callback_data='👋点错了，给我取消')
 b_alive = InlineKeyboardButton("节点存活率", callback_data="节点存活率")
-buttons = [b1, b2, b3, b4, b5, b8, b9, b10, b12, b13, b14, b15, b16, b17, b18, b19]
+buttons = [b1, b2, b3, b4, b5, b8, b9, b10, b12, b13, b14, b15, b16, b17, b18, b19, b20]
 IKM = InlineKeyboardMarkup(
     [
         # 第一行
+        [http_rtt],
         [b1, b2, b3],
         # 第二行
         [b4, b5, b9],
         [b10, b12, b13],
         [b14, b15, b16],
-        [b17, b19, b18],
+        [b17, b18, b19],
+        [b20],
         [yusanjia, b_alive],
         [b_cancel, b_reverse],
         [b8]

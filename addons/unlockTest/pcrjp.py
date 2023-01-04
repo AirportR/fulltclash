@@ -19,19 +19,32 @@ async def fetch_pcr(Collector, session: aiohttp.ClientSession, proxy=None, recon
     :return:
     """
     try:
-        async with session.get(pcrurl, proxy=proxy, timeout=5) as res:
+        headers = {
+            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+            "accept-language": "zh-CN,zh;q=0.9,en;q=0.8",
+            "cache-control": "max-age=0",
+            "sec-ch-ua": "\"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"108\", \"Google Chrome\";v=\"108\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "sec-fetch-dest": "document",
+            "sec-fetch-mode": "navigate",
+            "sec-fetch-site": "none",
+            "sec-fetch-user": "?1",
+            "upgrade-insecure-requests": "1"
+        }
+        async with session.get(pcrurl, headers=headers, proxy=proxy, timeout=5) as res:
             if res.status == 404:
-                Collector.info['公主链接'] = "解锁"
+                Collector.info['公主连结'] = "解锁"
             elif res.status == 403:
-                Collector.info['公主链接'] = "失败"
+                Collector.info['公主连结'] = "失败"
             else:
-                Collector.info['公主链接'] = "N/A"
+                Collector.info['公主连结'] = "N/A"
     except ClientConnectorError as c:
-        logger.warning("公主链接请求发生错误:" + str(c))
+        logger.warning("公主连结请求发生错误:" + str(c))
         if reconnection != 0:
             await fetch_pcr(Collector, session, proxy=proxy, reconnection=reconnection - 1)
     except asyncio.exceptions.TimeoutError:
-        logger.warning("公主链接请求超时，正在重新发送请求......")
+        logger.warning("公主连结请求超时，正在重新发送请求......")
         if reconnection != 0:
             await fetch_pcr(Collector, session, proxy=proxy, reconnection=reconnection - 1)
 
@@ -43,17 +56,17 @@ def task(Collector, session, proxy):
 # cleaner section
 def get_pcr_info(ReCleaner):
     """
-    获得公主链接解锁信息
+    获得公主连结解锁信息
     :param ReCleaner:
     :return: str: 解锁信息: [解锁、失败、N/A]
     """
     try:
-        if '公主链接' not in ReCleaner.data:
+        if '公主连结' not in ReCleaner.data:
             logger.warning("采集器内无数据")
             return "N/A"
         else:
-            logger.info("公主链接解锁：" + str(ReCleaner.data.get('公主链接', "N/A")))
-            return ReCleaner.data.get('公主链接', "N/A")
+            logger.info("公主连结解锁：" + str(ReCleaner.data.get('公主连结', "N/A")))
+            return ReCleaner.data.get('公主连结', "N/A")
     except Exception as e:
         logger.error(e)
         return "N/A"
@@ -61,7 +74,7 @@ def get_pcr_info(ReCleaner):
 
 # bot_setting_board
 
-button = InlineKeyboardButton("✅公主链接", callback_data='✅公主链接')
+button = InlineKeyboardButton("✅公主连结", callback_data='✅公主连结')
 
 if __name__ == "__main__":
     "this is a test demo"
@@ -72,7 +85,7 @@ if __name__ == "__main__":
     from libs.collector import Collector as CL, media_items
 
     media_items.clear()
-    media_items.append("公主链接")
+    media_items.append("公主连结")
     cl = CL()
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
