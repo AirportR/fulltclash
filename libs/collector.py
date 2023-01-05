@@ -365,6 +365,9 @@ class Collector:
                     elif i == "Steam货币":
                         from addons.unlockTest import steam
                         self.tasks.append(steam.task(self, session, proxy=proxy))
+                    elif i == "维基百科":
+                        from addons.unlockTest import wikipedia
+                        self.tasks.append(wikipedia.task(self, session, proxy=proxy))
                     elif item == "HTTP延迟":
                         self.tasks.append(delay_https_task(self, session, proxy=proxy))
                     else:

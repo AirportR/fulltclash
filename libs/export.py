@@ -257,10 +257,10 @@ class ExportResult:
                     elif rtt == 0:
                         block = color_block((info_list_length[i], 40), color_value=colorvalue[7])
                         img.paste(block, (width, 40 * (t + 2)))
-                elif '解锁' in self.info[t1][t] and '待' not in self.info[t1][t]:
+                elif ('解锁' in self.info[t1][t] or '允许' in self.info[t1][t]) and '待' not in self.info[t1][t]:
                     block = color_block((info_list_length[i], 40), color_value=c_block['成功'])
                     img.paste(block, (width, 40 * (t + 2)))
-                elif '失败' in self.info[t1][t]:
+                elif '失败' in self.info[t1][t] or '禁止' in self.info[t1][t]:
                     block = color_block((info_list_length[i], 40), color_value=c_block['失败'])
                     img.paste(block, (width, 40 * (t + 2)))
                 elif '待解' in self.info[t1][t]:

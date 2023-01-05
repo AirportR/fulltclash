@@ -15,6 +15,7 @@ from addons.unlockTest.catchplay import button as b17
 from addons.unlockTest.viu import button as b18
 from addons.ip_risk import button as b19
 from addons.unlockTest.steam import button as b20
+from addons.unlockTest.wikipedia import button as b21
 
 b1 = InlineKeyboardButton("✅Netflix", callback_data='✅Netflix')
 b2 = InlineKeyboardButton("✅Youtube", callback_data='✅Youtube')
@@ -29,7 +30,7 @@ b_reverse = InlineKeyboardButton("🪞选项翻转", callback_data='🪞选项�
 yusanjia = InlineKeyboardButton("御三家(N-Y-D)", callback_data='御三家(N-Y-D)')
 b_cancel = InlineKeyboardButton("👋点错了，给我取消", callback_data='👋点错了，给我取消')
 b_alive = InlineKeyboardButton("节点存活率", callback_data="节点存活率")
-buttons = [b1, b2, b3, b4, b5, b8, b9, b10, b12, b13, b14, b15, b16, b17, b18, b19, b20]
+buttons = [b1, b2, b3, b4, b5, b8, b9, b10, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21]  # 仅仅是统计按钮数量，目前无用
 IKM = InlineKeyboardMarkup(
     [
         # 第一行
@@ -39,8 +40,8 @@ IKM = InlineKeyboardMarkup(
         [b4, b5, b9],
         [b10, b12, b13],
         [b14, b15, b16],
-        [b17, b18, b19],
-        [b20],
+        [b17, b18, b20],
+        [b21, b19],
         [yusanjia, b_alive],
         [b_cancel, b_reverse],
         [b8]
