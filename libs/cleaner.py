@@ -673,7 +673,7 @@ class ReCleaner:
                     info['赛马娘'] = umajp.get_uma_info(self)
                 elif item == "Hulu JP":
                     from addons.unlockTest import hulujp
-                    info['Hulu JP'] = hulujp.get_hulujp_info(self)
+                    info['Hulu jp'] = hulujp.get_hulujp_info(self)
                 else:
                     pass
         except Exception as e:
