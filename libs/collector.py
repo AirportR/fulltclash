@@ -370,6 +370,12 @@ class Collector:
                         self.tasks.append(wikipedia.task(self, session, proxy=proxy))
                     elif item == "HTTP延迟":
                         self.tasks.append(delay_https_task(self, session, proxy=proxy))
+                    elif i == "赛马娘":
+                        from addons.unlockTest import umajp
+                        self.tasks.append(umajp.task(self, session, proxy=proxy))
+                    elif item == "Hulu JP":
+                        from addons.unlockTest import hulujp
+                        self.tasks.append(hulujp.task(self, session, proxy=proxy))
                     else:
                         pass
             return self.tasks

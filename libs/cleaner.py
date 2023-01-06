@@ -668,6 +668,12 @@ class ReCleaner:
                 elif i == "维基百科":
                     from addons.unlockTest import wikipedia
                     info['维基百科'] = wikipedia.get_wikipedia_info(self)
+                elif i == "赛马娘":
+                    from addons.unlockTest import umajp
+                    info['赛马娘'] = umajp.get_uma_info(self)
+                elif item == "Hulu JP":
+                    from addons.unlockTest import hulujp
+                    info['Hulu JP'] = hulujp.get_hulujp_info(self)
                 else:
                     pass
         except Exception as e:

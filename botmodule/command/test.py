@@ -217,10 +217,10 @@ async def speedurl(_, message):
 @logger.catch()
 async def speed(_, message):
     back_message = await message.reply("╰(*°▽°*)╯速度测试进行中...")  # 发送提示
-    arg = cleaner.ArgCleaner().getall(str(message.text)).get('url', None)
+    arg = cleaner.ArgCleaner().getall(str(message.text))
     del arg[0]
     if len(arg):
-        suburl = config.get_sub(subname=arg[0])
+        suburl = config.get_sub(subname=arg[0]).get('url', None)
     else:
         await back_message.edit_text("❌找不到该任务名称，请检查参数是否正确")
         return
