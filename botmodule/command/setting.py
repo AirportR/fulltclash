@@ -27,7 +27,7 @@ b5 = InlineKeyboardButton("✅Dazn", callback_data='✅Dazn')
 b6 = InlineKeyboardButton("🔒节点类型", callback_data='🔒节点类型')
 b7 = InlineKeyboardButton("🔒延迟RTT", callback_data='🔒延迟RTT')
 b8 = InlineKeyboardButton("👌完成设置", callback_data='👌完成设置')
-http_rtt = InlineKeyboardButton("✅HTTP延迟", callback_data='✅HTTP延迟')
+# http_rtt = InlineKeyboardButton("✅HTTP延迟", callback_data='✅HTTP延迟')
 b_reverse = InlineKeyboardButton("🪞选项翻转", callback_data='🪞选项翻转')
 yusanjia = InlineKeyboardButton("御三家(N-Y-D)", callback_data='御三家(N-Y-D)')
 b_cancel = InlineKeyboardButton("👋点错了，给我取消", callback_data='👋点错了，给我取消')
@@ -36,7 +36,6 @@ buttons = [b1, b2, b3, b4, b5, b8, b9, b10, b12, b13, b14, b15, b16, b17, b18, b
 IKM = InlineKeyboardMarkup(
     [
         # 第一行
-        [http_rtt],
         [b1, b2, b3],
         # 第二行
         [b4, b5, b9],
