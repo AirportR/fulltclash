@@ -141,7 +141,7 @@ async def test_setting(client, callback_query):
         return test_items, origin_message, message, test_type
     elif "御三家(N-Y-D)" in callback_data:
         test_items.clear()
-        test_items.extend(['Netflix', 'Youtube', 'Disney+'])
+        test_items.extend(['HTTP延迟', 'Netflix', 'Youtube', 'Disney+'])
         message = await client.edit_message_text(chat_id=chat_id,
                                                  message_id=mess_id,
                                                  text="⌛正在提交任务~")
@@ -160,13 +160,11 @@ async def test_setting(client, callback_query):
         message = None
         return test_items, origin_message, message, test_type
     elif "👌完成设置" in callback_data:
-        test_items = []
+        test_items = ['HTTP延迟']
         for b_1 in inline_keyboard:
             for b in b_1:
                 if "✅" in b.text:
                     test_items.append(str(b.text)[1:])
-                # elif b.text == "✅落地IP风险":
-                #     test_items.append("iprisk")
         message = await client.edit_message_text(chat_id=chat_id,
                                                  message_id=mess_id,
                                                  text="⌛正在提交任务~")
