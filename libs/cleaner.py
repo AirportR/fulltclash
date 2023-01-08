@@ -663,8 +663,8 @@ class ReCleaner:
                 elif i == "Steam货币":
                     from addons.unlockTest import steam
                     info['Steam货币'] = steam.get_steam_info(self)
-                elif item == "HTTP延迟":
-                    info['HTTP延迟'] = self.get_https_rtt()
+                # elif item == "HTTP延迟":
+                #     info['HTTP延迟'] = self.get_https_rtt()
                 elif i == "维基百科":
                     from addons.unlockTest import wikipedia
                     info['维基百科'] = wikipedia.get_wikipedia_info(self)

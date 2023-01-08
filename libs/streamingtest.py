@@ -20,7 +20,7 @@ async def unit(test_items: list, delay: int, host="127.0.0.1", port=1122):
     :return: list 返回test_items对应顺序的信息
     """
     info = []
-    delay2 = await collector.delay_https_task(proxy=f"http://{host}:{port}", times=1)
+    delay2 = await collector.delay_https_task(proxy=f"http://{host}:{port}", times=3)
     if delay == 0 and delay2 == '0ms':
         for t in test_items:
             if t == "HTTP延迟":
@@ -29,12 +29,15 @@ async def unit(test_items: list, delay: int, host="127.0.0.1", port=1122):
                 info.append("N/A")
         return info
     else:
+        info.append(delay2)
         cl = collector.Collector()
         re1 = await cl.start(proxy=f"http://{host}:{port}")
         cnr = cleaner.ReCleaner(re1)
         old_info = cnr.get_all()
         for item in test_items:
             i = item.capitalize() if item != "BBC" and item != "HTTP延迟" else item
+            if i == 'HTTP延迟':
+                continue
             try:
                 info.append(old_info[i])
             except KeyError:
@@ -247,7 +250,7 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
     try:
         info['节点名称'] = nodename
         info['类型'] = nodetype
-        info['延迟RTT'] = rtt
+        # info['延迟RTT'] = rtt
         test_info = await batch_test_pro(back_message, nodename, rtt, test_items, pool)
         # test_info = await batch_test(back_message, nodename, rtt, test_items=test_items)
         info.update(test_info)

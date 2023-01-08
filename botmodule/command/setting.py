@@ -148,6 +148,7 @@ async def test_setting(client, callback_query):
         return test_items, origin_message, message, test_type
     elif "节点存活率" in callback_data:
         test_items.clear()
+        test_items.append('HTTP延迟')
         message = await client.edit_message_text(chat_id=chat_id, message_id=mess_id, text="⌛正在提交任务~")
         return test_items, origin_message, message, test_type
     elif "👋点错了，给我取消" in callback_data:
