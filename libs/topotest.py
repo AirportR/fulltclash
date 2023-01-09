@@ -143,8 +143,8 @@ async def core(message, back_message, start_time, suburl: str = None, test_type=
             include_text = texts[2]
         if len(texts) > 3:
             exclude_text = texts[3]
-        if await check.check_url(back_message, url):
-            return info1, info2
+    if await check.check_url(back_message, url):
+        return info1, info2
     print(url)
     pool = {'host': ['127.0.0.1' for _ in range(thread)],
             'port': [1124 + t * 2 for t in range(thread)]}

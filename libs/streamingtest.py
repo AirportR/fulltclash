@@ -199,8 +199,8 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
         if len(texts) > 3:
             exclude_text = texts[3]
         url = cleaner.geturl(text)
-        if await check.check_url(back_message, url):
-            return info
+    if await check.check_url(back_message, url):
+        return info
     pool = {'host': ['127.0.0.1' for _ in range(thread)],
             'port': [1124 + t * 2 for t in range(thread)]}
     print(url)

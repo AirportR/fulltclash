@@ -243,8 +243,8 @@ async def core(message, back_message, start_time, suburl: str = None):
         if len(texts) > 3:
             exclude_text = texts[3]
         url = cleaner.geturl(text)
-        if await check.check_url(back_message, url):
-            return info
+    if await check.check_url(back_message, url):
+        return info
     print(url)
     # 订阅采集
     logger.info(f"过滤器: 包含: [{include_text}], 排除: [{exclude_text}]")

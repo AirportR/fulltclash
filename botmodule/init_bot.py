@@ -59,9 +59,9 @@ logger.info("配置已加载, 程序启动中...")
 command = fr"{clash_path} -f {'./clash/proxy.yaml'} -d {clash_work_path}"
 subp = subprocess.Popen(command.split(), encoding="utf-8")
 time.sleep(2)
-logger.info("程序已启动!")
 corenum = config.config.get('clash', {}).get('core', 1)
 proxys.batch_start([1124 + i*2 for i in range(corenum)])
+logger.info("程序已启动!")
 
 
 def reloadUser():

@@ -83,7 +83,6 @@ def start_client(path: str, workpath: str = "./clash", config: str = './clash/pr
     command = fr"{path} -f {config} -d {workpath}"
     subprocess.Popen(command.split(), encoding="utf-8")
     sleep(2)
-    logger.info("程序已启动!")
 
 
 def batch_start(portlist: list, proxy_file_path="./clash/proxy.yaml"):
