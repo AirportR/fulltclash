@@ -3,14 +3,10 @@ import asyncio
 import pyrogram
 from async_timeout import timeout
 from loguru import logger
-from pyrogram import filters
 from pyrogram.errors import RPCError
-from pyrogram.handlers import MessageHandler
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from botmodule.command.submanage import get_telegram_id_from_message as get_id
-from botmodule.command import test
 from libs.cleaner import geturl
-from libs.check import check_url
 import random
 import string
 
