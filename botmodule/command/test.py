@@ -19,13 +19,14 @@ def reloadUser():
 
 
 @logger.catch()
-async def testurl(_, message):
+async def testurl(_, message, suburl: str = None, in_text='', ex_text=''):
     back_message = await message.reply("╰(*°▽°*)╯联通性测试进行中...")
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
     try:
         info = await streamingtest.core(message, back_message=back_message,
-                                        start_time=start_time, thread=coresum)
+                                        start_time=start_time, thread=coresum, suburl=suburl, include_text=in_text,
+                                        exclude_text=ex_text)
         if info:
             wtime = info.get('wtime', "-1")
             # 生成图片
@@ -104,7 +105,8 @@ async def analyzeurl(_, message, test_type="all"):
                 wtime = info2.get('wtime', "未知")
                 clone_info2 = {}
                 clone_info2.update(info2)
-                img_outbound, yug, image_width2 = export.ExportTopo().exportTopoOutbound(nodename=None, info=clone_info2)
+                img_outbound, yug, image_width2 = export.ExportTopo().exportTopoOutbound(nodename=None,
+                                                                                         info=clone_info2)
                 if test_type == "outbound":
                     stime = export.ExportTopo(name=None, info=info2).exportTopoOutbound()
                 else:
@@ -140,7 +142,8 @@ async def analyze(_, message, test_type="all"):
             ma = cleaner.ConfigManager('./clash/proxy.yaml')
 
             info1, info2 = await topotest.core(message, back_message=back_message,
-                                               start_time=start_time, suburl=suburl, test_type=test_type, thread=coresum)
+                                               start_time=start_time, suburl=suburl, test_type=test_type,
+                                               thread=coresum)
             if info1:
                 # 生成图片
                 if test_type == "inbound":
@@ -154,7 +157,8 @@ async def analyze(_, message, test_type="all"):
                     wtime = info2.get('wtime', '未知')
                     clone_info2 = {}
                     clone_info2.update(info2)
-                    img_outbound, yug, image_width2 = export.ExportTopo().exportTopoOutbound(nodename=None, info=clone_info2)
+                    img_outbound, yug, image_width2 = export.ExportTopo().exportTopoOutbound(nodename=None,
+                                                                                             info=clone_info2)
                     if test_type == "outbound":
                         stime = export.ExportTopo(name=None, info=info2).exportTopoOutbound()
                     else:

@@ -165,7 +165,7 @@ async def batch_test_pro(message, nodename: list, delays: list, test_items: list
 
 
 @logger.catch()
-async def core(message, back_message, start_time, suburl: str = None, media_items: list = None, thread: int = 1):
+async def core(message, back_message, start_time, suburl: str = None, media_items: list = None, thread: int = 1, **kwargs):
     """
 
     :param thread: 测试线程
@@ -191,6 +191,10 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
             include_text = texts[2]
         if len(texts) > 3:
             exclude_text = texts[3]
+        if kwargs.get('include_text', ''):
+            include_text = kwargs.get('include_text', '')
+        if kwargs.get('exclude_text', ''):
+            exclude_text = kwargs.get('exclude_text', '')
     else:
         text = str(message.text)
         texts = text.split(' ')

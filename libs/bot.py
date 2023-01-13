@@ -3,6 +3,7 @@ from pyrogram import Client, filters
 from loguru import logger
 import botmodule
 from botmodule import init_bot
+from botmodule.cfilter import dynamic_data_filter
 from libs.myqueue import q, bot_task_queue
 from libs.check import check_user as isuser
 from libs.check import check_callback_master
@@ -26,7 +27,8 @@ def command_loader(app: Client):
 
     @app.on_message(filters.command(["invite"]) & filters.user(admin), group=1)
     async def invite(client, message):
-        await botmodule.invite(client, message)
+        if await isuser(message, botmodule.init_bot.reloadUser()):
+            await botmodule.invite(client, message)
 
     @app.on_message(filters.command(["grant"]), group=2)
     async def grant(client, message):
@@ -60,7 +62,7 @@ def command_loader(app: Client):
             await message.reply("请选择想要启用的测试项:", reply_markup=botmodule.IKM, quote=True)
             # await bot_put(client, message, "test")
 
-    @app.on_message(filters.command(["help", "start"]), group=9)
+    @app.on_message(filters.command(["help"]), group=9)
     async def help_and_start(client, message):
         await botmodule.helps(client, message)
 
@@ -128,6 +130,15 @@ def command_loader(app: Client):
     async def debug(client, message):
         await botmodule.di.debug_interface(client, message)
 
+    @app.on_message(filters.command(["start"]), group=1)
+    async def start(client, message):
+        await botmodule.invite_pass(client, message)
+
+    @app.on_message(filters.private)
+    async def temp(client, message):
+        from botmodule.command.authority import temp_queue, get_url_from_invite
+        await get_url_from_invite(client, message)
+
 
 def callback_loader(app: Client):
     @app.on_callback_query()
@@ -139,6 +150,11 @@ def callback_loader(app: Client):
             await asyncio.sleep(3)
             await message.delete()
             await bot_put(client, origin_message, test_type, test_items)
+
+    @app.on_callback_query(filters=dynamic_data_filter('test'), group=1)
+    async def invite_test(client, callback_query):
+        if await check_callback_master(callback_query, strict=True):
+            return
 
 
 async def bot_put(client, message, put_type: str, test_items: list = None):
@@ -161,10 +177,11 @@ async def bot_put(client, message, put_type: str, test_items: list = None):
         r1(test_items)
         r2(test_items)
         await mes.edit_text("任务已提交")
+        await asyncio.sleep(3)
+        await mes.delete()
         await bot_task_queue(client, message, put_type, q)
         task_num -= 1
-        await asyncio.sleep(10)
-        await mes.delete()
+
     except AttributeError as a:
         logger.error(str(a))
     except Exception as e:
