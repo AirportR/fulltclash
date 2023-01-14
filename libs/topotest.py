@@ -112,7 +112,7 @@ async def batch_topo(message, nodename: list, pool: dict, proxygroup='auto'):
         return resdata
 
 
-async def core(message, back_message, start_time, suburl: str = None, test_type="all", thread: int = 1):
+async def core(message, back_message, start_time, suburl: str = None, test_type="all", thread: int = 1, **kwargs):
     """
 
     :param thread: 测试线程
@@ -135,6 +135,10 @@ async def core(message, back_message, start_time, suburl: str = None, test_type=
             include_text = texts[2]
         if len(texts) > 3:
             exclude_text = texts[3]
+        if kwargs.get('include_text', ''):
+            include_text = kwargs.get('include_text', '')
+        if kwargs.get('exclude_text', ''):
+            exclude_text = kwargs.get('exclude_text', '')
     else:
         text = str(message.text)
         url = cleaner.geturl(text)

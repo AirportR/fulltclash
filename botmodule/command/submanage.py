@@ -5,6 +5,7 @@ from pyrogram.errors import RPCError
 from loguru import logger
 from libs import cleaner, check
 from botmodule.init_bot import config, admin
+from libs.check import check_user
 
 
 async def sub(_, message):
@@ -21,6 +22,10 @@ async def sub(_, message):
                 return
             subpwd = subinfo.get('password', '')
             subowner = subinfo.get('owner', '')
+            if await check_user(message, admin, isalert=False):
+                # 管理员至高权限
+                await message.reply(str(subinfo.get('url', '')))
+                return
             if subowner and subowner == ID:
                 if hashlib.sha256(pwd.encode("utf-8")).hexdigest() == subpwd:
                     await message.reply(str(subinfo.get('url', '')))
@@ -31,7 +36,6 @@ async def sub(_, message):
             else:
                 await message.reply("❌身份ID不匹配，您无权查看该订阅。")
         else:
-
             if await check.check_user(message, admin, isalert=False):
                 subinfo = config.get_sub()
                 item = []

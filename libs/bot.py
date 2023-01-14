@@ -4,6 +4,7 @@ from loguru import logger
 import botmodule
 from botmodule import init_bot
 from botmodule.cfilter import dynamic_data_filter
+from botmodule.command.authority import get_url_from_invite
 from libs.myqueue import q, bot_task_queue
 from libs.check import check_user as isuser
 from libs.check import check_callback_master
@@ -20,12 +21,12 @@ def loader(app: Client):
 
 
 def command_loader(app: Client):
-    @app.on_message(filters.command(["testurl"]))
+    @app.on_message(filters.command(["testurl"]), group=1)
     async def testurl(_, message):
         if await isuser(message, botmodule.init_bot.reloadUser()):
             await message.reply("请选择想要启用的测试项:", reply_markup=botmodule.IKM, quote=True)
 
-    @app.on_message(filters.command(["invite"]) & filters.user(admin), group=1)
+    @app.on_message(filters.command(["invite"]), group=1)
     async def invite(client, message):
         if await isuser(message, botmodule.init_bot.reloadUser()):
             await botmodule.invite(client, message)
@@ -34,109 +35,108 @@ def command_loader(app: Client):
     async def grant(client, message):
         await botmodule.grant(client, message)
 
-    @app.on_message(filters.command(["ungrant"]), group=3)
+    @app.on_message(filters.command(["ungrant"]), group=2)
     async def ungrant(client, message):
         await botmodule.ungrant(client, message)
 
-    @app.on_message(filters.command(["user"]), group=4)
+    @app.on_message(filters.command(["user"]) & filters.user(admin), group=2)
     async def user(client, message):
         await botmodule.user(client, message)
 
-    @app.on_message(filters.command(["new"]), group=5)
+    @app.on_message(filters.command(["new"]), group=1)
     async def new(client, message):
         if await isuser(message, botmodule.init_bot.reloadUser()):
             await botmodule.new(client, message)
 
-    @app.on_message(filters.command(["remove"]) & filters.user(admin), group=6)
+    @app.on_message(filters.command(["remove"]) & filters.user(admin), group=2)
     async def remove(client, message):
         await botmodule.remove(client, message)
 
-    @app.on_message(filters.command(["sub"]), group=7)
+    @app.on_message(filters.command(["sub"]), group=1)
     async def sub(client, message):
         if await isuser(message, botmodule.init_bot.reloadUser()):
             await botmodule.sub(client, message)
 
-    @app.on_message(filters.command(["test"]), group=8)
+    @app.on_message(filters.command(["test"]), group=1)
     async def test(_, message):
         if await isuser(message, botmodule.init_bot.reloadUser()):
             await message.reply("请选择想要启用的测试项:", reply_markup=botmodule.IKM, quote=True)
             # await bot_put(client, message, "test")
 
-    @app.on_message(filters.command(["help"]), group=9)
+    @app.on_message(filters.command(["help"]), group=0)
     async def help_and_start(client, message):
         await botmodule.helps(client, message)
 
-    @app.on_message(filters.command(["version"]), group=9)
+    @app.on_message(filters.command(["version"]), group=0)
     async def print_version(client, message):
         await botmodule.version(client, message)
 
-    @app.on_message(filters.command(["analyzeurl", "topourl"]), group=10)
+    @app.on_message(filters.command(["analyzeurl", "topourl"]), group=1)
     async def analyzeurl(client, message):
         if await isuser(message, botmodule.init_bot.reloadUser()):
             await bot_put(client, message, "analyzeurl")
 
-    @app.on_message(filters.command(["analyze", "topo"]), group=11)
+    @app.on_message(filters.command(["analyze", "topo"]), group=1)
     async def analyze(client, message):
         if await isuser(message, botmodule.init_bot.reloadUser()):
             await bot_put(client, message, "analyze")
 
-    @app.on_message(filters.command(["reload"]) & filters.user(admin), group=12)
+    @app.on_message(filters.command(["reload"]) & filters.user(admin), group=2)
     async def reload_testmember(_, message):
         botmodule.reloadUser()
         r1()
         r2()
         await message.reply("已重载配置")
 
-    @app.on_message(filters.command(["register", "baipiao"]), group=13)
+    @app.on_message(filters.command(["register", "baipiao"]), group=1)
     async def regis(client, message):
         if await isuser(message, botmodule.init_bot.reloadUser()):
             await botmodule.register.baipiao(client, message)
 
-    @app.on_message(filters.command(["inbound"]), group=14)
+    @app.on_message(filters.command(["inbound"]), group=1)
     async def inbound(client, message):
         if await isuser(message, botmodule.init_bot.reloadUser()):
             await botmodule.analyze(client, message, test_type="inbound")
 
-    @app.on_message(filters.command(["inboundurl"]), group=15)
+    @app.on_message(filters.command(["inboundurl"]), group=1)
     async def inboundurl(client, message):
         if await isuser(message, botmodule.init_bot.reloadUser()):
             await botmodule.analyzeurl(client, message, test_type="inbound")
 
-    @app.on_message(filters.command(["outbound"]), group=14)
+    @app.on_message(filters.command(["outbound"]), group=1)
     async def outbound(client, message):
         if await isuser(message, botmodule.init_bot.reloadUser()):
             await bot_put(client, message, "outbound")
 
-    @app.on_message(filters.command(["outboundurl"]), group=15)
+    @app.on_message(filters.command(["outboundurl"]), group=1)
     async def outboundurl(client, message):
         if await isuser(message, botmodule.init_bot.reloadUser()):
             await bot_put(client, message, "outboundurl")
 
-    @app.on_message(filters.command(["speed"]), group=16)
+    @app.on_message(filters.command(["speed"]), group=1)
     async def speed(client, message):
         if await isuser(message, botmodule.init_bot.reloadUser()):
             await bot_put(client, message, "speed")
 
-    @app.on_message(filters.command(["speedurl"]), group=17)
+    @app.on_message(filters.command(["speedurl"]), group=1)
     async def speedurl(client, message):
         if await isuser(message, botmodule.init_bot.reloadUser()):
             await bot_put(client, message, "speedurl")
 
-    @app.on_message(filters.command(["subinfo", "traffic", "流量", "流量信息", "流量查询"]), group=18)
+    @app.on_message(filters.command(["subinfo", "traffic", "流量", "流量信息", "流量查询"]), group=0)
     async def subinfo(client, message):
         await botmodule.subinfo.getSubInfo(client, message)
 
-    @app.on_message(filters.command(["map"]) & filters.user(admin), group=19)
+    @app.on_message(filters.command(["map"]) & filters.user(admin), group=2)
     async def debug(client, message):
         await botmodule.di.debug_interface(client, message)
 
-    @app.on_message(filters.command(["start"]), group=1)
+    @app.on_message(filters.command(["start"]), group=0)
     async def start(client, message):
         await botmodule.invite_pass(client, message)
 
-    @app.on_message(filters.private)
+    @app.on_message(filters.private, group=3)
     async def temp(client, message):
-        from botmodule.command.authority import temp_queue, get_url_from_invite
         await get_url_from_invite(client, message)
 
 
@@ -152,12 +152,12 @@ def callback_loader(app: Client):
             await bot_put(client, origin_message, test_type, test_items)
 
     @app.on_callback_query(filters=dynamic_data_filter('test'), group=1)
-    async def invite_test(client, callback_query):
+    async def invite_test(_, callback_query):
         if await check_callback_master(callback_query, strict=True):
             return
 
 
-async def bot_put(client, message, put_type: str, test_items: list = None):
+async def bot_put(client, message, put_type: str, test_items: list = None, **kwargs):
     """
     推送任务，bot推送反馈
     :param test_items:
@@ -179,7 +179,7 @@ async def bot_put(client, message, put_type: str, test_items: list = None):
         await mes.edit_text("任务已提交")
         await asyncio.sleep(3)
         await mes.delete()
-        await bot_task_queue(client, message, put_type, q)
+        await bot_task_queue(client, message, put_type, q, **kwargs)
         task_num -= 1
 
     except AttributeError as a:

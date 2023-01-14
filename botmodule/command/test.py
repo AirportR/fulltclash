@@ -1,5 +1,4 @@
 import asyncio
-import hashlib
 import time
 from pyrogram.errors import RPCError, FloodWait
 from loguru import logger
@@ -19,14 +18,21 @@ def reloadUser():
 
 
 @logger.catch()
-async def testurl(_, message, suburl: str = None, in_text='', ex_text=''):
+async def testurl(_, message, **kwargs):
+    """
+
+    :param _:
+    :param message:
+    :param kwargs:
+    :return:
+    """
     back_message = await message.reply("╰(*°▽°*)╯联通性测试进行中...")
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
+    suburl = kwargs.get('url', None)
     try:
         info = await streamingtest.core(message, back_message=back_message,
-                                        start_time=start_time, thread=coresum, suburl=suburl, include_text=in_text,
-                                        exclude_text=ex_text)
+                                        start_time=start_time, thread=coresum, suburl=suburl, **kwargs)
         if info:
             wtime = info.get('wtime', "-1")
             # 生成图片
@@ -85,13 +91,15 @@ async def test(_, message):
 
 
 @logger.catch()
-async def analyzeurl(_, message, test_type="all"):
+async def analyzeurl(_, message, test_type="all", **kwargs):
     back_message = await message.reply("╰(*°▽°*)╯节点链路拓扑测试进行中...")  # 发送提示
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
+    suburl = kwargs.get('url', None)
     try:
-        info1, info2 = await topotest.core(message, back_message=back_message,
-                                           start_time=start_time, test_type=test_type, thread=coresum)
+        info1, info2 = await topotest.core(message, back_message,
+                                           start_time=start_time, suburl=suburl,
+                                           test_type=test_type, thread=coresum, **kwargs)
         if info1:
             if test_type == "inbound":
                 wtime = info1.get('wtime', "未知")
@@ -185,13 +193,14 @@ async def analyze(_, message, test_type="all"):
 
 
 @logger.catch()
-async def speedurl(_, message):
+async def speedurl(_, message, **kwargs):
     back_message = await message.reply("╰(*°▽°*)╯速度测试进行中...")  # 发送提示
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
+    suburl = kwargs.get('url', None)
     try:
-        info = await speedtest.core(message, back_message=back_message,
-                                    start_time=start_time)
+        info = await speedtest.core(message, back_message,
+                                    start_time=start_time, suburl=suburl, **kwargs)
         wtime = info.get('wtime', "-1")
         stime = export.ExportSpeed(name=None, info=info).exportImage()
         # 发送回TG

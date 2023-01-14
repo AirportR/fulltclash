@@ -4,6 +4,7 @@ import re
 
 from pyrogram.errors import RPCError
 from loguru import logger
+from pyrogram.filters import private_filter
 
 """
 这个模块主要是一些检查函数，用来验证某个值是否合法。一般是返回布尔值
@@ -251,7 +252,9 @@ async def check_photo(message, back_message, name, wtime):
             await message.reply_document(r"./results/{}.png".format(name),
                                          caption="⏱️总共耗时: {}s".format(wtime))
             await back_message.delete()
-            await message.delete()
+            if not await private_filter(name, name, message):
+                print("公开群组")
+                await message.delete()
     except RPCError as r:
         logger.error(r)
 

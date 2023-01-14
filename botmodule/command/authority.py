@@ -1,5 +1,6 @@
 import asyncio
-
+import random
+import string
 import pyrogram
 from async_timeout import timeout
 from loguru import logger
@@ -7,8 +8,6 @@ from pyrogram.errors import RPCError
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from botmodule.command.submanage import get_telegram_id_from_message as get_id
 from libs.cleaner import geturl
-import random
-import string
 
 b1 = InlineKeyboardMarkup(
     [
@@ -27,6 +26,7 @@ b1 = InlineKeyboardMarkup(
 invite_list = {}
 message_list = {}
 bot_message_list = {}
+success_message_list = {}
 task_type = ['testurl', 'analyzeurl', 'speedurl']
 temp_queue = asyncio.Queue(maxsize=1)
 
@@ -54,14 +54,18 @@ async def invite(client: pyrogram.Client, message):
                 buttun.callback_data = None
                 buttun.url = f"https://t.me/{username}?start={key}_{task_type[num_row]}"
             num_row = num_row + 1
-    invite_text = f"🎯您好, **{message.from_user.first_name}** 为您创建了一个测试任务，请选择测试的类型:"
+    try:
+        sender = message.from_user.first_name
+    except AttributeError:
+        sender = message.sender_chat.title
+    invite_text = f"🎯您好, **{sender}** 为您创建了一个测试任务，请选择测试的类型:"
     try:
         if message.reply_to_message is None:
             await message.reply("请先用该指令回复一个目标")
         else:
             r_message = message.reply_to_message
             invite_id = str(get_id(r_message))
-            print(invite_id)
+            logger.info("被邀请人id: " + invite_id)
             invite_list.update({key: invite_id})
             message_list.update({key + invite_id: r_message})
             IKM2 = InlineKeyboardMarkup(
@@ -78,17 +82,24 @@ async def invite(client: pyrogram.Client, message):
 
 
 async def get_url_from_invite(_, message2):
-    include_text = ''
-    exclude_text = ''
-    text_li = str(message2.text)
-    texts_li = text_li.split(' ')
-    if len(texts_li) > 1:
-        include_text = texts_li[1]
-    if len(texts_li) > 2:
-        exclude_text = texts_li[2]
-    url_li = geturl(text_li)
-    if url_li:
-        await temp_queue.put((url_li, include_text, exclude_text))
+    ID = str(get_id(message2))
+    suc_mes = success_message_list.get(ID, None)
+    if suc_mes is not None:
+        if message2.id == (suc_mes.id + 1):
+            include_text = ''
+            exclude_text = ''
+            text_li = str(message2.text)
+            texts_li = text_li.split(' ')
+            if len(texts_li) > 1:
+                include_text = texts_li[1]
+            if len(texts_li) > 2:
+                exclude_text = texts_li[2]
+            url_li = geturl(text_li)
+            if url_li:
+                await temp_queue.put((url_li, include_text, exclude_text))
+            else:
+                await message2.reply("无效的URL")
+            success_message_list.pop(ID, None)
 
 
 async def invite_pass(client: pyrogram.Client, message):
@@ -110,8 +121,9 @@ async def invite_pass(client: pyrogram.Client, message):
         task_type_select = k[1] if len(k) > 1 else ''
         if task_type_select in task_type:
 
-            s_text = f"✅身份验证成功\n🚗任务项: {task_type_select} \n\n**接下来请在{timeout_value}s内发送订阅链接**否则任务取消"
-            await message.reply(s_text)
+            s_text = f"✅身份验证成功\n🚗任务项: {task_type_select} \n\n**接下来请在{timeout_value}s内发送订阅链接** <过滤器> 否则任务取消"
+            success_mes = await message.reply(s_text)
+            success_message_list.update({ID: success_mes})
             mes = message_list.pop(key2 + ID, None)
             if mes is None:
                 return
@@ -131,9 +143,12 @@ async def invite_pass(client: pyrogram.Client, message):
                 await bot_mes.delete()
             if suburl:
                 from libs.bot import bot_put
-                # await test.testurl(client, mes, suburl, in_text, ex_text)
                 await message.reply("✨提交成功，请返回群组查看测试结果。")
-                await bot_put(client, mes, task_type_select)
+                await asyncio.sleep(3)
+                await bot_mes.delete()
+                test_item = ['HTTP延迟', 'Netflix', 'Youtube', 'Disney+']
+                await bot_put(client, mes, task_type_select, test_items=['HTTP延迟'],
+                              include_text=in_text, exclude_text=ex_text, url=suburl)
             else:
                 invite_list.pop(key2, '')
         else:

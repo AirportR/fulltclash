@@ -223,7 +223,7 @@ async def batch_udp(message, nodename: list, proxygroup='auto'):
     return info
 
 
-async def core(message, back_message, start_time, suburl: str = None):
+async def core(message, back_message, start_time, suburl: str = None, **kwargs):
     info = {}
     include_text = ''
     exclude_text = ''
@@ -235,6 +235,10 @@ async def core(message, back_message, start_time, suburl: str = None):
             include_text = texts[2]
         if len(texts) > 3:
             exclude_text = texts[3]
+        if kwargs.get('include_text', ''):
+            include_text = kwargs.get('include_text', '')
+        if kwargs.get('exclude_text', ''):
+            exclude_text = kwargs.get('exclude_text', '')
     else:
         text = str(message.text)
         texts = text.split(' ')
