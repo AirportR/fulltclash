@@ -178,8 +178,8 @@ async def bot_put(client, message, put_type: str, test_items: list = None, **kwa
         r2(test_items)
         await mes.edit_text("任务已提交")
         await asyncio.sleep(3)
-        await mes.delete()
         await bot_task_queue(client, message, put_type, q, **kwargs)
+        await mes.delete()
         task_num -= 1
 
     except AttributeError as a:
