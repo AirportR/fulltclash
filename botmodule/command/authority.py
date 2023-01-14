@@ -146,7 +146,9 @@ async def invite_pass(client: pyrogram.Client, message):
                 await message.reply("✨提交成功，请返回群组查看测试结果。")
                 await asyncio.sleep(3)
                 await bot_mes.delete()
-                test_item = ['HTTP延迟', 'Netflix', 'Youtube', 'Disney+']
+                test_item = ['HTTP延迟', 'Netflix', 'Youtube', 'Disney+', 'Primevideo', 'steam货币', 'Bilibili', 'Dazn',
+                             'Hbomax', 'Bahamut', 'Abema', '公主连结', 'BBC', 'Myvideo', 'Catchplay', 'Viu', '维基百科',
+                             '维基百科(中文)', 'Hulu JP', '赛马娘', '落地IP风险']
                 await bot_put(client, mes, task_type_select, test_items=test_item,
                               include_text=in_text, exclude_text=ex_text, url=suburl)
             else:

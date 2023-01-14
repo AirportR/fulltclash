@@ -393,7 +393,7 @@ class ConfigManager:
     def get_sub(self, subname: str = None):
         """
         获取所有已保存的订阅,或者单个订阅
-        :return:
+        :return: 单个订阅或全部订阅
         """
         if subname is None:
             try:

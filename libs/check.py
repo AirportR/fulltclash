@@ -11,6 +11,20 @@ from pyrogram.filters import private_filter
 """
 
 
+async def check_share(message, shareid: list):
+    """
+    检查是否在分享名单中,若在返回真，否则返回假。
+    :param message: 消息对象
+    :param shareid: 共享名单
+    :return: [true, false]
+    """
+    try:
+        ID = message.from_user.id
+    except AttributeError:
+        ID = message.sender_chat.id
+    return str(ID) in shareid
+
+
 async def check_callback_master(callback_query, USER_TARGET=None, strict: bool = False):
     """
 
@@ -66,10 +80,11 @@ async def check_subowner(message, back_message, subinfo: dict, admin: list, pass
         return False
     subpwd = subinfo.get('password', '')
     subowner = subinfo.get('owner', '')
+    subuser = subinfo.get('share', [])
     if await check_user(message, admin, isalert=False):
         # 管理员至高权限
         return True
-    if subowner and subowner == ID:
+    if (subowner and subowner == ID) or await check_share(message, subuser):
         if hashlib.sha256(password.encode("utf-8")).hexdigest() == subpwd:
             return True
         else:

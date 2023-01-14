@@ -22,7 +22,7 @@ async def fetch_wikipedia_zh(Collector, session: aiohttp.ClientSession, proxy=No
                    "prop=revisions%7Cinfo&rvprop=content%7Ctimestamp&titles=%E8%8D%94%E6%9E%9D&intestactions=edit&" \
                    "intestactionsdetail=full&rvsection=0"
     try:
-        async with session.get(wikipediaurl, proxy=proxy, timeout=5) as res:
+        async with session.get(wikipediaurl, proxy=proxy, timeout=4) as res:
             if res.status == 200:
                 resdata = await res.json()
                 is_blocked = ''
