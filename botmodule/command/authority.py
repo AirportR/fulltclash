@@ -147,7 +147,7 @@ async def invite_pass(client: pyrogram.Client, message):
                 await asyncio.sleep(3)
                 await bot_mes.delete()
                 test_item = ['HTTP延迟', 'Netflix', 'Youtube', 'Disney+']
-                await bot_put(client, mes, task_type_select, test_items=['HTTP延迟'],
+                await bot_put(client, mes, task_type_select, test_items=test_item,
                               include_text=in_text, exclude_text=ex_text, url=suburl)
             else:
                 invite_list.pop(key2, '')
