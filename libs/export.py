@@ -49,13 +49,16 @@ class ExportResult:
             self.nodenum = 0
         self.front_size = 30
         self.config = ConfigManager()
-        self.color = self.config.getColor().get('delay', [])
+        self.color = self.config.getColor()
+        self.image_config = self.config.config.get('image', {})
+        self.delay_color = self.color.get('delay', [])
         self.__font = ImageFont.truetype(self.config.getFont(), self.front_size)
+        self.title = self.image_config.get('title', 'FullTclash')
 
     @property
     def interval(self):
         interval_list = []
-        for c in self.color:
+        for c in self.delay_color:
             interval_list.append(c.get('label', 0))
         a = list(set(interval_list))  # 去重加排序
         a.sort()
@@ -69,7 +72,7 @@ class ExportResult:
     @property
     def colorvalue(self):
         color_list = []
-        for c in self.color:
+        for c in self.delay_color:
             color_list.append(c.get('value', '#f5f3f2'))
         while len(color_list) < 8:
             color_list.append('#f5f3f2')
@@ -181,7 +184,7 @@ class ExportResult:
         idraw = ImageDraw.Draw(img)
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
-        list1 = ["FullTclash - 联通性测试", f"版本:{__version__}   ⏱️总共耗时: {wtime}s  过滤器: {self.filter_include} <-> {self.filter_exclude}",
+        list1 = [f"{self.title} - 联通性测试", f"版本:{__version__}   ⏱️总共耗时: {wtime}s  过滤器: {self.filter_include} <-> {self.filter_exclude}",
                  "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time)]
         export_time = export_time.replace(':', '-')
         title = list1[0]
@@ -205,13 +208,23 @@ class ExportResult:
         '''
         :内容填充
         '''
-        if self.color:
+        if self.delay_color:
             colorvalue = self.colorvalue
             interval = self.interval
         else:
             # 默认值
             colorvalue = ["#f5f3f2", "#beb1aa", "#f6bec8", "#dc6b82", "#c35c5d", "#8ba3c7", "#c8161d", '#8d8b8e']
             interval = [0, 100, 200, 300, 500, 1000, 2000, 99999]
+        # 填充颜色块
+        c_block = {'成功': self.color.get('yes', '#bee47e'),
+                   '失败': self.color.get('no', '#ee6b73'),
+                   'N/A': self.color.get('na', '#8d8b8e'),
+                   '待解锁': self.color.get('wait', '#dcc7e1'),
+                   'low': self.color.get('iprisk', {}).get('low', '#ffffff'),
+                   'medium': self.color.get('iprisk', {}).get('medium', '#ffffff'),
+                   'high': self.color.get('iprisk', {}).get('high', '#ffffff'),
+                   'veryhigh': self.color.get('iprisk', {}).get('veryhigh', '#ffffff'),
+                   }
         for t in range(self.nodenum):
             # 序号
             idraw.text((self.get_mid(0, 100, str(t + 1)), 40 * (t + 2)), text=str(t + 1), font=fnt, fill=(0, 0, 0))
@@ -228,8 +241,6 @@ class ExportResult:
                               emoji_position_offset=(0, 6))
             width = 100 + nodename_width
             i = 0
-            # 填充颜色块
-            c_block = {'成功': '#bee47e', '失败': '#ee6b73', 'N/A': '#8d8b8e', '待解锁': '#dcc7e1'}
             for t1 in key_list:
                 if "延迟RTT" == t1 or "HTTP延迟" == t1:
                     rtt = float(self.info[t1][t][:-2])
@@ -268,6 +279,18 @@ class ExportResult:
                     img.paste(block, (width, 40 * (t + 2)))
                 elif 'N/A' in self.info[t1][t]:
                     block = color_block((info_list_length[i], 40), color_value=c_block['N/A'])
+                    img.paste(block, (width, 40 * (t + 2)))
+                elif 'Low' in self.info[t1][t]:
+                    block = color_block((info_list_length[i], 40), color_value=c_block['low'])
+                    img.paste(block, (width, 40 * (t + 2)))
+                elif 'Medium' in self.info[t1][t]:
+                    block = color_block((info_list_length[i], 40), color_value=c_block['medium'])
+                    img.paste(block, (width, 40 * (t + 2)))
+                elif 'High' in self.info[t1][t] and 'Very' not in self.info[t1][t]:
+                    block = color_block((info_list_length[i], 40), color_value=c_block['high'])
+                    img.paste(block, (width, 40 * (t + 2)))
+                elif 'Very' in self.info[t1][t]:
+                    block = color_block((info_list_length[i], 40), color_value=c_block['veryhigh'])
                     img.paste(block, (width, 40 * (t + 2)))
 
                 else:
@@ -321,6 +344,8 @@ class ExportTopo(ExportResult):
         self.front_size = 30
         self.config = ConfigManager()
         self.__font = ImageFont.truetype(self.config.getFont(), self.front_size)
+        # self.image_config = self.config.config.get('image', {})
+        # self.title = self.image_config.get('title', 'FullTclash')
 
     def get_width(self, compare: int = None):
         """
@@ -395,7 +420,7 @@ class ExportTopo(ExportResult):
         idraw = ImageDraw.Draw(img)
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
-        list1 = ["FullTclash - 节点拓扑分析", "版本:{}     ⏱️总共耗时: {}s".format(__version__, self.wtime),
+        list1 = [f"{self.title} - 节点拓扑分析", "版本:{}     ⏱️总共耗时: {}s".format(__version__, self.wtime),
                  "测试时间: {}  测试结果仅供参考".format(export_time)]
         export_time = export_time.replace(':', '-')
         title = list1[0]
@@ -608,7 +633,7 @@ class ExportSpeed(ExportResult):
         idraw = ImageDraw.Draw(img)
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
-        list1 = ["FullTclash - 速度测试",
+        list1 = [f"{self.title} - 速度测试",
                  f"版本:{__version__}     ⏱️总共耗时: {self.wtime}s   消耗流量: {self.traffic}MB   线程: {self.thread}  过滤器: {self.filter_include} <-> {self.filter_exclude}",
                  "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time)]
         export_time = export_time.replace(':', '-')

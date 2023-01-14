@@ -300,7 +300,7 @@ class ConfigManager:
         return self.config.get('font', "./resources/苹方黑体-准-简.ttf")
 
     def getColor(self):
-        return self.config.get('color', {})
+        return self.config.get('image', {}).get('color', {})
 
     def getAdmin(self) -> list:
         try:

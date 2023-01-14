@@ -29,23 +29,36 @@ item: # 流媒体测试项，决定你想要测哪个项,目前仅支持以下�
 # workpath: './clash' # clash的工作目录，工作目录这里指的是clash读取配置文件的目录，请勿与操作系统上的概念混淆（可选配置）
 # core: 4 # 核心数，数量越多测试速度越快，但代价是内存会大量占用(每个核心大概10M)，自己的机子多少内存自己平衡
 #font: './resources/苹方黑体-准-简.ttf' #自定义字体，这里填字体的路径
-# 以下是颜色配置，其中speed是速度相关,name为颜色名字，value为颜色值，目前仅支持十六进制，label是颜色对应的速度区间（单位MB）,不用动，只需改value值，其他项是为了做区分。
-#color:
-# speed: # 刚刚好有七个颜色，多一个少一个可能会有奇怪的效果。注意缩进。如果不想有太多颜色，可以两个颜色取同样的颜色值。
-#  - { label: 0, name: '云水', value: '#B4C3D0' }
-#  - { label: 1, name: '晴山', value: '#91AEC4' }
-#  - { label: 5, name: '秋波', value: '#8BB8CB' }
-#  - { label: 10, name: '天韵', value: '#5796B3' }
-#  - { label: 20, name: '鸢尾', value: '#1988AE' }
-#  - { label: 60, name: '甸子', value: '#238BBC' }
-#  - { label: 100, name: '景泰', value: '#2A73AC' }
-# delay: #延迟单位: ms
-#  - { label: 1, name: '云水', value: '#B4C3D0' }
-#  - { label: 100, name: '晴山', value: '#91AEC4' }
-#  - { label: 200, name: '秋波', value: '#8BB8CB' }
-#  - { label: 300, name: '天韵', value: '#5796B3' }
-#  - { label: 500, name: '鸢尾', value: '#1988AE' }
-#  - { label: 1000, name: '甸子', value: '#238BBC' }
-#  - { label: 2000, name: '景泰', value: '#2A73AC' }
-#  - { label: 99999, name: '景泰', value: '#8d8b8e' }  #第八个为超时，label无用
 
+#----------------------------   以下为绘图相关配置   --------------------------------#
+
+#image:
+# title: 'FullTclash' # 绘图时的标题
+# 以下是颜色配置，其中speed是速度相关,name为颜色名字，value为颜色值，目前仅支持十六进制，label是颜色对应的速度区间（单位MB）,不用动，只需改value值，其他项是为了做区分。
+# color:
+#  speed: # 刚刚好有七个颜色，多一个少一个可能会有奇怪的效果。注意缩进。如果不想有太多颜色，可以两个颜色取同样的颜色值。
+#   - { label: 0, name: '云水', value: '#B4C3D0' }
+#   - { label: 1, name: '晴山', value: '#91AEC4' }
+#   - { label: 5, name: '秋波', value: '#8BB8CB' }
+#   - { label: 10, name: '天韵', value: '#5796B3' }
+#   - { label: 20, name: '鸢尾', value: '#1988AE' }
+#   - { label: 60, name: '甸子', value: '#238BBC' }
+#   - { label: 100, name: '景泰', value: '#2A73AC' }
+#  delay: #延迟单位: ms
+#   - { label: 1, name: '云水', value: '#B4C3D0' }
+#   - { label: 100, name: '晴山', value: '#91AEC4' }
+#   - { label: 200, name: '秋波', value: '#8BB8CB' }
+#   - { label: 300, name: '天韵', value: '#5796B3' }
+#   - { label: 500, name: '鸢尾', value: '#1988AE' }
+#   - { label: 1000, name: '甸子', value: '#238BBC' }
+#   - { label: 2000, name: '景泰', value: '#2A73AC' }
+#   - { label: 99999, name: '景泰', value: '#8d8b8e' }  #第八个为超时，label无用
+#  yes: '#bee47e' #解锁色块的颜色
+#  no: '#ee6b73' #失败色块的颜色
+#  na: '#8d8b8e' #N/A色块的颜色
+#  wait: '#dcc7e1' #待解锁色块的颜色
+#  iprisk: #IP风险色块颜色
+#   low: '#ffffff'
+#   medium: '#ffffff'
+#   high: '#ffffff'
+#   veryhigh: '#ffffff'
