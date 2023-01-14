@@ -1,7 +1,6 @@
 import re
 import socket
 import yaml
-from bs4 import BeautifulSoup
 from loguru import logger
 
 
@@ -608,9 +607,6 @@ class ReCleaner:
         try:
             for item in items:
                 i = item.capitalize()
-                # if i == "Netflix":
-                #     nf = self.getnetflixinfo()
-                #     info['Netflix'] = nf[len(nf) - 1] #旧奈飞测试，已废弃
                 if i == "Youtube":
                     you = self.getyoutubeinfo()
                     info['Youtube'] = you
@@ -663,8 +659,9 @@ class ReCleaner:
                 elif i == "Steam货币":
                     from addons.unlockTest import steam
                     info['Steam货币'] = steam.get_steam_info(self)
-                # elif item == "HTTP延迟":
-                #     info['HTTP延迟'] = self.get_https_rtt()
+                elif i == "维基百科(中文)":
+                    from addons.unlockTest import wikipedia_zh
+                    info['维基百科(中文)'] = wikipedia_zh.get_wikipedia_info(self)
                 elif i == "维基百科":
                     from addons.unlockTest import wikipedia
                     info['维基百科'] = wikipedia.get_wikipedia_info(self)

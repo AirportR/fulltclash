@@ -368,8 +368,9 @@ class Collector:
                     elif i == "维基百科":
                         from addons.unlockTest import wikipedia
                         self.tasks.append(wikipedia.task(self, session, proxy=proxy))
-                    # elif item == "HTTP延迟":
-                    #     self.tasks.append(delay_https_task(self, session, proxy=proxy))
+                    elif i == "维基百科(中文)":
+                        from addons.unlockTest import wikipedia_zh
+                        self.tasks.append(wikipedia_zh.task(self, session, proxy=proxy))
                     elif i == "赛马娘":
                         from addons.unlockTest import umajp
                         self.tasks.append(umajp.task(self, session, proxy=proxy))
