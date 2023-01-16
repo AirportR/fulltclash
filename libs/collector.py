@@ -721,10 +721,13 @@ async def delay_https(session: aiohttp.ClientSession, proxy=None, testurl="http:
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
                       'Chrome/102.0.5005.63 Safari/537.36'
     }
+    _headers2 = {'User-Agent': 'clash'}
     try:
         s1 = time.time()
-        async with session.get(url=testurl, proxy=proxy, headers=_headers,
+        async with session.get(url=testurl, proxy=proxy, headers=_headers2,
                                timeout=timeout) as r:
+            if r.status == 502:
+                logger.error("dual stack tcp shake hands failed")
             if r.status == 204:
                 delay1 = time.time() - s1
                 # print(delay1)

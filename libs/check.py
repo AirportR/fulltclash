@@ -2,6 +2,7 @@ import asyncio
 import hashlib
 import re
 
+import pyrogram.types
 from pyrogram.errors import RPCError
 from loguru import logger
 from pyrogram.filters import private_filter
@@ -249,7 +250,7 @@ async def check_nodes(message, nodenum, args: tuple, max_num=300):
         return False
 
 
-async def check_photo(message, back_message, name, wtime):
+async def check_photo(message: pyrogram.types.Message, back_message, name, wtime):
     """
     检查图片是否生成成功
     :param wtime: 消耗时间

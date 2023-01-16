@@ -1,7 +1,7 @@
 import loguru
 from pyrogram.errors import RPCError
 from botmodule.init_bot import admin, config, reloadUser
-from botmodule.command import test
+from botmodule.command.test import reloadUser as r2
 
 
 async def grant(client, message):
@@ -30,7 +30,7 @@ async def grant(client, message):
             loguru.logger.info("授权id:", grant_id)
             config.add_user(grant_id)
             config.reload()
-            test.reloadUser()
+            r2()
             reloadUser()
 
     except RPCError as r:
@@ -59,7 +59,7 @@ async def ungrant(client, message):
             try:
                 config.del_user(ungrant_id)
                 config.reload()
-                test.reloadUser()
+                r2()
                 reloadUser()
                 await client.send_message(chat_id=message.chat.id,
                                           text=ungrant_text,
@@ -73,7 +73,7 @@ async def ungrant(client, message):
         print(r)
 
 
-async def user(client, message):
+async def user(_, message):
     try:
         if int(message.from_user.id) not in admin and str(
                 message.from_user.username) not in admin:  # 如果不在USER_TARGET名单是不会有权限的
