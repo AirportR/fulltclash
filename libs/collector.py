@@ -555,6 +555,8 @@ class Collector:
                     elif dis1.history:
                         if 300 <= dis1.history[0].status <= 399:
                             self.info['disney'] = "待解({})".format(region)
+                        else:
+                            self.info['disney'] = "未知"
                     else:
                         self.info['disney'] = "解锁({})".format(region)
                     logger.info("disney+ 成功访问(轻检测，检测结果准确率下降)")
@@ -577,6 +579,8 @@ class Collector:
                     elif dis1.history:
                         if 300 <= dis1.history[0].status <= 399:
                             self.info['disney'] = "待解({})".format(region)
+                        else:
+                            self.info['disney'] = "未知"
                     else:
                         self.info['disney'] = "解锁({})".format(region)
                 else:
@@ -612,10 +616,14 @@ class Collector:
             logger.warning("Dazn请求发生错误:" + str(c))
             if reconnection != 0:
                 await self.fetch_dis(session=session, proxy=proxy, reconnection=reconnection - 1)
+            else:
+                self.info['dazn'] = '连接错误'
         except asyncio.exceptions.TimeoutError:
             logger.warning("Dazn请求超时，正在重新发送请求......")
             if reconnection != 0:
                 await self.fetch_dis(session=session, proxy=proxy, reconnection=reconnection - 1)
+            else:
+                self.info['dazn'] = '超时'
 
     async def start(self, proxy=None):
         """

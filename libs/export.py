@@ -16,7 +16,7 @@ from addons.emoji_custom import TwitterPediaSource
 2、何为基础数据？
     基础数据决定了生成图片的高度（Height），它是列表，列表里面的数据一般是一组节点名，即有多少个节点就对应了info键值中的长度。
 """
-__version__ = "3.4.4"  # 版本号
+__version__ = "3.4.5"  # 版本号
 custom_source = TwitterPediaSource  # 自定义emoji风格 TwitterPediaSource
 
 
@@ -190,7 +190,11 @@ class ExportResult:
         title = list1[0]
         idraw.text((self.get_mid(0, image_width, title), 5), title, font=fnt, fill=(0, 0, 0))  # 标题
         # idraw.text((10, image_height - 75), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
-        pilmoji.text((10, image_height - 75), text=list1[1], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 3))
+        try:
+            pilmoji.text((10, image_height - 75), text=list1[1], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 3))
+        except Exception as e:
+            logger.error(str(e))
+            idraw.text((10, image_height - 75), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
         idraw.text((10, image_height - 35), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
         '''
         :绘制标签
@@ -224,12 +228,13 @@ class ExportResult:
                    'medium': self.color.get('iprisk', {}).get('medium', '#ffffff'),
                    'high': self.color.get('iprisk', {}).get('high', '#ffffff'),
                    'veryhigh': self.color.get('iprisk', {}).get('veryhigh', '#ffffff'),
+                   '警告': self.color.get('warn', '#fcc43c')
                    }
         for t in range(self.nodenum):
             # 序号
             idraw.text((self.get_mid(0, 100, str(t + 1)), 40 * (t + 2)), text=str(t + 1), font=fnt, fill=(0, 0, 0))
             # 节点名称
-            # idraw.text((110, 40 * (t + 2)), text=self.nodename[t], font=fnt, fill=(0, 0, 0))
+            # idraw.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0))
             try:
                 # 自定义emoji源可能出错，所以捕捉了异常
                 pilmoji.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
@@ -239,6 +244,9 @@ class ExportResult:
                 pilmoji2 = Pilmoji(img, source=Twemoji)
                 pilmoji2.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
                               emoji_position_offset=(0, 6))
+            except Exception:
+                idraw.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0))
+
             width = 100 + nodename_width
             i = 0
             for t1 in key_list:
@@ -292,7 +300,9 @@ class ExportResult:
                 elif 'Very' in self.info[t1][t]:
                     block = color_block((info_list_length[i], 40), color_value=c_block['veryhigh'])
                     img.paste(block, (width, 40 * (t + 2)))
-
+                elif '超时' in self.info[t1][t] or '连接错误' in self.info[t1][t]:
+                    block = color_block((info_list_length[i], 40), color_value=c_block['警告'])
+                    img.paste(block, (width, 40 * (t + 2)))
                 else:
                     pass
                 width += info_list_length[i]

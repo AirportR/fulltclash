@@ -30,10 +30,14 @@ async def fetch_bbciplayer(Collector, session: aiohttp.ClientSession, proxy=None
         logger.warning("BBCiplayer请求发生错误:" + str(c))
         if reconnection != 0:
             await fetch_bbciplayer(Collector, session, proxy=proxy, reconnection=reconnection - 1)
+        else:
+            Collector.info['BBC'] = "连接错误"
     except asyncio.exceptions.TimeoutError:
         logger.warning("BBCiplayer请求超时，正在重新发送请求......")
         if reconnection != 0:
             await fetch_bbciplayer(Collector, session, proxy=proxy, reconnection=reconnection - 1)
+        else:
+            Collector.info['BBC'] = "超时"
 
 
 def task(Collector, session, proxy):

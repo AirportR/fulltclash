@@ -53,8 +53,8 @@ item: # 流媒体测试项，决定你想要测哪个项,目前仅支持以下�
 #   - { label: 1000, name: '甸子', value: '#238BBC' }
 #   - { label: 2000, name: '景泰', value: '#2A73AC' }
 #   - { label: 99999, name: '景泰', value: '#8d8b8e' }  #第八个为超时，label无用
-#  yes: '#bee47e' #解锁色块的颜色
-#  no: '#ee6b73' #失败色块的颜色
+#  "yes": '#bee47e' #解锁色块的颜色，注意不要去掉双引号
+#  "no": '#ee6b73' #失败色块的颜色，注意不要去掉双引号
 #  na: '#8d8b8e' #N/A色块的颜色
 #  wait: '#dcc7e1' #待解锁色块的颜色
 #  iprisk: #IP风险色块颜色
@@ -62,3 +62,4 @@ item: # 流媒体测试项，决定你想要测哪个项,目前仅支持以下�
 #   medium: '#ffffff'
 #   high: '#ffffff'
 #   veryhigh: '#ffffff'
+#  warn: '#fcc43c'

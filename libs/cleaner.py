@@ -702,6 +702,10 @@ class ReCleaner:
                 logger.warning("采集器内无数据: Dazn")
                 return "N/A"
             else:
+                i1 = self.data.get('dazn', '')
+                if i1 == '连接错误' or i1 == '超时':
+                    logger.info("Dazn状态: " + i1)
+                    return i1
                 try:
                     info = self.data['dazn']['Region']
                     isAllowed = info['isAllowed']
