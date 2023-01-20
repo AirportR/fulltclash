@@ -24,7 +24,6 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
     :param reconnection: 重连次数
     :return:
     """
-    print(reconnection)
     try:
         if flag == 1:
             async with session.get(netflix_url1, proxy=proxy, timeout=8) as res:
@@ -66,12 +65,10 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
             return
     except ClientConnectorError as c:
         logger.warning("Netflix请求发生错误:" + str(c))
-        if reconnection != 0:
+        if reconnection != 0 and reconnection > 5:
             await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection - 1)
-        elif reconnection < 5:
-            Collector.info['netflix_new'] = "连接错误"
         else:
-            Collector.info['netflix_new'] = "N/A"
+            Collector.info['netflix_new'] = "连接错误"
     except asyncio.exceptions.TimeoutError:
         logger.warning("Netflix请求超时，正在重新发送请求......")
         if reconnection != 0:

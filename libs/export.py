@@ -320,7 +320,7 @@ class ExportResult:
         '''
         # 绘制横线
         for t in range(self.nodenum + 3):
-            idraw.line([(0, 40 * (t + 1)), (image_width, 40 * (t + 1))], fill="#e1e1e1", width=1)
+            idraw.line([(0, 40 * (t + 1)), (image_width, 40 * (t + 1))], fill="#e1e1e1", width=2)
         # 绘制竖线
         idraw.line([(100, 40), (100, 80)], fill="#e1e1e1", width=2)
         start_x = 100 + nodename_width
