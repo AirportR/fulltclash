@@ -38,6 +38,7 @@ proxy-providers:
     path: ./default.yaml
     type: file
 rules:
+- DOMAIN-KEYWORD,stun,auto
 - DOMAIN-SUFFIX,gstatic.com,auto
 - DOMAIN-KEYWORD,gstatic,auto
 - DOMAIN-SUFFIX,google.com,auto

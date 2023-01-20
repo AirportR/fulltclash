@@ -1,4 +1,5 @@
-import loguru
+import pyrogram.types
+from loguru import logger
 from pyrogram.errors import RPCError
 from botmodule.init_bot import admin, config, reloadUser
 from botmodule.command.test import reloadUser as r2
@@ -27,7 +28,7 @@ async def grant(client, message):
                 grant_id = int(message.reply_to_message.from_user.id)
             except AttributeError:
                 grant_id = int(message.reply_to_message.sender_chat.id)
-            loguru.logger.info("授权id:", grant_id)
+            logger.info("授权id:" + str(grant_id))
             config.add_user(grant_id)
             config.reload()
             r2()
@@ -37,7 +38,7 @@ async def grant(client, message):
         print(r)
 
 
-async def ungrant(client, message):
+async def ungrant(_, message: pyrogram.types.Message):
     try:
         if int(message.from_user.id) not in admin and str(
                 message.from_user.username) not in admin:  # 如果不在USER_TARGET名单是不会有权限的
@@ -56,21 +57,14 @@ async def ungrant(client, message):
                 ungrant_id = int(message.reply_to_message.from_user.id)
             except AttributeError:
                 ungrant_id = int(message.reply_to_message.sender_chat.id)
-            try:
-                config.del_user(ungrant_id)
-                config.reload()
-                r2()
-                reloadUser()
-                await client.send_message(chat_id=message.chat.id,
-                                          text=ungrant_text,
-                                          reply_to_message_id=message.reply_to_message.id)
-            except RPCError:
-                await client.send_message(chat_id=message.chat.id,
-                                          text="移出失败，找不到该用户(也许该目标本来就不是授权目标哦)",
-                                          reply_to_message_id=message.reply_to_message.id)
+            config.del_user(ungrant_id)
+            config.reload()
+            r2()
+            reloadUser()
+            await message.reply(ungrant_text)
 
     except RPCError as r:
-        print(r)
+        logger.error(str(r))
 
 
 async def user(_, message):

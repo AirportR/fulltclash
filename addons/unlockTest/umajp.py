@@ -24,7 +24,7 @@ async def fetch_uma(Collector, session: aiohttp.ClientSession, proxy=None, recon
             #               'Chrome/102.0.5005.63 Safari/537.36',
             'User-Agent': "Dalvik/2.1.0 (Linux; U; Android 9; ALP-AL00 Build/HUAWEIALP-AL00)"
         }
-        async with session.get(umaurl, headers=_headers, proxy=proxy, timeout=5) as res:
+        async with session.get(umaurl, headers=_headers, proxy=proxy, timeout=10) as res:
             if res.status == 404:
                 Collector.info['赛马娘'] = "解锁"
             elif res.status == 403:
@@ -35,10 +35,15 @@ async def fetch_uma(Collector, session: aiohttp.ClientSession, proxy=None, recon
         logger.warning("赛马娘请求发生错误:" + str(c))
         if reconnection != 0:
             await fetch_uma(Collector, session, proxy=proxy, reconnection=reconnection - 1)
+        else:
+            Collector.info['赛马娘'] = "连接错误"
+            return
     except asyncio.exceptions.TimeoutError:
-        logger.warning("赛马娘请求超时，正在重新发送请求......")
-        if reconnection != 0:
-            await fetch_uma(Collector, session, proxy=proxy, reconnection=reconnection - 1)
+        Collector.info['赛马娘'] = "超时"
+        return
+        # logger.warning("赛马娘请求超时，正在重新发送请求......")
+        # if reconnection != 0:
+        #     await fetch_uma(Collector, session, proxy=proxy, reconnection=reconnection - 1)
 
 
 def task(Collector, session, proxy):
@@ -73,7 +78,7 @@ if __name__ == "__main__":
     import sys
     import os
 
-    sys.path.append(os.path.abspath(os.path.join(os.getcwd(), os.pardir)))
+    sys.path.append(os.path.abspath(os.path.join(os.getcwd(), os.pardir, os.pardir)))
     from libs.collector import Collector as CL, media_items
 
     media_items.clear()

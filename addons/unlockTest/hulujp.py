@@ -8,7 +8,7 @@ from pyrogram.types import InlineKeyboardButton
 # collector section
 
 
-async def fetch_hulujp(Collector, session: aiohttp.ClientSession, proxy=None, reconnection=2):
+async def fetch_hulujp(Collector, session: aiohttp.ClientSession, proxy=None, reconnection=1):
     """
     Hulu JP检测
     :param Collector: 采集器
@@ -33,7 +33,7 @@ async def fetch_hulujp(Collector, session: aiohttp.ClientSession, proxy=None, re
             "sec-fetch-user": "?1",
             "upgrade-insecure-requests": "1"
         }
-        async with session.get(hulujpurl, headers=_headers, proxy=proxy, timeout=5) as res:
+        async with session.get(hulujpurl, headers=_headers, proxy=proxy, timeout=10) as res:
             if res.history:
                 a = res.history[0]
                 location = a.headers.get('Location', '')
@@ -48,10 +48,13 @@ async def fetch_hulujp(Collector, session: aiohttp.ClientSession, proxy=None, re
         logger.warning("Hulu JP'请求发生错误:" + str(c))
         if reconnection != 0:
             await fetch_hulujp(Collector, session, proxy=proxy, reconnection=reconnection - 1)
+        else:
+            Collector.info['Hulu JP'] = "连接错误"
     except asyncio.exceptions.TimeoutError:
-        logger.warning("Hulu JP'请求超时，正在重新发送请求......")
-        if reconnection != 0:
-            await fetch_hulujp(Collector, session, proxy=proxy, reconnection=reconnection - 1)
+        # logger.warning("Hulu JP'请求超时，正在重新发送请求......")
+        Collector.info['Hulu JP'] = "超时"
+        # if reconnection != 0:
+        #     await fetch_hulujp(Collector, session, proxy=proxy, reconnection=reconnection - 1)
 
 
 def task(Collector, session, proxy):
@@ -86,7 +89,7 @@ if __name__ == "__main__":
     import sys
     import os
 
-    sys.path.append(os.path.abspath(os.path.join(os.getcwd(), os.pardir)))
+    sys.path.append(os.path.abspath(os.path.join(os.getcwd(), os.pardir, os.pardir)))
     from libs.collector import Collector as CL, media_items
 
     media_items.clear()
