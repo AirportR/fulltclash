@@ -41,7 +41,7 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
                         logger.error(e)
                         Collector.info['netflix_new'] = "N/A"
                 elif res.status == 403:
-                    await asyncio.sleep(2)
+                    await asyncio.sleep(0.5)
                     if reconnection == 0:
                         logger.info("不支持非自制剧，正在检测自制剧...")
                         await fetch_netflix_new(Collector, session, flag=flag + 1, proxy=proxy, reconnection=5)
