@@ -26,7 +26,7 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
     """
     try:
         if flag == 1:
-            async with session.get(netflix_url1, proxy=proxy, timeout=8) as res:
+            async with session.get(netflix_url1, proxy=proxy, timeout=5) as res:
                 if res.status == 200:  # 解锁非自制
                     text = await res.text()
                     try:
