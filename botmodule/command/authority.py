@@ -23,9 +23,9 @@ b1 = InlineKeyboardMarkup(
 
     ]
 )
-invite_list = {}
-message_list = {}
-bot_message_list = {}
+invite_list = {}  # 被邀请人ID列表
+message_list = {}  # 原消息
+bot_message_list = {}  # bot回复消息
 success_message_list = {}
 task_type = ['testurl', 'analyzeurl', 'speedurl']
 temp_queue = asyncio.Queue(maxsize=1)
@@ -40,6 +40,10 @@ def generate_random_string(length: int):
 
 async def invite(client: pyrogram.Client, message):
     bot_info = await client.get_me()
+    text = str(message.text)
+    texts = text.split(' ')
+    del texts[0]
+
     try:
         username = bot_info.username
     except AttributeError as a:
@@ -52,7 +56,15 @@ async def invite(client: pyrogram.Client, message):
         for row in inline_keyboard:
             for buttun in row:
                 buttun.callback_data = None
-                buttun.url = f"https://t.me/{username}?start={key}_{task_type[num_row]}"
+
+                if texts:
+                    url_text = f"https://t.me/{username}?start={key}_{task_type[num_row]}"
+                    for t in texts:
+                        url_text = url_text + "_" + t
+                else:
+                    url_text = f"https://t.me/{username}?start={key}_{task_type[num_row]}_default"
+
+                buttun.url = url_text
             num_row = num_row + 1
     try:
         sender = message.from_user.first_name
@@ -119,6 +131,18 @@ async def invite_pass(client: pyrogram.Client, message):
             await message.reply("ID验证失败，请不要乱用别人的测试哦！")
             return
         task_type_select = k[1] if len(k) > 1 else ''
+        test_type_select = ['HTTP延迟']
+        if len(k) > 2:
+            if k[2] == 'default':
+                test_type_select.extend(['HTTP延迟', 'Netflix', 'Youtube', 'Disney+', 'Primevideo', 'steam货币', 'Bilibili',
+                                         'Dazn', 'Hbomax', 'Bahamut', 'Abema', '公主连结', 'BBC', 'Myvideo', 'Catchplay',
+                                         'Viu', '维基百科', '维基百科(中文)', 'Hulu JP', '赛马娘', '落地IP风险'])
+            else:
+                for i in k[2:]:
+                    if i == 'HTTP延迟':
+                        continue
+                    test_type_select.append(i)
+
         if task_type_select in task_type:
 
             s_text = f"✅身份验证成功\n🚗任务项: {task_type_select} \n\n**接下来请在{timeout_value}s内发送订阅链接** <过滤器> 否则任务取消"
@@ -146,9 +170,7 @@ async def invite_pass(client: pyrogram.Client, message):
                 await message.reply("✨提交成功，请返回群组查看测试结果。")
                 await asyncio.sleep(3)
                 await bot_mes.delete()
-                test_item = ['HTTP延迟', 'Netflix', 'Youtube', 'Disney+', 'Primevideo', 'steam货币', 'Bilibili', 'Dazn',
-                             'Hbomax', 'Bahamut', 'Abema', '公主连结', 'BBC', 'Myvideo', 'Catchplay', 'Viu', '维基百科',
-                             '维基百科(中文)', 'Hulu JP', '赛马娘', '落地IP风险']
+                test_item = test_type_select
                 await bot_put(client, mes, task_type_select, test_items=test_item,
                               include_text=in_text, exclude_text=ex_text, url=suburl)
             else:
