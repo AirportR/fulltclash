@@ -19,11 +19,11 @@ async def getSubInfo(_, message):
             rs = subinfo[3] - subinfo[2]  # 剩余流量
             subinfo_text = f"""
 ☁️订阅链接：{url}
-⬆️已用上行：{subinfo[0]} GB
-⬇️已用下行：{subinfo[1]} GB
-🚗总共使用：{subinfo[2]} GB
-⏳剩余流量：{rs} GB
-💧总流量：{subinfo[3]} GB
+⬆️已用上行：{round(subinfo[0], 3)} GB
+⬇️已用下行：{round(subinfo[1], 3)} GB
+🚗总共使用：{round(subinfo[2], 3)} GB
+⏳剩余流量：{round(rs, 3)} GB
+💧总流量：{round(subinfo[3], 3)} GB
 ⏱️过期时间：{subinfo[4]}
                 """
             await back_message.edit_text(subinfo_text)
