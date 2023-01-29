@@ -41,7 +41,6 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
                         logger.error(e)
                         Collector.info['netflix_new'] = "N/A"
                 elif res.status == 403:
-                    await asyncio.sleep(0.5)
                     if reconnection == 0:
                         logger.info("不支持非自制剧，正在检测自制剧...")
                         await fetch_netflix_new(Collector, session, flag=flag + 1, proxy=proxy, reconnection=5)
@@ -65,7 +64,7 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
             return
     except ClientConnectorError as c:
         logger.warning("Netflix请求发生错误:" + str(c))
-        if reconnection != 0 and reconnection > 5:
+        if reconnection != 0 and reconnection > 4:
             await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection - 1)
         else:
             Collector.info['netflix_new'] = "连接错误"
@@ -73,6 +72,8 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
         logger.warning("Netflix请求超时，正在重新发送请求......")
         if reconnection != 0:
             await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection - 1)
+        else:
+            Collector.info['netflix_new'] = "超时"
 
 
 def task(Collector, session, proxy):

@@ -32,10 +32,14 @@ async def fetch_abema(Collector, session: aiohttp.ClientSession, proxy=None, rec
         logger.warning("Abema请求发生错误:" + str(c))
         if reconnection != 0:
             await fetch_abema(Collector, session, proxy=proxy, reconnection=reconnection - 1)
+        else:
+            Collector.info['abema'] = "连接错误"
     except asyncio.exceptions.TimeoutError:
         logger.warning("Abema请求超时，正在重新发送请求......")
         if reconnection != 0:
             await fetch_abema(Collector, session, proxy=proxy, reconnection=reconnection - 1)
+        else:
+            Collector.info['abema'] = "超时"
 
 
 def task(Collector, session, proxy):

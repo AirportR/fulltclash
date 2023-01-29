@@ -591,6 +591,8 @@ class Collector:
             logger.warning("disney+请求发生错误:" + str(c))
             if reconnection != 0:
                 await self.fetch_dis(session=session, proxy=proxy, reconnection=reconnection - 1)
+            else:
+                self.info['disney'] = '连接错误'
         except asyncio.exceptions.TimeoutError:
             logger.warning("disney+请求超时，正在重新发送请求......")
             if reconnection != 0:

@@ -760,74 +760,6 @@ class ReCleaner:
             logger.error(e)
             return "N/A"
 
-    # 以下为旧版奈飞测试，灵感来自 SSRSpeedN ，现已废弃。如果有人看到这段消息，可以删掉这段代码了。
-    # def getnetflixinfo(self):
-    #     """
-    #
-    #     :return: list: [netflix_ip, proxy_ip, netflix_info: "解锁"，“自制”，“失败”，“N/A”]
-    #     """
-    #     try:
-    #         if self.data['ip'] is None or self.data['ip'] == "N/A":
-    #             return ["N/A", "N/A", "N/A"]
-    #         if self.data['netflix2'] is None:
-    #             return ["N/A", "N/A", "N/A"]
-    #         if self.data['netflix1'] is None:
-    #             return ["N/A", "N/A", "N/A"]
-    #         r1 = self.data['netflix1']
-    #         status_code = self.data['ne_status_code1']
-    #         if status_code == 200:
-    #             self._sum += 1
-    #             soup = BeautifulSoup(r1, "html.parser")
-    #             netflix_ip_str = str(soup.find_all("script"))
-    #             p1 = netflix_ip_str.find("requestIpAddress")
-    #             netflix_ip_r = netflix_ip_str[p1 + 19:p1 + 60]
-    #             p2 = netflix_ip_r.find(",")
-    #             netflix_ip = netflix_ip_r[0:p2]
-    #             self._netflix_info.append(netflix_ip)  # 奈飞ip
-    #         r2 = self.data['ne_status_code2']
-    #         if r2 == 200:
-    #             self._sum += 1
-    #
-    #         self._netflix_info.append(self.data['ip']['ip'])  # 请求ip
-    #
-    #         if self._sum == 0:
-    #             ntype = "失败"
-    #             self._netflix_info.append(ntype)  # 类型有四种，分别是无、仅自制剧、原生解锁（大概率）、 DNS解锁
-    #             logger.info("当前节点情况: " + str(self._netflix_info))
-    #             return self._netflix_info
-    #         elif self._sum == 1:
-    #             ntype = "自制"
-    #             self._netflix_info.append(ntype)
-    #             logger.info("当前节点情况: " + str(self._netflix_info))
-    #             return self._netflix_info
-    #         elif self.data['ip']['ip'] == self._netflix_info[0]:
-    #             text = self.data['netflix2']
-    #             s = text.find('preferredLocale', 100000)
-    #             if s == -1:
-    #                 self._netflix_info.append("原生解锁(未知)")
-    #                 logger.info("当前节点情况: " + str(self._netflix_info))
-    #                 return self._netflix_info
-    #             region = text[s + 29:s + 31]
-    #             ntype = "原生解锁({})".format(region)
-    #             self._netflix_info.append(ntype)
-    #             logger.info("当前节点情况: " + str(self._netflix_info))
-    #             return self._netflix_info
-    #         else:
-    #             text = self.data['netflix2']
-    #             s = text.find('preferredLocale', 100000)
-    #             if s == -1:
-    #                 self._netflix_info.append("DNS解锁(未知)")
-    #                 logger.info("当前节点情况: " + str(self._netflix_info))
-    #                 return self._netflix_info
-    #             region = text[s + 29:s + 31]
-    #             ntype = "DNS解锁({})".format(region)
-    #             self._netflix_info.append(ntype)
-    #             logger.info("当前节点情况: " + str(self._netflix_info))
-    #             return self._netflix_info
-    #     except Exception as e:
-    #         logger.error(e)
-    #         return ["N/A", "N/A", "N/A"]
-
     def getyoutubeinfo(self):
         """
         :return: str :解锁信息: (解锁、失败、N/A)
@@ -842,14 +774,12 @@ class ReCleaner:
                         'manageSubscriptionButton') == -1:
                     return "失败"
                 if text.find('www.google.cn') != -1:
-                    return "失败(CN)"
+                    return "送中(CN)"
                 elif self.data['youtube_status_code'] == 200:
                     idx = text.find('"countryCode"')
                     region = text[idx:idx + 17].replace('"countryCode":"', "")
                     if idx == -1 and text.find('manageSubscriptionButton') != -1:
                         region = "US"
-                    elif region == "":
-                        region == "未知"
                     logger.info(f"Youtube解锁地区: {region}")
                     return f"解锁({region})"
                 else:
@@ -864,7 +794,7 @@ class ReCleaner:
         :return: 解锁信息: 解锁、失败、N/A、待解
         """
         try:
-            if self.data['disney'] is None:
+            if 'disney' not in self.data:
                 logger.warning("无法读取Desney Plus解锁信息")
                 return "N/A"
             else:
