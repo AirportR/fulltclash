@@ -1,5 +1,6 @@
 import asyncio
 import time
+from pyrogram.types import Message
 from pyrogram.errors import RPCError, FloodWait
 from loguru import logger
 import botmodule.init_bot
@@ -18,7 +19,7 @@ def reloadUser():
 
 
 @logger.catch()
-async def testurl(_, message, **kwargs):
+async def testurl(_, message: Message, **kwargs):
     """
 
     :param _:
@@ -43,7 +44,7 @@ async def testurl(_, message, **kwargs):
             ma.save(savePath='./clash/proxy.yaml')
     except RPCError as r:
         logger.error(str(r))
-        message.reply(str(r))
+        await message.reply(str(r))
     except FloodWait as e:
         await asyncio.sleep(e.value)
     except Exception as e:
@@ -51,7 +52,7 @@ async def testurl(_, message, **kwargs):
 
 
 @logger.catch()
-async def test(_, message):
+async def test(_, message: Message):
     back_message = await message.reply("╰(*°▽°*)╯联通性测试进行中...")  # 发送提示
     arg = cleaner.ArgCleaner().getall(str(message.text))
     del arg[0]
@@ -83,7 +84,7 @@ async def test(_, message):
             return
     except RPCError as r:
         logger.error(str(r))
-        message.reply(str(r))
+        await message.reply(str(r))
     except FloodWait as e:
         await asyncio.sleep(e.value)
     except Exception as e:
@@ -91,7 +92,7 @@ async def test(_, message):
 
 
 @logger.catch()
-async def analyzeurl(_, message, test_type="all", **kwargs):
+async def analyzeurl(_, message: Message, test_type="all", **kwargs):
     back_message = await message.reply("╰(*°▽°*)╯节点链路拓扑测试进行中...")  # 发送提示
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
@@ -126,7 +127,7 @@ async def analyzeurl(_, message, test_type="all", **kwargs):
                 ma.save(savePath='./clash/proxy.yaml')
     except RPCError as r:
         logger.error(str(r))
-        message.reply(str(r))
+        await message.reply(str(r))
     except FloodWait as e:
         await asyncio.sleep(e.value)
     except Exception as e:
@@ -134,7 +135,7 @@ async def analyzeurl(_, message, test_type="all", **kwargs):
 
 
 @logger.catch()
-async def analyze(_, message, test_type="all"):
+async def analyze(_, message: Message, test_type="all"):
     back_message = await message.reply("╰(*°▽°*)╯节点链路拓扑测试进行中...")  # 发送提示
     arg = cleaner.ArgCleaner().getall(str(message.text))
     del arg[0]
@@ -185,7 +186,7 @@ async def analyze(_, message, test_type="all"):
         await asyncio.sleep(e.value)
     except RPCError as r:
         logger.error(str(r))
-        message.reply(str(r))
+        await message.reply(str(r))
     except KeyboardInterrupt:
         await back_message.edit_text("程序已被强行中止")
     except Exception as e:
@@ -193,23 +194,29 @@ async def analyze(_, message, test_type="all"):
 
 
 @logger.catch()
-async def speedurl(_, message, **kwargs):
-    back_message = await message.reply("╰(*°▽°*)╯速度测试进行中...")  # 发送提示
+async def speedurl(_, message: Message, **kwargs):
+    back_message = await message.reply("╰(*°▽°*)╯速度测试进行中...", quote=True)  # 发送提示
+    if config.nospeed:
+        await back_message.edit_text("❌已禁止测速服务")
+        await asyncio.sleep(10)
+        await back_message.delete(revoke=False)
+        return
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
     suburl = kwargs.get('url', None)
     try:
         info = await speedtest.core(message, back_message,
                                     start_time=start_time, suburl=suburl, **kwargs)
-        wtime = info.get('wtime', "-1")
-        stime = export.ExportSpeed(name=None, info=info).exportImage()
-        # 发送回TG
-        await check.check_photo(message, back_message, stime, wtime)
         ma.delsub(subname=start_time)
         ma.save(savePath='./clash/proxy.yaml')
+        if info:
+            wtime = info.get('wtime', "-1")
+            stime = export.ExportSpeed(name=None, info=info).exportImage()
+            # 发送回TG
+            await check.check_photo(message, back_message, stime, wtime)
     except RPCError as r:
         logger.error(str(r))
-        message.reply(str(r))
+        await message.reply(str(r))
     except FloodWait as e:
         await asyncio.sleep(e.value)
     except Exception as e:
@@ -217,8 +224,13 @@ async def speedurl(_, message, **kwargs):
 
 
 @logger.catch()
-async def speed(_, message):
-    back_message = await message.reply("╰(*°▽°*)╯速度测试进行中...")  # 发送提示
+async def speed(_, message: Message):
+    back_message = await message.reply("╰(*°▽°*)╯速度测试进行中...", quote=True)  # 发送提示
+    if config.nospeed:
+        await back_message.edit_text("❌已禁止测速服务")
+        await asyncio.sleep(10)
+        await back_message.delete(revoke=False)
+        return
     arg = cleaner.ArgCleaner().getall(str(message.text))
     del arg[0]
     try:
@@ -233,13 +245,13 @@ async def speed(_, message):
             ma = cleaner.ConfigManager('./clash/proxy.yaml')
             info = await speedtest.core(message, back_message=back_message,
                                         start_time=start_time, suburl=suburl)
+            ma.delsub(subname=start_time)
+            ma.save(savePath='./clash/proxy.yaml')
             if info:
                 wtime = info.get('wtime', "-1")
                 stime = export.ExportSpeed(name=None, info=info).exportImage()
                 # 发送回TG
                 await check.check_photo(message, back_message, stime, wtime)
-                ma.delsub(subname=start_time)
-                ma.save(savePath='./clash/proxy.yaml')
         else:
             await back_message.edit_text("❌无接受参数，使用方法: /speed <订阅名>")
             await asyncio.sleep(10)
@@ -247,7 +259,7 @@ async def speed(_, message):
             return
     except RPCError as r:
         logger.error(str(r))
-        message.reply(str(r))
+        await message.reply(str(r))
     except FloodWait as e:
         await asyncio.sleep(e.value)
     except Exception as e:

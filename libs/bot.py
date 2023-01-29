@@ -10,6 +10,7 @@ from libs.check import check_user as isuser
 from libs.check import check_callback_master
 from libs.collector import reload_config as r1
 from libs.cleaner import reload_config as r2
+from libs.speedtest import break_speed
 
 admin = init_bot.admin  # 管理员
 task_num = 0  # 任务数
@@ -156,10 +157,13 @@ def callback_loader(app: Client):
             await message.delete()
             await bot_put(client, origin_message, test_type, test_items)
 
-    @app.on_callback_query(filters=dynamic_data_filter('test'), group=1)
+    @app.on_callback_query(filters=dynamic_data_filter('stop'), group=1)
     async def invite_test(_, callback_query):
-        if await check_callback_master(callback_query, strict=True):
+        if await check_callback_master(callback_query, USER_TARGET=botmodule.init_bot.reloadUser(), strict=False):
             return
+        else:
+            break_speed.append(True)
+            logger.info("测速中止")
 
 
 async def bot_put(client, message, put_type: str, test_items: list = None, **kwargs):

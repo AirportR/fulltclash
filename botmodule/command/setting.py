@@ -2,6 +2,7 @@ import asyncio
 
 from loguru import logger
 from pyrogram import types
+from pyrogram.errors import RPCError
 from pyrogram.types import BotCommand
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from addons.unlockTest.hbomax import b9
@@ -92,81 +93,84 @@ async def test_setting(client, callback_query):
                                        text="⚠️无法获取发起该任务的源消息")
         await asyncio.sleep(1)
         return test_items, origin_message, message, test_type
-    if "✅" in callback_data:
-        for b_1 in inline_keyboard:
-            for b in b_1:
-                if b.text == callback_data:
-                    b.text = b.text.replace("✅", "❌")
-                    b.callback_data = b.text
-                    IKM2 = InlineKeyboardMarkup(
-                        inline_keyboard
-                    )
-                    await client.edit_message_text(chat_id=chat_id,
-                                                   message_id=mess_id,
-                                                   text=text,
-                                                   reply_markup=IKM2)
-        return test_items, origin_message, message, test_type
-    elif "❌" in callback_data:
-        for b_1 in inline_keyboard:
-            for b in b_1:
-                if b.text == callback_data:
-                    b.text = b.text.replace("❌", "✅")
-                    b.callback_data = b.text
-                    IKM2 = InlineKeyboardMarkup(
-                        inline_keyboard
-                    )
-                    await client.edit_message_text(chat_id=chat_id,
-                                                   message_id=mess_id,
-                                                   text=text,
-                                                   reply_markup=IKM2)
-        return test_items, origin_message, message, test_type
-    elif "🪞选项翻转" in callback_data:
-        for b_1 in inline_keyboard:
-            for b in b_1:
-                if "❌" in b.text:
-                    b.text = b.text.replace("❌", "✅")
-                    b.callback_data = b.text
+    try:
+        if "✅" in callback_data:
+            for b_1 in inline_keyboard:
+                for b in b_1:
+                    if b.text == callback_data:
+                        b.text = b.text.replace("✅", "❌")
+                        b.callback_data = b.text
+                        IKM2 = InlineKeyboardMarkup(
+                            inline_keyboard
+                        )
+                        await client.edit_message_text(chat_id=chat_id,
+                                                       message_id=mess_id,
+                                                       text=text,
+                                                       reply_markup=IKM2)
+            return test_items, origin_message, message, test_type
+        elif "❌" in callback_data:
+            for b_1 in inline_keyboard:
+                for b in b_1:
+                    if b.text == callback_data:
+                        b.text = b.text.replace("❌", "✅")
+                        b.callback_data = b.text
+                        IKM2 = InlineKeyboardMarkup(
+                            inline_keyboard
+                        )
+                        await client.edit_message_text(chat_id=chat_id,
+                                                       message_id=mess_id,
+                                                       text=text,
+                                                       reply_markup=IKM2)
+            return test_items, origin_message, message, test_type
+        elif "🪞选项翻转" in callback_data:
+            for b_1 in inline_keyboard:
+                for b in b_1:
+                    if "❌" in b.text:
+                        b.text = b.text.replace("❌", "✅")
+                        b.callback_data = b.text
 
-                elif "✅" in b.text:
-                    b.text = b.text.replace("✅", "❌")
-                    b.callback_data = b.text
-        IKM2 = InlineKeyboardMarkup(
-            inline_keyboard
-        )
-        await client.edit_message_text(chat_id=chat_id,
-                                       message_id=mess_id,
-                                       text=text,
-                                       reply_markup=IKM2)
+                    elif "✅" in b.text:
+                        b.text = b.text.replace("✅", "❌")
+                        b.callback_data = b.text
+            IKM2 = InlineKeyboardMarkup(
+                inline_keyboard
+            )
+            await client.edit_message_text(chat_id=chat_id,
+                                           message_id=mess_id,
+                                           text=text,
+                                           reply_markup=IKM2)
+            return test_items, origin_message, message, test_type
+        elif "御三家(N-Y-D)" in callback_data:
+            test_items.clear()
+            test_items.extend(['HTTP延迟', 'Netflix', 'Youtube', 'Disney+'])
+            message = await client.edit_message_text(chat_id=chat_id,
+                                                     message_id=mess_id,
+                                                     text="⌛正在提交任务~")
+            return test_items, origin_message, message, test_type
+        elif "节点存活率" in callback_data:
+            test_items.clear()
+            test_items.append('HTTP延迟')
+            message = await client.edit_message_text(chat_id=chat_id, message_id=mess_id, text="⌛正在提交任务~")
+            return test_items, origin_message, message, test_type
+        elif "👋点错了，给我取消" in callback_data:
+            message = await client.edit_message_text(chat_id=chat_id,
+                                                     message_id=mess_id,
+                                                     text="❌任务已取消")
+            await asyncio.sleep(10)
+            await message.delete()
+            message = None
+            return test_items, origin_message, message, test_type
+        elif "👌完成设置" in callback_data:
+            test_items = ['HTTP延迟']
+            for b_1 in inline_keyboard:
+                for b in b_1:
+                    if "✅" in b.text:
+                        test_items.append(str(b.text)[1:])
+            message = await client.edit_message_text(chat_id=chat_id,
+                                                     message_id=mess_id,
+                                                     text="⌛正在提交任务~")
+            return test_items, origin_message, message, test_type
+    except RPCError as r:
+        logger.warning(str(r))
+    finally:
         return test_items, origin_message, message, test_type
-    elif "御三家(N-Y-D)" in callback_data:
-        test_items.clear()
-        test_items.extend(['HTTP延迟', 'Netflix', 'Youtube', 'Disney+'])
-        message = await client.edit_message_text(chat_id=chat_id,
-                                                 message_id=mess_id,
-                                                 text="⌛正在提交任务~")
-        return test_items, origin_message, message, test_type
-    elif "节点存活率" in callback_data:
-        test_items.clear()
-        test_items.append('HTTP延迟')
-        message = await client.edit_message_text(chat_id=chat_id, message_id=mess_id, text="⌛正在提交任务~")
-        return test_items, origin_message, message, test_type
-    elif "👋点错了，给我取消" in callback_data:
-        message = await client.edit_message_text(chat_id=chat_id,
-                                                 message_id=mess_id,
-                                                 text="❌任务已取消")
-        await asyncio.sleep(10)
-        await message.delete()
-        message = None
-        return test_items, origin_message, message, test_type
-    elif "👌完成设置" in callback_data:
-        test_items = ['HTTP延迟']
-        for b_1 in inline_keyboard:
-            for b in b_1:
-                if "✅" in b.text:
-                    test_items.append(str(b.text)[1:])
-        message = await client.edit_message_text(chat_id=chat_id,
-                                                 message_id=mess_id,
-                                                 text="⌛正在提交任务~")
-        return test_items, origin_message, message, test_type
-
-    return test_items, origin_message, message, test_type

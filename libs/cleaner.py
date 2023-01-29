@@ -296,6 +296,10 @@ class ConfigManager:
                 yaml.dump(data, fp)
             self.yaml = data
 
+    @property
+    def nospeed(self) -> bool:
+        return bool(self.config.get('nospeed', False))
+
     def getFont(self):
         return self.config.get('font', "./resources/苹方黑体-准-简.ttf")
 

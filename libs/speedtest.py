@@ -10,6 +10,8 @@ import socks
 from aiohttp_socks import ProxyConnector
 from loguru import logger
 from pyrogram.errors import RPCError
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
+
 from libs import cleaner, check, collector, proxys
 from addons import pynat
 
@@ -18,6 +20,7 @@ from addons import pynat
 保留原作者信息
 author: https://github.com/Oreomeow
 """
+break_speed = []
 
 
 # 部分内容已被修改  Some codes has been modified
@@ -103,7 +106,7 @@ async def fetch(self, url: str, host: str, port: int, buffer: int):
     try:
         # logger.info(f"Fetching {url} via {host}:{port}.")
         async with aiohttp.ClientSession(
-                headers={"User-Agent": "curl/11.45.14"},
+                headers={"User-Agent": "FullTclash"},
                 connector=ProxyConnector(host=host, port=port),
                 timeout=aiohttp.ClientTimeout(connect=10),
         ) as session:
@@ -111,11 +114,14 @@ async def fetch(self, url: str, host: str, port: int, buffer: int):
             async with session.get(url) as response:
                 # logger.debug("Awaiting response.")
                 while not self._stopped:
-                    chunk = await response.content.read(buffer)
-                    if not chunk:
-                        logger.info("No chunk, task stopped.")
+                    if not break_speed:
+                        chunk = await response.content.read(buffer)
+                        if not chunk:
+                            logger.info("No chunk, task stopped.")
+                            break
+                        await self.record(len(chunk))
+                    else:
                         break
-                    await self.record(len(chunk))
 
     except Exception as e:
         logger.error(f"Download link error: {str(e)}")
@@ -153,7 +159,7 @@ async def start(
 
 # ----------------------------------------------------------------------------------------------------------------------
 # 以下为 另一部分
-async def batch_speed(message, nodename: list, proxygroup='auto'):
+async def batch_speed(message: Message, nodename: list, proxygroup='auto'):
     info = {}
     progress = 0
     sending_time = 0
@@ -177,16 +183,25 @@ async def batch_speed(message, nodename: list, proxygroup='auto'):
         for i in range(len(test_items)):
             info[test_items[i]].append(res2[i])
 
+        if break_speed:
+            await message.edit_text("❌测速任务已取消")
+            break
         progress += 1
         cal = progress / nodenum * 100
         p_text = "%.2f" % cal
+        IKM = InlineKeyboardMarkup(
+            [
+                [InlineKeyboardButton("👋中止测速", callback_data='stop')],
+            ]
+        )
         # 判断进度条，每隔10%发送一次反馈，有效防止洪水等待(FloodWait)
         if cal >= sending_time:
             sending_time += 10
             try:
+                # 实时反馈进度
                 await message.edit_text("╰(*°▽°*)╯速度测试进行中...\n\n" +
                                         "当前进度:\n" + p_text +
-                                        "%     [" + str(progress) + "/" + str(nodenum) + "]")  # 实时反馈进度
+                                        "%     [" + str(progress) + "/" + str(nodenum) + "]", reply_markup=IKM)
             except RPCError as r:
                 logger.error(r)
     return info
@@ -282,6 +297,7 @@ async def core(message, back_message, start_time, suburl: str = None, **kwargs):
     rtt = check.check_rtt(old_rtt, nodenum)
     print("延迟:", rtt)
     try:
+        break_speed.clear()
         speedinfo = await batch_speed(back_message, nodename)
         info['节点名称'] = nodename
         info['类型'] = nodetype
@@ -294,6 +310,8 @@ async def core(message, back_message, start_time, suburl: str = None, **kwargs):
         info['线程'] = collector.config.config.get('speedthread', 4)
         # 过滤器内容
         info['filter'] = {'include': include_text, 'exclude': exclude_text}
+        if break_speed:
+            info.clear()
         cl1 = cleaner.ConfigManager(configpath=r"./results/{}.yaml".format(start_time.replace(':', '-')), data=info)
         cl1.save(r"./results/{}.yaml".format(start_time.replace(':', '-')))
     except Exception as e:

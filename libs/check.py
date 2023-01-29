@@ -37,7 +37,6 @@ async def check_callback_master(callback_query, USER_TARGET=None, strict: bool =
     master = []
     if USER_TARGET and not strict:
         master.extend(USER_TARGET)
-
     try:
         master.append(callback_query.message.reply_to_message.from_user.id)  # 发起测试任务的用户id
         if int(callback_query.from_user.id) not in master:
@@ -116,7 +115,7 @@ async def check_user(message, USER_TARGET: list, isalert=True):
     try:
         try:
             username = str(message.from_user.username)
-        except Exception as e:
+        except AttributeError:
             pass
             # logger.info("无法获取该目标获取用户名" + str(e))
         if username:
@@ -319,3 +318,5 @@ async def progress(message, prog, *args):
             logger.error(str(r))
     except Exception as e:
         logger.error(str(e))
+
+
