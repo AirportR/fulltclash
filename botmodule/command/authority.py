@@ -106,7 +106,7 @@ async def invite_pass(client: pyrogram.Client, message):
     # temp_queue = asyncio.Queue(maxsize=1)
     ID = str(get_id(message))
     text = str(message.text)
-    timeout_value = 20
+    timeout_value = 60
     if 'testurl' in text or 'analyzeurl' in text or 'speedurl' in text:
         texts = text.split(' ')
         pre_key = texts[1] if len(texts) > 1 else ''
