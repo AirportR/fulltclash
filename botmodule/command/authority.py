@@ -137,7 +137,7 @@ async def invite_pass(client: pyrogram.Client, message):
                 async with timeout(timeout_value):
                     suburl, in_text, ex_text = await temp_queue.get()
             except asyncio.TimeoutError:
-                print(f"验证过期: {key2}:{ID}")
+                logger.info(f"验证过期: {key2}:{ID}")
                 await bot_mes.edit_text(f"❌任务已取消\n\n原因: 接收订阅链接超时")
                 await asyncio.sleep(10)
                 await bot_mes.delete()

@@ -49,7 +49,7 @@ def command_loader(app: Client):
         if await isuser(message, botmodule.init_bot.reloadUser()):
             await botmodule.new(client, message)
 
-    @app.on_message(filters.command(["remove"]) & filters.user(admin), group=2)
+    @app.on_message(filters.command(["remove"]), group=1)
     async def remove(client, message):
         await botmodule.remove(client, message)
 

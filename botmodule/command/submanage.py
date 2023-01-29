@@ -144,14 +144,32 @@ async def new(_, message):
 
 
 async def remove(_, message):
+    ID = get_telegram_id_from_message(message)
     arg = cleaner.ArgCleaner().getall(str(message.text))
+    arg2 = []
+    arg3 = []
     try:
         del arg[0]
+        s_num = 0  # 删除成功数量
+        f_num = 0  # 删除失败数量
         for i in arg:
-            config.removesub(i)
+            subinfo = config.get_sub(i)
+            owner = subinfo.get('owner', '')
+            if await check_user(message, admin, isalert=False) or owner == ID:
+                # 管理员和订阅主人可以删除
+                config.removesub(i)
+                arg2.append(i)
+                s_num += 1
+            else:
+                arg3.append(i)
+                f_num += 1
         config.reload()
         try:
-            await message.reply('移除了{}个订阅: '.format(len(arg)) + str(arg))
+            if f_num:
+                await message.reply(f'成功移除了{s_num}个订阅: \n{str(arg2)}\n\n'
+                                    f'以下有{f_num}个移除失败(名称不符或您不是该订阅的所有者): \n{str(arg3)}')
+            else:
+                await message.reply(f'成功移除了{s_num}个订阅: \n{str(arg2)}\n\n')
         except RPCError as r:
             print(r)
     except IndexError:
