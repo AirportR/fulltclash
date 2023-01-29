@@ -43,10 +43,14 @@ async def fetch_pcr(Collector, session: aiohttp.ClientSession, proxy=None, recon
         logger.warning("公主连结请求发生错误:" + str(c))
         if reconnection != 0:
             await fetch_pcr(Collector, session, proxy=proxy, reconnection=reconnection - 1)
+        else:
+            Collector.info['公主连结'] = "连接错误"
     except asyncio.exceptions.TimeoutError:
         logger.warning("公主连结请求超时，正在重新发送请求......")
         if reconnection != 0:
             await fetch_pcr(Collector, session, proxy=proxy, reconnection=reconnection - 1)
+        else:
+            Collector.info['公主连结'] = "超时"
 
 
 def task(Collector, session, proxy):
