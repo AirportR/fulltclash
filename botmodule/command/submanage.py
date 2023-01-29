@@ -163,6 +163,7 @@ async def remove(_, message):
                     s_num += 1
                 else:
                     f_num += 1
+                    arg3.append(i)
             else:
                 arg3.append(i)
                 f_num += 1
