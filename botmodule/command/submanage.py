@@ -157,9 +157,12 @@ async def remove(_, message):
             owner = subinfo.get('owner', '')
             if await check_user(message, admin, isalert=False) or owner == ID:
                 # 管理员和订阅主人可以删除
-                config.removesub(i)
-                arg2.append(i)
-                s_num += 1
+                if subinfo:
+                    config.removesub(i)
+                    arg2.append(i)
+                    s_num += 1
+                else:
+                    f_num += 1
             else:
                 arg3.append(i)
                 f_num += 1
