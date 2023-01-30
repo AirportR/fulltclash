@@ -49,6 +49,7 @@ class ExportResult:
             self.nodenum = 0
         self.front_size = 30
         self.config = ConfigManager()
+        self.emoji = self.config.config.get('emoji', True)  # 是否启用emoji，若否，则在输出图片时emoji将无法正常显示
         self.color = self.config.getColor()
         self.image_config = self.config.config.get('image', {})
         self.delay_color = self.color.get('delay', [])
@@ -184,17 +185,16 @@ class ExportResult:
         idraw = ImageDraw.Draw(img)
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
-        list1 = [f"{self.title} - 联通性测试", f"版本:{__version__}   ⏱️总共耗时: {wtime}s  过滤器: {self.filter_include} <-> {self.filter_exclude}",
+        list1 = [f"{self.title} - 联通性测试",
+                 f"版本:{__version__}   ⏱总共耗时: {wtime}s  过滤器: {self.filter_include} <-> {self.filter_exclude}",
                  "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time)]
         export_time = export_time.replace(':', '-')
         title = list1[0]
         idraw.text((self.get_mid(0, image_width, title), 5), title, font=fnt, fill=(0, 0, 0))  # 标题
-        # idraw.text((10, image_height - 75), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
-        try:
-            pilmoji.text((10, image_height - 75), text=list1[1], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 3))
-        except Exception as e:
-            logger.error(str(e))
-            idraw.text((10, image_height - 75), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
+        if self.emoji:
+            pilmoji.text((10, image_height - 80), text=list1[1], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 3))
+        else:
+            idraw.text((10, image_height - 80), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
         idraw.text((10, image_height - 35), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
         '''
         :绘制标签
@@ -234,17 +234,17 @@ class ExportResult:
             # 序号
             idraw.text((self.get_mid(0, 100, str(t + 1)), 40 * (t + 2)), text=str(t + 1), font=fnt, fill=(0, 0, 0))
             # 节点名称
-            # idraw.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0))
-            try:
-                # 自定义emoji源可能出错，所以捕捉了异常
-                pilmoji.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
-                             emoji_position_offset=(0, 6))
-            except PIL.UnidentifiedImageError:
-                logger.warning("无效符号:" + self.basedata[t])
-                pilmoji2 = Pilmoji(img, source=Twemoji)
-                pilmoji2.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
-                              emoji_position_offset=(0, 6))
-            except Exception:
+            if self.emoji:
+                try:
+                    # 自定义emoji源可能出错，所以捕捉了异常
+                    pilmoji.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
+                                 emoji_position_offset=(0, 6))
+                except PIL.UnidentifiedImageError:
+                    logger.warning("无效符号:" + self.basedata[t])
+                    pilmoji2 = Pilmoji(img, source=Twemoji)
+                    pilmoji2.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
+                                  emoji_position_offset=(0, 6))
+            else:
                 idraw.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0))
 
             width = 100 + nodename_width
@@ -349,6 +349,7 @@ class ExportTopo(ExportResult):
             self.basedata = self.info.get('地区', [])
         else:
             self.basedata = self.info.get('地区', name)
+        self.emoji = self.config.config.get('emoji', True)  # 是否启用emoji，若否，则在输出图片时emoji将无法正常显示
         self.wtime = self.info.pop('wtime', "未知")
         self.nodenum = len(self.basedata)
         self.front_size = 30
@@ -430,13 +431,16 @@ class ExportTopo(ExportResult):
         idraw = ImageDraw.Draw(img)
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
-        list1 = [f"{self.title} - 节点拓扑分析", "版本:{}     ⏱️总共耗时: {}s".format(__version__, self.wtime),
+        list1 = [f"{self.title} - 节点拓扑分析", "版本:{}     ⏱总共耗时: {}s".format(__version__, self.wtime),
                  "测试时间: {}  测试结果仅供参考".format(export_time)]
         export_time = export_time.replace(':', '-')
         title = list1[0]
         idraw.text((self.get_mid(0, image_width, title), 1), title, font=fnt, fill=(0, 0, 0))  # 标题
-        # idraw.text((10, image_height - 75), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
-        pilmoji.text((10, image_height - 80), text=list1[1], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
+
+        if self.emoji:
+            pilmoji.text((10, image_height - 80), text=list1[1], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
+        else:
+            idraw.text((10, image_height - 80), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
         idraw.text((10, image_height - 40), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
         # 绘制标签
         idraw.text((20, 40), '序号', font=fnt, fill=(0, 0, 0))  # 序号
@@ -502,7 +506,7 @@ class ExportTopo(ExportResult):
         image_height = self.get_height()
         key_list = self.get_key_list()
         img = Image.new("RGB", (image_width, image_height), (255, 255, 255))
-        pilmoji = Pilmoji(img)  # emoji表情修复
+        pilmoji = Pilmoji(img, source=custom_source)  # emoji表情修复
         # 绘制色块
         bkg = Image.new('RGB', (image_width, 80), (234, 234, 234))  # 首尾部填充
         img.paste(bkg, (0, 0))
@@ -510,13 +514,15 @@ class ExportTopo(ExportResult):
         idraw = ImageDraw.Draw(img)
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
-        list1 = ["出口（提示:出口数量顺数即为每个入口对应节点）", "版本:{}     ⏱️总共耗时: {}s".format(__version__, self.wtime),
+        list1 = ["出口（提示:出口数量顺数即为每个入口对应节点）", "版本:{}     ⏱总共耗时: {}s".format(__version__, self.wtime),
                  "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time)]
         export_time = export_time.replace(':', '-')
         title = list1[0]
         idraw.text((self.get_mid(0, image_width, title), 1), title, font=fnt, fill=(0, 0, 0))  # 标题
-        # idraw.text((10, image_height - 75), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
-        pilmoji.text((10, image_height - 80), text=list1[1], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
+        if self.emoji:
+            pilmoji.text((10, image_height - 80), text=list1[1], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
+        else:
+            idraw.text((10, image_height - 80), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
         idraw.text((10, image_height - 40), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
         # 绘制标签
         idraw.text((20, 40), '序号', font=fnt, fill=(0, 0, 0))  # 序号
@@ -541,9 +547,12 @@ class ExportTopo(ExportResult):
                                font=fnt, fill=(0, 0, 0))
                 elif t1 == "节点名称":
                     try:
-                        pilmoji.text((width + 10, (t + 2) * 40),
-                                     self.info[t1][t],
-                                     font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
+                        if self.emoji:
+                            pilmoji.text((width + 10, (t + 2) * 40),
+                                         self.info[t1][t],
+                                         font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
+                        else:
+                            idraw.text((width + 10, (t + 2) * 40), self.info[t1][t], font=fnt, fill=(0, 0, 0))
                     except PIL.UnidentifiedImageError:
                         logger.warning("无效符号:" + self.basedata[t])
                         pilmoji2 = Pilmoji(img, source=Twemoji)
@@ -644,7 +653,7 @@ class ExportSpeed(ExportResult):
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
         list1 = [f"{self.title} - 速度测试",
-                 f"版本:{__version__}     ⏱️总共耗时: {self.wtime}s   消耗流量: {self.traffic}MB   线程: {self.thread}  过滤器: {self.filter_include} <-> {self.filter_exclude}",
+                 f"版本:{__version__}     ⏱总共耗时: {self.wtime}s   消耗流量: {self.traffic}MB   线程: {self.thread}  过滤器: {self.filter_include} <-> {self.filter_exclude}",
                  "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time)]
         export_time = export_time.replace(':', '-')
         title = list1[0]
