@@ -1,6 +1,7 @@
 # 这是一个批量启动clash子进程的脚本
 import subprocess
 import yaml
+from time import sleep
 
 
 class ClashCleaner:
@@ -118,6 +119,7 @@ def start_client(path: str, workpath: str = "./clash", _config: str = './clash/p
     # 启动了一个clash常驻进程
     _command = fr"{path} -f {_config} -d {workpath}"
     subprocess.Popen(_command.split(), encoding="utf-8")
+    sleep(2)
 
 
 def batch_start(portlist: list, proxy_file_path="./clash/proxy.yaml"):
@@ -150,6 +152,7 @@ clash_work_path = config.get_clash_work_path()  # clash工作路径
 command = fr"{clash_path} -f {'./clash/proxy.yaml'} -d {clash_work_path}"
 subp = subprocess.Popen(command.split(), encoding="utf-8")
 corenum = config.config.get('clash', {}).get('core', 1)
+sleep(2)
 batch_start([1124 + i * 2 for i in range(corenum)])
 print("Clash核心进程已启动!")
 while True:
