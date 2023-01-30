@@ -1,8 +1,6 @@
 # 这是一个批量启动clash子进程的脚本
 import subprocess
-from time import sleep
 import yaml
-from loguru import logger
 
 
 class ClashCleaner:
@@ -26,10 +24,10 @@ class ClashCleaner:
         """
         if 'mixed-port' in self.yaml:
             self.yaml['mixed-port'] = int(port)
-            logger.info("配置端口已被改变为：" + str(port))
+            print("配置端口已被改变为：" + str(port))
         elif 'port' in self.yaml:
             self.yaml['port'] = int(port)
-            logger.info("配置端口已被改变为：" + str(port))
+            print("配置端口已被改变为：" + str(port))
 
     def changeClashEC(self, ec: str = '127.0.0.1:1123'):
         """
@@ -37,11 +35,10 @@ class ClashCleaner:
         """
         try:
             self.yaml['external-controller'] = ec
-            logger.info("外部控制地址已被修改为：" + ec)
+            print("外部控制地址已被修改为：" + ec)
         except Exception as e:
-            logger.error(str(e))
+            print(str(e))
 
-    @logger.catch
     def save(self, savePath: str = "./sub.yaml"):
         with open(savePath, "w", encoding="UTF-8") as fp:
             yaml.dump(self.yaml, fp)
@@ -90,7 +87,7 @@ class ConfigManager:
         try:
             return self.config['clash']['workpath']
         except KeyError:
-            logger.warning("获取工作路径失败，将采用默认工作路径 ./clash")
+            print("获取工作路径失败，将采用默认工作路径 ./clash")
             try:
                 d = {'workpath': './clash'}
                 self.yaml['clash'].update(d)
@@ -107,7 +104,7 @@ class ConfigManager:
         try:
             return self.config['clash']['path']
         except KeyError:
-            logger.warning("获取运行路径失败，将采用默认运行路径 ./resources/clash-windows-amd64.exe")
+            print("获取运行路径失败，将采用默认运行路径 ./resources/clash-windows-amd64.exe")
             try:
                 d = {'path': './resources/clash-windows-amd64.exe'}
                 self.yaml['clash'].update(d)
@@ -121,7 +118,6 @@ def start_client(path: str, workpath: str = "./clash", _config: str = './clash/p
     # 启动了一个clash常驻进程
     _command = fr"{path} -f {_config} -d {workpath}"
     subprocess.Popen(_command.split(), encoding="utf-8")
-    sleep(2)
 
 
 def batch_start(portlist: list, proxy_file_path="./clash/proxy.yaml"):
@@ -134,7 +130,7 @@ def batch_start(portlist: list, proxy_file_path="./clash/proxy.yaml"):
 
     ecport = [i + 1 for i in portlist]
     if len(list(set(portlist).intersection(set(ecport)))):
-        logger.error("代理端口组请至少间隔一个数字，如[1124,1126,1128,...]")
+        print("代理端口组请至少间隔一个数字，如[1124,1126,1128,...]")
         raise ValueError("代理端口组请至少间隔一个数字，如[1124,1126,1128,...]")
     for i in range(len(portlist)):
         clashconf = ClashCleaner(proxy_file_path)
@@ -154,9 +150,8 @@ clash_work_path = config.get_clash_work_path()  # clash工作路径
 command = fr"{clash_path} -f {'./clash/proxy.yaml'} -d {clash_work_path}"
 subp = subprocess.Popen(command.split(), encoding="utf-8")
 corenum = config.config.get('clash', {}).get('core', 1)
-sleep(2)
 batch_start([1124 + i * 2 for i in range(corenum)])
-logger.info("Clash核心进程已启动!")
+print("Clash核心进程已启动!")
 while True:
     try:
         pass
