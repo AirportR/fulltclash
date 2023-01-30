@@ -233,14 +233,17 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
     ma.addsub(subname=start_time, subpath='./sub{}.yaml'.format(start_time))
     ma.save('./clash/proxy.yaml')
     # 重载配置文件
-    await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=1123)
+    if not await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=1123):
+        return info
     try:
         if nodenum < len(pool.get('port', [])):
             for i in pool.get('port', [])[:nodenum]:
-                await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=i + 1)
+                if not await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=i + 1):
+                    return info
         else:
             for i in pool.get('port', []):
-                await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=i + 1)
+                if not await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=i + 1):
+                    return info
     except Exception as e:
         logger.error(str(e))
         return info

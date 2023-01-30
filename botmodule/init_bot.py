@@ -1,15 +1,13 @@
-import subprocess
 import sys
 import time
 from loguru import logger
-
-from libs import proxys
 from libs.cleaner import ConfigManager
 
 logger.add("./logs/fulltclash_{time}.log", rotation='7 days')
 config = ConfigManager()
 clash_path = config.get_clash_path()  # 为clash核心运行路径, Windows系统需要加后缀名.exe
 clash_work_path = config.get_clash_work_path()  # clash工作路径
+corenum = config.config.get('clash', {}).get('core', 1)
 admin = config.getAdmin()  # 管理员
 config.add_user(admin)
 config.reload()
@@ -54,14 +52,14 @@ if admin is None:
     sys.exit(1)
 
 
-logger.info("配置已加载, 程序启动中...")
-# 启动了一个clash常驻进程
-command = fr"{clash_path} -f {'./clash/proxy.yaml'} -d {clash_work_path}"
-subp = subprocess.Popen(command.split(), encoding="utf-8")
-time.sleep(2)
-corenum = config.config.get('clash', {}).get('core', 1)
-proxys.batch_start([1124 + i*2 for i in range(corenum)])
-logger.info("程序已启动!")
+logger.info("配置已加载, Telegram bot程序正在运行...")
+# # 启动了一个clash常驻进程
+# command = fr"{clash_path} -f {'./clash/proxy.yaml'} -d {clash_work_path}"
+# subp = subprocess.Popen(command.split(), encoding="utf-8")
+# time.sleep(2)
+
+# proxys.batch_start([1124 + i*2 for i in range(corenum)])
+# logger.info("程序已启动!")
 
 
 def reloadUser():

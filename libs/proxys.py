@@ -7,6 +7,7 @@ from time import sleep
 import aiohttp
 import async_timeout
 import requests
+from aiohttp import ClientConnectorError
 from loguru import logger
 from libs.cleaner import ClashCleaner, config
 
@@ -59,23 +60,29 @@ async def switchProxy(proxyName, proxyGroup, clashHost: str = "127.0.0.1", clash
 
 async def reloadConfig(filePath: str, clashHost: str = "127.0.0.1", clashPort: int = 1123):
     """
-
+    若重载成功返回True，否则为False
     :param filePath: 文件路径,最好是绝对路径，如果是相对路径，则会尝试处理成绝对路径
     :param clashHost:
     :param clashPort:
     :return:
     """
     pwd = os.path.abspath(filePath)
-    print(pwd)
+    # print(pwd)
     url = "http://{}:{}/configs/".format(clashHost, str(clashPort))
     payload = json.dumps({"path": pwd})
     _headers = {'Content-Type': 'application/json'}
     async with aiohttp.ClientSession() as session:
-        async with session.put(url, headers=_headers, timeout=5, data=payload) as r:
-            if r.status == 204:
-                logger.info("切换配置文件成功，当前配置文件路径:" + pwd)
-            else:
-                logger.error("发送错误: 状态码" + str(r.status))
+        try:
+            async with session.put(url, headers=_headers, timeout=5, data=payload) as r:
+                if r.status == 204:
+                    logger.info("切换配置文件成功，当前配置文件路径:" + pwd)
+                    return True
+                else:
+                    logger.error("发送错误: 状态码" + str(r.status))
+                    return False
+        except ClientConnectorError as c:
+            logger.error(str(c))
+            return False
 
 
 def start_client(path: str, workpath: str = "./clash", config: str = './clash/proxy.yaml', ):

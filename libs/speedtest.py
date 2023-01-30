@@ -290,7 +290,8 @@ async def core(message, back_message, start_time, suburl: str = None, **kwargs):
     ma.addsub(subname=start_time, subpath='./sub{}.yaml'.format(start_time))
     ma.save('./clash/proxy.yaml')
     # 重载配置文件
-    await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=1123)
+    if not await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=1123):
+        return info
     logger.info("开始测试延迟...")
     s1 = time.time()
     old_rtt = await collector.delay_providers(providername=start_time)
