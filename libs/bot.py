@@ -51,7 +51,8 @@ def command_loader(app: Client):
 
     @app.on_message(filters.command(["remove"]), group=1)
     async def remove(client, message):
-        await botmodule.remove(client, message)
+        if await isuser(message, botmodule.init_bot.reloadUser()):
+            await botmodule.remove(client, message)
 
     @app.on_message(filters.command(["sub"]), group=1)
     async def sub(client, message):

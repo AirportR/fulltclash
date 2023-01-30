@@ -97,6 +97,7 @@ async def get_url_from_invite(_, message2):
     ID = str(get_id(message2))
     suc_mes = success_message_list.get(ID, None)
     if suc_mes is not None:
+        success_message_list.pop(ID, None)
         if message2.id == (suc_mes.id + 1):
             include_text = ''
             exclude_text = ''
@@ -111,7 +112,6 @@ async def get_url_from_invite(_, message2):
                 await temp_queue.put((url_li, include_text, exclude_text))
             else:
                 await message2.reply("无效的URL")
-            success_message_list.pop(ID, None)
 
 
 async def invite_pass(client: pyrogram.Client, message):
@@ -134,7 +134,7 @@ async def invite_pass(client: pyrogram.Client, message):
         test_type_select = ['HTTP延迟']
         if len(k) > 2:
             if k[2] == 'default':
-                test_type_select.extend(['HTTP延迟', 'Netflix', 'Youtube', 'Disney+', 'Primevideo', 'steam货币', 'Bilibili',
+                test_type_select.extend(['Netflix', 'Youtube', 'Disney+', 'Primevideo', 'steam货币', 'Bilibili',
                                          'Dazn', 'Hbomax', 'Bahamut', 'Abema', '公主连结', 'BBC', 'Myvideo', 'Catchplay',
                                          'Viu', '维基百科', '维基百科(中文)', 'Hulu JP', '赛马娘', '落地IP风险'])
             else:
