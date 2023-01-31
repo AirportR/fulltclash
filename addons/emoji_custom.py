@@ -17,9 +17,7 @@ author: https://github.com/Oreomeow
 class EmojiPediaSource(pilmoji.source.DiscordEmojiSourceMixin):
     """A base source that fetches emojis from emojipedia."""
 
-    BASE_EMOJIPEDIA_URL: ClassVar[
-        str
-    ] = "https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/"
+    BASE_EMOJIPEDIA_URL: ClassVar[str] = "https://em-content.zobj.net/thumbs/120/"
     STYLE: ClassVar[Optional[str]] = None
 
     def get_emoji(self, emoji: str, /) -> Optional[BytesIO]:  # type: ignore
