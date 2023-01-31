@@ -29,7 +29,8 @@ class Speedtest:
         self._config = cleaner.ConfigManager()
         self._stopped = False
         self.speedurl = self.config.get('speedfile',
-                                        "https://dl.google.com/dl/android/studio/install/3.4.1.0/android-studio-ide-183.5522156-windows.exe")
+                                        "https://dl.google.com/dl/android/studio/install/3.4.1.0/" +
+                                        "android-studio-ide-183.5522156-windows.exe")
         self._thread = self.config.get('speedthread', 4)
         self.result = []
         self._total_red = 0
@@ -185,6 +186,8 @@ async def batch_speed(message: Message, nodename: list, proxygroup='auto'):
 
         if break_speed:
             await message.edit_text("❌测速任务已取消")
+            await asyncio.sleep(10)
+            await message.delete(revoke=False)
             break
         progress += 1
         cal = progress / nodenum * 100
@@ -271,6 +274,9 @@ async def core(message, back_message, start_time, suburl: str = None, **kwargs):
     subconfig = await sub.getSubConfig(save_path='./clash/sub{}.yaml'.format(start_time))
     if await check.check_sub(back_message, subconfig):
         return info
+    ma = cleaner.ConfigManager('./clash/proxy.yaml')
+    ma.addsub2provider(subname=start_time, subpath='./sub{}.yaml'.format(start_time))
+    ma.save('./clash/proxy.yaml')
     try:
         # 启动订阅清洗
         with open('./clash/sub{}.yaml'.format(start_time), "r", encoding="UTF-8") as fp:
@@ -286,9 +292,6 @@ async def core(message, back_message, start_time, suburl: str = None, **kwargs):
     # 检查获得的数据
     if await check.check_nodes(back_message, nodenum, (nodename, nodetype,)):
         return info
-    ma = cleaner.ConfigManager('./clash/proxy.yaml')
-    ma.addsub(subname=start_time, subpath='./sub{}.yaml'.format(start_time))
-    ma.save('./clash/proxy.yaml')
     # 重载配置文件
     if not await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=1123):
         return info

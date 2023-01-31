@@ -16,7 +16,7 @@ from addons.emoji_custom import TwitterPediaSource
 2、何为基础数据？
     基础数据决定了生成图片的高度（Height），它是列表，列表里面的数据一般是一组节点名，即有多少个节点就对应了info键值中的长度。
 """
-__version__ = "3.4.6"  # 版本号
+__version__ = "3.4.7"  # 版本号
 custom_source = TwitterPediaSource  # 自定义emoji风格 TwitterPediaSource
 
 
@@ -653,7 +653,8 @@ class ExportSpeed(ExportResult):
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
         list1 = [f"{self.title} - 速度测试",
-                 f"版本:{__version__}     ⏱总共耗时: {self.wtime}s   消耗流量: {self.traffic}MB   线程: {self.thread}  过滤器: {self.filter_include} <-> {self.filter_exclude}",
+                 f"版本:{__version__}     总共耗时: {self.wtime}s   消耗流量: {self.traffic}MB   线程: {self.thread}  \
+                 过滤器: {self.filter_include} <-> {self.filter_exclude}",
                  "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time)]
         export_time = export_time.replace(':', '-')
         title = list1[0]

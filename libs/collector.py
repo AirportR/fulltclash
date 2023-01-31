@@ -171,17 +171,19 @@ class SubCollector(BaseCollector):
         self.subconvertor = config.config.get('subconvertor', {})
         self.cvt_enable = self.subconvertor.get('enable', False)
         self.url = suburl
+        self.include = include
+        self.exclude = exclude
         self.codeurl = quote(suburl, encoding='utf-8')
         self.code_include = quote(include, encoding='utf-8')
         self.code_exclude = quote(exclude, encoding='utf-8')
-        self.host = str(self.subconvertor.get('host', '127.0.0.1:25500'))
-        self.cvt_url = f"http://{self.host}/sub?target=clash&new_name=true&url={self.codeurl}&include={self.code_include}&exclude={self.code_exclude}"
+        self.cvt_host = str(self.subconvertor.get('host', '127.0.0.1:25500'))
+        self.cvt_url = f"http://{self.cvt_host}/sub?target=clash&new_name=true&url={self.codeurl}&include={self.code_include}&exclude={self.code_exclude}"
         self.sub_remote_config = self.subconvertor.get('remoteconfig', '')
         self.config_include = quote(self.subconvertor.get('include', ''), encoding='utf-8')  # 这两个
         self.config_exclude = quote(self.subconvertor.get('exclude', ''), encoding='utf-8')
-        print(f"配置文件过滤,包含：{self.config_include} 排除：{self.config_exclude}")
+        # print(f"配置文件过滤,包含：{self.config_include} 排除：{self.config_exclude}")
         if self.config_include or self.config_exclude:
-            self.cvt_url = f"http://{self.host}/sub?target=clash&new_name=true&url={self.cvt_url}&include={self.code_include}&exclude={self.code_exclude}"
+            self.cvt_url = f"http://{self.cvt_host}/sub?target=clash&new_name=true&url={self.cvt_url}&include={self.code_include}&exclude={self.code_exclude}"
         if self.sub_remote_config:
             self.sub_remote_config = quote(self.sub_remote_config, encoding='utf-8')
             self.cvt_url = self.cvt_url + "&config=" + self.sub_remote_config
@@ -251,7 +253,8 @@ class SubCollector(BaseCollector):
                                     logger.info("获取订阅成功")
                                     break
                                 fd.write(chunk)
-                            return True
+                        return True
+                    return False
         except asyncio.exceptions.TimeoutError:
             logger.info("获取订阅超时")
             return False
@@ -310,13 +313,6 @@ class Collector:
             if len(items):
                 for item in items:
                     i = item.capitalize()
-                    # if i == "Netflix":
-                    #     task1 = asyncio.create_task(self.fetch_ip(session=session, proxy=proxy))
-                    #     self.tasks.append(task1)
-                    #     task2 = asyncio.create_task(self.fetch_ninfo1(session, proxy=proxy))
-                    #     self.tasks.append(task2)
-                    #     task3 = asyncio.create_task(self.fetch_ninfo2(session, proxy=proxy))
-                    #     self.tasks.append(task3) # 旧奈飞测试，已废弃
                     if i == "Youtube":
                         task4 = asyncio.create_task(self.fetch_youtube(session, proxy=proxy))
                         self.tasks.append(task4)

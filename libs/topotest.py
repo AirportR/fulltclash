@@ -99,8 +99,8 @@ async def batch_topo(message, nodename: list, pool: dict, proxygroup='auto'):
         if nodenum % psize != 0:
             logger.info("最后批次: " + str(subbatch + 1))
             for i in range(nodenum % psize):
-                proxys.switchProxy_old(proxyName=nodename[subbatch * psize + i], proxyGroup=proxygroup, clashHost=host[i],
-                                       clashPort=port[i] + 1)
+                proxys.switchProxy_old(proxyName=nodename[subbatch * psize + i], proxyGroup=proxygroup,
+                                       clashHost=host[i], clashPort=port[i] + 1)
             ipcol = collector.IPCollector()
             sub_res = await ipcol.batch(proxyhost=host[:nodenum % psize],
                                         proxyport=port[:nodenum % psize])
@@ -158,6 +158,9 @@ async def core(message, back_message, start_time, suburl: str = None, test_type=
     subconfig = await sub.getSubConfig(save_path='./clash/sub{}.yaml'.format(start_time))
     if await check.check_sub(back_message, subconfig):
         return info1, info2
+    ma = cleaner.ConfigManager('./clash/proxy.yaml')
+    ma.addsub2provider(subname=start_time, subpath='./sub{}.yaml'.format(start_time))
+    ma.save('./clash/proxy.yaml')
     try:
         # 启动订阅清洗
         with open('./clash/sub{}.yaml'.format(start_time), "r", encoding="UTF-8") as fp:
@@ -169,9 +172,6 @@ async def core(message, back_message, start_time, suburl: str = None, test_type=
     # 检查获得的数据
     if await check.check_nodes(back_message, nodenum, ()):
         return info1, info2
-    ma = cleaner.ConfigManager('./clash/proxy.yaml')
-    ma.addsub(subname=start_time, subpath='./sub{}.yaml'.format(start_time))
-    ma.save('./clash/proxy.yaml')
     # 重载配置文件
     if not await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=1123):
         return info1, info2
@@ -260,8 +260,5 @@ if __name__ == "__main__":
 
 
     async def test():
-        a = await batch_topo(['🇺🇸 USA-01-1x', '🇭🇰 HKG-02-1x', '🇭🇰 HKG-03-1x', '🇸🇬 SGP-02-IPLC', '🇸🇬 SGP-01-IPLC'],
-                         {'host': ['127.0.0.1' for _ in range(4)], 'port': [1112, 1114, 1116, 1118]}, 'ETON')
-        print(a)
-
+        pass
     loop.run_until_complete(test())

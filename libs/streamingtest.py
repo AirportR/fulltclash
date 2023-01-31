@@ -214,6 +214,9 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
     subconfig = await sub.getSubConfig(save_path='./clash/sub{}.yaml'.format(start_time))
     if await check.check_sub(back_message, subconfig):
         return info
+    ma = cleaner.ConfigManager('./clash/proxy.yaml')
+    ma.addsub2provider(subname=start_time, subpath='./sub{}.yaml'.format(start_time))
+    ma.save('./clash/proxy.yaml')
     try:
         # 启动订阅清洗
         with open('./clash/sub{}.yaml'.format(start_time), "r", encoding="UTF-8") as fp:
@@ -229,9 +232,6 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
     # 检查获得的数据
     if await check.check_nodes(back_message, nodenum, (nodename, nodetype,)):
         return info
-    ma = cleaner.ConfigManager('./clash/proxy.yaml')
-    ma.addsub(subname=start_time, subpath='./sub{}.yaml'.format(start_time))
-    ma.save('./clash/proxy.yaml')
     # 重载配置文件
     if not await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=1123):
         return info
@@ -259,7 +259,6 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
         info['类型'] = nodetype
         # info['延迟RTT'] = rtt
         test_info = await batch_test_pro(back_message, nodename, rtt, test_items, pool)
-        # test_info = await batch_test(back_message, nodename, rtt, test_items=test_items)
         info.update(test_info)
         info = cleaner.ResultCleaner(info).start()
         # 计算测试消耗时间

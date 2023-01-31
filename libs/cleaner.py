@@ -558,7 +558,7 @@ class ConfigManager:
             logger.error('移出失败')
 
     @logger.catch
-    def delsub(self, subname: str):
+    def delsub2provider(self, subname: str):
         try:
             subinfo = self.yaml['proxy-providers']
             if subinfo is not None:
@@ -572,15 +572,18 @@ class ConfigManager:
             logger.warning("删除失败")
 
     @logger.catch
-    def addsub(self, subname: str, subpath: str):
+    def addsub2provider(self, subname: str, subpath: str, nodefilter: str = ''):
         """
         添加订阅到总文件，如用相对路径，请注意这里的subpath是写入到配置里面的，如果你指定过clash核心的工作目录，则相对位置以clash工作目录为准
+        :param nodefilter: 节点过滤
         :param subname:
         :param subpath:
         :return:
         """
         info = {'type': 'file', 'path': subpath,
                 'health-check': {'enable': True, 'url': 'http://www.gstatic.com/generate_204', 'interval': 600}}
+        if nodefilter:
+            info['filter'] = nodefilter
         self.yaml['proxy-providers'][subname] = info
         if subname not in self.yaml['proxy-groups'][0]['use']:
             self.yaml['proxy-groups'][0]['use'].append(subname)

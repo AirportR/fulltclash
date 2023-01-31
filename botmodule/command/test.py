@@ -40,7 +40,7 @@ async def testurl(_, message: Message, **kwargs):
             stime = export.ExportResult(nodename=None, info=info).exportUnlock()
             # 发送回TG
             await check.check_photo(message, back_message, stime, wtime)
-            ma.delsub(subname=start_time)
+            ma.delsub2provider(subname=start_time)
             ma.save(savePath='./clash/proxy.yaml')
     except RPCError as r:
         logger.error(str(r))
@@ -75,7 +75,7 @@ async def test(_, message: Message):
                 stime = export.ExportResult(nodename=None, info=info).exportUnlock()
                 # 发送回TG
                 await check.check_photo(message, back_message, stime, wtime)
-                ma.delsub(subname=start_time)
+                ma.delsub2provider(subname=start_time)
                 ma.save(savePath='./clash/proxy.yaml')
         else:
             await back_message.edit_text("❌无接受参数，使用方法: /test <订阅名>")
@@ -106,7 +106,7 @@ async def analyzeurl(_, message: Message, test_type="all", **kwargs):
                 wtime = info1.get('wtime', "未知")
                 stime = export.ExportTopo(name=None, info=info1).exportTopoInbound()
                 await check.check_photo(message, back_message, 'Topo' + stime, wtime)
-                ma.delsub(subname=start_time)
+                ma.delsub2provider(subname=start_time)
                 ma.save(savePath='./clash/proxy.yaml')
                 return
             if info2:
@@ -123,7 +123,7 @@ async def analyzeurl(_, message: Message, test_type="all", **kwargs):
                                                                                        img2_width=image_width2)
                 # 发送回TG
                 await check.check_photo(message, back_message, 'Topo' + stime, wtime)
-                ma.delsub(subname=start_time)
+                ma.delsub2provider(subname=start_time)
                 ma.save(savePath='./clash/proxy.yaml')
     except RPCError as r:
         logger.error(str(r))
@@ -159,7 +159,7 @@ async def analyze(_, message: Message, test_type="all"):
                     wtime = info1.get('wtime', "未知")
                     stime = export.ExportTopo(name=None, info=info1).exportTopoInbound()
                     await check.check_photo(message, back_message, 'Topo' + stime, wtime)
-                    ma.delsub(subname=start_time)
+                    ma.delsub2provider(subname=start_time)
                     ma.save(savePath='./clash/proxy.yaml')
                     return
                 if info2:
@@ -175,7 +175,7 @@ async def analyze(_, message: Message, test_type="all"):
                                                                                            img2_width=image_width2)
                     # 发送回TG
                     await check.check_photo(message, back_message, 'Topo' + stime, wtime)
-                    ma.delsub(subname=start_time)
+                    ma.delsub2provider(subname=start_time)
                     ma.save(savePath='./clash/proxy.yaml')
         else:
             await back_message.edit_text("❌无接受参数，使用方法: /analyze <订阅名>")
@@ -207,7 +207,7 @@ async def speedurl(_, message: Message, **kwargs):
     try:
         info = await speedtest.core(message, back_message,
                                     start_time=start_time, suburl=suburl, **kwargs)
-        ma.delsub(subname=start_time)
+        ma.delsub2provider(subname=start_time)
         ma.save(savePath='./clash/proxy.yaml')
         if info:
             wtime = info.get('wtime', "-1")
@@ -245,7 +245,7 @@ async def speed(_, message: Message):
             ma = cleaner.ConfigManager('./clash/proxy.yaml')
             info = await speedtest.core(message, back_message=back_message,
                                         start_time=start_time, suburl=suburl)
-            ma.delsub(subname=start_time)
+            ma.delsub2provider(subname=start_time)
             ma.save(savePath='./clash/proxy.yaml')
             if info:
                 wtime = info.get('wtime', "-1")
