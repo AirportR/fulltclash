@@ -239,7 +239,8 @@ class SubCollector(BaseCollector):
         :return: 获得一个文件: sub.yaml, bool : True or False
         """
         _headers = {'User-Agent': 'clash'}
-        suburl = self.cvt_url if self.cvt_enable else self.url
+        # suburl = self.cvt_url if self.cvt_enable else self.url
+        suburl = self.url
         cvt_text = r"subconvertor状态: {}".format("已启用" if self.cvt_enable else "未启用")
         logger.info(cvt_text)
         try:

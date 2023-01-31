@@ -9,12 +9,11 @@ class IPCleaner:
         self._data = data
         self.style = config.config.get('geoip-api', 'ip-api.com')
 
-    def get(self, key):
+    def get(self, key, _default=None):
         try:
             return self._data[key]
-        except KeyError as k:
-            logger.error(str(k))
-            return None
+        except KeyError:
+            return _default
         except TypeError:
             # logger.warning("无法获取对应信息: " + str(key))
             return None
@@ -75,21 +74,19 @@ class IPCleaner:
             return ""
 
     def get_asn(self):
-        asn = ""
-        try:
-            if self.style == "ip-api.com":
-                asn = self.get('as').split(' ')[0]
-            elif self.style == "ip.sb":
-                asn = self.get('asn')
-            else:
-                pass
-            if asn:
+        if self.style == "ip-api.com":
+            try:
+                asn = self.get('as', '0').split(' ')[0]
                 return asn
-            else:
-                return "0"
-        except Exception as e:
-            # logger.warning(str(e))
-            return "0"
+            except AttributeError:
+                return '0'
+            except IndexError:
+                return '0'
+        elif self.style == "ip.sb":
+            asn = self.get('asn', '0')
+            return asn
+        else:
+            return ''
 
 
 class ClashCleaner:
@@ -97,15 +94,18 @@ class ClashCleaner:
     yaml配置清洗
     """
 
-    def __init__(self, config):
+    def __init__(self, _config):
         """
-        :param config: 传入一个文件对象，或者一个字符串,文件对象需指向 yaml/yml 后缀文件
+        :param _config: 传入一个文件对象，或者一个字符串,文件对象需指向 yaml/yml 后缀文件
         """
-        if type(config).__name__ == 'str':
-            with open(config, 'r', encoding="UTF-8") as fp:
+        self.path = ''
+        self.yaml = {}
+        if type(_config).__name__ == 'str':
+            with open(_config, 'r', encoding="UTF-8") as fp:
                 self.yaml = yaml.load(fp, Loader=yaml.FullLoader)
+            self.path = _config
         else:
-            self.yaml = yaml.load(config, Loader=yaml.FullLoader)
+            self.yaml = yaml.load(_config, Loader=yaml.FullLoader)
 
     def getProxies(self):
         """
@@ -132,7 +132,7 @@ class ClashCleaner:
             logger.warning("读取节点信息失败！")
             return 0
 
-    def nodesName(self):
+    def nodesName(self, _filter: str = ''):
         """
         获取节点名
         :return: list
@@ -142,6 +142,9 @@ class ClashCleaner:
             for i in self.yaml['proxies']:
                 lis.append(i['name'])
             return lis
+        except KeyError:
+            logger.warning("读取节点信息失败！")
+            return None
         except TypeError:
             logger.warning("读取节点信息失败！")
             return None
@@ -253,6 +256,64 @@ class ClashCleaner:
         """
         self.yaml['mode'] = mode
         logger.info("Clash 模式已被修改为:" + self.yaml['mode'])
+
+    def node_filter(self, include: str = '', exclude: str = ''):
+        """
+        节点过滤
+        :param include: 包含
+        :param exclude: 排除
+        :return:
+        """
+        result = []
+        result2 = []
+        nodelist = self.getProxies()
+        pattern1 = pattern2 = None
+        try:
+            if include:
+                pattern1 = re.compile(include)
+            if exclude:
+                pattern2 = re.compile(exclude)
+        except re.error:
+            logger.error("正则错误！请检查正则表达式！")
+            return self.nodesName()
+        except Exception as e:
+            logger.error(e)
+            return self.nodesName()
+        if pattern1 is None:
+            result = nodelist
+        else:
+            for node in nodelist:
+                try:
+                    r = pattern1.findall(node.get('name', ''))
+                    if r:
+                        logger.info("包含过滤器已命中:" + str(node.get('name', '')))
+                        result.append(node)
+                except re.error as rerror:
+                    logger.error(str(rerror))
+                    result.append(node)
+                except Exception as e:
+                    logger.error(str(e))
+                    result.append(node)
+        jishu1 = len(result)
+        jishu2 = 0
+        if pattern2 is None:
+            result2 = result
+        else:
+            for node in result:
+                try:
+                    r = pattern2.findall(node.get('name', ''))
+                    if r:
+                        logger.info("排除过滤器已命中: " + str(node.get('name', '')))
+                        jishu2 += 1
+                    else:
+                        result2.append(node)
+                except re.error as rerror:
+                    logger.error(str(rerror))
+                except Exception as e:
+                    logger.error(str(e))
+        logger.info(f"Included {jishu1} node(s)  Excluded {jishu2} node(s)  Exported {jishu1-jishu2} node(s)")
+        self.yaml['proxies'] = result2
+        self.save(savePath=self.path)
 
     @logger.catch
     def save(self, savePath: str = "./sub.yaml"):
@@ -866,7 +927,7 @@ class ArgCleaner:
 def geturl(string: str):
     text = string
     pattern = re.compile(
-        r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+")  # 匹配订阅地址
+        r"https?://(?:[a-zA-Z]|\d|[$-_@.&+]|[!*,]|(?:%[\da-fA-F][\da-fA-F]))+")  # 匹配订阅地址
     # 获取订阅地址
     try:
         url = pattern.findall(text)[0]  # 列表中第一个项为订阅地址

@@ -274,16 +274,13 @@ async def core(message, back_message, start_time, suburl: str = None, **kwargs):
     subconfig = await sub.getSubConfig(save_path='./clash/sub{}.yaml'.format(start_time))
     if await check.check_sub(back_message, subconfig):
         return info
-    ma = cleaner.ConfigManager('./clash/proxy.yaml')
-    ma.addsub2provider(subname=start_time, subpath='./sub{}.yaml'.format(start_time))
-    ma.save('./clash/proxy.yaml')
     try:
         # 启动订阅清洗
-        with open('./clash/sub{}.yaml'.format(start_time), "r", encoding="UTF-8") as fp:
-            cl = cleaner.ClashCleaner(fp)
-            nodenum = cl.nodesCount()
-            nodename = cl.nodesName()
-            nodetype = cl.nodesType()
+        cl = cleaner.ClashCleaner('./clash/sub{}.yaml'.format(start_time))
+        cl.node_filter(include_text, exclude_text)
+        nodenum = cl.nodesCount()
+        nodename = cl.nodesName()
+        nodetype = cl.nodesType()
     except Exception as e:
         logger.error(e)
         nodenum = 0
@@ -292,6 +289,9 @@ async def core(message, back_message, start_time, suburl: str = None, **kwargs):
     # 检查获得的数据
     if await check.check_nodes(back_message, nodenum, (nodename, nodetype,)):
         return info
+    ma = cleaner.ConfigManager('./clash/proxy.yaml')
+    ma.addsub2provider(subname=start_time, subpath='./sub{}.yaml'.format(start_time))
+    ma.save('./clash/proxy.yaml')
     # 重载配置文件
     if not await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=1123):
         return info
