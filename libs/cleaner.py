@@ -311,7 +311,7 @@ class ClashCleaner:
                     logger.error(str(rerror))
                 except Exception as e:
                     logger.error(str(e))
-        logger.info(f"Included {jishu1} node(s)  Excluded {jishu2} node(s)  Exported {jishu1-jishu2} node(s)")
+        logger.info(f"Included {jishu1} node(s)  Excluded {jishu2} node(s)  Exported {jishu1 - jishu2} node(s)")
         self.yaml['proxies'] = result2
         self.save(savePath=self.path)
 
@@ -927,7 +927,7 @@ class ArgCleaner:
 def geturl(string: str):
     text = string
     pattern = re.compile(
-        r"https?://(?:[a-zA-Z]|\d|[$-_@.&+]|[!*,]|(?:%[\da-fA-F][\da-fA-F]))+")  # 匹配订阅地址
+        r"https?://(?:[a-zA-Z]|\d|[$-_@.&+]|[!*,]|(?:%[\da-fA-F][\da-fA-F])|[\w\u4e00-\u9fa5])+")  # 匹配订阅地址
     # 获取订阅地址
     try:
         url = pattern.findall(text)[0]  # 列表中第一个项为订阅地址
@@ -1013,3 +1013,71 @@ def batch_domain2ip(host: list):
             else:
                 ipaddrs.append("N/A")
     return ipaddrs
+
+
+def get_airport_info(text: str = None):
+    """
+    过去特定格式的信息
+    :return:
+    """
+    jcid = jcname = jctime = jcurl = jcgroup = jccomment = jcchannel = jcowner = ''
+    try:
+        a = text if text is not None else ''
+        b = a.split('\n')
+        p1 = re.search('[序编]?号[:：]?.*(\d)+', a)
+        if p1 is not None:
+            jcid = p1.group()
+        b.pop(0)
+        prename = b.pop(0) if len(b) else ''
+        names = prename.split(' ')
+        for n in names:
+            if n:
+                if n[0] == '#':
+                    jcname += n[1:] + ' '
+                else:
+                    jcname += n + ' '
+        prename = re.search("名称[:：]?.*", a)
+        if prename is not None:
+            jcname = prename.group()[3:]
+        timepattern = re.compile(r"时间[:：].?(\d+\W\d+\W\d+)")
+        pretime = timepattern.search(a)
+        if pretime is not None:
+            jctime = pretime.group()[3:]
+        preurl = re.search("官网[:：].*", a)
+        if preurl is not None:
+            jcurl = preurl.group()[3:]
+        pretgg1 = re.search("群组[:：].*@\w+", a)
+        if pretgg1 is not None:
+            jcgroup = pretgg1.group()[3:]
+        else:
+            pretgg2 = re.search("群组[:：].*", a)
+            if pretgg2 is not None:
+                jcgroup = pretgg2.group()[3:]
+        pretgc1 = re.search("频道[:：].*@\w+", a)
+        if pretgc1 is not None:
+            jcchannel = pretgc1.group()[3:]
+        else:
+            pretgc2 = re.search("频道[:：].*", a)
+            if pretgc2 is not None:
+                jcchannel = pretgc2.group()[3:]
+        commentp = re.compile("[说明|简要介绍|备注][:：]?.*")
+        pre_comment = commentp.search(a)
+        if pre_comment is not None:
+            t = pre_comment.group()
+            index1 = t.find(':')
+            index2 = t.find('：')
+            if index1 > 0:
+                jccomment = t[index1 + 1:]
+            elif index2 > 0:
+                jccomment = t[index2 + 1:]
+        # print(jcid)
+        # print(jcname)
+        # print(jctime)
+        # print(jcurl)
+        # print(jcgroup)
+        # print(jcchannel)
+        # print(jccomment)
+        return jcid, jcname, jctime, jcurl, jcgroup, jcchannel, jccomment, jcowner
+    except Exception as e:
+        logger.error(str(e))
+        return jcid, jcname, jctime, jcurl, jcgroup, jcchannel, jccomment, jcowner

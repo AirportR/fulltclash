@@ -318,5 +318,3 @@ async def progress(message, prog, *args):
             logger.error(str(r))
     except Exception as e:
         logger.error(str(e))
-
-

@@ -150,6 +150,11 @@ def command_loader(app: Client):
 def callback_loader(app: Client):
     @app.on_callback_query()
     async def settings_test(client, callback_query):
+        if callback_query.data == "blank":
+            return
+        elif "page" in callback_query.data:
+            await botmodule.select_page(client, callback_query, page=int(str(callback_query.data)[4:]))
+            return
         if await check_callback_master(callback_query, botmodule.init_bot.reloadUser()):
             return
         test_items, origin_message, message, test_type = await botmodule.test_setting(client, callback_query)

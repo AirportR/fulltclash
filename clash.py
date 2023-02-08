@@ -155,8 +155,7 @@ corenum = config.config.get('clash', {}).get('core', 1)
 sleep(2)
 batch_start([1124 + i * 2 for i in range(corenum)])
 print("Clash核心进程已启动!")
-while True:
-    try:
-        pass
-    except KeyboardInterrupt:
-        exit()
+try:
+    subp.wait()
+except KeyboardInterrupt:
+    exit()

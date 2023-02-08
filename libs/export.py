@@ -186,11 +186,11 @@ class ExportResult:
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
         list1 = [f"{self.title} - 联通性测试",
-                 f"版本:{__version__}   ⏱总共耗时: {wtime}s  过滤器: {self.filter_include} <-> {self.filter_exclude}",
+                 f"版本:{__version__}   总共耗时: {wtime}s  过滤器: {self.filter_include} <-> {self.filter_exclude}",
                  "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time)]
         export_time = export_time.replace(':', '-')
         title = list1[0]
-        idraw.text((self.get_mid(0, image_width, title), 5), title, font=fnt, fill=(0, 0, 0))  # 标题
+        idraw.text((self.get_mid(0, image_width, title), 3), title, font=fnt, fill=(0, 0, 0))  # 标题
         if self.emoji:
             pilmoji.text((10, image_height - 80), text=list1[1], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 3))
         else:
@@ -431,7 +431,7 @@ class ExportTopo(ExportResult):
         idraw = ImageDraw.Draw(img)
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
-        list1 = [f"{self.title} - 节点拓扑分析", "版本:{}     ⏱总共耗时: {}s".format(__version__, self.wtime),
+        list1 = [f"{self.title} - 节点拓扑分析", "版本:{}   总共耗时: {}s".format(__version__, self.wtime),
                  "测试时间: {}  测试结果仅供参考".format(export_time)]
         export_time = export_time.replace(':', '-')
         title = list1[0]
@@ -514,7 +514,7 @@ class ExportTopo(ExportResult):
         idraw = ImageDraw.Draw(img)
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
-        list1 = ["出口（提示:出口数量顺数即为每个入口对应节点）", "版本:{}     ⏱总共耗时: {}s".format(__version__, self.wtime),
+        list1 = ["出口（提示:出口数量顺数即为每个入口对应节点）", "版本:{}  总共耗时: {}s".format(__version__, self.wtime),
                  "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time)]
         export_time = export_time.replace(':', '-')
         title = list1[0]
@@ -653,7 +653,7 @@ class ExportSpeed(ExportResult):
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
         list1 = [f"{self.title} - 速度测试",
-                 f"版本:{__version__}     总共耗时: {self.wtime}s   消耗流量: {self.traffic}MB   线程: {self.thread}  \
+                 f"版本:{__version__}    总共耗时: {self.wtime}s   消耗流量: {self.traffic}MB   线程: {self.thread}  \
                  过滤器: {self.filter_include} <-> {self.filter_exclude}",
                  "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time)]
         export_time = export_time.replace(':', '-')
