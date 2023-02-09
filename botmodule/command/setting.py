@@ -3,7 +3,7 @@ from copy import deepcopy
 from loguru import logger
 from pyrogram import types, Client
 from pyrogram.errors import RPCError
-from pyrogram.types import BotCommand, CallbackQuery
+from pyrogram.types import BotCommand, CallbackQuery, Message
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from addons.unlockTest.hbomax import b9
 from addons.unlockTest.bahamut import b10
@@ -33,28 +33,26 @@ b_cancel = InlineKeyboardButton("👋点错了，给我取消", callback_data='�
 b_alive = InlineKeyboardButton("节点存活率", callback_data="节点存活率")
 b_okpage = InlineKeyboardButton("🔒锁定本页设置", callback_data="ok_p")
 b_all = InlineKeyboardButton("全测", callback_data="全测")
-
+b_origin = InlineKeyboardButton("♾️订阅原序", callback_data="sort:订阅原序")
+b_rhttp = InlineKeyboardButton("⬇️HTTP倒序", callback_data="sort:HTTP倒序")
+b_http = InlineKeyboardButton("⬆️HTTP升序", callback_data="sort:HTTP升序")
 buttons = [b1, b2, b3, b4, b15, b18, b20, b21, b19, b14, b5, b16, b17, b9, b13, b10, b12, b22, b23,
            b24]  # 全部测试项按钮
 max_page_g = int(len(buttons) / 9) + 1
 blank_g = InlineKeyboardButton(f"{1}/{max_page_g}", callback_data=f"blank")
 next_page_g = InlineKeyboardButton("➡️下一页", callback_data=f"page{2}")
-IKM = InlineKeyboardMarkup(
+
+IKM2 = InlineKeyboardMarkup(
     [
         # 第一行
-        [b_okpage],
-        [b1, b2, b3],
-        # 第二行
-        [b4, b15, b18],
-        [b20, b21, b19],
-        [b_all, blank_g, next_page_g],
-        [yusanjia, b_alive],
-        [b_cancel, b_reverse],
-        [ok_b]
+        [b_origin],
+        [b_rhttp, b_http],
+        [b_cancel, ]
     ]
 )
 select_item_cache = {}
 page_is_locked = {}
+sort_cache = {}
 
 
 async def setcommands(client):
@@ -290,3 +288,30 @@ async def select_page(client: Client, call: CallbackQuery, **kwargs):
             keyboard.append([ok_b])
             new_ikm = InlineKeyboardMarkup(keyboard)
     await client.edit_message_text(chat_id, mess_id, "请选择想要启用的测试项: ", reply_markup=new_ikm)
+
+
+def get_sort_str(message: Message):
+    k = str(message.chat.id) + ":" + str(message.id)
+    return sort_cache.pop(k, "订阅原序")
+
+
+async def select_sort(app: Client, call: CallbackQuery):
+    IKM = InlineKeyboardMarkup(
+        [
+            # 第一行
+            [b_okpage],
+            [b1, b2, b3],
+            # 第二行
+            [b4, b15, b18],
+            [b20, b21, b19],
+            [b_all, blank_g, next_page_g],
+            [yusanjia, b_alive],
+            [b_cancel, b_reverse],
+            [ok_b]
+        ]
+    )
+    sort_str = str(call.data)[5:]
+    chat_id = call.message.chat.id
+    mess_id = call.message.id
+    sort_cache[str(chat_id) + ":" + str(mess_id)] = sort_str
+    await app.edit_message_text(chat_id, mess_id, "请选择想要启用的测试项: ", reply_markup=IKM)

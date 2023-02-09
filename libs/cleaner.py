@@ -362,7 +362,7 @@ class ConfigManager:
         return bool(self.config.get('nospeed', False))
 
     def getFont(self):
-        return self.config.get('font', "./resources/苹方黑体-准-简.ttf")
+        return self.config.get('font', "./resources/阿里巴巴普惠体-Regular.ttf")
 
     def getColor(self):
         return self.config.get('image', {}).get('color', {})
@@ -873,7 +873,7 @@ class ResultCleaner:
     def __init__(self, info: dict):
         self.data = info
 
-    def start(self):
+    def start(self, sort="订阅原序"):
         try:
             if '类型' in self.data:
                 type1 = self.data['类型']
@@ -886,15 +886,46 @@ class ResultCleaner:
                     else:
                         new_type.append(t.capitalize())
                 self.data['类型'] = new_type
+            if sort == "HTTP倒序":
+                self.sort_by_ping(reverse=True)
+            elif sort == "HTTP升序":
+                self.sort_by_ping()
             if '延迟RTT' in self.data:
                 rtt = self.data['延迟RTT']
                 new_rtt = []
                 for r in rtt:
                     new_rtt.append(str(r) + 'ms')
                 self.data['延迟RTT'] = new_rtt
+            if 'HTTP延迟' in self.data:
+                rtt = self.data['HTTP延迟']
+                new_rtt = []
+                for r in rtt:
+                    new_rtt.append(str(r) + 'ms')
+                self.data['HTTP延迟'] = new_rtt
             return self.data
         except TypeError:
             return {}
+
+    def sort_by_ping(self, reverse=False):
+        new_list = [self.data.get('HTTP延迟'), self.data.get('节点名称'), self.data.get('类型')]
+        for k, v in self.data.items():
+            if k == "HTTP延迟" or k == "节点名称" or k == "类型":
+                continue
+            new_list.append(v)
+        lists = zip(*new_list)
+        lists = sorted(lists, key=lambda x: x[0], reverse=reverse)
+        lists = zip(*lists)
+        new_list = [list(l_) for l_ in lists]
+        if len(new_list) > 2:
+            self.data['HTTP延迟'] = new_list[0]
+            self.data['节点名称'] = new_list[1]
+            self.data['类型'] = new_list[2]
+            num = -1
+            for k in self.data.keys():
+                num += 1
+                if k == "HTTP延迟" or k == "节点名称" or k == "类型":
+                    continue
+                self.data[k] = new_list[num]
 
 
 class ArgCleaner:

@@ -755,6 +755,7 @@ async def delay_https_task(collector=None, session: aiohttp.ClientSession = None
             http_delay = sum(sum_num) / len(sum_num) if len(sum_num) else 0
             http_delay = "%.0fms" % (http_delay * 1000)
             # print("http平均延迟:", http_delay)
+            http_delay = int(http_delay[:-2])
             if collector is not None:
                 collector.info['HTTP延迟'] = http_delay
             return http_delay
@@ -764,6 +765,7 @@ async def delay_https_task(collector=None, session: aiohttp.ClientSession = None
         sum_num = [r for r in result if r != 0]
         http_delay = sum(sum_num) / len(sum_num) if len(sum_num) else 0
         http_delay = "%.0fms" % (http_delay * 1000)
+        http_delay = int(http_delay[:-2])
         # print("http平均延迟:", http_delay)
         if collector is not None:
             collector.info['HTTP延迟'] = http_delay

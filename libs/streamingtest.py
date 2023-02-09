@@ -260,10 +260,13 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
         # info['延迟RTT'] = rtt
         test_info = await batch_test_pro(back_message, nodename, rtt, test_items, pool)
         info.update(test_info)
-        info = cleaner.ResultCleaner(info).start()
+        sort = kwargs.get('sort', "订阅原序")
+        logger.info("排序："+sort)
+        info = cleaner.ResultCleaner(info).start(sort=sort)
         # 计算测试消耗时间
         wtime = "%.1f" % float(time.time() - s1)
         info['wtime'] = wtime
+        info['sort'] = sort
         # 过滤器内容
         info['filter'] = {'include': include_text, 'exclude': exclude_text}
         # 保存结果

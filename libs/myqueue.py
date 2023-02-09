@@ -25,7 +25,7 @@ async def bot_task_queue(client: Client, message, task_type: str, qu: asyncio.Qu
     ex_text = kwargs.get('exclude_text', '')
     suburl = kwargs.get('url', None)
     if "test" in task_type and "url" not in task_type:
-        await botmodule.test(client, message)
+        await botmodule.test(client, message, **kwargs)
     elif "testurl" in task_type:
         await botmodule.testurl(client, message, **kwargs)
     elif "analyze" in task_type and "url" not in task_type:

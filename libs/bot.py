@@ -25,7 +25,12 @@ def command_loader(app: Client):
     @app.on_message(filters.command(["testurl"]), group=1)
     async def testurl(_, message):
         if await isuser(message, botmodule.init_bot.reloadUser()):
-            await message.reply("请选择想要启用的测试项:", reply_markup=botmodule.IKM, quote=True)
+            await message.reply("请选择排序方式:", reply_markup=botmodule.IKM2, quote=True)
+
+    @app.on_message(filters.command(["test"]), group=1)
+    async def test(_, message):
+        if await isuser(message, botmodule.init_bot.reloadUser()):
+            await message.reply("请选择排序方式:", reply_markup=botmodule.IKM2, quote=True)
 
     @app.on_message(filters.command(["invite"]), group=1)
     async def invite(client, message):
@@ -58,12 +63,6 @@ def command_loader(app: Client):
     async def sub(client, message):
         if await isuser(message, botmodule.init_bot.reloadUser()):
             await botmodule.sub(client, message)
-
-    @app.on_message(filters.command(["test"]), group=1)
-    async def test(_, message):
-        if await isuser(message, botmodule.init_bot.reloadUser()):
-            await message.reply("请选择想要启用的测试项:", reply_markup=botmodule.IKM, quote=True)
-            # await bot_put(client, message, "test")
 
     @app.on_message(filters.command(["help"]), group=0)
     async def help_and_start(client, message):
@@ -150,18 +149,22 @@ def command_loader(app: Client):
 def callback_loader(app: Client):
     @app.on_callback_query()
     async def settings_test(client, callback_query):
+        if await check_callback_master(callback_query, botmodule.init_bot.reloadUser()):
+            return
         if callback_query.data == "blank":
             return
         elif "page" in callback_query.data:
             await botmodule.select_page(client, callback_query, page=int(str(callback_query.data)[4:]))
             return
-        if await check_callback_master(callback_query, botmodule.init_bot.reloadUser()):
+        elif "sort" in callback_query.data:
+            await botmodule.select_sort(client, callback_query)
             return
         test_items, origin_message, message, test_type = await botmodule.test_setting(client, callback_query)
         if message:
+            sort_str = botmodule.get_sort_str(message)
             await asyncio.sleep(3)
             await message.delete()
-            await bot_put(client, origin_message, test_type, test_items)
+            await bot_put(client, origin_message, test_type, test_items, sort=sort_str)
 
     @app.on_callback_query(filters=dynamic_data_filter('stop'), group=1)
     async def invite_test(_, callback_query):

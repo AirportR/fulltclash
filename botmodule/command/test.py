@@ -52,7 +52,7 @@ async def testurl(_, message: Message, **kwargs):
 
 
 @logger.catch()
-async def test(_, message: Message):
+async def test(_, message: Message, **kwargs):
     back_message = await message.reply("╰(*°▽°*)╯联通性测试进行中...")  # 发送提示
     arg = cleaner.ArgCleaner().getall(str(message.text))
     del arg[0]
@@ -68,7 +68,7 @@ async def test(_, message: Message):
             start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
             ma = cleaner.ConfigManager('./clash/proxy.yaml')
             info = await streamingtest.core(message, back_message=back_message,
-                                            start_time=start_time, suburl=suburl, thread=coresum)
+                                            start_time=start_time, suburl=suburl, thread=coresum, **kwargs)
             if info:
                 wtime = info.get('wtime', "-1")
                 # 生成图片

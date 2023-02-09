@@ -43,6 +43,7 @@ class ExportResult:
         self.filter = self.info.pop('filter', {})
         self.filter_include = self.filter.get('include', '')
         self.filter_exclude = self.filter.get('exclude', '')
+        self.sort = self.info.pop('sort', '订阅原序')
         if self.basedata:
             self.nodenum = len(self.basedata)
         else:
@@ -186,7 +187,8 @@ class ExportResult:
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
         list1 = [f"{self.title} - 联通性测试",
-                 f"版本:{__version__}   总共耗时: {wtime}s  过滤器: {self.filter_include} <-> {self.filter_exclude}",
+                 f"版本:{__version__}   总共耗时: {wtime}s  排序: {self.sort}   " +
+                 f"过滤器: {self.filter_include} <-> {self.filter_exclude}",
                  "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time)]
         export_time = export_time.replace(':', '-')
         title = list1[0]
