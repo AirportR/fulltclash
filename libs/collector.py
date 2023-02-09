@@ -374,6 +374,9 @@ class Collector:
                     elif item == "Hulu JP":
                         from addons.unlockTest import hulujp
                         self.tasks.append(hulujp.task(self, session, proxy=proxy))
+                    elif item == "OpenAI":
+                        from addons.unlockTest import openai
+                        self.tasks.append(openai.task(self, session, proxy=proxy))
                     else:
                         pass
             return self.tasks

@@ -739,6 +739,9 @@ class ReCleaner:
                 elif item == "Hulu JP":
                     from addons.unlockTest import hulujp
                     info['Hulu jp'] = hulujp.get_hulujp_info(self)
+                elif item == "OpenAI":
+                    from addons.unlockTest import openai
+                    info['Openai'] = openai.get_openai_info(self)
                 else:
                     pass
         except Exception as e:

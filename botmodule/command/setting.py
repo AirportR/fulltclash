@@ -20,6 +20,7 @@ from addons.unlockTest.wikipedia import button as b21
 from addons.unlockTest.umajp import button as b22
 from addons.unlockTest.hulujp import button as b23
 from addons.unlockTest.wikipedia_zh import button as b24
+from addons.unlockTest.openai import button as b25
 
 b1 = InlineKeyboardButton("✅Netflix", callback_data='✅Netflix')
 b2 = InlineKeyboardButton("✅Youtube", callback_data='✅Youtube')
@@ -36,8 +37,8 @@ b_all = InlineKeyboardButton("全测", callback_data="全测")
 b_origin = InlineKeyboardButton("♾️订阅原序", callback_data="sort:订阅原序")
 b_rhttp = InlineKeyboardButton("⬇️HTTP倒序", callback_data="sort:HTTP倒序")
 b_http = InlineKeyboardButton("⬆️HTTP升序", callback_data="sort:HTTP升序")
-buttons = [b1, b2, b3, b4, b15, b18, b20, b21, b19, b14, b5, b16, b17, b9, b13, b10, b12, b22, b23,
-           b24]  # 全部测试项按钮
+buttons = [b1, b2, b3, b25, b15, b18, b20, b21, b19, b14, b5, b16, b17, b9, b13, b10, b12, b22, b23,
+           b24, b4]  # 全部测试项按钮
 max_page_g = int(len(buttons) / 9) + 1
 blank_g = InlineKeyboardButton(f"{1}/{max_page_g}", callback_data=f"blank")
 next_page_g = InlineKeyboardButton("➡️下一页", callback_data=f"page{2}")
@@ -302,8 +303,8 @@ async def select_sort(app: Client, call: CallbackQuery):
             [b_okpage],
             [b1, b2, b3],
             # 第二行
-            [b4, b15, b18],
-            [b20, b21, b19],
+            [b20, b15, b18],
+            [b25, b21, b19],
             [b_all, blank_g, next_page_g],
             [yusanjia, b_alive],
             [b_cancel, b_reverse],
