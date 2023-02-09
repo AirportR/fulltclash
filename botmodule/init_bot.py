@@ -1,8 +1,27 @@
+import os
 import sys
 import time
 from loguru import logger
 from libs.cleaner import ConfigManager
 
+
+def check_init():
+    dirs = os.listdir()
+    if "clash" in dirs and "logs" in dirs and "results" in dirs:
+        return
+    logger.info("检测到初次使用，正在初始化...")
+    if not os.path.isdir('clash'):
+        os.mkdir("clash")
+        logger.info("创建文件夹: clash 用于保存订阅")
+    if not os.path.isdir('logs'):
+        os.mkdir("logs")
+        logger.info("创建文件夹: logs 用于保存日志")
+    if not os.path.isdir('results'):
+        os.mkdir("results")
+        logger.info("创建文件夹: results 用于保存测试结果")
+
+
+check_init()
 logger.add("./logs/fulltclash_{time}.log", rotation='7 days')
 config = ConfigManager()
 clash_path = config.get_clash_path()  # 为clash核心运行路径, Windows系统需要加后缀名.exe
@@ -51,8 +70,9 @@ if admin is None:
     time.sleep(5)
     sys.exit(1)
 
-
 logger.info("配置已加载, Telegram bot程序正在运行...")
+
+
 # # 启动了一个clash常驻进程
 # command = fr"{clash_path} -f {'./clash/proxy.yaml'} -d {clash_work_path}"
 # subp = subprocess.Popen(command.split(), encoding="utf-8")
