@@ -56,9 +56,9 @@ async def fetch_openai(Collector, session: aiohttp.ClientSession, proxy=None, re
                 if index2 > 0:
                     region = text2[index2+4:index2+6]
                     if region in SUPPORT_REGION:
-                        Collector.info['OpenAI'] = f"解锁{region}"
+                        Collector.info['OpenAI'] = f"解锁({region})"
                     else:
-                        Collector.info['OpenAI'] = f"待解{region}"
+                        Collector.info['OpenAI'] = f"待解({region})"
                 else:
                     Collector.info['OpenAI'] = "未知"
             else:
