@@ -134,9 +134,9 @@ async def invite_pass(client: pyrogram.Client, message):
         test_type_select = ['HTTP延迟']
         if len(k) > 2:
             if k[2] == 'default':
-                test_type_select.extend(['Netflix', 'Youtube', 'Disney+', 'Primevideo', 'steam货币', 'Bilibili',
-                                         'Dazn', 'Hbomax', 'Bahamut', 'Abema', '公主连结', 'BBC', 'Myvideo', 'Catchplay',
-                                         'Viu', '维基百科', '维基百科(中文)', 'Hulu JP', '赛马娘', '落地IP风险'])
+                test_type_select.extend(['Netflix', 'Youtube', 'Disney+', 'Primevideo', 'steam货币', '落地IP风险', 'OpenAI',
+                                         'Bilibili', 'Dazn', 'Hbomax', 'Bahamut', 'Abema', '公主连结', 'BBC', 'Myvideo',
+                                         'Catchplay', 'Viu', '维基百科', '维基百科(中文)', 'Hulu JP', '赛马娘', ])
             else:
                 for i in k[2:]:
                     if i == 'HTTP延迟':

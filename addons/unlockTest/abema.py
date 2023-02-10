@@ -65,6 +65,11 @@ def get_abema_info(ReCleaner):
         return "N/A"
 
 
+SCRIPT = {
+    "MYNAME": "Abema",
+    "TASK": task,
+    "GET": get_abema_info
+}
 # bot_setting_board
 
 button = InlineKeyboardButton("✅Abema", callback_data='✅Abema')

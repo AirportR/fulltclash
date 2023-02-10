@@ -106,13 +106,13 @@ async def test_setting(client: Client, callback_query: CallbackQuery, row=3, **k
                     if b.text == callback_data:
                         b.text = b.text.replace("✅", "❌")
                         b.callback_data = b.text
-                        IKM2 = InlineKeyboardMarkup(
+                        IKM22 = InlineKeyboardMarkup(
                             inline_keyboard
                         )
                         await client.edit_message_text(chat_id=chat_id,
                                                        message_id=mess_id,
                                                        text=text,
-                                                       reply_markup=IKM2)
+                                                       reply_markup=IKM22)
             return test_items, origin_message, message, test_type
         elif "❌" in callback_data:
             for b_1 in inline_keyboard:
@@ -120,13 +120,13 @@ async def test_setting(client: Client, callback_query: CallbackQuery, row=3, **k
                     if b.text == callback_data:
                         b.text = b.text.replace("❌", "✅")
                         b.callback_data = b.text
-                        IKM2 = InlineKeyboardMarkup(
+                        IKM22 = InlineKeyboardMarkup(
                             inline_keyboard
                         )
                         await client.edit_message_text(chat_id=chat_id,
                                                        message_id=mess_id,
                                                        text=text,
-                                                       reply_markup=IKM2)
+                                                       reply_markup=IKM22)
             return test_items, origin_message, message, test_type
         elif "🪞选项翻转" in callback_data:
             for b_1 in inline_keyboard:
@@ -138,13 +138,13 @@ async def test_setting(client: Client, callback_query: CallbackQuery, row=3, **k
                     elif "✅" in b.text:
                         b.text = b.text.replace("✅", "❌")
                         b.callback_data = b.text
-            IKM2 = InlineKeyboardMarkup(
+            IKM22 = InlineKeyboardMarkup(
                 inline_keyboard
             )
             await client.edit_message_text(chat_id=chat_id,
                                            message_id=mess_id,
                                            text=text,
-                                           reply_markup=IKM2)
+                                           reply_markup=IKM22)
             return test_items, origin_message, message, test_type
         elif "御三家(N-Y-D)" in callback_data:
             test_items.clear()
@@ -167,7 +167,7 @@ async def test_setting(client: Client, callback_query: CallbackQuery, row=3, **k
             message = None
             return test_items, origin_message, message, test_type
         elif "全测" == callback_data:
-            test_items = ['Netflix', 'Youtube', 'Disney+', 'Primevideo', 'steam货币', 'Bilibili',
+            test_items = ['HTTP延迟', 'Netflix', 'Youtube', 'Disney+', 'Primevideo', 'steam货币', 'OpenAI', 'Bilibili',
                           'Dazn', 'Hbomax', 'Bahamut', 'Abema', '公主连结', 'BBC', 'Myvideo', 'Catchplay',
                           'Viu', '维基百科', '维基百科(中文)', 'Hulu JP', '赛马娘', '落地IP风险']
             message = await client.edit_message_text(chat_id, mess_id, text="⌛正在提交任务~")

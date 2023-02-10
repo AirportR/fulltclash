@@ -301,6 +301,12 @@ class Collector:
                         "=bangumi"
         self.daznurl = "https://startup.core.indazn.com/misl/v5/Startup"
 
+    def create_tasks_new(self, session: aiohttp.ClientSession, proxy=None):
+        import importlib
+        module_name = ["abema"]
+        for mname in module_name:
+            mo1 = importlib.import_module(f"./addons/{mname}")
+            pass
     @logger.catch
     def create_tasks(self, session: aiohttp.ClientSession, proxy=None):
         """
