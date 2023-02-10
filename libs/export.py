@@ -5,7 +5,7 @@ from pilmoji import Pilmoji
 from pilmoji.source import Twemoji
 import time
 from libs.cleaner import ConfigManager
-from addons.emoji_custom import TwitterPediaSource
+from libs.emoji_custom import TwitterPediaSource
 
 """
 这是将测试的结果输出为图片的模块。
@@ -16,7 +16,7 @@ from addons.emoji_custom import TwitterPediaSource
 2、何为基础数据？
     基础数据决定了生成图片的高度（Height），它是列表，列表里面的数据一般是一组节点名，即有多少个节点就对应了info键值中的长度。
 """
-__version__ = "3.4.7"  # 版本号
+__version__ = "3.4.8"  # 版本号
 custom_source = TwitterPediaSource  # 自定义emoji风格 TwitterPediaSource
 
 

@@ -1,7 +1,6 @@
 import asyncio
 import json
 import time
-
 import aiohttp
 import async_timeout
 from urllib.parse import quote
@@ -21,7 +20,9 @@ from libs import cleaner
 ** 开发建议 **
 如果你想自己添加一个流媒体测试项，建议继承Collector类，重写类中的create_tasks方法，以及自定义自己的流媒体测试函数 fetch_XXX()
 """
+
 config = cleaner.ConfigManager()
+addon = cleaner.AddonCleaner()
 media_items = config.get_media_item()
 proxies = config.get_proxy()  # 代理
 
@@ -241,8 +242,8 @@ class SubCollector(BaseCollector):
         _headers = {'User-Agent': 'clash'}
         # suburl = self.cvt_url if self.cvt_enable else self.url
         suburl = self.url
-        cvt_text = r"subconvertor状态: {}".format("已启用" if self.cvt_enable else "未启用")
-        logger.info(cvt_text)
+        # cvt_text = r"subconvertor状态: {}".format("已启用" if self.cvt_enable else "未启用")
+        # logger.info(cvt_text)
         try:
             async with aiohttp.ClientSession(headers=_headers) as session:
                 async with session.get(suburl, proxy=proxy, timeout=20) as response:
@@ -268,6 +269,7 @@ class Collector:
     def __init__(self):
         self.session = None
         self.tasks = []
+        self.script = addon.script
         self._headers = {
             'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                           "Chrome/106.0.0.0 Safari/537.36"}
@@ -301,12 +303,6 @@ class Collector:
                         "=bangumi"
         self.daznurl = "https://startup.core.indazn.com/misl/v5/Startup"
 
-    def create_tasks_new(self, session: aiohttp.ClientSession, proxy=None):
-        import importlib
-        module_name = ["abema"]
-        for mname in module_name:
-            mo1 = importlib.import_module(f"./addons/{mname}")
-            pass
     @logger.catch
     def create_tasks(self, session: aiohttp.ClientSession, proxy=None):
         """
@@ -319,7 +315,11 @@ class Collector:
         try:
             if len(items):
                 for item in items:
-                    i = item.capitalize()
+                    i = item
+                    if i in self.script:
+                        task = self.script[i][0]
+                        self.tasks.append(task(self, session, proxy=proxy))
+                        continue
                     if i == "Youtube":
                         task4 = asyncio.create_task(self.fetch_youtube(session, proxy=proxy))
                         self.tasks.append(task4)
@@ -332,54 +332,54 @@ class Collector:
                     elif i == "Dazn":
                         task7 = asyncio.create_task(self.fetch_dazn(session, proxy=proxy))
                         self.tasks.append(task7)
-                    elif i == "Hbomax":
-                        from addons.unlockTest import hbomax
-                        self.tasks.append(hbomax.task(self, session, proxy=proxy))
-                    elif i == "Bahamut":
-                        from addons.unlockTest import bahamut
-                        self.tasks.append(bahamut.task(self, session, proxy=proxy))
+                    # elif i == "Hbomax":
+                    #     from addons.unlockTest import hbomax
+                    #     self.tasks.append(hbomax.task(self, session, proxy=proxy))
+                    # elif i == "Bahamut":
+                    #     from addons.unlockTest import bahamut
+                    #     self.tasks.append(bahamut.task(self, session, proxy=proxy))
                     elif i == "Netflix":
                         from addons.unlockTest import netflix
                         self.tasks.append(netflix.task(self, session, proxy=proxy))
-                    elif i == "Abema":
-                        from addons.unlockTest import abema
-                        self.tasks.append(abema.task(self, session, proxy=proxy))
-                    elif i == "Bbc":
-                        from addons.unlockTest import bbciplayer
-                        self.tasks.append(bbciplayer.task(self, session, proxy=proxy))
-                    elif i == "公主连结":
-                        from addons.unlockTest import pcrjp
-                        self.tasks.append(pcrjp.task(self, session, proxy=proxy))
+                    # elif i == "Abema":
+                    #     from addons.unlockTest import abema
+                    #     self.tasks.append(abema.task(self, session, proxy=proxy))
+                    # elif i == "BBC":
+                    #     from addons.unlockTest import bbciplayer
+                    #     self.tasks.append(bbciplayer.task(self, session, proxy=proxy))
+                    # elif i == "公主连结":
+                    #     from addons.unlockTest import pcrjp
+                    #     self.tasks.append(pcrjp.task(self, session, proxy=proxy))
                     elif i == "Primevideo":
                         from addons.unlockTest import primevideo
                         self.tasks.append(primevideo.task(self, session, proxy=proxy))
-                    elif i == "Myvideo":
-                        from addons.unlockTest import myvideo
-                        self.tasks.append(myvideo.task(self, session, proxy=proxy))
-                    elif i == "Catchplay":
-                        from addons.unlockTest import catchplay
-                        self.tasks.append(catchplay.task(self, session, proxy=proxy))
+                    # elif i == "Myvideo":
+                    #     from addons.unlockTest import myvideo
+                    #     self.tasks.append(myvideo.task(self, session, proxy=proxy))
+                    # elif i == "Catchplay":
+                    #     from addons.unlockTest import catchplay
+                    #     self.tasks.append(catchplay.task(self, session, proxy=proxy))
                     elif i == "Viu":
                         from addons.unlockTest import viu
                         self.tasks.append(viu.task(self, session, proxy=proxy))
-                    elif i == "Iprisk" or i == "落地ip风险":
-                        from addons import ip_risk
+                    elif i == "Iprisk" or i == "落地IP风险":
+                        from addons.unlockTest import ip_risk
                         self.tasks.append(ip_risk.task(self, session, proxy=proxy))
-                    elif i == "Steam货币":
+                    elif i == "steam货币":
                         from addons.unlockTest import steam
                         self.tasks.append(steam.task(self, session, proxy=proxy))
                     elif i == "维基百科":
                         from addons.unlockTest import wikipedia
                         self.tasks.append(wikipedia.task(self, session, proxy=proxy))
-                    elif i == "维基百科(中文)":
-                        from addons.unlockTest import wikipedia_zh
-                        self.tasks.append(wikipedia_zh.task(self, session, proxy=proxy))
-                    elif i == "赛马娘":
-                        from addons.unlockTest import umajp
-                        self.tasks.append(umajp.task(self, session, proxy=proxy))
-                    elif item == "Hulu JP":
-                        from addons.unlockTest import hulujp
-                        self.tasks.append(hulujp.task(self, session, proxy=proxy))
+                    # elif i == "维基百科(中文)":
+                    #     from addons.unlockTest import wikipedia_zh
+                    #     self.tasks.append(wikipedia_zh.task(self, session, proxy=proxy))
+                    # elif i == "赛马娘":
+                    #     from addons.unlockTest import umajp
+                    #     self.tasks.append(umajp.task(self, session, proxy=proxy))
+                    # elif item == "Hulu JP":
+                    #     from addons.unlockTest import hulujp
+                    #     self.tasks.append(hulujp.task(self, session, proxy=proxy))
                     elif item == "OpenAI":
                         from addons.unlockTest import openai
                         self.tasks.append(openai.task(self, session, proxy=proxy))

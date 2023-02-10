@@ -5,21 +5,22 @@ from pyrogram import types, Client
 from pyrogram.errors import RPCError
 from pyrogram.types import BotCommand, CallbackQuery, Message
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from addons.unlockTest.hbomax import b9
-from addons.unlockTest.bahamut import b10
-from addons.unlockTest.abema import button as b12
-from addons.unlockTest.bbciplayer import button as b13
-from addons.unlockTest.pcrjp import button as b14
+from libs.cleaner import addon
+# from addons.unlockTest.hbomax import b9
+# from addons.unlockTest.bahamut import b10
+# from addons.unlockTest.abema import button as b12
+# from addons.unlockTest.bbciplayer import button as b13
+# from addons.unlockTest.pcrjp import button as b14
 from addons.unlockTest.primevideo import button as b15
-from addons.unlockTest.myvideo import button as b16
-from addons.unlockTest.catchplay import button as b17
+# from addons.unlockTest.myvideo import button as b16
+# from addons.unlockTest.catchplay import button as b17
 from addons.unlockTest.viu import button as b18
-from addons.ip_risk import button as b19
+from addons.unlockTest.ip_risk import button as b19
 from addons.unlockTest.steam import button as b20
 from addons.unlockTest.wikipedia import button as b21
-from addons.unlockTest.umajp import button as b22
-from addons.unlockTest.hulujp import button as b23
-from addons.unlockTest.wikipedia_zh import button as b24
+# from addons.unlockTest.umajp import button as b22
+# from addons.unlockTest.hulujp import button as b23
+# from addons.unlockTest.wikipedia_zh import button as b24
 from addons.unlockTest.openai import button as b25
 
 b1 = InlineKeyboardButton("✅Netflix", callback_data='✅Netflix')
@@ -37,8 +38,10 @@ b_all = InlineKeyboardButton("全测", callback_data="全测")
 b_origin = InlineKeyboardButton("♾️订阅原序", callback_data="sort:订阅原序")
 b_rhttp = InlineKeyboardButton("⬇️HTTP倒序", callback_data="sort:HTTP倒序")
 b_http = InlineKeyboardButton("⬆️HTTP升序", callback_data="sort:HTTP升序")
-buttons = [b1, b2, b3, b25, b15, b18, b20, b21, b19, b14, b5, b16, b17, b9, b13, b10, b12, b22, b23,
-           b24, b4]  # 全部测试项按钮
+buttons = [b1, b2, b3, b25, b15, b18, b20, b21, b19]  # , b14, b5, b16, b17, b9, b13, b10, b12, b22, b23,
+# b24, b4]  # 全部测试项按钮
+# buttons = []
+buttons.extend(addon.init_button())
 max_page_g = int(len(buttons) / 9) + 1
 blank_g = InlineKeyboardButton(f"{1}/{max_page_g}", callback_data=f"blank")
 next_page_g = InlineKeyboardButton("➡️下一页", callback_data=f"page{2}")
@@ -167,9 +170,8 @@ async def test_setting(client: Client, callback_query: CallbackQuery, row=3, **k
             message = None
             return test_items, origin_message, message, test_type
         elif "全测" == callback_data:
-            test_items = ['HTTP延迟', 'Netflix', 'Youtube', 'Disney+', 'Primevideo', 'steam货币', 'OpenAI', 'Bilibili',
-                          'Dazn', 'Hbomax', 'Bahamut', 'Abema', '公主连结', 'BBC', 'Myvideo', 'Catchplay',
-                          'Viu', '维基百科', '维基百科(中文)', 'Hulu JP', '赛马娘', '落地IP风险']
+            t = addon.global_test_item()
+            test_items = ['HTTP延迟'].extend(t)
             message = await client.edit_message_text(chat_id, mess_id, text="⌛正在提交任务~")
             return test_items, origin_message, message, test_type
         elif 'ok_p' == callback_data:

@@ -7,7 +7,7 @@ from loguru import logger
 from pyrogram.errors import RPCError
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from botmodule.command.submanage import get_telegram_id_from_message as get_id
-from libs.cleaner import geturl
+from libs.cleaner import geturl, addon
 
 b1 = InlineKeyboardMarkup(
     [
@@ -134,9 +134,7 @@ async def invite_pass(client: pyrogram.Client, message):
         test_type_select = ['HTTP延迟']
         if len(k) > 2:
             if k[2] == 'default':
-                test_type_select.extend(['Netflix', 'Youtube', 'Disney+', 'Primevideo', 'steam货币', '落地IP风险', 'OpenAI',
-                                         'Bilibili', 'Dazn', 'Hbomax', 'Bahamut', 'Abema', '公主连结', 'BBC', 'Myvideo',
-                                         'Catchplay', 'Viu', '维基百科', '维基百科(中文)', 'Hulu JP', '赛马娘', ])
+                test_type_select.extend(addon.global_test_item())
             else:
                 for i in k[2:]:
                     if i == 'HTTP延迟':

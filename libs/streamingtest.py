@@ -35,7 +35,7 @@ async def unit(test_items: list, delay: int, host="127.0.0.1", port=1122):
         cnr = cleaner.ReCleaner(re1)
         old_info = cnr.get_all()
         for item in test_items:
-            i = item.capitalize() if item != "BBC" and item != "HTTP延迟" else item
+            i = item
             if i == 'HTTP延迟':
                 continue
             try:

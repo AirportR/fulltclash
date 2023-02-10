@@ -1,3 +1,5 @@
+import importlib
+import os
 import re
 import socket
 import yaml
@@ -87,6 +89,93 @@ class IPCleaner:
             return asn
         else:
             return ''
+
+
+class AddonCleaner:
+    """
+    动态脚本导入
+    """
+
+    def __init__(self, path: str = "./addons"):
+        """
+
+        :param path: 加载路径
+        """
+        self._script = {}
+        self.init_addons(path)
+
+    def global_test_item(self):
+        test_item = list(self._script.keys())
+        return ['Netflix', 'Youtube', 'Disney+', 'Primevideo', 'Viu', 'steam货币', 'OpenAI',
+                '维基百科', '落地IP风险'] + test_item
+
+    @property
+    def script(self):
+        return self._script
+
+    def reload(self, path: str = "./addons"):
+        self.init_addons(path)
+
+    def init_addons(self, path: str):
+        try:
+            di = os.listdir(path)
+        except FileNotFoundError:
+            di = None
+        module_name = []
+        if di is None:
+            logger.warning(f"找不到 {path} 所在的路径")
+        else:
+            for d in di:
+                if len(d) > 3:
+                    if d[-3:] == '.py' and d != "__init__.py":
+                        module_name.append(d[:-3])
+                    else:
+                        pass
+
+        logger.info("模块即将动态加载: " + str(module_name))
+        # module_name = ["abema"]
+        for mname in module_name:
+            try:
+                mo1 = importlib.import_module(f".{mname}", package='addons')
+            except ModuleNotFoundError:
+                mo1 = None
+            except NameError:
+                mo1 = None
+            except Exception as e:
+                logger.error(str(e))
+                mo1 = None
+            if mo1 is None:
+                continue
+            try:
+                script = getattr(mo1, 'SCRIPT')
+            except AttributeError:
+                script = None
+            if script is None or type(script).__name__ != "dict":
+                continue
+
+            sname = script.get('MYNAME', None)
+            stask = script.get("TASK", None)
+            sget = script.get("GET", None)
+            if type(stask).__name__ == 'function' and type(sname).__name__ == 'str' and type(
+                    sget).__name__ == 'function':
+                self._script[sname] = [stask, sget]
+                logger.info(f"测试脚本加载：{sname}")
+            else:
+                logger.warning("测试脚本导入格式错误")
+
+    @staticmethod
+    def init_button():
+        try:
+            from pyrogram.types import InlineKeyboardButton
+            script = addon.script
+            button = []
+            for k in script.keys():
+                b = InlineKeyboardButton(f"✅{str(k)}", callback_data=f"✅{str(k)}")
+                button.append(b)
+            return button
+        except Exception as e:
+            logger.error(str(e))
+            return []
 
 
 class ClashCleaner:
@@ -342,9 +431,13 @@ class ConfigManager:
             if flag == 0 and configpath == "./resources/config.yaml":
                 flag += 1
                 logger.warning("无法在 ./resources/ 下找到 config.yaml 配置文件，正在尝试寻找旧目录 ./config.yaml")
-                with open('./config.yaml', "r", encoding="UTF-8") as fp1:
-                    self.config = yaml.load(fp1, Loader=yaml.FullLoader)
-                    self.yaml.update(self.config)
+                try:
+                    with open('./config.yaml', "r", encoding="UTF-8") as fp1:
+                        self.config = yaml.load(fp1, Loader=yaml.FullLoader)
+                        self.yaml.update(self.config)
+                except FileNotFoundError:
+                    self.config = {}
+                    self.yaml = {}
             elif flag > 1:
                 logger.warning("无法找到配置文件，正在初始化...")
         if self.config is None:
@@ -652,6 +745,7 @@ class ConfigManager:
 
 config = ConfigManager()
 media_item = config.get_media_item()
+addon = AddonCleaner()
 
 
 def reload_config(media: list = None):
@@ -668,13 +762,28 @@ class ReCleaner:
         self.data = data
         self._sum = 0
         self._netflix_info = []
+        self._script = addon.script
+
+    @property
+    def script(self):
+        return self._script
 
     def get_all(self):
         info = {}
         items = media_item
         try:
             for item in items:
-                i = item.capitalize()
+                i = item
+                if i in self.script:
+                    task = self.script[i][1]
+                    info[i] = task(self)
+                    logger.info("已命中动态加载clean")
+                    continue
+                elif item in self.script:
+                    task = self.script[item][1]
+                    info[i] = task(self)
+                    logger.info("已命中动态加载clean")
+                    continue
                 if i == "Youtube":
                     you = self.getyoutubeinfo()
                     info['Youtube'] = you
@@ -690,58 +799,58 @@ class ReCleaner:
                 elif i == "Dazn":
                     dazn = self.get_dazn_info()
                     info['Dazn'] = dazn
-                elif i == "Hbomax":
-                    from addons.unlockTest import hbomax
-                    hbomaxinfo = hbomax.get_hbomax_info(self)
-                    info['Hbomax'] = hbomaxinfo
-                elif i == "Bahamut":
-                    from addons.unlockTest import bahamut
-                    info['Bahamut'] = bahamut.get_bahamut_info(self)
+                # elif i == "Hbomax":
+                #     from addons.unlockTest import hbomax
+                #     hbomaxinfo = hbomax.get_hbomax_info(self)
+                #     info['Hbomax'] = hbomaxinfo
+                # elif i == "Bahamut":
+                #     from addons.unlockTest import bahamut
+                #     info['Bahamut'] = bahamut.get_bahamut_info(self)
                 elif i == "Netflix":
                     from addons.unlockTest import netflix
                     info['Netflix'] = netflix.get_netflix_info_new(self)
-                elif i == "Abema":
-                    from addons.unlockTest import abema
-                    info['Abema'] = abema.get_abema_info(self)
-                elif i == "Bbc":
-                    from addons.unlockTest import bbciplayer
-                    info['BBC'] = bbciplayer.get_bbc_info(self)
-                elif i == "公主连结":
-                    from addons.unlockTest import pcrjp
-                    info['公主连结'] = pcrjp.get_pcr_info(self)
+                # elif i == "Abema":
+                #     from addons.unlockTest import abema
+                #     info['Abema'] = abema.get_abema_info(self)
+                # elif i == "BBC":
+                #     from addons.unlockTest import bbciplayer
+                #     info['BBC'] = bbciplayer.get_bbc_info(self)
+                # elif i == "公主连结":
+                #     from addons.unlockTest import pcrjp
+                #     info['公主连结'] = pcrjp.get_pcr_info(self)
                 elif i == "Primevideo":
                     from addons.unlockTest import primevideo
                     info['Primevideo'] = primevideo.get_primevideo_info(self)
-                elif i == "Myvideo":
-                    from addons.unlockTest import myvideo
-                    info['Myvideo'] = myvideo.get_myvideo_info(self)
-                elif i == "Catchplay":
-                    from addons.unlockTest import catchplay
-                    info['Catchplay'] = catchplay.get_catchplay_info(self)
+                # elif i == "Myvideo":
+                #     from addons.unlockTest import myvideo
+                #     info['Myvideo'] = myvideo.get_myvideo_info(self)
+                # elif i == "Catchplay":
+                #     from addons.unlockTest import catchplay
+                #     info['Catchplay'] = catchplay.get_catchplay_info(self)
                 elif i == "Viu":
                     from addons.unlockTest import viu
                     info['Viu'] = viu.get_viu_info(self)
-                elif i == "Iprisk" or i == "落地ip风险":
-                    from addons import ip_risk
-                    info['落地ip风险'] = ip_risk.get_iprisk_info(self)
-                elif i == "Steam货币":
+                elif i == "iprisk" or i == "落地IP风险":
+                    from addons.unlockTest import ip_risk
+                    info['落地IP风险'] = ip_risk.get_iprisk_info(self)
+                elif i == "steam货币":
                     from addons.unlockTest import steam
-                    info['Steam货币'] = steam.get_steam_info(self)
-                elif i == "维基百科(中文)":
-                    from addons.unlockTest import wikipedia_zh
-                    info['维基百科(中文)'] = wikipedia_zh.get_wikipedia_info(self)
+                    info['steam货币'] = steam.get_steam_info(self)
+                # elif i == "维基百科(中文)":
+                #     from addons.unlockTest import wikipedia_zh
+                #     info['维基百科(中文)'] = wikipedia_zh.get_wikipedia_info(self)
                 elif i == "维基百科":
                     from addons.unlockTest import wikipedia
                     info['维基百科'] = wikipedia.get_wikipedia_info(self)
-                elif i == "赛马娘":
-                    from addons.unlockTest import umajp
-                    info['赛马娘'] = umajp.get_uma_info(self)
-                elif item == "Hulu JP":
-                    from addons.unlockTest import hulujp
-                    info['Hulu jp'] = hulujp.get_hulujp_info(self)
+                # elif i == "赛马娘":
+                #     from addons.unlockTest import umajp
+                #     info['赛马娘'] = umajp.get_uma_info(self)
+                # elif item == "Hulu JP":
+                #     from addons.unlockTest import hulujp
+                #     info['Hulu JP'] = hulujp.get_hulujp_info(self)
                 elif item == "OpenAI":
                     from addons.unlockTest import openai
-                    info['Openai'] = openai.get_openai_info(self)
+                    info['OpenAI'] = openai.get_openai_info(self)
                 else:
                     pass
         except Exception as e:
