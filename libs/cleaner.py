@@ -133,7 +133,9 @@ class AddonCleaner:
                         pass
 
         logger.info("模块即将动态加载: " + str(module_name))
+        logger.info("正在尝试获取 'SCRIPT' 属性组件")
         # module_name = ["abema"]
+        num = 0
         for mname in module_name:
             try:
                 mo1 = importlib.import_module(f".{mname}", package='addons')
@@ -159,9 +161,11 @@ class AddonCleaner:
             if type(stask).__name__ == 'function' and type(sname).__name__ == 'str' and type(
                     sget).__name__ == 'function':
                 self._script[sname] = [stask, sget]
-                logger.info(f"测试脚本加载：{sname}")
+                num += 1
+                logger.info(f"已成功加载测试脚本：{sname}")
             else:
                 logger.warning("测试脚本导入格式错误")
+        logger.info(f"外接测试脚本成功导入数量: {num}")
 
     @staticmethod
     def init_button():
