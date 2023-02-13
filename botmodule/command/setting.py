@@ -170,10 +170,8 @@ async def test_setting(client: Client, callback_query: CallbackQuery, row=3, **k
             message = None
             return test_items, origin_message, message, test_type
         elif "全测" == callback_data:
-            t = addon.global_test_item()
-            print(t)
-            test_items = ['HTTP延迟'] + t
-            print(test_items)
+            test_items = ['HTTP延迟']
+            test_items += addon.global_test_item()
             message = await client.edit_message_text(chat_id, mess_id, text="⌛正在提交任务~")
             return test_items, origin_message, message, test_type
         elif 'ok_p' == callback_data:

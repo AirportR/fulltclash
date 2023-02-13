@@ -24,7 +24,7 @@ async def unit(test_items: list, delay: int, host="127.0.0.1", port=1122):
     if delay == 0 and delay2 == 0:
         for t in test_items:
             if t == "HTTP延迟":
-                info.append("0ms")
+                info.append(0)
             else:
                 info.append("N/A")
         return info
