@@ -21,7 +21,7 @@ async def unit(test_items: list, delay: int, host="127.0.0.1", port=1122):
     """
     info = []
     delay2 = await collector.delay_https_task(proxy=f"http://{host}:{port}", times=3)
-    if delay == 0 and delay2 == '0ms':
+    if delay == 0 and delay2 == 0:
         for t in test_items:
             if t == "HTTP延迟":
                 info.append("0ms")

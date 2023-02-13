@@ -795,9 +795,6 @@ class ReCleaner:
                 elif i == "Disney+":
                     dis = self.getDisneyinfo()
                     info['Disney+'] = dis
-                elif i == "Bilibili":
-                    bili = self.get_bilibili_info()
-                    info['Bilibili'] = bili
                 elif i == "Dazn":
                     dazn = self.get_dazn_info()
                     info['Dazn'] = dazn
@@ -880,31 +877,6 @@ class ReCleaner:
                     return "N/A"
         except Exception as e:
             logger.error(str(e))
-            return "N/A"
-
-    def get_bilibili_info(self):
-        """
-
-        :return: str: 解锁信息: [解锁(台湾)、解锁(港澳台)、失败、N/A]
-        """
-        try:
-            if 'bilibili' not in self.data:
-                logger.warning("采集器内无数据: bilibili")
-                return "N/A"
-            else:
-                try:
-                    info = self.data['bilibili']
-                    if info is None:
-                        logger.warning("无法读取bilibili解锁信息")
-                        return "N/A"
-                    else:
-                        logger.info("bilibili情况: " + info)
-                        return info
-                except KeyError:
-                    logger.warning("无法读取bilibili解锁信息")
-                    return "N/A"
-        except Exception as e:
-            logger.error(e)
             return "N/A"
 
     def getyoutubeinfo(self):

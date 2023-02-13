@@ -295,12 +295,6 @@ class Collector:
         self.info = {}
         self.disneyurl1 = "https://www.disneyplus.com/"
         self.disneyurl2 = "https://global.edge.bamgrid.com/token"
-        self.biliurl1 = "https://api.bilibili.com/pgc/player/web/playurl?avid=50762638&cid=100279344&qn=0&type=&otype" \
-                        "=json&ep_id=268176&fourk=1&fnver=0&fnval=16&session=926c41d4f12e53291b284b94f555e7df&module" \
-                        "=bangumi"
-        self.biliurl2 = "https://api.bilibili.com/pgc/player/web/playurl?avid=18281381&cid=29892777&qn=0&type=&otype" \
-                        "=json&ep_id=183799&fourk=1&fnver=0&fnval=16&session=926c41d4f12e53291b284b94f555e7df&module" \
-                        "=bangumi"
         self.daznurl = "https://startup.core.indazn.com/misl/v5/Startup"
 
     @logger.catch
@@ -326,9 +320,6 @@ class Collector:
                     elif i == "Disney" or i == "Disney+":
                         task5 = asyncio.create_task(self.fetch_dis(session, proxy=proxy))
                         self.tasks.append(task5)
-                    elif i == "Bilibili":
-                        task6 = asyncio.create_task(self.fetch_bilibili(session, proxy=proxy))
-                        self.tasks.append(task6)
                     elif i == "Dazn":
                         task7 = asyncio.create_task(self.fetch_dazn(session, proxy=proxy))
                         self.tasks.append(task7)
@@ -359,49 +350,6 @@ class Collector:
         except Exception as e:
             logger.error(e)
             return []
-
-    async def fetch_bilibili(self, session: aiohttp.ClientSession, flag=1, proxy=None, reconnection=2):
-        """
-        bilibili解锁测试，先测仅限台湾地区的限定资源，再测港澳台的限定资源
-        :param flag: 用于判断请求的是哪个bilibili url
-        :param reconnection:
-        :param session:
-        :param proxy:
-        :return:
-        """
-        try:
-            if flag == 1:
-                res = await session.get(self.biliurl1, proxy=proxy, timeout=5)
-            elif flag == 2:
-                res = await session.get(self.biliurl2, proxy=proxy, timeout=5)
-            else:
-                return
-            if res.status == 200:
-                text = await res.json()
-                try:
-                    message = text['message']
-                    if message == "抱歉您所在地区不可观看！" and flag == 1:
-                        await self.fetch_bilibili(session, flag=flag + 1, proxy=proxy, reconnection=2)
-                    elif message == "抱歉您所在地区不可观看！" and flag == 2:
-                        self.info['bilibili'] = "失败"
-                    elif message == "success" and flag == 1:
-                        self.info['bilibili'] = "解锁(台湾)"
-                    elif message == "success" and flag == 2:
-                        self.info['bilibili'] = "解锁(港澳台)"
-                    else:
-                        self.info['bilibili'] = "N/A"
-                except KeyError:
-                    self.info['bilibili'] = "N/A"
-            else:
-                self.info['bilibili'] = "N/A"
-        except ClientConnectorError as c:
-            logger.warning("bilibili请求发生错误:" + str(c))
-            if reconnection != 0:
-                await self.fetch_bilibili(session=session, proxy=proxy, flag=flag, reconnection=reconnection - 1)
-        except asyncio.exceptions.TimeoutError:
-            logger.warning("bilibili请求超时，正在重新发送请求......")
-            if reconnection != 0:
-                await self.fetch_bilibili(session=session, proxy=proxy, flag=flag, reconnection=reconnection - 1)
 
     async def fetch_ip(self, session: aiohttp.ClientSession, proxy=None):
         """
