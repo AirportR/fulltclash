@@ -332,33 +332,12 @@ class Collector:
                     elif i == "Dazn":
                         task7 = asyncio.create_task(self.fetch_dazn(session, proxy=proxy))
                         self.tasks.append(task7)
-                    # elif i == "Hbomax":
-                    #     from addons.unlockTest import hbomax
-                    #     self.tasks.append(hbomax.task(self, session, proxy=proxy))
-                    # elif i == "Bahamut":
-                    #     from addons.unlockTest import bahamut
-                    #     self.tasks.append(bahamut.task(self, session, proxy=proxy))
                     elif i == "Netflix":
                         from addons.unlockTest import netflix
                         self.tasks.append(netflix.task(self, session, proxy=proxy))
-                    # elif i == "Abema":
-                    #     from addons.unlockTest import abema
-                    #     self.tasks.append(abema.task(self, session, proxy=proxy))
-                    # elif i == "BBC":
-                    #     from addons.unlockTest import bbciplayer
-                    #     self.tasks.append(bbciplayer.task(self, session, proxy=proxy))
-                    # elif i == "公主连结":
-                    #     from addons.unlockTest import pcrjp
-                    #     self.tasks.append(pcrjp.task(self, session, proxy=proxy))
                     elif i == "Primevideo":
                         from addons.unlockTest import primevideo
                         self.tasks.append(primevideo.task(self, session, proxy=proxy))
-                    # elif i == "Myvideo":
-                    #     from addons.unlockTest import myvideo
-                    #     self.tasks.append(myvideo.task(self, session, proxy=proxy))
-                    # elif i == "Catchplay":
-                    #     from addons.unlockTest import catchplay
-                    #     self.tasks.append(catchplay.task(self, session, proxy=proxy))
                     elif i == "Viu":
                         from addons.unlockTest import viu
                         self.tasks.append(viu.task(self, session, proxy=proxy))
@@ -371,15 +350,6 @@ class Collector:
                     elif i == "维基百科":
                         from addons.unlockTest import wikipedia
                         self.tasks.append(wikipedia.task(self, session, proxy=proxy))
-                    # elif i == "维基百科(中文)":
-                    #     from addons.unlockTest import wikipedia_zh
-                    #     self.tasks.append(wikipedia_zh.task(self, session, proxy=proxy))
-                    # elif i == "赛马娘":
-                    #     from addons.unlockTest import umajp
-                    #     self.tasks.append(umajp.task(self, session, proxy=proxy))
-                    # elif item == "Hulu JP":
-                    #     from addons.unlockTest import hulujp
-                    #     self.tasks.append(hulujp.task(self, session, proxy=proxy))
                     elif item == "OpenAI":
                         from addons.unlockTest import openai
                         self.tasks.append(openai.task(self, session, proxy=proxy))

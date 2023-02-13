@@ -134,7 +134,7 @@ async def invite_pass(client: pyrogram.Client, message):
         test_type_select = ['HTTP延迟']
         if len(k) > 2:
             if k[2] == 'default':
-                test_type_select + addon.global_test_item()
+                test_type_select += addon.global_test_item()
             else:
                 for i in k[2:]:
                     if i == 'HTTP延迟':

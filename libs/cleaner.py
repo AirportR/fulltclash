@@ -138,10 +138,12 @@ class AddonCleaner:
         num = 0
         for mname in module_name:
             try:
-                mo1 = importlib.import_module(f".{mname}", package='addons')
-            except ModuleNotFoundError:
+                mo1 = importlib.import_module(f"addons.{mname}")
+            except ModuleNotFoundError as m:
+                logger.warning(str(m))
                 mo1 = None
-            except NameError:
+            except NameError as n:
+                logger.warning(str(n))
                 mo1 = None
             except Exception as e:
                 logger.error(str(e))
@@ -150,7 +152,8 @@ class AddonCleaner:
                 continue
             try:
                 script = getattr(mo1, 'SCRIPT')
-            except AttributeError:
+            except AttributeError as a:
+                logger.warning(str(a))
                 script = None
             if script is None or type(script).__name__ != "dict":
                 continue
@@ -781,12 +784,7 @@ class ReCleaner:
                 if i in self.script:
                     task = self.script[i][1]
                     info[i] = task(self)
-                    logger.info("已命中动态加载clean")
-                    continue
-                elif item in self.script:
-                    task = self.script[item][1]
-                    info[i] = task(self)
-                    logger.info("已命中动态加载clean")
+                    logger.info(f"已命中动态加载: {i}")
                     continue
                 if i == "Youtube":
                     you = self.getyoutubeinfo()
@@ -803,34 +801,12 @@ class ReCleaner:
                 elif i == "Dazn":
                     dazn = self.get_dazn_info()
                     info['Dazn'] = dazn
-                # elif i == "Hbomax":
-                #     from addons.unlockTest import hbomax
-                #     hbomaxinfo = hbomax.get_hbomax_info(self)
-                #     info['Hbomax'] = hbomaxinfo
-                # elif i == "Bahamut":
-                #     from addons.unlockTest import bahamut
-                #     info['Bahamut'] = bahamut.get_bahamut_info(self)
                 elif i == "Netflix":
                     from addons.unlockTest import netflix
                     info['Netflix'] = netflix.get_netflix_info_new(self)
-                # elif i == "Abema":
-                #     from addons.unlockTest import abema
-                #     info['Abema'] = abema.get_abema_info(self)
-                # elif i == "BBC":
-                #     from addons.unlockTest import bbciplayer
-                #     info['BBC'] = bbciplayer.get_bbc_info(self)
-                # elif i == "公主连结":
-                #     from addons.unlockTest import pcrjp
-                #     info['公主连结'] = pcrjp.get_pcr_info(self)
                 elif i == "Primevideo":
                     from addons.unlockTest import primevideo
                     info['Primevideo'] = primevideo.get_primevideo_info(self)
-                # elif i == "Myvideo":
-                #     from addons.unlockTest import myvideo
-                #     info['Myvideo'] = myvideo.get_myvideo_info(self)
-                # elif i == "Catchplay":
-                #     from addons.unlockTest import catchplay
-                #     info['Catchplay'] = catchplay.get_catchplay_info(self)
                 elif i == "Viu":
                     from addons.unlockTest import viu
                     info['Viu'] = viu.get_viu_info(self)
@@ -840,18 +816,9 @@ class ReCleaner:
                 elif i == "steam货币":
                     from addons.unlockTest import steam
                     info['steam货币'] = steam.get_steam_info(self)
-                # elif i == "维基百科(中文)":
-                #     from addons.unlockTest import wikipedia_zh
-                #     info['维基百科(中文)'] = wikipedia_zh.get_wikipedia_info(self)
                 elif i == "维基百科":
                     from addons.unlockTest import wikipedia
                     info['维基百科'] = wikipedia.get_wikipedia_info(self)
-                # elif i == "赛马娘":
-                #     from addons.unlockTest import umajp
-                #     info['赛马娘'] = umajp.get_uma_info(self)
-                # elif item == "Hulu JP":
-                #     from addons.unlockTest import hulujp
-                #     info['Hulu JP'] = hulujp.get_hulujp_info(self)
                 elif item == "OpenAI":
                     from addons.unlockTest import openai
                     info['OpenAI'] = openai.get_openai_info(self)
