@@ -473,6 +473,16 @@ class ConfigManager:
         except KeyError:
             return []
 
+    def getGstatic(self):
+        """
+        获取HTTP延迟测试的URL
+        :return:
+        """
+        try:
+            return self.config.get('pingurl', "http://www.gstatic.com/generate_204")
+        except KeyError:
+            return "http://www.gstatic.com/generate_204"
+
     def getuser(self):
         try:
             return self.config['user']

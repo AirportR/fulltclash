@@ -22,7 +22,7 @@ from libs import cleaner
 """
 
 config = cleaner.ConfigManager()
-addon = cleaner.AddonCleaner()
+addon = cleaner.addon
 media_items = config.get_media_item()
 proxies = config.get_proxy()  # 代理
 
@@ -614,7 +614,7 @@ async def delay_providers(providername, hostname='127.0.0.1', port=1123, session
 
 
 async def batch_delay(proxyname: list, session: aiohttp.ClientSession = None,
-                      testurl='http://www.gstatic.com/generate_204',
+                      testurl=config.getGstatic(),
                       hostname='127.0.0.1', port=1123, timeout='5000'):
     """
     批量测试延迟，仅适用于不含providers的订阅
@@ -649,7 +649,7 @@ async def batch_delay(proxyname: list, session: aiohttp.ClientSession = None,
         return None
 
 
-async def delay_https(session: aiohttp.ClientSession, proxy=None, testurl="http://www.gstatic.com/generate_204",
+async def delay_https(session: aiohttp.ClientSession, proxy=None, testurl=config.getGstatic(),
                       timeout=10):
     _headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
@@ -661,8 +661,9 @@ async def delay_https(session: aiohttp.ClientSession, proxy=None, testurl="http:
         async with session.get(url=testurl, proxy=proxy, headers=_headers2,
                                timeout=timeout) as r:
             if r.status == 502:
-                logger.error("dual stack tcp shake hands failed")
-            if r.status == 204:
+                pass
+                # logger.error("dual stack tcp shake hands failed")
+            if r.status == 204 or r.status == 200:
                 delay1 = time.time() - s1
                 # print(delay1)
                 return delay1
