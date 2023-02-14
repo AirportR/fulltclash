@@ -972,7 +972,12 @@ class ResultCleaner:
             return {}
 
     def sort_by_ping(self, reverse=False):
-        new_list = [self.data.get('HTTP延迟'), self.data.get('节点名称'), self.data.get('类型')]
+        http_l = self.data.get('HTTP延迟')
+        if not reverse:
+            for i in range(len(http_l)):
+                if http_l[i] == 0:
+                    http_l[i] = 999999
+        new_list = [http_l, self.data.get('节点名称'), self.data.get('类型')]
         for k, v in self.data.items():
             if k == "HTTP延迟" or k == "节点名称" or k == "类型":
                 continue
@@ -981,8 +986,13 @@ class ResultCleaner:
         lists = sorted(lists, key=lambda x: x[0], reverse=reverse)
         lists = zip(*lists)
         new_list = [list(l_) for l_ in lists]
+        http_l = new_list[0]
+        if not reverse:
+            for i in range(len(http_l)):
+                if http_l[i] == 999999:
+                    http_l[i] = 0
         if len(new_list) > 2:
-            self.data['HTTP延迟'] = new_list[0]
+            self.data['HTTP延迟'] = http_l
             self.data['节点名称'] = new_list[1]
             self.data['类型'] = new_list[2]
             num = -1
