@@ -794,7 +794,6 @@ class ReCleaner:
                 if i in self.script:
                     task = self.script[i][1]
                     info[i] = task(self)
-                    logger.info(f"已命中动态加载: {i}")
                     continue
                 if i == "Youtube":
                     you = self.getyoutubeinfo()

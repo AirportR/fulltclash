@@ -1,5 +1,6 @@
 import asyncio
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pyrogram.types import Message
 from pyrogram.errors import RPCError, FloodWait
 from loguru import logger
@@ -37,7 +38,11 @@ async def testurl(_, message: Message, **kwargs):
         if info:
             wtime = info.get('wtime', "-1")
             # 生成图片
-            stime = export.ExportResult(nodename=None, info=info).exportUnlock()
+            ex = export.ExportResult(nodename=None, info=info)
+            with ThreadPoolExecutor() as pool:
+                loop = asyncio.get_running_loop()
+                stime = await loop.run_in_executor(
+                    pool, ex.exportUnlock)
             # 发送回TG
             await check.check_photo(message, back_message, stime, wtime)
             ma.delsub2provider(subname=start_time)
@@ -72,7 +77,11 @@ async def test(_, message: Message, **kwargs):
             if info:
                 wtime = info.get('wtime', "-1")
                 # 生成图片
-                stime = export.ExportResult(nodename=None, info=info).exportUnlock()
+                ex = export.ExportResult(nodename=None, info=info)
+                with ThreadPoolExecutor() as pool:
+                    loop = asyncio.get_running_loop()
+                    stime = await loop.run_in_executor(
+                        pool, ex.exportUnlock)
                 # 发送回TG
                 await check.check_photo(message, back_message, stime, wtime)
                 ma.delsub2provider(subname=start_time)
@@ -104,7 +113,12 @@ async def analyzeurl(_, message: Message, test_type="all", **kwargs):
         if info1:
             if test_type == "inbound":
                 wtime = info1.get('wtime', "未知")
-                stime = export.ExportTopo(name=None, info=info1).exportTopoInbound()
+                # stime = export.ExportTopo(name=None, info=info1).exportTopoInbound()
+                ex = export.ExportTopo(name=None, info=info1)
+                with ThreadPoolExecutor() as pool:
+                    loop = asyncio.get_running_loop()
+                    stime = await loop.run_in_executor(
+                        pool, ex.exportTopoInbound)
                 await check.check_photo(message, back_message, 'Topo' + stime, wtime)
                 ma.delsub2provider(subname=start_time)
                 ma.save(savePath='./clash/proxy.yaml')
@@ -117,7 +131,12 @@ async def analyzeurl(_, message: Message, test_type="all", **kwargs):
                 img_outbound, yug, image_width2 = export.ExportTopo().exportTopoOutbound(nodename=None,
                                                                                          info=clone_info2)
                 if test_type == "outbound":
-                    stime = export.ExportTopo(name=None, info=info2).exportTopoOutbound()
+                    # stime = export.ExportTopo(name=None, info=info2).exportTopoOutbound()
+                    ex = export.ExportTopo(name=None, info=info2)
+                    with ThreadPoolExecutor() as pool:
+                        loop = asyncio.get_running_loop()
+                        stime = await loop.run_in_executor(
+                            pool, ex.exportTopoOutbound)
                 else:
                     stime = export.ExportTopo(name=None, info=info1).exportTopoInbound(info2.get('节点名称', []), info2,
                                                                                        img2_width=image_width2)
@@ -157,7 +176,12 @@ async def analyze(_, message: Message, test_type="all"):
                 # 生成图片
                 if test_type == "inbound":
                     wtime = info1.get('wtime', "未知")
-                    stime = export.ExportTopo(name=None, info=info1).exportTopoInbound()
+                    # stime = export.ExportTopo(name=None, info=info1).exportTopoInbound()
+                    ex = export.ExportTopo(name=None, info=info1)
+                    with ThreadPoolExecutor() as pool:
+                        loop = asyncio.get_running_loop()
+                        stime = await loop.run_in_executor(
+                            pool, ex.exportTopoInbound)
                     await check.check_photo(message, back_message, 'Topo' + stime, wtime)
                     ma.delsub2provider(subname=start_time)
                     ma.save(savePath='./clash/proxy.yaml')
@@ -169,7 +193,12 @@ async def analyze(_, message: Message, test_type="all"):
                     img_outbound, yug, image_width2 = export.ExportTopo().exportTopoOutbound(nodename=None,
                                                                                              info=clone_info2)
                     if test_type == "outbound":
-                        stime = export.ExportTopo(name=None, info=info2).exportTopoOutbound()
+                        # stime = export.ExportTopo(name=None, info=info2).exportTopoOutbound()
+                        ex = export.ExportTopo(name=None, info=info2)
+                        with ThreadPoolExecutor() as pool:
+                            loop = asyncio.get_running_loop()
+                            stime = await loop.run_in_executor(
+                                pool, ex.exportTopoOutbound)
                     else:
                         stime = export.ExportTopo(name=None, info=info1).exportTopoInbound(info2.get('节点名称', []), info2,
                                                                                            img2_width=image_width2)
@@ -211,7 +240,12 @@ async def speedurl(_, message: Message, **kwargs):
         ma.save(savePath='./clash/proxy.yaml')
         if info:
             wtime = info.get('wtime', "-1")
-            stime = export.ExportSpeed(name=None, info=info).exportImage()
+            # stime = export.ExportSpeed(name=None, info=info).exportImage()
+            ex = export.ExportSpeed(name=None, info=info)
+            with ThreadPoolExecutor() as pool:
+                loop = asyncio.get_running_loop()
+                stime = await loop.run_in_executor(
+                    pool, ex.exportImage)
             # 发送回TG
             await check.check_photo(message, back_message, stime, wtime)
     except RPCError as r:
@@ -249,7 +283,12 @@ async def speed(_, message: Message):
             ma.save(savePath='./clash/proxy.yaml')
             if info:
                 wtime = info.get('wtime', "-1")
-                stime = export.ExportSpeed(name=None, info=info).exportImage()
+                # stime = export.ExportSpeed(name=None, info=info).exportImage()
+                ex = export.ExportSpeed(name=None, info=info)
+                with ThreadPoolExecutor() as pool:
+                    loop = asyncio.get_running_loop()
+                    stime = await loop.run_in_executor(
+                        pool, ex.exportImage)
                 # 发送回TG
                 await check.check_photo(message, back_message, stime, wtime)
         else:
