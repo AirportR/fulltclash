@@ -50,7 +50,7 @@ FullTclash bot 是承载其测试任务的Telegram 机器人（以下简称bot�
 
 要成功运行该项目代码，首先需要准备以下信息：
 
-- Telegram 的api_id 、api_hash [获取地址](https://my.telegram.org/apps) 不会请Google。
+- Telegram 的api_id 、api_hash [获取地址](https://my.telegram.org/apps) 不会请Google。(部分TG账号已被拉黑，无法正常使用)
 
 - 去 [@BotFather](https://t.me/BotFather) 那里创建一个机器人，获得该机器人的bot_token，应形如：
   
@@ -142,13 +142,34 @@ chmod +x ./resources/clash-linux-amd64
   # 获取订阅时使用代理（可选）
   proxy: 127.0.0.1:7890 #替换成自己的代理地址和端口,注意，此配置与上面的独立分开。
   ```
+- 更改clash核心
 
+  如果您想在非Windows平台运行此程序，请在配置文件中指定对应平台的clash可执行文件：
+  ```yaml
+  # 以Ubuntu为例:
+  clash:
+    path: ./resources/clash-linux-amd64
+    workpath: ./clash
+  ```
 ## 开始启动
 
 在项目目录下运行以下指令
-
+Windows10:
+```shell
+python clash.py
 ```
+在第二个窗口运行:
+```shell
 python main.py
+```
+
+Ubuntu: 
+```shell
+python3 clash.py
+```
+在第二个窗口运行:
+```shell
+python3 main.py
 ```
 
 等待初始化操作，出现“程序已启动!”字样就说明在运行了.
