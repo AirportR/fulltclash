@@ -268,7 +268,6 @@ async def check_photo(message: pyrogram.types.Message, back_message, name, wtime
                                          caption="⏱️总共耗时: {}s".format(wtime))
             await back_message.delete()
             if not await private_filter(name, name, message):
-                print("公开群组")
                 await message.delete()
     except RPCError as r:
         logger.error(r)

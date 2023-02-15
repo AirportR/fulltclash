@@ -751,8 +751,9 @@ class ConfigManager:
         :param subpath:
         :return:
         """
+        pingurl = config.getGstatic()
         info = {'type': 'file', 'path': subpath,
-                'health-check': {'enable': True, 'url': 'http://www.gstatic.com/generate_204', 'interval': 600}}
+                'health-check': {'enable': True, 'url': pingurl, 'interval': 6000}}
         if nodefilter:
             info['filter'] = nodefilter
         self.yaml['proxy-providers'][subname] = info
