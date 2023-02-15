@@ -937,6 +937,33 @@ class ResultCleaner:
     def __init__(self, info: dict):
         self.data = info
 
+    @staticmethod
+    def get_http_latency(data: list):
+        """
+        对所有列表延迟取平均，去除0
+        :param data:
+        :return:
+        """
+        if not data:
+            raise IndexError("列表为空")
+        n = len(data)
+        m = len(data[0])
+        new_list = []
+
+        for j in range(m):
+            col_sum = 0
+            num = 0
+            for i in range(n):
+                if data[i][j] != 0:
+                    col_sum += data[i][j]
+                    num += 1
+            if num:
+                r1 = int(col_sum/num)
+                new_list.append(r1)
+            else:
+                new_list.append(0)
+        return new_list
+
     def start(self, sort="订阅原序"):
         try:
             if '类型' in self.data:
@@ -954,12 +981,12 @@ class ResultCleaner:
                 self.sort_by_ping(reverse=True)
             elif sort == "HTTP升序":
                 self.sort_by_ping()
-            if '延迟RTT' in self.data:
-                rtt = self.data['延迟RTT']
+            if 'HTTP延迟(内核)' in self.data:
+                rtt = self.data['HTTP延迟(内核)']
                 new_rtt = []
                 for r in rtt:
                     new_rtt.append(str(r) + 'ms')
-                self.data['延迟RTT'] = new_rtt
+                self.data['HTTP延迟(内核)'] = new_rtt
             if 'HTTP延迟' in self.data:
                 rtt = self.data['HTTP延迟']
                 new_rtt = []

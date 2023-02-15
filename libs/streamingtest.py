@@ -20,8 +20,9 @@ async def unit(test_items: list, delay: int, host="127.0.0.1", port=1122):
     :return: list 返回test_items对应顺序的信息
     """
     info = []
-    delay2 = await collector.delay_https_task(proxy=f"http://{host}:{port}", times=3)
-    if delay == 0 and delay2 == 0:
+    # delay2 = await collector.delay_https_task(proxy=f"http://{host}:{port}", times=3)
+    delay2 = 0
+    if delay == 0:
         logger.warning("超时节点，跳过测试")
         for t in test_items:
             if t == "HTTP延迟":
@@ -30,7 +31,7 @@ async def unit(test_items: list, delay: int, host="127.0.0.1", port=1122):
                 info.append("N/A")
         return info
     else:
-        info.append(delay2)
+        info.append(delay)
         cl = collector.Collector()
         re1 = await cl.start(proxy=f"http://{host}:{port}")
         cnr = cleaner.ReCleaner(re1)
@@ -252,14 +253,22 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
     await back_message.edit_text(f"正在测试延迟... \n\n{nodenum}个节点")
     s1 = time.time()
     old_rtt = await collector.delay_providers(providername=start_time)
-    rtt = check.check_rtt(old_rtt, nodenum)
-    print("延迟:", rtt)
+    rtt1 = check.check_rtt(old_rtt, nodenum)
+    print("第一次延迟:", rtt1)
+    old_rtt = await collector.delay_providers(providername=start_time)
+    rtt2 = check.check_rtt(old_rtt, nodenum)
+    print("第二次延迟:", rtt2)
+    old_rtt = await collector.delay_providers(providername=start_time)
+    rtt3 = check.check_rtt(old_rtt, nodenum)
+    print("第三次延迟:", rtt3)
+    rtt = cleaner.ResultCleaner.get_http_latency([rtt1, rtt2, rtt3])
     # 启动流媒体测试
     try:
         info['节点名称'] = nodename
         info['类型'] = nodetype
-        # info['延迟RTT'] = rtt
         test_info = await batch_test_pro(back_message, nodename, rtt, test_items, pool)
+        info['HTTP延迟'] = test_info.pop('HTTP延迟')
+        # info['HTTP延迟(内核)'] = rtt
         info.update(test_info)
         sort = kwargs.get('sort', "订阅原序")
         logger.info("排序："+sort)
