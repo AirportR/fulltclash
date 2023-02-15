@@ -297,14 +297,21 @@ async def core(message, back_message, start_time, suburl: str = None, **kwargs):
     logger.info("开始测试延迟...")
     s1 = time.time()
     old_rtt = await collector.delay_providers(providername=start_time)
-    rtt = check.check_rtt(old_rtt, nodenum)
-    print("延迟:", rtt)
+    rtt1 = check.check_rtt(old_rtt, nodenum)
+    print("第一次延迟:", rtt1)
+    old_rtt = await collector.delay_providers(providername=start_time)
+    rtt2 = check.check_rtt(old_rtt, nodenum)
+    print("第二次延迟:", rtt2)
+    old_rtt = await collector.delay_providers(providername=start_time)
+    rtt3 = check.check_rtt(old_rtt, nodenum)
+    print("第三次延迟:", rtt3)
+    rtt = cleaner.ResultCleaner.get_http_latency([rtt1, rtt2, rtt3])
     try:
         break_speed.clear()
         speedinfo = await batch_speed(back_message, nodename)
         info['节点名称'] = nodename
         info['类型'] = nodetype
-        info['延迟RTT'] = rtt
+        info['HTTP延迟'] = rtt
         info.update(speedinfo)
         info = cleaner.ResultCleaner(info).start()
         # 计算测试消耗时间
