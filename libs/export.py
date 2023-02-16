@@ -348,9 +348,9 @@ class ExportTopo(ExportResult):
         else:
             self.info = info
         if name is None:
-            self.basedata = self.info.get('地区', [])
+            self.basedata = self.info.get('节点名称', []) if '节点名称' in self.info else self.info.get('地区', [])
         else:
-            self.basedata = self.info.get('地区', name)
+            self.basedata = self.info.get('节点名称', name) if '节点名称' in self.info else self.info.get('地区', [])
         self.emoji = self.config.config.get('emoji', True)  # 是否启用emoji，若否，则在输出图片时emoji将无法正常显示
         self.wtime = self.info.pop('wtime', "未知")
         self.nodenum = len(self.basedata)
@@ -455,6 +455,7 @@ class ExportTopo(ExportResult):
             start_x = end
             m = m + 1
         # 内容填充
+        # cu = self.info.pop('簇', [1 for _ in range(self.nodenum)])
         for t in range(self.nodenum):
             # 序号
             idraw.text((self.get_mid(0, 100, str(t + 1)), 40 * (t + 2)), text=str(t + 1), font=fnt, fill=(0, 0, 0))
@@ -470,8 +471,8 @@ class ExportTopo(ExportResult):
                                self.info[t1][t],
                                font=fnt, fill=(0, 0, 0))
                 else:
-                    idraw.text((self.get_mid(width, width + info_list_length[i], self.info[t1][t]), (t + 2) * 40),
-                               self.info[t1][t],
+                    idraw.text((self.get_mid(width, width + info_list_length[i], str(self.info[t1][t])), (t + 2) * 40),
+                               str(self.info[t1][t]),
                                font=fnt, fill=(0, 0, 0))
                 width += info_list_length[i]
                 i += 1
@@ -516,8 +517,8 @@ class ExportTopo(ExportResult):
         idraw = ImageDraw.Draw(img)
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
-        list1 = ["出口（提示:出口数量顺数即为每个入口对应节点）", "版本:{}  总共耗时: {}s".format(__version__, self.wtime),
-                 "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time)]
+        list1 = ["出口分析", "版本:{}  总共耗时: {}s".format(__version__, self.wtime),
+                 "测试时间: {}  测试结果仅供参考,以实际情况为准。簇代表节点复用。".format(export_time)]
         export_time = export_time.replace(':', '-')
         title = list1[0]
         idraw.text((self.get_mid(0, image_width, title), 1), title, font=fnt, fill=(0, 0, 0))  # 标题
@@ -536,17 +537,57 @@ class ExportTopo(ExportResult):
             idraw.text((self.get_mid(x, end, key_list[m]), 40), key_list[m], font=fnt, fill=(0, 0, 0))
             start_x = end
             m = m + 1
+        # 绘制横线
+        # for t in range(self.nodenum + 3):
+        #     idraw.line([(0, 40 * (t + 1)), (image_width, 40 * (t + 1))], fill="#e1e1e1", width=2)
         # 内容填充
+        cu = self.info.get('簇', [1 for _ in range(self.nodenum)])
+        cu_offset = 0
+        cu_offset2 = 0
         for t in range(self.nodenum):
             # 序号
             idraw.text((self.get_mid(0, 100, str(t + 1)), 40 * (t + 2)), text=str(t + 1), font=fnt, fill=(0, 0, 0))
+            idraw.line([(0, 40 * (t + 3)), (100, 40 * (t + 3))], fill="#e1e1e1", width=2)
             width = 100
             i = 0
+            if t < len(cu):
+                if cu[t] > 1:
+                    cu_offset2 += cu[t] - 1
             for t1 in key_list:
-                if t1 == "组织":
-                    idraw.text((width + 10, (t + 2) * 40),
-                               self.info[t1][t],
-                               font=fnt, fill=(0, 0, 0))
+                if t1 == "地区" or t1 == "AS编号":
+                    if t < len(cu):
+                        temp = cu[t]
+                        y = ((t + 2) * 40 + (t + 2) * 40 + (40 * (temp - 1))) / 2 + cu_offset * 40
+                        idraw.text((self.get_mid(width, width + info_list_length[i], str(self.info[t1][t])), y),
+                                   str(self.info[t1][cu_offset + t]),
+                                   font=fnt, fill=(0, 0, 0))
+                        idraw.line([(width, (t + 3 + cu_offset2) * 40),
+                                    (width + info_list_length[i], (t + 3 + cu_offset2) * 40)],
+                                   fill="#e1e1e1", width=2)
+                elif t1 == "组织":
+                    if t < len(cu):
+                        temp = cu[t]
+                        y = ((t + 2) * 40 + (t + 2) * 40 + (40 * (temp - 1))) / 2 + cu_offset * 40
+                        idraw.text((width + 10, y),
+                                   str(self.info[t1][cu_offset + t]),
+                                   font=fnt, fill=(0, 0, 0))
+                        idraw.line([(width, (t + 3 + cu_offset2) * 40),
+                                    (width + info_list_length[i], (t + 3 + cu_offset2) * 40)],
+                                   fill="#e1e1e1", width=2)
+                elif t1 == "簇":
+                    if t < len(cu):
+                        temp = self.info[t1][t]
+                        y = ((t + 2) * 40 + (t + 2) * 40 + (40 * (temp - 1))) / 2 + cu_offset * 40
+                        idraw.text((self.get_mid(width, width + info_list_length[i], str(self.info[t1][t])), y),
+                                   str(self.info[t1][t]),
+                                   font=fnt, fill=(0, 0, 0))
+                        if cu[t] > 1:
+                            cu_offset += cu[t] - 1
+                        idraw.line([(width, (t + 3 + cu_offset2) * 40),
+                                    (width + info_list_length[i], (t + 3 + cu_offset2) * 40)],
+                                   fill="#e1e1e1", width=2)
+                    else:
+                        pass
                 elif t1 == "节点名称":
                     try:
                         if self.emoji:
@@ -561,15 +602,35 @@ class ExportTopo(ExportResult):
                         pilmoji2.text((width + 10, (t + 2) * 40),
                                       self.info[t1][t],
                                       font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
+                    except Exception as e:
+                        logger.error(str(e))
+                        idraw.text((width + 10, (t + 2) * 40), self.info[t1][t], font=fnt, fill=(0, 0, 0))
+                    idraw.line(
+                        [(width, (t + 3) * 40), (width + info_list_length[i], (t + 3) * 40)],
+                        fill="#e1e1e1", width=2)
+                elif t1 == "入口":
+                    text = str(self.info[t1][t])
+                    pre_text = str(self.info[t1][t - 1]) if t > 0 else str(self.info[t1][0])
+                    if t == 0:
+                        idraw.text(
+                            (self.get_mid(width, width + info_list_length[i], str(self.info[t1][t])), (t + 2) * 40),
+                            str(self.info[t1][t]),
+                            font=fnt, fill=(0, 0, 0))
+                    elif text != pre_text:
+                        idraw.text(
+                            (self.get_mid(width, width + info_list_length[i], text), (t + 2) * 40),
+                            text,
+                            font=fnt, fill=(0, 0, 0))
+                    else:
+                        pass
                 else:
-                    idraw.text((self.get_mid(width, width + info_list_length[i], self.info[t1][t]), (t + 2) * 40),
-                               self.info[t1][t],
+                    idraw.text((self.get_mid(width, width + info_list_length[i], str(self.info[t1][t])), (t + 2) * 40),
+                               str(self.info[t1][t]),
                                font=fnt, fill=(0, 0, 0))
                 width += info_list_length[i]
                 i += 1
-        # 绘制横线
-        for t in range(self.nodenum + 3):
-            idraw.line([(0, 40 * (t + 1)), (image_width, 40 * (t + 1))], fill="#e1e1e1", width=1)
+        idraw.line([(0, 40), (image_width, 40)], fill="#e1e1e1", width=2)
+        idraw.line([(0, image_height-40), (image_width, image_height-40)], fill="#e1e1e1", width=2)
         start_x = 100
         for i in info_list_length:
             x = start_x

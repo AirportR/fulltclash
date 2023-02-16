@@ -1,6 +1,7 @@
 import asyncio
 import time
-
+from collections import Counter
+from operator import itemgetter
 import aiohttp
 from loguru import logger
 from pyrogram.errors import RPCError, FloodWait
@@ -38,7 +39,7 @@ async def topo(file_path: str):
             info.update({'地区': country_code, 'AS编号': asn, '组织': org})
             numcount = []
             for v in inboundinfo.values():
-                numcount.append(str(v))
+                numcount.append(int(v))
             new_hosts = []
             for host in hosts:
                 if len(host) < 16:  # v4地址最大长度为15
@@ -214,18 +215,29 @@ async def core(message, back_message, start_time, suburl: str = None, test_type=
                 asn.append(str(ipcl.get_asn()))
                 org.append(ipcl.get_org())
                 ip = ipcl.get_ip()
-                if len(ip) < 16:  # v4地址最大长度为15
-                    try:
-                        old_ip = ip.split('.')
-                        new_ip = "*.*.*." + old_ip[-1]
-                    except IndexError:
-                        new_ip = ip
-                    ipaddr.append(new_ip)
-                else:
-                    ipaddr.append("?")
-
-            info2.update({'地区': country_code, 'AS编号': asn, '组织': org, '出口ip': ipaddr})
-            info2.update({'节点名称': nodename})
+                ipaddr.append(ip)
+                # if len(ip) < 16:  # v4地址最大长度为15
+                #     try:
+                #         old_ip = ip.split('.')
+                #         new_ip = "*.*.*." + old_ip[-1]
+                #     except IndexError:
+                #         new_ip = ip
+                #     ipaddr.append(new_ip)
+                # else:
+                #     ipaddr.append("?")
+            out_num = info1.get('出口数量', [])
+            num_c = 1
+            d0 = []
+            for i in out_num:
+                d0 += [num_c for _ in range(int(i))]
+                num_c += 1
+            all_data = zip(d0, country_code, asn, org, ipaddr, nodename)
+            sorted_data = sorted(all_data, key=itemgetter(4), reverse=True)
+            d0, d1, d2, d3, d4, d5 = zip(*sorted_data)
+            d4_count = Counter(d4)
+            results4 = [v for k, v in d4_count.items()]
+            info2.update({'入口': d0, '地区': d1, 'AS编号': d2, '组织': d3, '簇': results4})
+            info2.update({'节点名称': d5})
         # 计算测试消耗时间
         wtime = "%.1f" % float(time.time() - s1)
         info2.update({'wtime': wtime})

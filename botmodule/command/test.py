@@ -301,5 +301,5 @@ async def speed(_, message: Message):
         await message.reply(str(r))
     except FloodWait as e:
         await asyncio.sleep(e.value)
-    # except Exception as e:
-    #     logger.error(e)
+    except Exception as e:
+        logger.error(e)

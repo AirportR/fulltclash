@@ -73,7 +73,7 @@ async def fetch_openai(Collector, session: aiohttp.ClientSession, proxy=None, re
             return
     except asyncio.exceptions.TimeoutError:
         if reconnection != 0:
-            logger.warning("赛马娘请求超时，正在重新发送请求......")
+            logger.warning("OpenAI请求超时，正在重新发送请求......")
             await fetch_openai(Collector, session, proxy=proxy, reconnection=reconnection - 1)
         else:
             Collector.info['OpenAI'] = "超时"
