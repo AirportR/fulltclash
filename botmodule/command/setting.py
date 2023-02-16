@@ -6,21 +6,11 @@ from pyrogram.errors import RPCError
 from pyrogram.types import BotCommand, CallbackQuery, Message
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from libs.cleaner import addon
-# from addons.unlockTest.hbomax import b9
-# from addons.unlockTest.bahamut import b10
-# from addons.unlockTest.abema import button as b12
-# from addons.unlockTest.bbciplayer import button as b13
-# from addons.unlockTest.pcrjp import button as b14
 from addons.unlockTest.primevideo import button as b15
-# from addons.unlockTest.myvideo import button as b16
-# from addons.unlockTest.catchplay import button as b17
 from addons.unlockTest.viu import button as b18
 from addons.unlockTest.ip_risk import button as b19
 from addons.unlockTest.steam import button as b20
 from addons.unlockTest.wikipedia import button as b21
-# from addons.unlockTest.umajp import button as b22
-# from addons.unlockTest.hulujp import button as b23
-# from addons.unlockTest.wikipedia_zh import button as b24
 from addons.unlockTest.openai import button as b25
 
 b1 = InlineKeyboardButton("✅Netflix", callback_data='✅Netflix')
