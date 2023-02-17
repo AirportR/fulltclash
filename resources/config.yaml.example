@@ -6,13 +6,13 @@ item: # 流媒体测试项，决定你想要测哪个项,目前仅支持以下�
 - 'Youtube' # Youtube premium测试，如果测试结果显示失败大概率该节点是送中节点，默认开启。
 - 'Disney' # Disney Plus 区域限制不明显，观看体验尚佳，默认开启。
 #- 'Bilibili' # bilibili解锁， 仅在港澳台或者仅限台湾的番剧，这项测试一般很难看，默认不开启，想开启该项将该行最前面的#号删除即可。
-#- 'Dazn' # Dazn 一般测试得很难看，默认不开启，想开启该项将该行最前面的#号删除即可。
+#- 'Dazn' # Dazn 一般测试得很难看，默认不开启，想开启该项将该行git branch -D最前面的#号删除即可。
 #- 'Hbomax'
 #- 'Bahamut'
 #netflixurl: "https://www.netflix.com/title/80113701"  #自定义奈飞非自制剧检测网页，注意在更换此链接时请确保是非自制的链接。
 #proxyport: 7890 # 此为旧版代理设置，用于TGbot通讯，现已不推荐使用。
 #bot:
-# proxy: "host:端口" #socks5代理，已和下面的proxy单独分离，请勿混用
+# proxy: "host:端口:用户名:密码" #socks5代理，用户名和密码为可选配置，已和下面的proxy单独分离，请勿混用
 # strictmode: false # 严格模式，代表测试的时侯，bot内联按钮只有发起测试的主人才能按，否则所有用户用户权限都可以按。默认false，目前未适配，敬请期待。
 #proxy: "host:端口" # http配置代理(非socks5)，用于下载获取订阅链接，订阅链接国内打不开可尝试开启（可选配置）,本机提供的代理可以这样填: '127.0.0.1:7890'
 #geoip-api: "ip-api.com" # GEOIP 测试api ，取二级域名,目前支持 ip-api.com ip.sb 两种
