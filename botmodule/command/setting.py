@@ -49,6 +49,12 @@ page_is_locked = {}
 sort_cache = {}
 
 
+def reload_button():
+    global buttons
+    buttons = [b1, b2, b3, b25, b15, b18, b20, b21, b19]
+    buttons.extend(addon.init_button())
+
+
 async def setcommands(client):
     my = types.BotCommandScopeAllGroupChats()
     await client.set_bot_commands(
