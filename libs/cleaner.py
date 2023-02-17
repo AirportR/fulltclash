@@ -103,18 +103,24 @@ class AddonCleaner:
         """
         self._script = {}
         self.init_addons(path)
+        self.blacklist = []
 
     def global_test_item(self):
-        test_item = list(self._script.keys())
-        return ['Netflix', 'Youtube', 'Disney+', 'Primevideo', 'Viu', 'steam货币', 'OpenAI',
-                '维基百科', '落地IP风险'] + test_item
+        base_item = ['Netflix', 'Youtube', 'Disney+', 'Primevideo', 'Viu', 'steam货币', 'OpenAI',
+                     '维基百科', '落地IP风险']
+        test_item = set(list(self._script.keys()) + base_item)
+        new_item = test_item - set(self.blacklist)
+        return list(new_item)
 
     @property
     def script(self):
         return self._script
 
-    def reload(self, path: str = "./addons"):
+    def reload_script(self, blacklist: list = None, path: str = "./addons"):
         self.init_addons(path)
+        if blacklist:
+            for b in blacklist:
+                self._script.pop(b, None)
 
     def init_addons(self, path: str):
         try:
@@ -959,7 +965,7 @@ class ResultCleaner:
                     col_sum += data[i][j]
                     num += 1
             if num:
-                r1 = int(col_sum/num)
+                r1 = int(col_sum / num)
                 new_list.append(r1)
             else:
                 new_list.append(0)

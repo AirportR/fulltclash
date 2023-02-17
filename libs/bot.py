@@ -145,6 +145,10 @@ def command_loader(app: Client):
         if await isuser(message, botmodule.init_bot.reloadUser()):
             await botmodule.sub_invite(client, message)
 
+    @app.on_message(filters.command(['upload']) & filters.user(admin), group=2)
+    async def load_script(client, message):
+        await botmodule.download_script(client, message)
+
 
 def callback_loader(app: Client):
     @app.on_callback_query()
