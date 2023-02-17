@@ -1,12 +1,29 @@
 import asyncio
+import hashlib
 import re
 
+import pyrogram.types
 from pyrogram.errors import RPCError
 from loguru import logger
+from pyrogram.filters import private_filter
 
 """
 这个模块主要是一些检查函数，用来验证某个值是否合法。一般是返回布尔值
 """
+
+
+async def check_share(message, shareid: list):
+    """
+    检查是否在分享名单中,若在返回真，否则返回假。
+    :param message: 消息对象
+    :param shareid: 共享名单
+    :return: [true, false]
+    """
+    try:
+        ID = message.from_user.id
+    except AttributeError:
+        ID = message.sender_chat.id
+    return str(ID) in shareid
 
 
 async def check_callback_master(callback_query, USER_TARGET=None, strict: bool = False):
@@ -20,7 +37,6 @@ async def check_callback_master(callback_query, USER_TARGET=None, strict: bool =
     master = []
     if USER_TARGET and not strict:
         master.extend(USER_TARGET)
-
     try:
         master.append(callback_query.message.reply_to_message.from_user.id)  # 发起测试任务的用户id
         if int(callback_query.from_user.id) not in master:
@@ -43,6 +59,46 @@ async def check_callback_master(callback_query, USER_TARGET=None, strict: bool =
         return True
 
 
+async def check_subowner(message, back_message, subinfo: dict, admin: list, password: str):
+    """
+    检查是否是订阅的拥有者
+    :param password:
+    :param admin: 管理员列表名单
+    :param back_message: 消息对象
+    :param message: 消息对象
+    :param subinfo: config.get_sub()返回的字典
+    :return: True|False
+    """
+    try:
+        ID = message.from_user.id
+    except AttributeError:
+        ID = message.sender_chat.id
+    if not subinfo:
+        await back_message.edit_text("❌找不到该任务名称，请检查参数是否正确")
+        await asyncio.sleep(10)
+        await back_message.delete()
+        return False
+    subpwd = subinfo.get('password', '')
+    subowner = subinfo.get('owner', '')
+    subuser = subinfo.get('share', [])
+    if await check_user(message, admin, isalert=False):
+        # 管理员至高权限
+        return True
+    if (subowner and subowner == ID) or await check_share(message, subuser):
+        if hashlib.sha256(password.encode("utf-8")).hexdigest() == subpwd:
+            return True
+        else:
+            await back_message.edit_text('❌访问密码错误')
+            await asyncio.sleep(10)
+            await back_message.delete()
+            return False
+    else:
+        await back_message.edit_text("❌身份ID不匹配，您无权使用该订阅。")
+        await asyncio.sleep(10)
+        await back_message.delete()
+        return False
+
+
 async def check_user(message, USER_TARGET: list, isalert=True):
     """
     检查是否是用户，如果是返回真
@@ -59,8 +115,9 @@ async def check_user(message, USER_TARGET: list, isalert=True):
     try:
         try:
             username = str(message.from_user.username)
-        except Exception as e:
-            logger.info("无法获取该目标获取用户名" + str(e))
+        except AttributeError:
+            pass
+            # logger.info("无法获取该目标获取用户名" + str(e))
         if username:
             if username not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
                 if int(message.from_user.id) not in USER_TARGET:
@@ -192,7 +249,7 @@ async def check_nodes(message, nodenum, args: tuple, max_num=300):
         return False
 
 
-async def check_photo(message, back_message, name, wtime):
+async def check_photo(message: pyrogram.types.Message, back_message, name, wtime):
     """
     检查图片是否生成成功
     :param wtime: 消耗时间
@@ -210,7 +267,8 @@ async def check_photo(message, back_message, name, wtime):
             await message.reply_document(r"./results/{}.png".format(name),
                                          caption="⏱️总共耗时: {}s".format(wtime))
             await back_message.delete()
-            await message.delete()
+            if not await private_filter(name, name, message):
+                await message.delete()
     except RPCError as r:
         logger.error(r)
 

@@ -1,7 +1,6 @@
 import asyncio
 import json
 import time
-
 import aiohttp
 import async_timeout
 from urllib.parse import quote
@@ -21,7 +20,9 @@ from libs import cleaner
 ** 开发建议 **
 如果你想自己添加一个流媒体测试项，建议继承Collector类，重写类中的create_tasks方法，以及自定义自己的流媒体测试函数 fetch_XXX()
 """
+
 config = cleaner.ConfigManager()
+addon = cleaner.addon
 media_items = config.get_media_item()
 proxies = config.get_proxy()  # 代理
 
@@ -171,17 +172,19 @@ class SubCollector(BaseCollector):
         self.subconvertor = config.config.get('subconvertor', {})
         self.cvt_enable = self.subconvertor.get('enable', False)
         self.url = suburl
+        self.include = include
+        self.exclude = exclude
         self.codeurl = quote(suburl, encoding='utf-8')
         self.code_include = quote(include, encoding='utf-8')
         self.code_exclude = quote(exclude, encoding='utf-8')
-        self.host = str(self.subconvertor.get('host', '127.0.0.1:25500'))
-        self.cvt_url = f"http://{self.host}/sub?target=clash&new_name=true&url={self.codeurl}&include={self.code_include}&exclude={self.code_exclude}&emoji=true"
+        self.cvt_host = str(self.subconvertor.get('host', '127.0.0.1:25500'))
+        self.cvt_url = f"http://{self.cvt_host}/sub?target=clash&new_name=true&url={self.codeurl}&include={self.code_include}&exclude={self.code_exclude}"
         self.sub_remote_config = self.subconvertor.get('remoteconfig', '')
         self.config_include = quote(self.subconvertor.get('include', ''), encoding='utf-8')  # 这两个
         self.config_exclude = quote(self.subconvertor.get('exclude', ''), encoding='utf-8')
-        print(f"配置文件过滤,包含：{self.config_include} 排除：{self.config_exclude}")
+        # print(f"配置文件过滤,包含：{self.config_include} 排除：{self.config_exclude}")
         if self.config_include or self.config_exclude:
-            self.cvt_url = f"http://{self.host}/sub?target=clash&new_name=true&url={self.cvt_url}&include={self.code_include}&exclude={self.code_exclude}&emoji=true"
+            self.cvt_url = f"http://{self.cvt_host}/sub?target=clash&new_name=true&url={self.cvt_url}&include={self.code_include}&exclude={self.code_exclude}"
         if self.sub_remote_config:
             self.sub_remote_config = quote(self.sub_remote_config, encoding='utf-8')
             self.cvt_url = self.cvt_url + "&config=" + self.sub_remote_config
@@ -237,6 +240,7 @@ class SubCollector(BaseCollector):
         :return: 获得一个文件: sub.yaml, bool : True or False
         """
         _headers = {'User-Agent': 'clash'}
+        # suburl = self.url
         suburl = self.cvt_url if self.cvt_enable else self.url
         cvt_text = r"subconvertor状态: {}".format("已启用" if self.cvt_enable else "未启用")
         logger.info(cvt_text)
@@ -251,7 +255,8 @@ class SubCollector(BaseCollector):
                                     logger.info("获取订阅成功")
                                     break
                                 fd.write(chunk)
-                            return True
+                        return True
+                    return False
         except asyncio.exceptions.TimeoutError:
             logger.info("获取订阅超时")
             return False
@@ -264,6 +269,7 @@ class Collector:
     def __init__(self):
         self.session = None
         self.tasks = []
+        self.script = addon.script
         self._headers = {
             'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                           "Chrome/106.0.0.0 Safari/537.36"}
@@ -289,12 +295,6 @@ class Collector:
         self.info = {}
         self.disneyurl1 = "https://www.disneyplus.com/"
         self.disneyurl2 = "https://global.edge.bamgrid.com/token"
-        self.biliurl1 = "https://api.bilibili.com/pgc/player/web/playurl?avid=50762638&cid=100279344&qn=0&type=&otype" \
-                        "=json&ep_id=268176&fourk=1&fnver=0&fnval=16&session=926c41d4f12e53291b284b94f555e7df&module" \
-                        "=bangumi"
-        self.biliurl2 = "https://api.bilibili.com/pgc/player/web/playurl?avid=18281381&cid=29892777&qn=0&type=&otype" \
-                        "=json&ep_id=183799&fourk=1&fnver=0&fnval=16&session=926c41d4f12e53291b284b94f555e7df&module" \
-                        "=bangumi"
         self.daznurl = "https://startup.core.indazn.com/misl/v5/Startup"
 
     @logger.catch
@@ -309,108 +309,47 @@ class Collector:
         try:
             if len(items):
                 for item in items:
-                    i = item.capitalize()
-                    # if i == "Netflix":
-                    #     task1 = asyncio.create_task(self.fetch_ip(session=session, proxy=proxy))
-                    #     self.tasks.append(task1)
-                    #     task2 = asyncio.create_task(self.fetch_ninfo1(session, proxy=proxy))
-                    #     self.tasks.append(task2)
-                    #     task3 = asyncio.create_task(self.fetch_ninfo2(session, proxy=proxy))
-                    #     self.tasks.append(task3) # 旧奈飞测试，已废弃
+                    i = item
+                    if i in self.script:
+                        task = self.script[i][0]
+                        self.tasks.append(task(self, session, proxy=proxy))
+                        continue
                     if i == "Youtube":
                         task4 = asyncio.create_task(self.fetch_youtube(session, proxy=proxy))
                         self.tasks.append(task4)
                     elif i == "Disney" or i == "Disney+":
                         task5 = asyncio.create_task(self.fetch_dis(session, proxy=proxy))
                         self.tasks.append(task5)
-                    elif i == "Bilibili":
-                        task6 = asyncio.create_task(self.fetch_bilibili(session, proxy=proxy))
-                        self.tasks.append(task6)
                     elif i == "Dazn":
                         task7 = asyncio.create_task(self.fetch_dazn(session, proxy=proxy))
                         self.tasks.append(task7)
-                    elif i == "Hbomax":
-                        from addons.unlockTest import hbomax
-                        self.tasks.append(hbomax.task(self, session, proxy=proxy))
-                    elif i == "Bahamut":
-                        from addons.unlockTest import bahamut
-                        self.tasks.append(bahamut.task(self, session, proxy=proxy))
                     elif i == "Netflix":
                         from addons.unlockTest import netflix
                         self.tasks.append(netflix.task(self, session, proxy=proxy))
-                    elif i == "Abema":
-                        from addons.unlockTest import abema
-                        self.tasks.append(abema.task(self, session, proxy=proxy))
-                    elif i == "Bbc":
-                        from addons.unlockTest import bbciplayer
-                        self.tasks.append(bbciplayer.task(self, session, proxy=proxy))
-                    elif i == "公主链接":
-                        from addons.unlockTest import pcrjp
-                        self.tasks.append(pcrjp.task(self, session, proxy=proxy))
                     elif i == "Primevideo":
                         from addons.unlockTest import primevideo
                         self.tasks.append(primevideo.task(self, session, proxy=proxy))
-                    elif i == "Myvideo":
-                        from addons.unlockTest import myvideo
-                        self.tasks.append(myvideo.task(self, session, proxy=proxy))
-                    elif i == "Catchplay":
-                        from addons.unlockTest import catchplay
-                        self.tasks.append(catchplay.task(self, session, proxy=proxy))
                     elif i == "Viu":
                         from addons.unlockTest import viu
                         self.tasks.append(viu.task(self, session, proxy=proxy))
-                    elif i == "Iprisk" or i == "落地ip风险":
-                        from addons import ip_risk
+                    elif i == "Iprisk" or i == "落地IP风险":
+                        from addons.unlockTest import ip_risk
                         self.tasks.append(ip_risk.task(self, session, proxy=proxy))
+                    elif i == "steam货币":
+                        from addons.unlockTest import steam
+                        self.tasks.append(steam.task(self, session, proxy=proxy))
+                    elif i == "维基百科":
+                        from addons.unlockTest import wikipedia
+                        self.tasks.append(wikipedia.task(self, session, proxy=proxy))
+                    elif item == "OpenAI":
+                        from addons.unlockTest import openai
+                        self.tasks.append(openai.task(self, session, proxy=proxy))
                     else:
                         pass
             return self.tasks
         except Exception as e:
             logger.error(e)
             return []
-
-    async def fetch_bilibili(self, session: aiohttp.ClientSession, flag=1, proxy=None, reconnection=2):
-        """
-        bilibili解锁测试，先测仅限台湾地区的限定资源，再测港澳台的限定资源
-        :param flag: 用于判断请求的是哪个bilibili url
-        :param reconnection:
-        :param session:
-        :param proxy:
-        :return:
-        """
-        try:
-            if flag == 1:
-                res = await session.get(self.biliurl1, proxy=proxy, timeout=5)
-            elif flag == 2:
-                res = await session.get(self.biliurl2, proxy=proxy, timeout=5)
-            else:
-                return
-            if res.status == 200:
-                text = await res.json()
-                try:
-                    message = text['message']
-                    if message == "抱歉您所在地区不可观看！" and flag == 1:
-                        await self.fetch_bilibili(session, flag=flag + 1, proxy=proxy, reconnection=2)
-                    elif message == "抱歉您所在地区不可观看！" and flag == 2:
-                        self.info['bilibili'] = "失败"
-                    elif message == "success" and flag == 1:
-                        self.info['bilibili'] = "解锁(台湾)"
-                    elif message == "success" and flag == 2:
-                        self.info['bilibili'] = "解锁(港澳台)"
-                    else:
-                        self.info['bilibili'] = "N/A"
-                except KeyError:
-                    self.info['bilibili'] = "N/A"
-            else:
-                self.info['bilibili'] = "N/A"
-        except ClientConnectorError as c:
-            logger.warning("bilibili请求发生错误:" + str(c))
-            if reconnection != 0:
-                await self.fetch_bilibili(session=session, proxy=proxy, flag=flag, reconnection=reconnection - 1)
-        except asyncio.exceptions.TimeoutError:
-            logger.warning("bilibili请求超时，正在重新发送请求......")
-            if reconnection != 0:
-                await self.fetch_bilibili(session=session, proxy=proxy, flag=flag, reconnection=reconnection - 1)
 
     async def fetch_ip(self, session: aiohttp.ClientSession, proxy=None):
         """
@@ -540,6 +479,8 @@ class Collector:
                     elif dis1.history:
                         if 300 <= dis1.history[0].status <= 399:
                             self.info['disney'] = "待解({})".format(region)
+                        else:
+                            self.info['disney'] = "未知"
                     else:
                         self.info['disney'] = "解锁({})".format(region)
                     logger.info("disney+ 成功访问(轻检测，检测结果准确率下降)")
@@ -562,6 +503,8 @@ class Collector:
                     elif dis1.history:
                         if 300 <= dis1.history[0].status <= 399:
                             self.info['disney'] = "待解({})".format(region)
+                        else:
+                            self.info['disney'] = "未知"
                     else:
                         self.info['disney'] = "解锁({})".format(region)
                 else:
@@ -572,6 +515,8 @@ class Collector:
             logger.warning("disney+请求发生错误:" + str(c))
             if reconnection != 0:
                 await self.fetch_dis(session=session, proxy=proxy, reconnection=reconnection - 1)
+            else:
+                self.info['disney'] = '连接错误'
         except asyncio.exceptions.TimeoutError:
             logger.warning("disney+请求超时，正在重新发送请求......")
             if reconnection != 0:
@@ -597,10 +542,14 @@ class Collector:
             logger.warning("Dazn请求发生错误:" + str(c))
             if reconnection != 0:
                 await self.fetch_dis(session=session, proxy=proxy, reconnection=reconnection - 1)
+            else:
+                self.info['dazn'] = '连接错误'
         except asyncio.exceptions.TimeoutError:
             logger.warning("Dazn请求超时，正在重新发送请求......")
             if reconnection != 0:
                 await self.fetch_dis(session=session, proxy=proxy, reconnection=reconnection - 1)
+            else:
+                self.info['dazn'] = '超时'
 
     async def start(self, proxy=None):
         """
@@ -665,7 +614,7 @@ async def delay_providers(providername, hostname='127.0.0.1', port=1123, session
 
 
 async def batch_delay(proxyname: list, session: aiohttp.ClientSession = None,
-                      testurl='http://www.gstatic.com/generate_204',
+                      testurl=config.getGstatic(),
                       hostname='127.0.0.1', port=1123, timeout='5000'):
     """
     批量测试延迟，仅适用于不含providers的订阅
@@ -698,3 +647,65 @@ async def batch_delay(proxyname: list, session: aiohttp.ClientSession = None,
     except Exception as e:
         logger.error(e)
         return None
+
+
+async def delay_https(session: aiohttp.ClientSession, proxy=None, testurl=config.getGstatic(),
+                      timeout=10):
+    _headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
+                      'Chrome/102.0.5005.63 Safari/537.36'
+    }
+    _headers2 = {'User-Agent': 'clash'}
+    try:
+        s1 = time.time()
+        async with session.get(url=testurl, proxy=proxy, headers=_headers2,
+                               timeout=timeout) as r:
+            if r.status == 502:
+                pass
+                # logger.error("dual stack tcp shake hands failed")
+            if r.status == 204 or r.status == 200:
+                delay1 = time.time() - s1
+                # print(delay1)
+                return delay1
+            else:
+                return 0
+    except Exception as e:
+        logger.error(str(e))
+        return 0
+
+
+async def delay_https_task(collector=None, session: aiohttp.ClientSession = None, proxy=None, times=5):
+    if session is None:
+        async with aiohttp.ClientSession() as session:
+            tasks = [asyncio.create_task(delay_https(session=session, proxy=proxy)) for _ in range(times)]
+            result = await asyncio.gather(*tasks)
+            sum_num = [r for r in result if r != 0]
+            http_delay = sum(sum_num) / len(sum_num) if len(sum_num) else 0
+            http_delay = "%.0fms" % (http_delay * 1000)
+            # print("http平均延迟:", http_delay)
+            http_delay = int(http_delay[:-2])
+            if collector is not None:
+                collector.info['HTTP延迟'] = http_delay
+            return http_delay
+    else:
+        tasks = [asyncio.create_task(delay_https(session=session, proxy=proxy)) for _ in range(times)]
+        result = await asyncio.gather(*tasks)
+        sum_num = [r for r in result if r != 0]
+        http_delay = sum(sum_num) / len(sum_num) if len(sum_num) else 0
+        http_delay = "%.0fms" % (http_delay * 1000)
+        http_delay = int(http_delay[:-2])
+        # print("http平均延迟:", http_delay)
+        if collector is not None:
+            collector.info['HTTP延迟'] = http_delay
+        return http_delay
+
+
+if __name__ == "__main__":
+    "this is a test demo"
+    import sys
+    import os
+
+    sys.path.append(os.path.abspath(os.path.join(os.getcwd(), os.pardir)))
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(delay_https_task())

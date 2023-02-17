@@ -1,7 +1,8 @@
+import importlib
+import os
 import re
 import socket
 import yaml
-from bs4 import BeautifulSoup
 from loguru import logger
 
 
@@ -10,12 +11,11 @@ class IPCleaner:
         self._data = data
         self.style = config.config.get('geoip-api', 'ip-api.com')
 
-    def get(self, key):
+    def get(self, key, _default=None):
         try:
             return self._data[key]
-        except KeyError as k:
-            logger.error(str(k))
-            return None
+        except KeyError:
+            return _default
         except TypeError:
             # logger.warning("无法获取对应信息: " + str(key))
             return None
@@ -76,21 +76,113 @@ class IPCleaner:
             return ""
 
     def get_asn(self):
-        asn = ""
-        try:
-            if self.style == "ip-api.com":
-                asn = self.get('as').split(' ')[0]
-            elif self.style == "ip.sb":
-                asn = self.get('asn')
-            else:
-                pass
-            if asn:
+        if self.style == "ip-api.com":
+            try:
+                asn = self.get('as', '0').split(' ')[0]
                 return asn
+            except AttributeError:
+                return '0'
+            except IndexError:
+                return '0'
+        elif self.style == "ip.sb":
+            asn = self.get('asn', '0')
+            return asn
+        else:
+            return ''
+
+
+class AddonCleaner:
+    """
+    动态脚本导入
+    """
+
+    def __init__(self, path: str = "./addons"):
+        """
+
+        :param path: 加载路径
+        """
+        self._script = {}
+        self.init_addons(path)
+
+    def global_test_item(self):
+        test_item = list(self._script.keys())
+        return ['Netflix', 'Youtube', 'Disney+', 'Primevideo', 'Viu', 'steam货币', 'OpenAI',
+                '维基百科', '落地IP风险'] + test_item
+
+    @property
+    def script(self):
+        return self._script
+
+    def reload(self, path: str = "./addons"):
+        self.init_addons(path)
+
+    def init_addons(self, path: str):
+        try:
+            di = os.listdir(path)
+        except FileNotFoundError:
+            di = None
+        module_name = []
+        if di is None:
+            logger.warning(f"找不到 {path} 所在的路径")
+        else:
+            for d in di:
+                if len(d) > 3:
+                    if d[-3:] == '.py' and d != "__init__.py":
+                        module_name.append(d[:-3])
+                    else:
+                        pass
+
+        logger.info("模块即将动态加载: " + str(module_name))
+        logger.info("正在尝试获取 'SCRIPT' 属性组件")
+        # module_name = ["abema"]
+        num = 0
+        for mname in module_name:
+            try:
+                mo1 = importlib.import_module(f"addons.{mname}")
+            except ModuleNotFoundError as m:
+                logger.warning(str(m))
+                mo1 = None
+            except NameError as n:
+                logger.warning(str(n))
+                mo1 = None
+            except Exception as e:
+                logger.error(str(e))
+                mo1 = None
+            if mo1 is None:
+                continue
+            try:
+                script = getattr(mo1, 'SCRIPT')
+            except AttributeError as a:
+                logger.warning(str(a))
+                script = None
+            if script is None or type(script).__name__ != "dict":
+                continue
+
+            sname = script.get('MYNAME', None)
+            stask = script.get("TASK", None)
+            sget = script.get("GET", None)
+            if type(stask).__name__ == 'function' and type(sname).__name__ == 'str' and type(
+                    sget).__name__ == 'function':
+                self._script[sname] = [stask, sget]
+                num += 1
+                logger.info(f"已成功加载测试脚本：{sname}")
             else:
-                return "0"
+                logger.warning("测试脚本导入格式错误")
+        logger.info(f"外接测试脚本成功导入数量: {num}")
+
+    @staticmethod
+    def init_button():
+        try:
+            from pyrogram.types import InlineKeyboardButton
+            script = addon.script
+            button = []
+            for k in script.keys():
+                b = InlineKeyboardButton(f"✅{str(k)}", callback_data=f"✅{str(k)}")
+                button.append(b)
+            return button
         except Exception as e:
-            # logger.warning(str(e))
-            return "0"
+            logger.error(str(e))
+            return []
 
 
 class ClashCleaner:
@@ -98,15 +190,18 @@ class ClashCleaner:
     yaml配置清洗
     """
 
-    def __init__(self, config):
+    def __init__(self, _config):
         """
-        :param config: 传入一个文件对象，或者一个字符串,文件对象需指向 yaml/yml 后缀文件
+        :param _config: 传入一个文件对象，或者一个字符串,文件对象需指向 yaml/yml 后缀文件
         """
-        if type(config).__name__ == 'str':
-            with open(config, 'r', encoding="UTF-8") as fp:
+        self.path = ''
+        self.yaml = {}
+        if type(_config).__name__ == 'str':
+            with open(_config, 'r', encoding="UTF-8") as fp:
                 self.yaml = yaml.load(fp, Loader=yaml.FullLoader)
+            self.path = _config
         else:
-            self.yaml = yaml.load(config, Loader=yaml.FullLoader)
+            self.yaml = yaml.load(_config, Loader=yaml.FullLoader)
 
     def getProxies(self):
         """
@@ -133,7 +228,7 @@ class ClashCleaner:
             logger.warning("读取节点信息失败！")
             return 0
 
-    def nodesName(self):
+    def nodesName(self, _filter: str = ''):
         """
         获取节点名
         :return: list
@@ -143,6 +238,9 @@ class ClashCleaner:
             for i in self.yaml['proxies']:
                 lis.append(i['name'])
             return lis
+        except KeyError:
+            logger.warning("读取节点信息失败！")
+            return None
         except TypeError:
             logger.warning("读取节点信息失败！")
             return None
@@ -255,6 +353,64 @@ class ClashCleaner:
         self.yaml['mode'] = mode
         logger.info("Clash 模式已被修改为:" + self.yaml['mode'])
 
+    def node_filter(self, include: str = '', exclude: str = ''):
+        """
+        节点过滤
+        :param include: 包含
+        :param exclude: 排除
+        :return:
+        """
+        result = []
+        result2 = []
+        nodelist = self.getProxies()
+        pattern1 = pattern2 = None
+        try:
+            if include:
+                pattern1 = re.compile(include)
+            if exclude:
+                pattern2 = re.compile(exclude)
+        except re.error:
+            logger.error("正则错误！请检查正则表达式！")
+            return self.nodesName()
+        except Exception as e:
+            logger.error(e)
+            return self.nodesName()
+        if pattern1 is None:
+            result = nodelist
+        else:
+            for node in nodelist:
+                try:
+                    r = pattern1.findall(node.get('name', ''))
+                    if r:
+                        logger.info("包含过滤器已命中:" + str(node.get('name', '')))
+                        result.append(node)
+                except re.error as rerror:
+                    logger.error(str(rerror))
+                    result.append(node)
+                except Exception as e:
+                    logger.error(str(e))
+                    result.append(node)
+        jishu1 = len(result)
+        jishu2 = 0
+        if pattern2 is None:
+            result2 = result
+        else:
+            for node in result:
+                try:
+                    r = pattern2.findall(node.get('name', ''))
+                    if r:
+                        logger.info("排除过滤器已命中: " + str(node.get('name', '')))
+                        jishu2 += 1
+                    else:
+                        result2.append(node)
+                except re.error as rerror:
+                    logger.error(str(rerror))
+                except Exception as e:
+                    logger.error(str(e))
+        logger.info(f"Included {jishu1} node(s)  Excluded {jishu2} node(s)  Exported {jishu1 - jishu2} node(s)")
+        self.yaml['proxies'] = result2
+        self.save(savePath=self.path)
+
     @logger.catch
     def save(self, savePath: str = "./sub.yaml"):
         with open(savePath, "w", encoding="UTF-8") as fp:
@@ -282,9 +438,13 @@ class ConfigManager:
             if flag == 0 and configpath == "./resources/config.yaml":
                 flag += 1
                 logger.warning("无法在 ./resources/ 下找到 config.yaml 配置文件，正在尝试寻找旧目录 ./config.yaml")
-                with open('./config.yaml', "r", encoding="UTF-8") as fp1:
-                    self.config = yaml.load(fp1, Loader=yaml.FullLoader)
-                    self.yaml.update(self.config)
+                try:
+                    with open('./config.yaml', "r", encoding="UTF-8") as fp1:
+                        self.config = yaml.load(fp1, Loader=yaml.FullLoader)
+                        self.yaml.update(self.config)
+                except FileNotFoundError:
+                    self.config = {}
+                    self.yaml = {}
             elif flag > 1:
                 logger.warning("无法找到配置文件，正在初始化...")
         if self.config is None:
@@ -297,17 +457,31 @@ class ConfigManager:
                 yaml.dump(data, fp)
             self.yaml = data
 
+    @property
+    def nospeed(self) -> bool:
+        return bool(self.config.get('nospeed', False))
+
     def getFont(self):
-        return self.config.get('font', "./resources/苹方黑体-准-简.ttf")
+        return self.config.get('font', "./resources/阿里巴巴普惠体-Regular.ttf")
 
     def getColor(self):
-        return self.config.get('color', {})
+        return self.config.get('image', {}).get('color', {})
 
     def getAdmin(self) -> list:
         try:
             return self.config['admin']
         except KeyError:
             return []
+
+    def getGstatic(self):
+        """
+        获取HTTP延迟测试的URL
+        :return:
+        """
+        try:
+            return self.config.get('pingurl', "http://www.gstatic.com/generate_204")
+        except KeyError:
+            return "http://www.gstatic.com/generate_204"
 
     def getuser(self):
         try:
@@ -394,7 +568,7 @@ class ConfigManager:
     def get_sub(self, subname: str = None):
         """
         获取所有已保存的订阅,或者单个订阅
-        :return:
+        :return: 单个订阅或全部订阅
         """
         if subname is None:
             try:
@@ -555,7 +729,7 @@ class ConfigManager:
             logger.error('移出失败')
 
     @logger.catch
-    def delsub(self, subname: str):
+    def delsub2provider(self, subname: str):
         try:
             subinfo = self.yaml['proxy-providers']
             if subinfo is not None:
@@ -569,15 +743,19 @@ class ConfigManager:
             logger.warning("删除失败")
 
     @logger.catch
-    def addsub(self, subname: str, subpath: str):
+    def addsub2provider(self, subname: str, subpath: str, nodefilter: str = ''):
         """
         添加订阅到总文件，如用相对路径，请注意这里的subpath是写入到配置里面的，如果你指定过clash核心的工作目录，则相对位置以clash工作目录为准
+        :param nodefilter: 节点过滤
         :param subname:
         :param subpath:
         :return:
         """
+        pingurl = config.getGstatic()
         info = {'type': 'file', 'path': subpath,
-                'health-check': {'enable': True, 'url': 'http://www.gstatic.com/generate_204', 'interval': 600}}
+                'health-check': {'enable': True, 'url': pingurl, 'interval': 6000}}
+        if nodefilter:
+            info['filter'] = nodefilter
         self.yaml['proxy-providers'][subname] = info
         if subname not in self.yaml['proxy-groups'][0]['use']:
             self.yaml['proxy-groups'][0]['use'].append(subname)
@@ -585,6 +763,7 @@ class ConfigManager:
 
 config = ConfigManager()
 media_item = config.get_media_item()
+addon = AddonCleaner()
 
 
 def reload_config(media: list = None):
@@ -601,16 +780,22 @@ class ReCleaner:
         self.data = data
         self._sum = 0
         self._netflix_info = []
+        self._script = addon.script
+
+    @property
+    def script(self):
+        return self._script
 
     def get_all(self):
         info = {}
         items = media_item
         try:
             for item in items:
-                i = item.capitalize()
-                # if i == "Netflix":
-                #     nf = self.getnetflixinfo()
-                #     info['Netflix'] = nf[len(nf) - 1] #旧奈飞测试，已废弃
+                i = item
+                if i in self.script:
+                    task = self.script[i][1]
+                    info[i] = task(self)
+                    continue
                 if i == "Youtube":
                     you = self.getyoutubeinfo()
                     info['Youtube'] = you
@@ -620,51 +805,50 @@ class ReCleaner:
                 elif i == "Disney+":
                     dis = self.getDisneyinfo()
                     info['Disney+'] = dis
-                elif i == "Bilibili":
-                    bili = self.get_bilibili_info()
-                    info['Bilibili'] = bili
                 elif i == "Dazn":
                     dazn = self.get_dazn_info()
                     info['Dazn'] = dazn
-                elif i == "Hbomax":
-                    from addons.unlockTest import hbomax
-                    hbomaxinfo = hbomax.get_hbomax_info(self)
-                    info['Hbomax'] = hbomaxinfo
-                elif i == "Bahamut":
-                    from addons.unlockTest import bahamut
-                    info['Bahamut'] = bahamut.get_bahamut_info(self)
                 elif i == "Netflix":
                     from addons.unlockTest import netflix
                     info['Netflix'] = netflix.get_netflix_info_new(self)
-                elif i == "Abema":
-                    from addons.unlockTest import abema
-                    info['Abema'] = abema.get_abema_info(self)
-                elif i == "Bbc":
-                    from addons.unlockTest import bbciplayer
-                    info['BBC'] = bbciplayer.get_bbc_info(self)
-                elif i == "公主链接":
-                    from addons.unlockTest import pcrjp
-                    info['公主链接'] = pcrjp.get_pcr_info(self)
                 elif i == "Primevideo":
                     from addons.unlockTest import primevideo
                     info['Primevideo'] = primevideo.get_primevideo_info(self)
-                elif i == "Myvideo":
-                    from addons.unlockTest import myvideo
-                    info['Myvideo'] = myvideo.get_myvideo_info(self)
-                elif i == "Catchplay":
-                    from addons.unlockTest import catchplay
-                    info['Catchplay'] = catchplay.get_catchplay_info(self)
                 elif i == "Viu":
                     from addons.unlockTest import viu
                     info['Viu'] = viu.get_viu_info(self)
-                elif i == "Iprisk" or i == "落地ip风险":
-                    from addons import ip_risk
-                    info['落地ip风险'] = ip_risk.get_iprisk_info(self)
+                elif i == "iprisk" or i == "落地IP风险":
+                    from addons.unlockTest import ip_risk
+                    info['落地IP风险'] = ip_risk.get_iprisk_info(self)
+                elif i == "steam货币":
+                    from addons.unlockTest import steam
+                    info['steam货币'] = steam.get_steam_info(self)
+                elif i == "维基百科":
+                    from addons.unlockTest import wikipedia
+                    info['维基百科'] = wikipedia.get_wikipedia_info(self)
+                elif item == "OpenAI":
+                    from addons.unlockTest import openai
+                    info['OpenAI'] = openai.get_openai_info(self)
                 else:
                     pass
         except Exception as e:
             logger.error(str(e))
         return info
+
+    def get_https_rtt(self):
+        """
+        获取http(s)协议延迟
+        :return: int
+        """
+        try:
+            if 'HTTP延迟' not in self.data and 'HTTPS延迟' not in self.data:
+                logger.warning("采集器内无数据: HTTP延迟")
+                return 0
+            else:
+                return self.data.get('HTTP延迟', 0)
+        except Exception as e:
+            logger.error(str(e))
+            return 0
 
     def get_dazn_info(self):
         """
@@ -676,6 +860,10 @@ class ReCleaner:
                 logger.warning("采集器内无数据: Dazn")
                 return "N/A"
             else:
+                i1 = self.data.get('dazn', '')
+                if i1 == '连接错误' or i1 == '超时':
+                    logger.info("Dazn状态: " + i1)
+                    return i1
                 try:
                     info = self.data['dazn']['Region']
                     isAllowed = info['isAllowed']
@@ -701,99 +889,6 @@ class ReCleaner:
             logger.error(str(e))
             return "N/A"
 
-    def get_bilibili_info(self):
-        """
-
-        :return: str: 解锁信息: [解锁(台湾)、解锁(港澳台)、失败、N/A]
-        """
-        try:
-            if 'bilibili' not in self.data:
-                logger.warning("采集器内无数据: bilibili")
-                return "N/A"
-            else:
-                try:
-                    info = self.data['bilibili']
-                    if info is None:
-                        logger.warning("无法读取bilibili解锁信息")
-                        return "N/A"
-                    else:
-                        logger.info("bilibili情况: " + info)
-                        return info
-                except KeyError:
-                    logger.warning("无法读取bilibili解锁信息")
-                    return "N/A"
-        except Exception as e:
-            logger.error(e)
-            return "N/A"
-
-    # 以下为旧版奈飞测试，灵感来自 SSRSpeedN ，现已废弃。如果有人看到这段消息，可以删掉这段代码了。
-    # def getnetflixinfo(self):
-    #     """
-    #
-    #     :return: list: [netflix_ip, proxy_ip, netflix_info: "解锁"，“自制”，“失败”，“N/A”]
-    #     """
-    #     try:
-    #         if self.data['ip'] is None or self.data['ip'] == "N/A":
-    #             return ["N/A", "N/A", "N/A"]
-    #         if self.data['netflix2'] is None:
-    #             return ["N/A", "N/A", "N/A"]
-    #         if self.data['netflix1'] is None:
-    #             return ["N/A", "N/A", "N/A"]
-    #         r1 = self.data['netflix1']
-    #         status_code = self.data['ne_status_code1']
-    #         if status_code == 200:
-    #             self._sum += 1
-    #             soup = BeautifulSoup(r1, "html.parser")
-    #             netflix_ip_str = str(soup.find_all("script"))
-    #             p1 = netflix_ip_str.find("requestIpAddress")
-    #             netflix_ip_r = netflix_ip_str[p1 + 19:p1 + 60]
-    #             p2 = netflix_ip_r.find(",")
-    #             netflix_ip = netflix_ip_r[0:p2]
-    #             self._netflix_info.append(netflix_ip)  # 奈飞ip
-    #         r2 = self.data['ne_status_code2']
-    #         if r2 == 200:
-    #             self._sum += 1
-    #
-    #         self._netflix_info.append(self.data['ip']['ip'])  # 请求ip
-    #
-    #         if self._sum == 0:
-    #             ntype = "失败"
-    #             self._netflix_info.append(ntype)  # 类型有四种，分别是无、仅自制剧、原生解锁（大概率）、 DNS解锁
-    #             logger.info("当前节点情况: " + str(self._netflix_info))
-    #             return self._netflix_info
-    #         elif self._sum == 1:
-    #             ntype = "自制"
-    #             self._netflix_info.append(ntype)
-    #             logger.info("当前节点情况: " + str(self._netflix_info))
-    #             return self._netflix_info
-    #         elif self.data['ip']['ip'] == self._netflix_info[0]:
-    #             text = self.data['netflix2']
-    #             s = text.find('preferredLocale', 100000)
-    #             if s == -1:
-    #                 self._netflix_info.append("原生解锁(未知)")
-    #                 logger.info("当前节点情况: " + str(self._netflix_info))
-    #                 return self._netflix_info
-    #             region = text[s + 29:s + 31]
-    #             ntype = "原生解锁({})".format(region)
-    #             self._netflix_info.append(ntype)
-    #             logger.info("当前节点情况: " + str(self._netflix_info))
-    #             return self._netflix_info
-    #         else:
-    #             text = self.data['netflix2']
-    #             s = text.find('preferredLocale', 100000)
-    #             if s == -1:
-    #                 self._netflix_info.append("DNS解锁(未知)")
-    #                 logger.info("当前节点情况: " + str(self._netflix_info))
-    #                 return self._netflix_info
-    #             region = text[s + 29:s + 31]
-    #             ntype = "DNS解锁({})".format(region)
-    #             self._netflix_info.append(ntype)
-    #             logger.info("当前节点情况: " + str(self._netflix_info))
-    #             return self._netflix_info
-    #     except Exception as e:
-    #         logger.error(e)
-    #         return ["N/A", "N/A", "N/A"]
-
     def getyoutubeinfo(self):
         """
         :return: str :解锁信息: (解锁、失败、N/A)
@@ -808,14 +903,12 @@ class ReCleaner:
                         'manageSubscriptionButton') == -1:
                     return "失败"
                 if text.find('www.google.cn') != -1:
-                    return "失败(CN)"
+                    return "送中(CN)"
                 elif self.data['youtube_status_code'] == 200:
                     idx = text.find('"countryCode"')
                     region = text[idx:idx + 17].replace('"countryCode":"', "")
                     if idx == -1 and text.find('manageSubscriptionButton') != -1:
                         region = "US"
-                    elif region == "":
-                        region == "未知"
                     logger.info(f"Youtube解锁地区: {region}")
                     return f"解锁({region})"
                 else:
@@ -830,7 +923,7 @@ class ReCleaner:
         :return: 解锁信息: 解锁、失败、N/A、待解
         """
         try:
-            if self.data['disney'] is None:
+            if 'disney' not in self.data:
                 logger.warning("无法读取Desney Plus解锁信息")
                 return "N/A"
             else:
@@ -845,7 +938,34 @@ class ResultCleaner:
     def __init__(self, info: dict):
         self.data = info
 
-    def start(self):
+    @staticmethod
+    def get_http_latency(data: list):
+        """
+        对所有列表延迟取平均，去除0
+        :param data:
+        :return:
+        """
+        if not data:
+            raise IndexError("列表为空")
+        n = len(data)
+        m = len(data[0])
+        new_list = []
+
+        for j in range(m):
+            col_sum = 0
+            num = 0
+            for i in range(n):
+                if data[i][j] != 0:
+                    col_sum += data[i][j]
+                    num += 1
+            if num:
+                r1 = int(col_sum/num)
+                new_list.append(r1)
+            else:
+                new_list.append(0)
+        return new_list
+
+    def start(self, sort="订阅原序"):
         try:
             if '类型' in self.data:
                 type1 = self.data['类型']
@@ -858,15 +978,56 @@ class ResultCleaner:
                     else:
                         new_type.append(t.capitalize())
                 self.data['类型'] = new_type
-            if '延迟RTT' in self.data:
-                rtt = self.data['延迟RTT']
+            if sort == "HTTP倒序":
+                self.sort_by_ping(reverse=True)
+            elif sort == "HTTP升序":
+                self.sort_by_ping()
+            if 'HTTP延迟(内核)' in self.data:
+                rtt = self.data['HTTP延迟(内核)']
                 new_rtt = []
                 for r in rtt:
                     new_rtt.append(str(r) + 'ms')
-                self.data['延迟RTT'] = new_rtt
+                self.data['HTTP延迟(内核)'] = new_rtt
+            if 'HTTP延迟' in self.data:
+                rtt = self.data['HTTP延迟']
+                new_rtt = []
+                for r in rtt:
+                    new_rtt.append(str(r) + 'ms')
+                self.data['HTTP延迟'] = new_rtt
             return self.data
         except TypeError:
             return {}
+
+    def sort_by_ping(self, reverse=False):
+        http_l = self.data.get('HTTP延迟')
+        if not reverse:
+            for i in range(len(http_l)):
+                if http_l[i] == 0:
+                    http_l[i] = 999999
+        new_list = [http_l, self.data.get('节点名称'), self.data.get('类型')]
+        for k, v in self.data.items():
+            if k == "HTTP延迟" or k == "节点名称" or k == "类型":
+                continue
+            new_list.append(v)
+        lists = zip(*new_list)
+        lists = sorted(lists, key=lambda x: x[0], reverse=reverse)
+        lists = zip(*lists)
+        new_list = [list(l_) for l_ in lists]
+        http_l = new_list[0]
+        if not reverse:
+            for i in range(len(http_l)):
+                if http_l[i] == 999999:
+                    http_l[i] = 0
+        if len(new_list) > 2:
+            self.data['HTTP延迟'] = http_l
+            self.data['节点名称'] = new_list[1]
+            self.data['类型'] = new_list[2]
+            num = -1
+            for k in self.data.keys():
+                num += 1
+                if k == "HTTP延迟" or k == "节点名称" or k == "类型":
+                    continue
+                self.data[k] = new_list[num]
 
 
 class ArgCleaner:
@@ -899,13 +1060,13 @@ class ArgCleaner:
 def geturl(string: str):
     text = string
     pattern = re.compile(
-        r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+")  # 匹配订阅地址
+        r"https?://(?:[a-zA-Z]|\d|[$-_@.&+]|[!*,]|(?:%[\da-fA-F][\da-fA-F])|[\w\u4e00-\u9fa5])+")  # 匹配订阅地址
     # 获取订阅地址
     try:
         url = pattern.findall(text)[0]  # 列表中第一个项为订阅地址
         return url
     except IndexError:
-        logger.info("未找到URL")
+        print("未找到URL")
         return None
 
 
@@ -985,3 +1146,71 @@ def batch_domain2ip(host: list):
             else:
                 ipaddrs.append("N/A")
     return ipaddrs
+
+
+def get_airport_info(text: str = None):
+    """
+    过去特定格式的信息
+    :return:
+    """
+    jcid = jcname = jctime = jcurl = jcgroup = jccomment = jcchannel = jcowner = ''
+    try:
+        a = text if text is not None else ''
+        b = a.split('\n')
+        p1 = re.search('[序编]?号[:：]?.*(\d)+', a)
+        if p1 is not None:
+            jcid = p1.group()
+        b.pop(0)
+        prename = b.pop(0) if len(b) else ''
+        names = prename.split(' ')
+        for n in names:
+            if n:
+                if n[0] == '#':
+                    jcname += n[1:] + ' '
+                else:
+                    jcname += n + ' '
+        prename = re.search("名称[:：]?.*", a)
+        if prename is not None:
+            jcname = prename.group()[3:]
+        timepattern = re.compile(r"时间[:：].?(\d+\W\d+\W\d+)")
+        pretime = timepattern.search(a)
+        if pretime is not None:
+            jctime = pretime.group()[3:]
+        preurl = re.search("官网[:：].*", a)
+        if preurl is not None:
+            jcurl = preurl.group()[3:]
+        pretgg1 = re.search("群组[:：].*@\w+", a)
+        if pretgg1 is not None:
+            jcgroup = pretgg1.group()[3:]
+        else:
+            pretgg2 = re.search("群组[:：].*", a)
+            if pretgg2 is not None:
+                jcgroup = pretgg2.group()[3:]
+        pretgc1 = re.search("频道[:：].*@\w+", a)
+        if pretgc1 is not None:
+            jcchannel = pretgc1.group()[3:]
+        else:
+            pretgc2 = re.search("频道[:：].*", a)
+            if pretgc2 is not None:
+                jcchannel = pretgc2.group()[3:]
+        commentp = re.compile("[说明|简要介绍|备注][:：]?.*")
+        pre_comment = commentp.search(a)
+        if pre_comment is not None:
+            t = pre_comment.group()
+            index1 = t.find(':')
+            index2 = t.find('：')
+            if index1 > 0:
+                jccomment = t[index1 + 1:]
+            elif index2 > 0:
+                jccomment = t[index2 + 1:]
+        # print(jcid)
+        # print(jcname)
+        # print(jctime)
+        # print(jcurl)
+        # print(jcgroup)
+        # print(jcchannel)
+        # print(jccomment)
+        return jcid, jcname, jctime, jcurl, jcgroup, jcchannel, jccomment, jcowner
+    except Exception as e:
+        logger.error(str(e))
+        return jcid, jcname, jctime, jcurl, jcgroup, jcchannel, jccomment, jcowner

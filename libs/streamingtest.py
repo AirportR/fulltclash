@@ -20,17 +20,26 @@ async def unit(test_items: list, delay: int, host="127.0.0.1", port=1122):
     :return: list 返回test_items对应顺序的信息
     """
     info = []
+    # delay2 = await collector.delay_https_task(proxy=f"http://{host}:{port}", times=3)
+    delay2 = 0
     if delay == 0:
-        for _ in test_items:
-            info.append("N/A")
+        logger.warning("超时节点，跳过测试")
+        for t in test_items:
+            if t == "HTTP延迟":
+                info.append(0)
+            else:
+                info.append("N/A")
         return info
     else:
+        info.append(delay)
         cl = collector.Collector()
         re1 = await cl.start(proxy=f"http://{host}:{port}")
         cnr = cleaner.ReCleaner(re1)
         old_info = cnr.get_all()
         for item in test_items:
-            i = item.capitalize() if item != "BBC" else item
+            i = item
+            if i == 'HTTP延迟':
+                continue
             try:
                 info.append(old_info[i])
             except KeyError:
@@ -158,7 +167,7 @@ async def batch_test_pro(message, nodename: list, delays: list, test_items: list
 
 
 @logger.catch()
-async def core(message, back_message, start_time, suburl: str = None, media_items: list = None, thread: int = 1):
+async def core(message, back_message, start_time, suburl: str = None, media_items: list = None, thread: int = 1, **kwargs):
     """
 
     :param thread: 测试线程
@@ -184,6 +193,10 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
             include_text = texts[2]
         if len(texts) > 3:
             exclude_text = texts[3]
+        if kwargs.get('include_text', ''):
+            include_text = kwargs.get('include_text', '')
+        if kwargs.get('exclude_text', ''):
+            exclude_text = kwargs.get('exclude_text', '')
     else:
         text = str(message.text)
         texts = text.split(' ')
@@ -192,8 +205,8 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
         if len(texts) > 3:
             exclude_text = texts[3]
         url = cleaner.geturl(text)
-        if await check.check_url(back_message, url):
-            return info
+    if await check.check_url(back_message, url):
+        return info
     pool = {'host': ['127.0.0.1' for _ in range(thread)],
             'port': [1124 + t * 2 for t in range(thread)]}
     print(url)
@@ -205,11 +218,11 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
         return info
     try:
         # 启动订阅清洗
-        with open('./clash/sub{}.yaml'.format(start_time), "r", encoding="UTF-8") as fp:
-            cl = cleaner.ClashCleaner(fp)
-            nodename = cl.nodesName()
-            nodetype = cl.nodesType()
-            nodenum = cl.nodesCount()
+        cl = cleaner.ClashCleaner(f'./clash/sub{start_time}.yaml')
+        cl.node_filter(include_text, exclude_text)
+        nodename = cl.nodesName()
+        nodetype = cl.nodesType()
+        nodenum = cl.nodesCount()
     except Exception as e:
         logger.error(e)
         nodename = None
@@ -219,17 +232,20 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
     if await check.check_nodes(back_message, nodenum, (nodename, nodetype,)):
         return info
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
-    ma.addsub(subname=start_time, subpath='./sub{}.yaml'.format(start_time))
+    ma.addsub2provider(subname=start_time, subpath='./sub{}.yaml'.format(start_time))
     ma.save('./clash/proxy.yaml')
     # 重载配置文件
-    await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=1123)
+    if not await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=1123):
+        return info
     try:
         if nodenum < len(pool.get('port', [])):
             for i in pool.get('port', [])[:nodenum]:
-                await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=i + 1)
+                if not await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=i + 1):
+                    return info
         else:
             for i in pool.get('port', []):
-                await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=i + 1)
+                if not await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=i + 1):
+                    return info
     except Exception as e:
         logger.error(str(e))
         return info
@@ -237,20 +253,30 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
     await back_message.edit_text(f"正在测试延迟... \n\n{nodenum}个节点")
     s1 = time.time()
     old_rtt = await collector.delay_providers(providername=start_time)
-    rtt = check.check_rtt(old_rtt, nodenum)
-    print("延迟:", rtt)
+    rtt1 = check.check_rtt(old_rtt, nodenum)
+    print("第一次延迟:", rtt1)
+    old_rtt = await collector.delay_providers(providername=start_time)
+    rtt2 = check.check_rtt(old_rtt, nodenum)
+    print("第二次延迟:", rtt2)
+    old_rtt = await collector.delay_providers(providername=start_time)
+    rtt3 = check.check_rtt(old_rtt, nodenum)
+    print("第三次延迟:", rtt3)
+    rtt = cleaner.ResultCleaner.get_http_latency([rtt1, rtt2, rtt3])
     # 启动流媒体测试
     try:
         info['节点名称'] = nodename
         info['类型'] = nodetype
-        info['延迟RTT'] = rtt
         test_info = await batch_test_pro(back_message, nodename, rtt, test_items, pool)
-        # test_info = await batch_test(back_message, nodename, rtt, test_items=test_items)
+        info['HTTP延迟'] = test_info.pop('HTTP延迟')
+        # info['HTTP延迟(内核)'] = rtt
         info.update(test_info)
-        info = cleaner.ResultCleaner(info).start()
+        sort = kwargs.get('sort', "订阅原序")
+        logger.info("排序："+sort)
+        info = cleaner.ResultCleaner(info).start(sort=sort)
         # 计算测试消耗时间
         wtime = "%.1f" % float(time.time() - s1)
         info['wtime'] = wtime
+        info['sort'] = sort
         # 过滤器内容
         info['filter'] = {'include': include_text, 'exclude': exclude_text}
         # 保存结果
@@ -280,5 +306,6 @@ if __name__ == "__main__":
 
     async def test():
         pass
+
 
     loop.run_until_complete(test())

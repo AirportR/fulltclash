@@ -2,10 +2,15 @@
 
 基于clash 核心运作的、进行全量订阅测试的telegram机器人
 
-# 最近更新(3.4.2)
+# 最近更新(3.4.8)
 
-- 支持添加订阅时设置密码
-- 测试任务将需要密码支持，否则无法访问。临时测试不受影响
+3.4.8版本更新如下特性：
+
+- 从此版本开始，支持外接测试脚本动态导入，请前往 ./resources/doc 查看对接方法。
+- 此版本将删除多余测试脚本，仅保留基本的跨国平台脚本。
+- 优化延迟显示。所有超时节点将始终显示在最下方。
+- 重新启用订阅转换。出于使用者需求考虑，重新启用内置订阅转换。但今后不会再维护此外置功能。
+- 支持自定义HTTP延迟测试URL。前往config.yaml.example查看。
 
 历史更新请到TG频道查看: 
 
@@ -23,15 +28,13 @@ FullTclash bot 是承载其测试任务的Telegram 机器人（以下简称bot�
 
 - Bilibili
 
-- Dazn
+- Primevideo
+- steam货币
+- OpenAI(ChatGPT)
+- 落地ip风险(IP欺诈度)
+- 维基百科
 
-- Hbomax
-
-- Bahamut
-
-- 落地IP风险检测
-
-以及clash 延迟测试和链路拓扑测试（节点出入口分析）。
+以及HTTP延迟测试和链路拓扑测试（节点出入口分析）。
 
 # 效果预览
 
@@ -47,7 +50,7 @@ FullTclash bot 是承载其测试任务的Telegram 机器人（以下简称bot�
 
 要成功运行该项目代码，首先需要准备以下信息：
 
-- Telegram 的api_id 、api_hash [获取地址](https://my.telegram.org/apps) 不会请Google。
+- Telegram 的api_id 、api_hash [获取地址](https://my.telegram.org/apps) 不会请Google。(部分TG账号已被拉黑，无法正常使用)
 
 - 去 [@BotFather](https://t.me/BotFather) 那里创建一个机器人，获得该机器人的bot_token，应形如：
   
@@ -121,7 +124,7 @@ chmod +x ./resources/clash-linux-amd64
 
 - 管理员配置
   
-  新建一个名为config.yaml的文件，项目有模板例子名为config.yaml.example,在config.yaml中写入如下信息： 
+  新建一个名为config.yaml的文件，项目有模板例子名为./resources/doc/config.yaml.example,在config.yaml中写入如下信息： 
   
   ```
   admin:
@@ -139,13 +142,34 @@ chmod +x ./resources/clash-linux-amd64
   # 获取订阅时使用代理（可选）
   proxy: 127.0.0.1:7890 #替换成自己的代理地址和端口,注意，此配置与上面的独立分开。
   ```
+- 更改clash核心
 
+  如果您想在非Windows平台运行此程序，请在配置文件中指定对应平台的clash可执行文件：
+  ```yaml
+  # 以Ubuntu为例:
+  clash:
+    path: ./resources/clash-linux-amd64
+    workpath: ./clash
+  ```
 ## 开始启动
 
 在项目目录下运行以下指令
-
+Windows10:
+```shell
+python clash.py
 ```
+在第二个窗口运行:
+```shell
 python main.py
+```
+
+Ubuntu: 
+```shell
+python3 clash.py
+```
+在第二个窗口运行:
+```shell
+python3 main.py
 ```
 
 等待初始化操作，出现“程序已启动!”字样就说明在运行了.

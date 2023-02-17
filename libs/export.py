@@ -5,7 +5,7 @@ from pilmoji import Pilmoji
 from pilmoji.source import Twemoji
 import time
 from libs.cleaner import ConfigManager
-from addons.emoji_custom import TwitterPediaSource
+from libs.emoji_custom import TwitterPediaSource
 
 """
 这是将测试的结果输出为图片的模块。
@@ -16,7 +16,7 @@ from addons.emoji_custom import TwitterPediaSource
 2、何为基础数据？
     基础数据决定了生成图片的高度（Height），它是列表，列表里面的数据一般是一组节点名，即有多少个节点就对应了info键值中的长度。
 """
-__version__ = "3.4.2"  # 版本号
+__version__ = "3.5.0-dev"  # 版本号
 custom_source = TwitterPediaSource  # 自定义emoji风格 TwitterPediaSource
 
 
@@ -43,19 +43,24 @@ class ExportResult:
         self.filter = self.info.pop('filter', {})
         self.filter_include = self.filter.get('include', '')
         self.filter_exclude = self.filter.get('exclude', '')
+        self.sort = self.info.pop('sort', '订阅原序')
         if self.basedata:
             self.nodenum = len(self.basedata)
         else:
             self.nodenum = 0
         self.front_size = 30
         self.config = ConfigManager()
-        self.color = self.config.getColor().get('delay', [])
+        self.emoji = self.config.config.get('emoji', True)  # 是否启用emoji，若否，则在输出图片时emoji将无法正常显示
+        self.color = self.config.getColor()
+        self.image_config = self.config.config.get('image', {})
+        self.delay_color = self.color.get('delay', [])
         self.__font = ImageFont.truetype(self.config.getFont(), self.front_size)
+        self.title = self.image_config.get('title', 'FullTclash')
 
     @property
     def interval(self):
         interval_list = []
-        for c in self.color:
+        for c in self.delay_color:
             interval_list.append(c.get('label', 0))
         a = list(set(interval_list))  # 去重加排序
         a.sort()
@@ -69,7 +74,7 @@ class ExportResult:
     @property
     def colorvalue(self):
         color_list = []
-        for c in self.color:
+        for c in self.delay_color:
             color_list.append(c.get('value', '#f5f3f2'))
         while len(color_list) < 8:
             color_list.append('#f5f3f2')
@@ -181,13 +186,17 @@ class ExportResult:
         idraw = ImageDraw.Draw(img)
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
-        list1 = ["FullTclash - 联通性测试", f"版本:{__version__}   ⏱️总共耗时: {wtime}s  过滤器: {self.filter_include} <-> {self.filter_exclude}",
+        list1 = [f"{self.title} - 联通性测试",
+                 f"版本:{__version__}   总共耗时: {wtime}s  排序: {self.sort}   " +
+                 f"过滤器: {self.filter_include} <-> {self.filter_exclude}",
                  "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time)]
         export_time = export_time.replace(':', '-')
         title = list1[0]
-        idraw.text((self.get_mid(0, image_width, title), 5), title, font=fnt, fill=(0, 0, 0))  # 标题
-        # idraw.text((10, image_height - 75), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
-        pilmoji.text((10, image_height - 75), text=list1[1], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 3))
+        idraw.text((self.get_mid(0, image_width, title), 3), title, font=fnt, fill=(0, 0, 0))  # 标题
+        if self.emoji:
+            pilmoji.text((10, image_height - 80), text=list1[1], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 3))
+        else:
+            idraw.text((10, image_height - 80), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
         idraw.text((10, image_height - 35), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
         '''
         :绘制标签
@@ -205,33 +214,45 @@ class ExportResult:
         '''
         :内容填充
         '''
-        if self.color:
+        if self.delay_color:
             colorvalue = self.colorvalue
             interval = self.interval
         else:
             # 默认值
             colorvalue = ["#f5f3f2", "#beb1aa", "#f6bec8", "#dc6b82", "#c35c5d", "#8ba3c7", "#c8161d", '#8d8b8e']
             interval = [0, 100, 200, 300, 500, 1000, 2000, 99999]
+        # 填充颜色块
+        c_block = {'成功': self.color.get('yes', '#bee47e'),
+                   '失败': self.color.get('no', '#ee6b73'),
+                   'N/A': self.color.get('na', '#8d8b8e'),
+                   '待解锁': self.color.get('wait', '#dcc7e1'),
+                   'low': self.color.get('iprisk', {}).get('low', '#ffffff'),
+                   'medium': self.color.get('iprisk', {}).get('medium', '#ffffff'),
+                   'high': self.color.get('iprisk', {}).get('high', '#ffffff'),
+                   'veryhigh': self.color.get('iprisk', {}).get('veryhigh', '#ffffff'),
+                   '警告': self.color.get('warn', '#fcc43c')
+                   }
         for t in range(self.nodenum):
             # 序号
             idraw.text((self.get_mid(0, 100, str(t + 1)), 40 * (t + 2)), text=str(t + 1), font=fnt, fill=(0, 0, 0))
             # 节点名称
-            # idraw.text((110, 40 * (t + 2)), text=self.nodename[t], font=fnt, fill=(0, 0, 0))
-            try:
-                # 自定义emoji源可能出错，所以捕捉了异常
-                pilmoji.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
-                             emoji_position_offset=(0, 6))
-            except PIL.UnidentifiedImageError:
-                logger.warning("无效符号:" + self.basedata[t])
-                pilmoji2 = Pilmoji(img, source=Twemoji)
-                pilmoji2.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
-                              emoji_position_offset=(0, 6))
+            if self.emoji:
+                try:
+                    # 自定义emoji源可能出错，所以捕捉了异常
+                    pilmoji.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
+                                 emoji_position_offset=(0, 6))
+                except PIL.UnidentifiedImageError:
+                    logger.warning("无效符号:" + self.basedata[t])
+                    pilmoji2 = Pilmoji(img, source=Twemoji)
+                    pilmoji2.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
+                                  emoji_position_offset=(0, 6))
+            else:
+                idraw.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0))
+
             width = 100 + nodename_width
             i = 0
-            # 填充颜色块
-            c_block = {'成功': '#bee47e', '失败': '#ee6b73', 'N/A': '#8d8b8e', '待解锁': '#dcc7e1'}
             for t1 in key_list:
-                if "延迟RTT" == t1:
+                if "延迟RTT" == t1 or "HTTP延迟" == t1:
                     rtt = float(self.info[t1][t][:-2])
                     if interval[0] < rtt < interval[1]:
                         block = color_block((info_list_length[i], 40), color_value=colorvalue[0])
@@ -257,10 +278,10 @@ class ExportResult:
                     elif rtt == 0:
                         block = color_block((info_list_length[i], 40), color_value=colorvalue[7])
                         img.paste(block, (width, 40 * (t + 2)))
-                elif '解锁' in self.info[t1][t] and '待' not in self.info[t1][t]:
+                elif ('解锁' in self.info[t1][t] or '允许' in self.info[t1][t]) and '待' not in self.info[t1][t]:
                     block = color_block((info_list_length[i], 40), color_value=c_block['成功'])
                     img.paste(block, (width, 40 * (t + 2)))
-                elif '失败' in self.info[t1][t]:
+                elif '失败' in self.info[t1][t] or '禁止' in self.info[t1][t]:
                     block = color_block((info_list_length[i], 40), color_value=c_block['失败'])
                     img.paste(block, (width, 40 * (t + 2)))
                 elif '待解' in self.info[t1][t]:
@@ -269,7 +290,21 @@ class ExportResult:
                 elif 'N/A' in self.info[t1][t]:
                     block = color_block((info_list_length[i], 40), color_value=c_block['N/A'])
                     img.paste(block, (width, 40 * (t + 2)))
-
+                elif 'Low' in self.info[t1][t]:
+                    block = color_block((info_list_length[i], 40), color_value=c_block['low'])
+                    img.paste(block, (width, 40 * (t + 2)))
+                elif 'Medium' in self.info[t1][t]:
+                    block = color_block((info_list_length[i], 40), color_value=c_block['medium'])
+                    img.paste(block, (width, 40 * (t + 2)))
+                elif 'High' in self.info[t1][t] and 'Very' not in self.info[t1][t]:
+                    block = color_block((info_list_length[i], 40), color_value=c_block['high'])
+                    img.paste(block, (width, 40 * (t + 2)))
+                elif 'Very' in self.info[t1][t]:
+                    block = color_block((info_list_length[i], 40), color_value=c_block['veryhigh'])
+                    img.paste(block, (width, 40 * (t + 2)))
+                elif '超时' in self.info[t1][t] or '连接错误' in self.info[t1][t]:
+                    block = color_block((info_list_length[i], 40), color_value=c_block['警告'])
+                    img.paste(block, (width, 40 * (t + 2)))
                 else:
                     pass
                 width += info_list_length[i]
@@ -287,7 +322,7 @@ class ExportResult:
         '''
         # 绘制横线
         for t in range(self.nodenum + 3):
-            idraw.line([(0, 40 * (t + 1)), (image_width, 40 * (t + 1))], fill="#e1e1e1", width=1)
+            idraw.line([(0, 40 * (t + 1)), (image_width, 40 * (t + 1))], fill="#e1e1e1", width=2)
         # 绘制竖线
         idraw.line([(100, 40), (100, 80)], fill="#e1e1e1", width=2)
         start_x = 100 + nodename_width
@@ -313,14 +348,17 @@ class ExportTopo(ExportResult):
         else:
             self.info = info
         if name is None:
-            self.basedata = self.info.get('地区', [])
+            self.basedata = self.info.get('节点名称', []) if '节点名称' in self.info else self.info.get('地区', [])
         else:
-            self.basedata = self.info.get('地区', name)
+            self.basedata = self.info.get('节点名称', name) if '节点名称' in self.info else self.info.get('地区', [])
+        self.emoji = self.config.config.get('emoji', True)  # 是否启用emoji，若否，则在输出图片时emoji将无法正常显示
         self.wtime = self.info.pop('wtime', "未知")
         self.nodenum = len(self.basedata)
         self.front_size = 30
         self.config = ConfigManager()
         self.__font = ImageFont.truetype(self.config.getFont(), self.front_size)
+        # self.image_config = self.config.config.get('image', {})
+        # self.title = self.image_config.get('title', 'FullTclash')
 
     def get_width(self, compare: int = None):
         """
@@ -395,13 +433,16 @@ class ExportTopo(ExportResult):
         idraw = ImageDraw.Draw(img)
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
-        list1 = ["FullTclash - 节点拓扑分析", "版本:{}     ⏱️总共耗时: {}s".format(__version__, self.wtime),
+        list1 = [f"{self.title} - 节点拓扑分析", "版本:{}   总共耗时: {}s".format(__version__, self.wtime),
                  "测试时间: {}  测试结果仅供参考".format(export_time)]
         export_time = export_time.replace(':', '-')
         title = list1[0]
         idraw.text((self.get_mid(0, image_width, title), 1), title, font=fnt, fill=(0, 0, 0))  # 标题
-        # idraw.text((10, image_height - 75), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
-        pilmoji.text((10, image_height - 80), text=list1[1], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
+
+        if self.emoji:
+            pilmoji.text((10, image_height - 80), text=list1[1], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
+        else:
+            idraw.text((10, image_height - 80), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
         idraw.text((10, image_height - 40), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
         # 绘制标签
         idraw.text((20, 40), '序号', font=fnt, fill=(0, 0, 0))  # 序号
@@ -414,6 +455,7 @@ class ExportTopo(ExportResult):
             start_x = end
             m = m + 1
         # 内容填充
+        # cu = self.info.pop('簇', [1 for _ in range(self.nodenum)])
         for t in range(self.nodenum):
             # 序号
             idraw.text((self.get_mid(0, 100, str(t + 1)), 40 * (t + 2)), text=str(t + 1), font=fnt, fill=(0, 0, 0))
@@ -429,8 +471,8 @@ class ExportTopo(ExportResult):
                                self.info[t1][t],
                                font=fnt, fill=(0, 0, 0))
                 else:
-                    idraw.text((self.get_mid(width, width + info_list_length[i], self.info[t1][t]), (t + 2) * 40),
-                               self.info[t1][t],
+                    idraw.text((self.get_mid(width, width + info_list_length[i], str(self.info[t1][t])), (t + 2) * 40),
+                               str(self.info[t1][t]),
                                font=fnt, fill=(0, 0, 0))
                 width += info_list_length[i]
                 i += 1
@@ -467,7 +509,7 @@ class ExportTopo(ExportResult):
         image_height = self.get_height()
         key_list = self.get_key_list()
         img = Image.new("RGB", (image_width, image_height), (255, 255, 255))
-        pilmoji = Pilmoji(img)  # emoji表情修复
+        pilmoji = Pilmoji(img, source=custom_source)  # emoji表情修复
         # 绘制色块
         bkg = Image.new('RGB', (image_width, 80), (234, 234, 234))  # 首尾部填充
         img.paste(bkg, (0, 0))
@@ -475,13 +517,15 @@ class ExportTopo(ExportResult):
         idraw = ImageDraw.Draw(img)
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
-        list1 = ["出口（提示:出口数量顺数即为每个入口对应节点）", "版本:{}     ⏱️总共耗时: {}s".format(__version__, self.wtime),
-                 "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time)]
+        list1 = ["出口分析", "版本:{}  总共耗时: {}s".format(__version__, self.wtime),
+                 "测试时间: {}  测试结果仅供参考,以实际情况为准。簇代表节点复用。".format(export_time)]
         export_time = export_time.replace(':', '-')
         title = list1[0]
         idraw.text((self.get_mid(0, image_width, title), 1), title, font=fnt, fill=(0, 0, 0))  # 标题
-        # idraw.text((10, image_height - 75), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
-        pilmoji.text((10, image_height - 80), text=list1[1], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
+        if self.emoji:
+            pilmoji.text((10, image_height - 80), text=list1[1], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
+        else:
+            idraw.text((10, image_height - 80), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
         idraw.text((10, image_height - 40), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
         # 绘制标签
         idraw.text((20, 40), '序号', font=fnt, fill=(0, 0, 0))  # 序号
@@ -493,37 +537,100 @@ class ExportTopo(ExportResult):
             idraw.text((self.get_mid(x, end, key_list[m]), 40), key_list[m], font=fnt, fill=(0, 0, 0))
             start_x = end
             m = m + 1
+        # 绘制横线
+        # for t in range(self.nodenum + 3):
+        #     idraw.line([(0, 40 * (t + 1)), (image_width, 40 * (t + 1))], fill="#e1e1e1", width=2)
         # 内容填充
+        cu = self.info.get('簇', [1 for _ in range(self.nodenum)])
+        cu_offset = 0
+        cu_offset2 = 0
         for t in range(self.nodenum):
             # 序号
             idraw.text((self.get_mid(0, 100, str(t + 1)), 40 * (t + 2)), text=str(t + 1), font=fnt, fill=(0, 0, 0))
+            idraw.line([(0, 40 * (t + 3)), (100, 40 * (t + 3))], fill="#e1e1e1", width=2)
             width = 100
             i = 0
+            if t < len(cu):
+                if cu[t] > 1:
+                    cu_offset2 += cu[t] - 1
             for t1 in key_list:
-                if t1 == "组织":
-                    idraw.text((width + 10, (t + 2) * 40),
-                               self.info[t1][t],
-                               font=fnt, fill=(0, 0, 0))
+                if t1 == "地区" or t1 == "AS编号":
+                    if t < len(cu):
+                        temp = cu[t]
+                        y = ((t + 2) * 40 + (t + 2) * 40 + (40 * (temp - 1))) / 2 + cu_offset * 40
+                        idraw.text((self.get_mid(width, width + info_list_length[i], str(self.info[t1][t])), y),
+                                   str(self.info[t1][cu_offset + t]),
+                                   font=fnt, fill=(0, 0, 0))
+                        idraw.line([(width, (t + 3 + cu_offset2) * 40),
+                                    (width + info_list_length[i], (t + 3 + cu_offset2) * 40)],
+                                   fill="#e1e1e1", width=2)
+                elif t1 == "组织":
+                    if t < len(cu):
+                        temp = cu[t]
+                        y = ((t + 2) * 40 + (t + 2) * 40 + (40 * (temp - 1))) / 2 + cu_offset * 40
+                        idraw.text((width + 10, y),
+                                   str(self.info[t1][cu_offset + t]),
+                                   font=fnt, fill=(0, 0, 0))
+                        idraw.line([(width, (t + 3 + cu_offset2) * 40),
+                                    (width + info_list_length[i], (t + 3 + cu_offset2) * 40)],
+                                   fill="#e1e1e1", width=2)
+                elif t1 == "簇":
+                    if t < len(cu):
+                        temp = self.info[t1][t]
+                        y = ((t + 2) * 40 + (t + 2) * 40 + (40 * (temp - 1))) / 2 + cu_offset * 40
+                        idraw.text((self.get_mid(width, width + info_list_length[i], str(self.info[t1][t])), y),
+                                   str(self.info[t1][t]),
+                                   font=fnt, fill=(0, 0, 0))
+                        if cu[t] > 1:
+                            cu_offset += cu[t] - 1
+                        idraw.line([(width, (t + 3 + cu_offset2) * 40),
+                                    (width + info_list_length[i], (t + 3 + cu_offset2) * 40)],
+                                   fill="#e1e1e1", width=2)
+                    else:
+                        pass
                 elif t1 == "节点名称":
                     try:
-                        pilmoji.text((width + 10, (t + 2) * 40),
-                                     self.info[t1][t],
-                                     font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
+                        if self.emoji:
+                            pilmoji.text((width + 10, (t + 2) * 40),
+                                         self.info[t1][t],
+                                         font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
+                        else:
+                            idraw.text((width + 10, (t + 2) * 40), self.info[t1][t], font=fnt, fill=(0, 0, 0))
                     except PIL.UnidentifiedImageError:
                         logger.warning("无效符号:" + self.basedata[t])
                         pilmoji2 = Pilmoji(img, source=Twemoji)
                         pilmoji2.text((width + 10, (t + 2) * 40),
                                       self.info[t1][t],
                                       font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
+                    except Exception as e:
+                        logger.error(str(e))
+                        idraw.text((width + 10, (t + 2) * 40), self.info[t1][t], font=fnt, fill=(0, 0, 0))
+                    idraw.line(
+                        [(width, (t + 3) * 40), (width + info_list_length[i], (t + 3) * 40)],
+                        fill="#e1e1e1", width=2)
+                elif t1 == "入口":
+                    text = str(self.info[t1][t])
+                    pre_text = str(self.info[t1][t - 1]) if t > 0 else str(self.info[t1][0])
+                    if t == 0:
+                        idraw.text(
+                            (self.get_mid(width, width + info_list_length[i], str(self.info[t1][t])), (t + 2) * 40),
+                            str(self.info[t1][t]),
+                            font=fnt, fill=(0, 0, 0))
+                    elif text != pre_text:
+                        idraw.text(
+                            (self.get_mid(width, width + info_list_length[i], text), (t + 2) * 40),
+                            text,
+                            font=fnt, fill=(0, 0, 0))
+                    else:
+                        pass
                 else:
-                    idraw.text((self.get_mid(width, width + info_list_length[i], self.info[t1][t]), (t + 2) * 40),
-                               self.info[t1][t],
+                    idraw.text((self.get_mid(width, width + info_list_length[i], str(self.info[t1][t])), (t + 2) * 40),
+                               str(self.info[t1][t]),
                                font=fnt, fill=(0, 0, 0))
                 width += info_list_length[i]
                 i += 1
-        # 绘制横线
-        for t in range(self.nodenum + 3):
-            idraw.line([(0, 40 * (t + 1)), (image_width, 40 * (t + 1))], fill="#e1e1e1", width=1)
+        idraw.line([(0, 40), (image_width, 40)], fill="#e1e1e1", width=2)
+        idraw.line([(0, image_height-40), (image_width, image_height-40)], fill="#e1e1e1", width=2)
         start_x = 100
         for i in info_list_length:
             x = start_x
@@ -608,8 +715,9 @@ class ExportSpeed(ExportResult):
         idraw = ImageDraw.Draw(img)
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
-        list1 = ["FullTclash - 速度测试",
-                 f"版本:{__version__}     ⏱️总共耗时: {self.wtime}s   消耗流量: {self.traffic}MB   线程: {self.thread}  过滤器: {self.filter_include} <-> {self.filter_exclude}",
+        list1 = [f"{self.title} - 速度测试",
+                 f"版本:{__version__}    总共耗时: {self.wtime}s   消耗流量: {self.traffic}MB   线程: {self.thread}  \
+                 过滤器: {self.filter_include} <-> {self.filter_exclude}",
                  "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time)]
         export_time = export_time.replace(':', '-')
         title = list1[0]

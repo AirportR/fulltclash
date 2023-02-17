@@ -1,6 +1,7 @@
 import asyncio
 import time
-
+from collections import Counter
+from operator import itemgetter
 import aiohttp
 from loguru import logger
 from pyrogram.errors import RPCError, FloodWait
@@ -38,7 +39,7 @@ async def topo(file_path: str):
             info.update({'地区': country_code, 'AS编号': asn, '组织': org})
             numcount = []
             for v in inboundinfo.values():
-                numcount.append(str(v))
+                numcount.append(int(v))
             new_hosts = []
             for host in hosts:
                 if len(host) < 16:  # v4地址最大长度为15
@@ -99,8 +100,8 @@ async def batch_topo(message, nodename: list, pool: dict, proxygroup='auto'):
         if nodenum % psize != 0:
             logger.info("最后批次: " + str(subbatch + 1))
             for i in range(nodenum % psize):
-                proxys.switchProxy_old(proxyName=nodename[subbatch * psize + i], proxyGroup=proxygroup, clashHost=host[i],
-                                       clashPort=port[i] + 1)
+                proxys.switchProxy_old(proxyName=nodename[subbatch * psize + i], proxyGroup=proxygroup,
+                                       clashHost=host[i], clashPort=port[i] + 1)
             ipcol = collector.IPCollector()
             sub_res = await ipcol.batch(proxyhost=host[:nodenum % psize],
                                         proxyport=port[:nodenum % psize])
@@ -112,7 +113,7 @@ async def batch_topo(message, nodename: list, pool: dict, proxygroup='auto'):
         return resdata
 
 
-async def core(message, back_message, start_time, suburl: str = None, test_type="all", thread: int = 1):
+async def core(message, back_message, start_time, suburl: str = None, test_type="all", thread: int = 1, **kwargs):
     """
 
     :param thread: 测试线程
@@ -135,6 +136,10 @@ async def core(message, back_message, start_time, suburl: str = None, test_type=
             include_text = texts[2]
         if len(texts) > 3:
             exclude_text = texts[3]
+        if kwargs.get('include_text', ''):
+            include_text = kwargs.get('include_text', '')
+        if kwargs.get('exclude_text', ''):
+            exclude_text = kwargs.get('exclude_text', '')
     else:
         text = str(message.text)
         url = cleaner.geturl(text)
@@ -143,8 +148,8 @@ async def core(message, back_message, start_time, suburl: str = None, test_type=
             include_text = texts[2]
         if len(texts) > 3:
             exclude_text = texts[3]
-        if await check.check_url(back_message, url):
-            return info1, info2
+    if await check.check_url(back_message, url):
+        return info1, info2
     print(url)
     pool = {'host': ['127.0.0.1' for _ in range(thread)],
             'port': [1124 + t * 2 for t in range(thread)]}
@@ -156,9 +161,9 @@ async def core(message, back_message, start_time, suburl: str = None, test_type=
         return info1, info2
     try:
         # 启动订阅清洗
-        with open('./clash/sub{}.yaml'.format(start_time), "r", encoding="UTF-8") as fp:
-            cl = cleaner.ClashCleaner(fp)
-            nodenum = cl.nodesCount()
+        cl = cleaner.ClashCleaner('./clash/sub{}.yaml'.format(start_time))
+        cl.node_filter(include_text, exclude_text)
+        nodenum = cl.nodesCount()
     except Exception as e:
         logger.error(e)
         nodenum = 0
@@ -166,17 +171,20 @@ async def core(message, back_message, start_time, suburl: str = None, test_type=
     if await check.check_nodes(back_message, nodenum, ()):
         return info1, info2
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
-    ma.addsub(subname=start_time, subpath='./sub{}.yaml'.format(start_time))
+    ma.addsub2provider(subname=start_time, subpath='./sub{}.yaml'.format(start_time))
     ma.save('./clash/proxy.yaml')
     # 重载配置文件
-    await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=1123)
+    if not await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=1123):
+        return info1, info2
     try:
         if nodenum < len(pool.get('port', [])):
             for i in pool.get('port', [])[:nodenum]:
-                await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=i + 1)
+                if not await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=i + 1):
+                    return info1, info2
         else:
             for i in pool.get('port', []):
-                await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=i + 1)
+                if not await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=i + 1):
+                    return info1, info2
     except Exception as e:
         logger.error(str(e))
         return info1, info2
@@ -207,18 +215,29 @@ async def core(message, back_message, start_time, suburl: str = None, test_type=
                 asn.append(str(ipcl.get_asn()))
                 org.append(ipcl.get_org())
                 ip = ipcl.get_ip()
-                if len(ip) < 16:  # v4地址最大长度为15
-                    try:
-                        old_ip = ip.split('.')
-                        new_ip = "*.*.*." + old_ip[-1]
-                    except IndexError:
-                        new_ip = ip
-                    ipaddr.append(new_ip)
-                else:
-                    ipaddr.append("?")
-
-            info2.update({'地区': country_code, 'AS编号': asn, '组织': org, '出口ip': ipaddr})
-            info2.update({'节点名称': nodename})
+                ipaddr.append(ip)
+                # if len(ip) < 16:  # v4地址最大长度为15
+                #     try:
+                #         old_ip = ip.split('.')
+                #         new_ip = "*.*.*." + old_ip[-1]
+                #     except IndexError:
+                #         new_ip = ip
+                #     ipaddr.append(new_ip)
+                # else:
+                #     ipaddr.append("?")
+            out_num = info1.get('出口数量', [])
+            num_c = 1
+            d0 = []
+            for i in out_num:
+                d0 += [num_c for _ in range(int(i))]
+                num_c += 1
+            all_data = zip(d0, country_code, asn, org, ipaddr, nodename)
+            sorted_data = sorted(all_data, key=itemgetter(4), reverse=True)
+            d0, d1, d2, d3, d4, d5 = zip(*sorted_data)
+            d4_count = Counter(d4)
+            results4 = [v for k, v in d4_count.items()]
+            info2.update({'入口': d0, '地区': d1, 'AS编号': d2, '组织': d3, '簇': results4})
+            info2.update({'节点名称': d5})
         # 计算测试消耗时间
         wtime = "%.1f" % float(time.time() - s1)
         info2.update({'wtime': wtime})
@@ -253,8 +272,5 @@ if __name__ == "__main__":
 
 
     async def test():
-        a = await batch_topo(['🇺🇸 USA-01-1x', '🇭🇰 HKG-02-1x', '🇭🇰 HKG-03-1x', '🇸🇬 SGP-02-IPLC', '🇸🇬 SGP-01-IPLC'],
-                         {'host': ['127.0.0.1' for _ in range(4)], 'port': [1112, 1114, 1116, 1118]}, 'ETON')
-        print(a)
-
+        pass
     loop.run_until_complete(test())
