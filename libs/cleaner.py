@@ -96,11 +96,12 @@ class AddonCleaner:
     动态脚本导入
     """
 
-    def __init__(self, path: str = "./addons"):
+    def __init__(self, path: str = "./addons/"):
         """
-
+        模块管理中心
         :param path: 加载路径
         """
+        self.path = path
         self._script = {}
         self.init_addons(path)
         self.blacklist = []
@@ -116,11 +117,31 @@ class AddonCleaner:
     def script(self):
         return self._script
 
-    def reload_script(self, blacklist: list = None, path: str = "./addons"):
+    def reload_script(self, blacklist: list = None, path: str = "./addons/"):
         self.init_addons(path)
         if blacklist:
             for b in blacklist:
                 self._script.pop(b, None)
+
+    def remove_addons(self, script_name: list):
+        success_list = []
+        if script_name:
+            for name in script_name:
+                if name[-3:] == '.py' and name != "__init__.py":
+                    continue
+                try:
+                    os.remove(self.path + name + '.py')
+                    success_list.append(name)
+                except FileNotFoundError as f:
+                    logger.warning(f"{name} 文件不存在\t"+str(f))
+                except PermissionError as p:
+                    logger.warning(f"权限错误: {str(p)}")
+                except Exception as e:
+                    logger.error(str(e))
+            return success_list
+        else:
+            logger.warning("script_name is empty")
+            return success_list
 
     def init_addons(self, path: str):
         try:
@@ -137,7 +158,7 @@ class AddonCleaner:
                         module_name.append(d[:-3])
                     else:
                         pass
-
+        self._script.clear()
         logger.info("模块即将动态加载: " + str(module_name))
         logger.info("正在尝试获取 'SCRIPT' 属性组件")
         # module_name = ["abema"]

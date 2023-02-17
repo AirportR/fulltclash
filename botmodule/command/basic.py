@@ -70,6 +70,8 @@ admin_text = f"""
 /ungrant <回复一个目标> [管理]取消授权一个目标
 /user [管理]查看所有授权用户的id
 /remove [管理]移除一个或多个订阅
+/install <回复一个文件>安装脚本
+/uninstall <脚本文件名>卸载脚本
 /reload [管理]重载部分配置(一般情况下用不到)
 
 如有使用问题加入频道 @FullTClash 交流

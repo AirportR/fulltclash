@@ -4,7 +4,7 @@ from botmodule.command.test import *
 from botmodule.command.authority import *
 from botmodule.command.basic import *
 from botmodule.command.setting import *
-from botmodule.command.download import download_script
+from botmodule.command.download import *
 from botmodule import register
 from botmodule import subinfo
 from botmodule import debug_interface as di
