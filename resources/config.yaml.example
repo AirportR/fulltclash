@@ -6,7 +6,7 @@ item: # 流媒体测试项，决定你想要测哪个项,目前仅支持以下�
 - 'Youtube' # Youtube premium测试，如果测试结果显示失败大概率该节点是送中节点，默认开启。
 - 'Disney' # Disney Plus 区域限制不明显，观看体验尚佳，默认开启。
 #- 'Bilibili' # bilibili解锁， 仅在港澳台或者仅限台湾的番剧，这项测试一般很难看，默认不开启，想开启该项将该行最前面的#号删除即可。
-#- 'Dazn' # Dazn 一般测试得很难看，默认不开启，想开启该项将该行git branch -D最前面的#号删除即可。
+#- 'Dazn' # Dazn 一般测试得很难看，默认不开启，想开启该项将该行最前面的#号删除即可。
 #- 'Hbomax'
 #- 'Bahamut'
 #netflixurl: "https://www.netflix.com/title/80113701"  #自定义奈飞非自制剧检测网页，注意在更换此链接时请确保是非自制的链接。
