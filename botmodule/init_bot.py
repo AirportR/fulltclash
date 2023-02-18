@@ -25,13 +25,17 @@ def check_init():
 check_init()
 
 # 获取远程仓库的最新提交哈希
-output = subprocess.check_output(['git', 'ls-remote']).decode().strip()
-# 解析输出，提取最新提交的哈希值
 latest_version_hash = ""
-for line in output.split("\n"):
-    if "HEAD" in line:
-        latest_version_hash = line.split()[0][:7]
-        break
+try:
+    output = subprocess.check_output(['git', 'ls-remote']).decode().strip()
+    # 解析输出，提取最新提交的哈希值
+    for line in output.split("\n"):
+        if "HEAD" in line:
+            latest_version_hash = line.split()[0][:7]
+            break
+except:
+    latest_version_hash = "Unavailable"
+
 logger.add("./logs/fulltclash_{time}.log", rotation='7 days')
 config = ConfigManager()
 clash_path = config.get_clash_path()  # 为clash核心运行路径, Windows系统需要加后缀名.exe
