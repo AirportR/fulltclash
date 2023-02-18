@@ -27,13 +27,14 @@ check_init()
 # 获取远程仓库的最新提交哈希
 latest_version_hash = ""
 try:
-    output = subprocess.check_output(['git', 'ls-remote']).decode().strip()
+    output = subprocess.check_output(['git', 'log']).decode().strip()
     # 解析输出，提取最新提交的哈希值
     for line in output.split("\n"):
-        if "HEAD" in line:
-            latest_version_hash = line.split()[0][:7]
+        if "commit" in line:
+            latest_version_hash = line.split()[1][:7]
             break
-except:
+except Exception as e:
+    logger.warning(str(e))
     latest_version_hash = "Unavailable"
 
 logger.add("./logs/fulltclash_{time}.log", rotation='7 days')
