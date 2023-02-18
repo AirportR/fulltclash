@@ -129,7 +129,7 @@ async def is_port_in_use(host='127.0.0.1', port=80):
         await writer.wait_closed()
         print(fr"{port} 端口已被占用，请更换。")
         return True
-    except ConnectionRefusedError as c:
+    except ConnectionRefusedError:
         return False
 
 
@@ -178,7 +178,6 @@ if __name__ == "__main__":
     clash_work_path = config.get_clash_work_path()  # clash工作路径
     corenum = config.config.get('clash', {}).get('core', 1)
     res = asyncio.run(check_port(1122, 1123 + corenum * 2))
-    print(res)
     if res:
         print("端口检查未通过，即将退出...")
         sleep(10)

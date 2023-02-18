@@ -85,9 +85,9 @@ async def reloadConfig(filePath: str, clashHost: str = "127.0.0.1", clashPort: i
             return False
 
 
-def start_client(path: str, workpath: str = "./clash", config: str = './clash/proxy.yaml', ):
+def start_client(path: str, workpath: str = "./clash", _config: str = './clash/proxy.yaml', ):
     # 启动了一个clash常驻进程
-    command = fr"{path} -f {config} -d {workpath}"
+    command = fr"{path} -f {_config} -d {workpath}"
     subprocess.Popen(command.split(), encoding="utf-8")
     sleep(2)
 
@@ -109,7 +109,7 @@ def batch_start(portlist: list, proxy_file_path="./clash/proxy.yaml"):
         clashconf.changeClashPort(port=portlist[i])
         clashconf.changeClashEC(ec="127.0.0.1:" + str(ecport[i]))
         clashconf.save(proxy_file_path)
-        start_client(path=config.get_clash_path(), workpath=config.get_clash_work_path(), config=proxy_file_path)
+        start_client(path=config.get_clash_path(), workpath=config.get_clash_work_path(), _config=proxy_file_path)
     clashconf = ClashCleaner(proxy_file_path)
     clashconf.changeClashPort(port=1122)
     clashconf.changeClashEC(ec="127.0.0.1:1123")
