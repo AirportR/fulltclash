@@ -177,8 +177,10 @@ if __name__ == "__main__":
     clash_path = config.get_clash_path()  # 为clash核心运行路径, Windows系统需要加后缀名.exe
     clash_work_path = config.get_clash_work_path()  # clash工作路径
     corenum = config.config.get('clash', {}).get('core', 1)
-    res = asyncio.run(check_port(1122, 1123 + corenum * 2))
-    if res:
+    start_port = config.config.get('clash', {}).get('startup', 1124)
+    res1 = asyncio.run(check_port(1122, 1123))
+    res2 = asyncio.run(check_port(start_port, start_port+1 + corenum * 2))
+    if res1 or res2:
         print("端口检查未通过，即将退出...")
         sleep(10)
         exit(1)
@@ -186,7 +188,7 @@ if __name__ == "__main__":
     subp = subprocess.Popen(command.split(), encoding="utf-8")
 
     sleep(2)
-    batch_start([1124 + i * 2 for i in range(corenum)])
+    batch_start([start_port + i * 2 for i in range(corenum)])
     print("Clash核心进程已启动!")
     try:
         subp.wait()
