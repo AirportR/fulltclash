@@ -1,10 +1,9 @@
 import asyncio
-import os
 from pyrogram.types import Message
 from pyrogram import Client
 from pyrogram.errors import RPCError
 from loguru import logger
-from libs.cleaner import addon,ArgCleaner
+from libs.cleaner import addon, ArgCleaner
 from botmodule.command.setting import reload_button
 
 
@@ -32,6 +31,10 @@ async def download_script(_: Client, message: Message):
             file_path = await target.download(file_name=f'./addons/{file_name}')
             if file_path:
                 logger.info("文件已下载到本地:", file_path)
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    source = f.read(1024)
+                    await m2.edit_text(source)
+                    await asyncio.sleep(10)
                 bm = await m2.edit_text(f"**{file_name}** 下载成功,正在重载...")
                 await asyncio.sleep(3)
                 addon.reload_script()
