@@ -57,7 +57,6 @@ class ExportResult:
         self.delay_color = self.color.get('delay', [])
         self.__font = ImageFont.truetype(self.config.getFont(), self.front_size)
         self.title = self.image_config.get('title', 'FullTclash')
-        self.speedblock_width = 20
 
     @property
     def interval(self):
@@ -137,22 +136,9 @@ class ExportResult:
         width_list = []
         for i in key_list:
             key_width = self.text_width(i)  # 键的长度
-            max_width = 0
-            if self.info[i]:
-                if type(self.info[i][0]) == str:
-                    value_width = self.text_maxwidth(self.info[i])  # 键所对应值的长度
-                    max_width = max(key_width, value_width)
-                    max_width += 40
-                elif type(self.info[i][0]) == list:
-                    speedblock_count = len(self.info[i][0])
-                    speedblock_total_width = speedblock_count * self.speedblock_width
-                    key_width += 40
-                    if speedblock_total_width >= key_width:
-                        max_width = speedblock_total_width
-                    else:
-                        self.speedblock_width = math.ceil(key_width / speedblock_count)
-                        max_width = speedblock_count * self.speedblock_width
-            
+            value_width = self.text_maxwidth(self.info[i])  # 键所对应值的长度
+            max_width = max(key_width, value_width)
+            max_width = max_width + 40
             width_list.append(max_width)
         return width_list  # 测试项列的大小
 
@@ -645,7 +631,7 @@ class ExportTopo(ExportResult):
                 width += info_list_length[i]
                 i += 1
         idraw.line([(0, 40), (image_width, 40)], fill="#e1e1e1", width=2)
-        idraw.line([(0, image_height-40), (image_width, image_height-40)], fill="#e1e1e1", width=2)
+        idraw.line([(0, image_height - 40), (image_width, image_height - 40)], fill="#e1e1e1", width=2)
         start_x = 100
         for i in info_list_length:
             x = start_x
@@ -687,6 +673,35 @@ class ExportSpeed(ExportResult):
         self.front_size = 30
         self.config = ConfigManager()
         self.__font = ImageFont.truetype(self.config.getFont(), self.front_size)
+        self.speedblock_width = 20
+
+    def key_value(self):
+        """
+        得到所有测试项列的大小
+        :return: list
+        """
+        key_list = self.get_key_list()  # 得到每个测试项绘图的大小[100,80]
+        width_list = []
+        for i in key_list:
+            key_width = self.text_width(i)  # 键的长度
+            max_width = 0
+            if self.info[i]:
+                if type(self.info[i][0]) == str:
+                    value_width = self.text_maxwidth(self.info[i])  # 键所对应值的长度
+                    max_width = max(key_width, value_width)
+                    max_width += 40
+                elif type(self.info[i][0]) == list:
+                    speedblock_count = len(self.info[i][0])
+                    speedblock_total_width = speedblock_count * self.speedblock_width
+                    key_width += 40
+                    if speedblock_total_width >= key_width:
+                        max_width = speedblock_total_width
+                    else:
+                        self.speedblock_width = math.ceil(key_width / speedblock_count)
+                        max_width = speedblock_count * self.speedblock_width
+
+            width_list.append(max_width)
+        return width_list  # 测试项列的大小
 
     @property
     def interval(self):
@@ -704,7 +719,7 @@ class ExportSpeed(ExportResult):
             return a
         '''
         return a
-    
+
     @property
     def colorvalue(self):
         color_list = []
@@ -736,8 +751,8 @@ class ExportSpeed(ExportResult):
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
         list1 = [f"{self.title} - 速度测试",
-                 f"版本:{__version__}    总共耗时: {self.wtime}s   消耗流量: {self.traffic}MB   线程: {self.thread}  \
-                 过滤器: {self.filter_include} <-> {self.filter_exclude}",
+                 f"版本:{__version__}    总共耗时: {self.wtime}s   消耗流量: {self.traffic}MB   线程: {self.thread}" +
+                 f"过滤器: {self.filter_include} <-> {self.filter_exclude}",
                  "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time)]
         export_time = export_time.replace(':', '-')
         title = list1[0]
@@ -785,14 +800,13 @@ class ExportSpeed(ExportResult):
                                   emoji_position_offset=(0, 6))
             else:
                 idraw.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0))
-            
-            
-            def get_color(speedvalue,default_color='#C0C0C0'):
+
+            def get_color(speedvalue, default_color='#C0C0C0'):
                 for i in reversed(range(len(colorvalue))):
                     if speedvalue >= interval[i]:
                         return colorvalue[i]
                 return default_color
-            
+
             width = 100 + nodename_width
             i = 0
             # 填充颜色块
@@ -810,15 +824,15 @@ class ExportSpeed(ExportResult):
                 if type(self.info[t2][t]) == str:
                     if t2 == "平均速度" or t2 == "最大速度":
                         idraw.text((self.get_mid(width, width + info_list_length[i], self.info[t2][t]), (t + 2) * 40),
-                            self.info[t2][t],
-                            font=fnt, fill=(0, 0, 0))
+                                   self.info[t2][t],
+                                   font=fnt, fill=(0, 0, 0))
                     else:
                         idraw.text((self.get_mid(width, width + info_list_length[i], self.info[t2][t]), (t + 2) * 40),
-                            self.info[t2][t],
-                            font=fnt, fill=(0, 0, 0))
+                                   self.info[t2][t],
+                                   font=fnt, fill=(0, 0, 0))
                 width += info_list_length[i]
                 i += 1
-            
+
             # 速度变化
             width = 100 + nodename_width + 2
             i = 0
@@ -828,21 +842,20 @@ class ExportSpeed(ExportResult):
                     speedblock_x = width
                     for speedvalue in self.info[t3][t]:
                         max_speed = float(self.info["最大速度"][t][:-2])
-                        if(max_speed > 0.0):
+                        if (max_speed > 0.0):
                             speedblock_ratio_height = int(speedblock_height * speedvalue / max_speed)
-                            if(speedblock_ratio_height > speedblock_height):
+                            if (speedblock_ratio_height > speedblock_height):
                                 speedblock_ratio_height = speedblock_height
                             speedblock_y = speedblock_height * (t + 2) + (speedblock_height - speedblock_ratio_height)
 
-                            block = color_block((self.speedblock_width, speedblock_ratio_height), 
-                                color_value=get_color(speedvalue))
+                            block = color_block((self.speedblock_width, speedblock_ratio_height),
+                                                color_value=get_color(speedvalue))
                             img.paste(block, (speedblock_x, speedblock_y))
                         speedblock_x += self.speedblock_width
                     break
                 width += info_list_length[i]
                 i += 1
-        
-        
+
         '''
         :添加横竖线条
         '''

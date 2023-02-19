@@ -151,8 +151,9 @@ async def core(message, back_message, start_time, suburl: str = None, test_type=
     if await check.check_url(back_message, url):
         return info1, info2
     print(url)
+    startup = cleaner.config.config.get('clash', {}).get('startup', 1124)
     pool = {'host': ['127.0.0.1' for _ in range(thread)],
-            'port': [1124 + t * 2 for t in range(thread)]}
+            'port': [startup + t * 2 for t in range(thread)]}
     # 订阅采集
     logger.info(f"过滤器: 包含: [{include_text}], 排除: [{exclude_text}]")
     sub = collector.SubCollector(suburl=url, include=include_text, exclude=exclude_text)
