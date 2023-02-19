@@ -145,6 +145,14 @@ def command_loader(app: Client):
         if await isuser(message, botmodule.init_bot.reloadUser()):
             await botmodule.sub_invite(client, message)
 
+    @app.on_message(filters.command(['install', 'list_script']) & filters.user(admin), group=2)
+    async def install_script(client, message):
+        await botmodule.download_script(client, message)
+
+    @app.on_message(filters.command(['uninstall']) & filters.user(admin), group=2)
+    async def uninstall_script(client, message):
+        await botmodule.uninstall_script(client, message)
+
 
 def callback_loader(app: Client):
     @app.on_callback_query()

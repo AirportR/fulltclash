@@ -6,12 +6,13 @@ from libs.check import check_user
 from botmodule import init_bot
 from libs.export import __version__
 
+
 tourist_text = f"""
     欢迎使用FullTclash bot,目前可用指令有:
 
 /help & /start [游客]获取帮助菜单
 /version [游客]输出版本信息({__version__})
-/traffic & /subinfo & /流量查询 & /流量 <订阅链接> [游客]获取流量信息
+/traffic & /subinfo & /流量查询 & /流量 <订阅链接> & <订阅名> [游客]获取流量信息
 /inboundurl <订阅链接> [游客/用户]临时下载订阅仅作入口分析(需管理员开启)
 
 如有使用问题加入频道 @FullTClash 交流
@@ -22,7 +23,7 @@ user_text = f"""
 基础指令
 /help & /start [游客]获取帮助菜单
 /version [游客]输出版本信息({__version__})
-/traffic & /subinfo & /流量查询 & /流量 <订阅链接> [游客]获取流量信息
+/traffic & /subinfo & /流量查询 & /流量 <订阅链接> & <订阅名> [游客]获取流量信息
 
 测试指令
 /test <订阅名> <包含过滤器> <排除过滤器> [用户]进行流媒体测试
@@ -49,7 +50,7 @@ admin_text = f"""
 基础指令
 /help & /start [游客]获取帮助菜单
 /version [游客]输出版本信息({__version__})
-/traffic & /subinfo & /流量查询 & /流量 <订阅链接> [游客]获取流量信息
+/traffic & /subinfo & /流量查询 & /流量 <订阅链接> & <订阅名> [游客]获取流量信息
 
 测试指令
 /test <订阅名> <包含过滤器> <排除过滤器> [用户]进行流媒体测试
@@ -70,6 +71,8 @@ admin_text = f"""
 /ungrant <回复一个目标> [管理]取消授权一个目标
 /user [管理]查看所有授权用户的id
 /remove [管理]移除一个或多个订阅
+/install <回复一个文件>安装脚本
+/uninstall <脚本文件名>卸载脚本
 /reload [管理]重载部分配置(一般情况下用不到)
 
 如有使用问题加入频道 @FullTClash 交流
@@ -78,7 +81,8 @@ admin_text = f"""
 
 async def version(_, message):
     try:
-        back_message = await message.reply(f"FullTclash版本: {__version__}")
+        version_hash = init_bot.latest_version_hash
+        back_message = await message.reply(f"FullTclash版本: {__version__} (__{version_hash}__)")
         await asyncio.sleep(30)
         await back_message.delete()
     except RPCError as r:

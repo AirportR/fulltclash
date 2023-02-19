@@ -1,4 +1,5 @@
 # 这是一个批量启动clash子进程的脚本
+import asyncio
 import subprocess
 import yaml
 from time import sleep
@@ -115,6 +116,31 @@ class ConfigManager:
             return './resources/clash-windows-amd64.exe'
 
 
+async def is_port_in_use(host='127.0.0.1', port=80):
+    """
+    检查主机端口是否被占用
+    :param host:
+    :param port:
+    :return:
+    """
+    try:
+        reader, writer = await asyncio.open_connection(host, port)
+        writer.close()
+        await writer.wait_closed()
+        print(fr"{port} 端口已被占用，请更换。")
+        return True
+    except ConnectionRefusedError:
+        return False
+
+
+async def check_port(start: int, end: int):
+    tasks = []
+    for i in range(start, end):
+        tasks.append(asyncio.create_task(is_port_in_use(port=i)))
+    results = await asyncio.gather(*tasks)
+    return True in results
+
+
 def start_client(path: str, workpath: str = "./clash", _config: str = './clash/proxy.yaml', ):
     # 启动了一个clash常驻进程
     _command = fr"{path} -f {_config} -d {workpath}"
@@ -146,16 +172,25 @@ def batch_start(portlist: list, proxy_file_path="./clash/proxy.yaml"):
     clashconf.save(proxy_file_path)
 
 
-config = ConfigManager()
-clash_path = config.get_clash_path()  # 为clash核心运行路径, Windows系统需要加后缀名.exe
-clash_work_path = config.get_clash_work_path()  # clash工作路径
-command = fr"{clash_path} -f {'./clash/proxy.yaml'} -d {clash_work_path}"
-subp = subprocess.Popen(command.split(), encoding="utf-8")
-corenum = config.config.get('clash', {}).get('core', 1)
-sleep(2)
-batch_start([1124 + i * 2 for i in range(corenum)])
-print("Clash核心进程已启动!")
-try:
-    subp.wait()
-except KeyboardInterrupt:
-    exit()
+if __name__ == "__main__":
+    config = ConfigManager()
+    clash_path = config.get_clash_path()  # 为clash核心运行路径, Windows系统需要加后缀名.exe
+    clash_work_path = config.get_clash_work_path()  # clash工作路径
+    corenum = config.config.get('clash', {}).get('core', 1)
+    start_port = config.config.get('clash', {}).get('startup', 1124)
+    res1 = asyncio.run(check_port(1122, 1123))
+    res2 = asyncio.run(check_port(start_port, start_port+1 + corenum * 2))
+    if res1 or res2:
+        print("端口检查未通过，即将退出...")
+        sleep(10)
+        exit(1)
+    command = fr"{clash_path} -f {'./clash/proxy.yaml'} -d {clash_work_path}"
+    subp = subprocess.Popen(command.split(), encoding="utf-8")
+
+    sleep(2)
+    batch_start([start_port + i * 2 for i in range(corenum)])
+    print("Clash核心进程已启动!")
+    try:
+        subp.wait()
+    except KeyboardInterrupt:
+        exit()

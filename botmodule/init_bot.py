@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import subprocess
 from loguru import logger
 from libs.cleaner import ConfigManager
 
@@ -22,6 +23,20 @@ def check_init():
 
 
 check_init()
+
+# 获取远程仓库的最新提交哈希
+latest_version_hash = ""
+try:
+    output = subprocess.check_output(['git', 'log']).decode().strip()
+    # 解析输出，提取最新提交的哈希值
+    for line in output.split("\n"):
+        if "commit" in line:
+            latest_version_hash = line.split()[1][:7]
+            break
+except Exception as e:
+    logger.warning(str(e))
+    latest_version_hash = "Unavailable"
+
 logger.add("./logs/fulltclash_{time}.log", rotation='7 days')
 config = ConfigManager()
 clash_path = config.get_clash_path()  # 为clash核心运行路径, Windows系统需要加后缀名.exe
@@ -39,15 +54,27 @@ try:
     _proxy = config.get_bot_proxy(isjoint=False).split(':')
     proxy_host = _proxy[0]
     proxy_port = _proxy[1]
-    logger.info("当前代理设置为: " + proxy_host + ":" + proxy_port)
+    proxy_username = None
+    proxy_password = None
+    lenproxy = len(_proxy)
+    if lenproxy < 3:
+        logger.info("当前代理设置为: " + proxy_host + ":" + proxy_port)
+    else:
+        proxy_username = _proxy[2]
+        proxy_password = _proxy[3]
+        logger.info("当前代理设置为: " + proxy_host + ":" + proxy_port + "\n" + "用户名：" + proxy_username + "密码：" + proxy_password)
 except AttributeError as attr:
     logger.info(str(attr))
     proxy_host = None
     proxy_port = None
+    proxy_username = None
+    proxy_password = None
 except Exception as e:
     logger.error(str(e))
     proxy_host = None
     proxy_port = None
+    proxy_username = None
+    proxy_password = None
 # 如果是在国内环境，则需要代理环境以供程序连接上TG
 if port:
     logger.warning("当前使用旧版代理方案，今后可能会废弃proxyport该键值对，建议使用新版方案: proxy键值对")
@@ -55,6 +82,14 @@ if port:
         "scheme": "socks5",  # "socks4", "socks5" and "http" are supported
         "hostname": "127.0.0.1",
         "port": port
+    }
+elif proxy_host and proxy_port and proxy_username and proxy_password:
+    proxies = {
+        "scheme": "socks5",  # "socks4", "socks5" and "http" are supported
+        "hostname": proxy_host,
+        "port": int(proxy_port),
+        "username": f"{proxy_username}",
+        "password": f"{proxy_password}"
     }
 elif proxy_host and proxy_port:
     proxies = {

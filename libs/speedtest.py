@@ -88,7 +88,8 @@ class Speedtest:
         self._delta_red = self._total_red
         self._count += 1
         print("\r[" + "=" * self._count + f"> [{speed_mb:.2f} MB/s]", end="")
-        self.result.append(speed)
+        if(len(self.result) < 10):
+            self.result.append(speed)
 
     def show_progress_full(self):
         mb_red = self._total_red / 1024 / 1024
@@ -176,7 +177,7 @@ async def batch_speed(message: Message, nodename: list, proxygroup='auto'):
         res = await start("127.0.0.1", 1122, 4096)
         avgspeed = "%.2f" % (res[0] / 1024 / 1024) + "MB"
         maxspeed = "%.2f" % (res[1] / 1024 / 1024) + "MB"
-        speedresult = res[2]
+        speedresult = [v / 1024 / 1024 for v in res[2]]
         traffic_used = float("%.2f" % (res[3] / 1024 / 1024))
         info["消耗流量"] += traffic_used
         res2 = [avgspeed, maxspeed, speedresult, udptype]

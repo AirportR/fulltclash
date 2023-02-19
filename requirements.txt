@@ -6,7 +6,7 @@ Pyrogram>=2.0.26
 PyYAML>=6.0
 requests>=2.26.0
 tgcrypto>=1.2.3
-APScheduler~=3.6.3
+APScheduler==3.6.3
 emoji==1.7.0
 loguru>=0.6.0
 aiohttp_socks==0.7.1

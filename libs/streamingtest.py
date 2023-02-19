@@ -207,8 +207,9 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
         url = cleaner.geturl(text)
     if await check.check_url(back_message, url):
         return info
+    startup = cleaner.config.config.get('clash', {}).get('startup', 1124)
     pool = {'host': ['127.0.0.1' for _ in range(thread)],
-            'port': [1124 + t * 2 for t in range(thread)]}
+            'port': [startup + t * 2 for t in range(thread)]}
     print(url)
     # 订阅采集
     logger.info(f"过滤器: 包含: [{include_text}], 排除: [{exclude_text}]")

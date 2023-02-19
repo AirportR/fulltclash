@@ -12,6 +12,31 @@ from pyrogram.filters import private_filter
 """
 
 
+async def is_port_in_use(host='127.0.0.1', port=80):
+    """
+    检查主机端口是否被占用
+    :param host:
+    :param port:
+    :return:
+    """
+    try:
+        reader, writer = await asyncio.open_connection(host, port)
+        writer.close()
+        await writer.wait_closed()
+        logger.warning(fr"{port} 已被占用，请更换。")
+        return True
+    except ConnectionRefusedError as c:
+        return False
+
+
+async def check_port(start: int, end: int):
+    tasks = []
+    for i in range(start, end):
+        tasks.append(asyncio.create_task(is_port_in_use(port=i)))
+    results = await asyncio.gather(*tasks)
+    return True in results
+
+
 async def check_share(message, shareid: list):
     """
     检查是否在分享名单中,若在返回真，否则返回假。
