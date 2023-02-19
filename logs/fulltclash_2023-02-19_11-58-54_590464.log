@@ -1,0 +1,28 @@
+2023-02-19 11:58:54.598 | INFO     | libs.cleaner:add_user:677 - 添加成功
+2023-02-19 11:58:54.610 | INFO     | botmodule.init_bot:<module>:49 - 管理员名单加载:[1227752162]
+2023-02-19 11:58:54.613 | INFO     | botmodule.init_bot:<module>:67 - 'NoneType' object has no attribute 'get'
+2023-02-19 11:58:54.615 | INFO     | botmodule.init_bot:<module>:108 - 配置已加载, Telegram bot程序正在运行...
+2023-02-19 11:59:44.728 | INFO     | libs.bot:bot_put:200 - 任务测试项为: []
+2023-02-19 11:59:50.029 | INFO     | libs.cleaner:get_sub:604 - 无订阅保存
+2023-02-19 12:00:38.275 | INFO     | libs.bot:bot_put:200 - 任务测试项为: []
+2023-02-19 12:00:41.630 | INFO     | libs.speedtest:core:271 - 过滤器: 包含: [新加坡], 排除: []
+2023-02-19 12:00:41.633 | INFO     | libs.collector:getSubConfig:246 - subconvertor状态: 未启用
+2023-02-19 12:00:42.369 | INFO     | libs.collector:getSubConfig:255 - 获取订阅成功
+2023-02-19 12:00:42.468 | INFO     | libs.cleaner:node_filter:412 - 包含过滤器已命中:新加坡 Akari [ IEPL ]
+2023-02-19 12:00:42.471 | INFO     | libs.cleaner:node_filter:412 - 包含过滤器已命中:新加坡 Nerocloud 01 [ IEPL ]
+2023-02-19 12:00:42.475 | INFO     | libs.cleaner:node_filter:412 - 包含过滤器已命中:新加坡 Nerocloud 02 [ IEPL ]
+2023-02-19 12:00:42.479 | INFO     | libs.cleaner:node_filter:437 - Included 3 node(s)  Excluded 0 node(s)  Exported 3 node(s)
+2023-02-19 12:00:42.542 | INFO     | libs.proxys:reloadConfig:78 - 切换配置文件成功，当前配置文件路径:F:\GithubCode\FullTclash\clash\proxy.yaml
+2023-02-19 12:00:42.544 | INFO     | libs.speedtest:core:297 - 开始测试延迟...
+2023-02-19 12:00:43.077 | INFO     | libs.proxys:switchProxy_old:34 - 切换节点: 新加坡 Akari [ IEPL ] 204
+2023-02-19 12:00:43.078 | INFO     | libs.speedtest:nat_type_test:338 - Performing UDP NAT Type Test.
+2023-02-19 12:00:46.149 | INFO     | libs.speedtest:start:142 - Running st_async, workers: 4.
+2023-02-19 12:00:56.249 | INFO     | libs.speedtest:show_progress_full:102 - Fetched 413.31 MB in 10.01s.
+2023-02-19 12:00:56.509 | INFO     | libs.proxys:switchProxy_old:34 - 切换节点: 新加坡 Nerocloud 01 [ IEPL ] 204
+2023-02-19 12:00:56.511 | INFO     | libs.speedtest:nat_type_test:338 - Performing UDP NAT Type Test.
+2023-02-19 12:00:59.549 | INFO     | libs.speedtest:start:142 - Running st_async, workers: 4.
+2023-02-19 12:01:09.715 | INFO     | libs.speedtest:show_progress_full:102 - Fetched 396.93 MB in 10.00s.
+2023-02-19 12:01:10.021 | INFO     | libs.proxys:switchProxy_old:34 - 切换节点: 新加坡 Nerocloud 02 [ IEPL ] 204
+2023-02-19 12:01:10.024 | INFO     | libs.speedtest:nat_type_test:338 - Performing UDP NAT Type Test.
+2023-02-19 12:01:13.083 | INFO     | libs.speedtest:start:142 - Running st_async, workers: 4.
+2023-02-19 12:01:23.304 | INFO     | libs.speedtest:show_progress_full:102 - Fetched 410.89 MB in 10.06s.

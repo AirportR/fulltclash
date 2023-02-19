@@ -1,0 +1,677 @@
+allow-lan: true
+bind-address: '*'
+dns:
+  default-nameserver:
+  - 223.5.5.5
+  - 119.29.29.29
+  enable: true
+  enhanced-mode: redir-host
+  fake-ip-range: 198.18.0.1/16
+  fallback:
+  - https://doh.dns.sb/dns-query
+  - https://dns.cloudflare.com/dns-query
+  - https://dns.twnic.tw/dns-query
+  - tls://8.8.4.4:853
+  fallback-filter:
+    geoip: true
+    ipcidr:
+    - 240.0.0.0/4
+    - 0.0.0.0/32
+  ipv6: false
+  nameserver:
+  - https://doh.pub/dns-query
+  - https://dns.alidns.com/dns-query
+  use-hosts: true
+external-controller: 127.0.0.1:9090
+log-level: info
+mixed-port: 7890
+mode: rule
+proxies:
+- cipher: chacha20-ietf-poly1305
+  name: "\u65B0\u52A0\u5761 Akari [ IEPL ]"
+  password: 3e4d6552-1540-40c4-a52e-0a199282da83
+  port: 10018
+  server: iepl-relay.opg951cy.bkcloud.ml
+  type: ss
+  udp: true
+- cipher: chacha20-ietf-poly1305
+  name: "\u65B0\u52A0\u5761 Nerocloud 01 [ IEPL ]"
+  password: 3e4d6552-1540-40c4-a52e-0a199282da83
+  port: 10019
+  server: iepl-relay.opg951cy.bkcloud.ml
+  type: ss
+  udp: true
+- cipher: chacha20-ietf-poly1305
+  name: "\u65B0\u52A0\u5761 Nerocloud 02 [ IEPL ]"
+  password: 3e4d6552-1540-40c4-a52e-0a199282da83
+  port: 10020
+  server: iepl-relay.opg951cy.bkcloud.ml
+  type: ss
+  udp: true
+proxy-groups:
+- name: BKCloud
+  proxies:
+  - "\u81EA\u52A8\u9009\u62E9"
+  - "\u6545\u969C\u8F6C\u79FB"
+  - "\u5269\u4F59\u6D41\u91CF\uFF1A4407.06 GB"
+  - "\u5957\u9910\u5230\u671F\uFF1A2023-05-31"
+  - "\u9999\u6E2F Akari 01 [ IEPL ]"
+  - "\u9999\u6E2F Akari 02 [ IEPL ]"
+  - "\u9999\u6E2F Akari 03 [ IEPL ]"
+  - "\u9999\u6E2F Akari 04 [ IEPL ]"
+  - "\u9999\u6E2F Akari 05 [ IEPL ]"
+  - "\u9999\u6E2F Akari 06 [ IEPL ]"
+  - "\u9999\u6E2F Akari 07 [ IEPL ]"
+  - "\u9999\u6E2F Akari 08 [ IEPL ]"
+  - "\u9999\u6E2F Akari 09 [ IEPL ]"
+  - "\u9999\u6E2F Akari 10 [ IEPL ]"
+  - "\u9999\u6E2F DMIT 01 [ IEPL ]"
+  - "\u9999\u6E2F DMIT 02 [ IEPL ]"
+  - "\u9999\u6E2F Misaka [ IEPL ]"
+  - "\u9999\u6E2F Catixs [ IEPL ]"
+  - "\u65E5\u672C Miku 01 [ IEPL ]"
+  - "\u65E5\u672C Miku 02 [ IEPL ]"
+  - "\u65E5\u672C Nerocloud [ IEPL ]"
+  - "\u65E5\u672C Catixs [ IEPL ]"
+  - "\u65B0\u52A0\u5761 Akari [ IEPL ]"
+  - "\u65B0\u52A0\u5761 Nerocloud 01 [ IEPL ]"
+  - "\u65B0\u52A0\u5761 Nerocloud 02 [ IEPL ]"
+  - "\u7F8E\u56FD Neko 01 [ IEPL ]"
+  - "\u7F8E\u56FD Neko 02 [ IEPL ]"
+  - "\u7F8E\u56FD DMIT [ IEPL ]"
+  - "\u53F0\u6E7E Akari 01 [ IEPL ]"
+  - "\u53F0\u6E7E Akari 02 [ IEPL ]"
+  - "\u53F0\u6E7E Akari 03 [ IEPL ]"
+  - "\u53F0\u6E7E Akari 04 [ IEPL ]"
+  - "\u53F0\u6E7E Akari 05 [ IEPL ]"
+  - "\u52A0\u62FF\u5927 Gtt [ IEPL ]"
+  type: select
+- interval: 86400
+  name: "\u81EA\u52A8\u9009\u62E9"
+  proxies:
+  - "\u5269\u4F59\u6D41\u91CF\uFF1A4407.06 GB"
+  - "\u5957\u9910\u5230\u671F\uFF1A2023-05-31"
+  - "\u9999\u6E2F Akari 01 [ IEPL ]"
+  - "\u9999\u6E2F Akari 02 [ IEPL ]"
+  - "\u9999\u6E2F Akari 03 [ IEPL ]"
+  - "\u9999\u6E2F Akari 04 [ IEPL ]"
+  - "\u9999\u6E2F Akari 05 [ IEPL ]"
+  - "\u9999\u6E2F Akari 06 [ IEPL ]"
+  - "\u9999\u6E2F Akari 07 [ IEPL ]"
+  - "\u9999\u6E2F Akari 08 [ IEPL ]"
+  - "\u9999\u6E2F Akari 09 [ IEPL ]"
+  - "\u9999\u6E2F Akari 10 [ IEPL ]"
+  - "\u9999\u6E2F DMIT 01 [ IEPL ]"
+  - "\u9999\u6E2F DMIT 02 [ IEPL ]"
+  - "\u9999\u6E2F Misaka [ IEPL ]"
+  - "\u9999\u6E2F Catixs [ IEPL ]"
+  - "\u65E5\u672C Miku 01 [ IEPL ]"
+  - "\u65E5\u672C Miku 02 [ IEPL ]"
+  - "\u65E5\u672C Nerocloud [ IEPL ]"
+  - "\u65E5\u672C Catixs [ IEPL ]"
+  - "\u65B0\u52A0\u5761 Akari [ IEPL ]"
+  - "\u65B0\u52A0\u5761 Nerocloud 01 [ IEPL ]"
+  - "\u65B0\u52A0\u5761 Nerocloud 02 [ IEPL ]"
+  - "\u7F8E\u56FD Neko 01 [ IEPL ]"
+  - "\u7F8E\u56FD Neko 02 [ IEPL ]"
+  - "\u7F8E\u56FD DMIT [ IEPL ]"
+  - "\u53F0\u6E7E Akari 01 [ IEPL ]"
+  - "\u53F0\u6E7E Akari 02 [ IEPL ]"
+  - "\u53F0\u6E7E Akari 03 [ IEPL ]"
+  - "\u53F0\u6E7E Akari 04 [ IEPL ]"
+  - "\u53F0\u6E7E Akari 05 [ IEPL ]"
+  - "\u52A0\u62FF\u5927 Gtt [ IEPL ]"
+  type: url-test
+  url: http://www.gstatic.com/generate_204
+- interval: 7200
+  name: "\u6545\u969C\u8F6C\u79FB"
+  proxies:
+  - "\u5269\u4F59\u6D41\u91CF\uFF1A4407.06 GB"
+  - "\u5957\u9910\u5230\u671F\uFF1A2023-05-31"
+  - "\u9999\u6E2F Akari 01 [ IEPL ]"
+  - "\u9999\u6E2F Akari 02 [ IEPL ]"
+  - "\u9999\u6E2F Akari 03 [ IEPL ]"
+  - "\u9999\u6E2F Akari 04 [ IEPL ]"
+  - "\u9999\u6E2F Akari 05 [ IEPL ]"
+  - "\u9999\u6E2F Akari 06 [ IEPL ]"
+  - "\u9999\u6E2F Akari 07 [ IEPL ]"
+  - "\u9999\u6E2F Akari 08 [ IEPL ]"
+  - "\u9999\u6E2F Akari 09 [ IEPL ]"
+  - "\u9999\u6E2F Akari 10 [ IEPL ]"
+  - "\u9999\u6E2F DMIT 01 [ IEPL ]"
+  - "\u9999\u6E2F DMIT 02 [ IEPL ]"
+  - "\u9999\u6E2F Misaka [ IEPL ]"
+  - "\u9999\u6E2F Catixs [ IEPL ]"
+  - "\u65E5\u672C Miku 01 [ IEPL ]"
+  - "\u65E5\u672C Miku 02 [ IEPL ]"
+  - "\u65E5\u672C Nerocloud [ IEPL ]"
+  - "\u65E5\u672C Catixs [ IEPL ]"
+  - "\u65B0\u52A0\u5761 Akari [ IEPL ]"
+  - "\u65B0\u52A0\u5761 Nerocloud 01 [ IEPL ]"
+  - "\u65B0\u52A0\u5761 Nerocloud 02 [ IEPL ]"
+  - "\u7F8E\u56FD Neko 01 [ IEPL ]"
+  - "\u7F8E\u56FD Neko 02 [ IEPL ]"
+  - "\u7F8E\u56FD DMIT [ IEPL ]"
+  - "\u53F0\u6E7E Akari 01 [ IEPL ]"
+  - "\u53F0\u6E7E Akari 02 [ IEPL ]"
+  - "\u53F0\u6E7E Akari 03 [ IEPL ]"
+  - "\u53F0\u6E7E Akari 04 [ IEPL ]"
+  - "\u53F0\u6E7E Akari 05 [ IEPL ]"
+  - "\u52A0\u62FF\u5927 Gtt [ IEPL ]"
+  type: fallback
+  url: http://www.gstatic.com/generate_204
+rules:
+- DOMAIN,bkcloud.autos,DIRECT
+- DOMAIN-SUFFIX,services.googleapis.cn,BKCloud
+- DOMAIN-SUFFIX,xn--ngstr-lra8j.com,BKCloud
+- DOMAIN,safebrowsing.urlsec.qq.com,DIRECT
+- DOMAIN,safebrowsing.googleapis.com,DIRECT
+- DOMAIN,developer.apple.com,BKCloud
+- DOMAIN-SUFFIX,digicert.com,BKCloud
+- DOMAIN,ocsp.apple.com,BKCloud
+- DOMAIN,ocsp.comodoca.com,BKCloud
+- DOMAIN,ocsp.usertrust.com,BKCloud
+- DOMAIN,ocsp.sectigo.com,BKCloud
+- DOMAIN,ocsp.verisign.net,BKCloud
+- DOMAIN-SUFFIX,apple-dns.net,BKCloud
+- DOMAIN,testflight.apple.com,BKCloud
+- DOMAIN,sandbox.itunes.apple.com,BKCloud
+- DOMAIN,itunes.apple.com,BKCloud
+- DOMAIN-SUFFIX,apps.apple.com,BKCloud
+- DOMAIN-SUFFIX,blobstore.apple.com,BKCloud
+- DOMAIN,cvws.icloud-content.com,BKCloud
+- DOMAIN-SUFFIX,mzstatic.com,DIRECT
+- DOMAIN-SUFFIX,itunes.apple.com,DIRECT
+- DOMAIN-SUFFIX,icloud.com,DIRECT
+- DOMAIN-SUFFIX,icloud-content.com,DIRECT
+- DOMAIN-SUFFIX,me.com,DIRECT
+- DOMAIN-SUFFIX,aaplimg.com,DIRECT
+- DOMAIN-SUFFIX,cdn20.com,DIRECT
+- DOMAIN-SUFFIX,cdn-apple.com,DIRECT
+- DOMAIN-SUFFIX,akadns.net,DIRECT
+- DOMAIN-SUFFIX,akamaiedge.net,DIRECT
+- DOMAIN-SUFFIX,edgekey.net,DIRECT
+- DOMAIN-SUFFIX,mwcloudcdn.com,DIRECT
+- DOMAIN-SUFFIX,mwcname.com,DIRECT
+- DOMAIN-SUFFIX,apple.com,DIRECT
+- DOMAIN-SUFFIX,apple-cloudkit.com,DIRECT
+- DOMAIN-SUFFIX,apple-mapkit.com,DIRECT
+- DOMAIN-SUFFIX,126.com,DIRECT
+- DOMAIN-SUFFIX,126.net,DIRECT
+- DOMAIN-SUFFIX,127.net,DIRECT
+- DOMAIN-SUFFIX,163.com,DIRECT
+- DOMAIN-SUFFIX,360buyimg.com,DIRECT
+- DOMAIN-SUFFIX,36kr.com,DIRECT
+- DOMAIN-SUFFIX,acfun.tv,DIRECT
+- DOMAIN-SUFFIX,air-matters.com,DIRECT
+- DOMAIN-SUFFIX,aixifan.com,DIRECT
+- DOMAIN-KEYWORD,alicdn,DIRECT
+- DOMAIN-KEYWORD,alipay,DIRECT
+- DOMAIN-KEYWORD,taobao,DIRECT
+- DOMAIN-SUFFIX,amap.com,DIRECT
+- DOMAIN-SUFFIX,autonavi.com,DIRECT
+- DOMAIN-KEYWORD,baidu,DIRECT
+- DOMAIN-SUFFIX,bdimg.com,DIRECT
+- DOMAIN-SUFFIX,bdstatic.com,DIRECT
+- DOMAIN-SUFFIX,bilibili.com,DIRECT
+- DOMAIN-SUFFIX,bilivideo.com,DIRECT
+- DOMAIN-SUFFIX,caiyunapp.com,DIRECT
+- DOMAIN-SUFFIX,clouddn.com,DIRECT
+- DOMAIN-SUFFIX,cnbeta.com,DIRECT
+- DOMAIN-SUFFIX,cnbetacdn.com,DIRECT
+- DOMAIN-SUFFIX,cootekservice.com,DIRECT
+- DOMAIN-SUFFIX,csdn.net,DIRECT
+- DOMAIN-SUFFIX,ctrip.com,DIRECT
+- DOMAIN-SUFFIX,dgtle.com,DIRECT
+- DOMAIN-SUFFIX,dianping.com,DIRECT
+- DOMAIN-SUFFIX,douban.com,DIRECT
+- DOMAIN-SUFFIX,doubanio.com,DIRECT
+- DOMAIN-SUFFIX,duokan.com,DIRECT
+- DOMAIN-SUFFIX,easou.com,DIRECT
+- DOMAIN-SUFFIX,ele.me,DIRECT
+- DOMAIN-SUFFIX,feng.com,DIRECT
+- DOMAIN-SUFFIX,fir.im,DIRECT
+- DOMAIN-SUFFIX,frdic.com,DIRECT
+- DOMAIN-SUFFIX,g-cores.com,DIRECT
+- DOMAIN-SUFFIX,godic.net,DIRECT
+- DOMAIN-SUFFIX,gtimg.com,DIRECT
+- DOMAIN,cdn.hockeyapp.net,DIRECT
+- DOMAIN-SUFFIX,hongxiu.com,DIRECT
+- DOMAIN-SUFFIX,hxcdn.net,DIRECT
+- DOMAIN-SUFFIX,iciba.com,DIRECT
+- DOMAIN-SUFFIX,ifeng.com,DIRECT
+- DOMAIN-SUFFIX,ifengimg.com,DIRECT
+- DOMAIN-SUFFIX,ipip.net,DIRECT
+- DOMAIN-SUFFIX,iqiyi.com,DIRECT
+- DOMAIN-SUFFIX,jd.com,DIRECT
+- DOMAIN-SUFFIX,jianshu.com,DIRECT
+- DOMAIN-SUFFIX,knewone.com,DIRECT
+- DOMAIN-SUFFIX,le.com,DIRECT
+- DOMAIN-SUFFIX,lecloud.com,DIRECT
+- DOMAIN-SUFFIX,lemicp.com,DIRECT
+- DOMAIN-SUFFIX,licdn.com,DIRECT
+- DOMAIN-SUFFIX,luoo.net,DIRECT
+- DOMAIN-SUFFIX,meituan.com,DIRECT
+- DOMAIN-SUFFIX,meituan.net,DIRECT
+- DOMAIN-SUFFIX,mi.com,DIRECT
+- DOMAIN-SUFFIX,miaopai.com,DIRECT
+- DOMAIN-SUFFIX,microsoft.com,DIRECT
+- DOMAIN-SUFFIX,microsoftonline.com,DIRECT
+- DOMAIN-SUFFIX,miui.com,DIRECT
+- DOMAIN-SUFFIX,miwifi.com,DIRECT
+- DOMAIN-SUFFIX,mob.com,DIRECT
+- DOMAIN-SUFFIX,netease.com,DIRECT
+- DOMAIN-SUFFIX,office.com,DIRECT
+- DOMAIN-SUFFIX,office365.com,DIRECT
+- DOMAIN-KEYWORD,officecdn,DIRECT
+- DOMAIN-SUFFIX,oschina.net,DIRECT
+- DOMAIN-SUFFIX,ppsimg.com,DIRECT
+- DOMAIN-SUFFIX,pstatp.com,DIRECT
+- DOMAIN-SUFFIX,qcloud.com,DIRECT
+- DOMAIN-SUFFIX,qdaily.com,DIRECT
+- DOMAIN-SUFFIX,qdmm.com,DIRECT
+- DOMAIN-SUFFIX,qhimg.com,DIRECT
+- DOMAIN-SUFFIX,qhres.com,DIRECT
+- DOMAIN-SUFFIX,qidian.com,DIRECT
+- DOMAIN-SUFFIX,qihucdn.com,DIRECT
+- DOMAIN-SUFFIX,qiniu.com,DIRECT
+- DOMAIN-SUFFIX,qiniucdn.com,DIRECT
+- DOMAIN-SUFFIX,qiyipic.com,DIRECT
+- DOMAIN-SUFFIX,qq.com,DIRECT
+- DOMAIN-SUFFIX,qqurl.com,DIRECT
+- DOMAIN-SUFFIX,rarbg.to,DIRECT
+- DOMAIN-SUFFIX,ruguoapp.com,DIRECT
+- DOMAIN-SUFFIX,segmentfault.com,DIRECT
+- DOMAIN-SUFFIX,sinaapp.com,DIRECT
+- DOMAIN-SUFFIX,smzdm.com,DIRECT
+- DOMAIN-SUFFIX,snapdrop.net,DIRECT
+- DOMAIN-SUFFIX,sogou.com,DIRECT
+- DOMAIN-SUFFIX,sogoucdn.com,DIRECT
+- DOMAIN-SUFFIX,sohu.com,DIRECT
+- DOMAIN-SUFFIX,soku.com,DIRECT
+- DOMAIN-SUFFIX,speedtest.net,DIRECT
+- DOMAIN-SUFFIX,sspai.com,DIRECT
+- DOMAIN-SUFFIX,suning.com,DIRECT
+- DOMAIN-SUFFIX,taobao.com,DIRECT
+- DOMAIN-SUFFIX,tencent.com,DIRECT
+- DOMAIN-SUFFIX,tenpay.com,DIRECT
+- DOMAIN-SUFFIX,tianyancha.com,DIRECT
+- DOMAIN-SUFFIX,tmall.com,DIRECT
+- DOMAIN-SUFFIX,tudou.com,DIRECT
+- DOMAIN-SUFFIX,umetrip.com,DIRECT
+- DOMAIN-SUFFIX,upaiyun.com,DIRECT
+- DOMAIN-SUFFIX,upyun.com,DIRECT
+- DOMAIN-SUFFIX,veryzhun.com,DIRECT
+- DOMAIN-SUFFIX,weather.com,DIRECT
+- DOMAIN-SUFFIX,weibo.com,DIRECT
+- DOMAIN-SUFFIX,xiami.com,DIRECT
+- DOMAIN-SUFFIX,xiami.net,DIRECT
+- DOMAIN-SUFFIX,xiaomicp.com,DIRECT
+- DOMAIN-SUFFIX,ximalaya.com,DIRECT
+- DOMAIN-SUFFIX,xmcdn.com,DIRECT
+- DOMAIN-SUFFIX,xunlei.com,DIRECT
+- DOMAIN-SUFFIX,yhd.com,DIRECT
+- DOMAIN-SUFFIX,yihaodianimg.com,DIRECT
+- DOMAIN-SUFFIX,yinxiang.com,DIRECT
+- DOMAIN-SUFFIX,ykimg.com,DIRECT
+- DOMAIN-SUFFIX,youdao.com,DIRECT
+- DOMAIN-SUFFIX,youku.com,DIRECT
+- DOMAIN-SUFFIX,zealer.com,DIRECT
+- DOMAIN-SUFFIX,zhihu.com,DIRECT
+- DOMAIN-SUFFIX,zhimg.com,DIRECT
+- DOMAIN-SUFFIX,zimuzu.tv,DIRECT
+- DOMAIN-SUFFIX,zoho.com,DIRECT
+- DOMAIN-KEYWORD,amazon,BKCloud
+- DOMAIN-KEYWORD,google,BKCloud
+- DOMAIN-KEYWORD,gmail,BKCloud
+- DOMAIN-KEYWORD,youtube,BKCloud
+- DOMAIN-KEYWORD,facebook,BKCloud
+- DOMAIN-SUFFIX,fb.me,BKCloud
+- DOMAIN-SUFFIX,fbcdn.net,BKCloud
+- DOMAIN-KEYWORD,twitter,BKCloud
+- DOMAIN-KEYWORD,instagram,BKCloud
+- DOMAIN-KEYWORD,dropbox,BKCloud
+- DOMAIN-SUFFIX,twimg.com,BKCloud
+- DOMAIN-KEYWORD,blogspot,BKCloud
+- DOMAIN-SUFFIX,youtu.be,BKCloud
+- DOMAIN-KEYWORD,whatsapp,BKCloud
+- DOMAIN-KEYWORD,admarvel,REJECT
+- DOMAIN-KEYWORD,admaster,REJECT
+- DOMAIN-KEYWORD,adsage,REJECT
+- DOMAIN-KEYWORD,adsmogo,REJECT
+- DOMAIN-KEYWORD,adsrvmedia,REJECT
+- DOMAIN-KEYWORD,adwords,REJECT
+- DOMAIN-KEYWORD,adservice,REJECT
+- DOMAIN-SUFFIX,appsflyer.com,REJECT
+- DOMAIN-KEYWORD,domob,REJECT
+- DOMAIN-SUFFIX,doubleclick.net,REJECT
+- DOMAIN-KEYWORD,duomeng,REJECT
+- DOMAIN-KEYWORD,dwtrack,REJECT
+- DOMAIN-KEYWORD,guanggao,REJECT
+- DOMAIN-KEYWORD,lianmeng,REJECT
+- DOMAIN-SUFFIX,mmstat.com,REJECT
+- DOMAIN-KEYWORD,mopub,REJECT
+- DOMAIN-KEYWORD,omgmta,REJECT
+- DOMAIN-KEYWORD,openx,REJECT
+- DOMAIN-KEYWORD,partnerad,REJECT
+- DOMAIN-KEYWORD,pingfore,REJECT
+- DOMAIN-KEYWORD,supersonicads,REJECT
+- DOMAIN-KEYWORD,uedas,REJECT
+- DOMAIN-KEYWORD,umeng,REJECT
+- DOMAIN-KEYWORD,usage,REJECT
+- DOMAIN-SUFFIX,vungle.com,REJECT
+- DOMAIN-KEYWORD,wlmonitor,REJECT
+- DOMAIN-KEYWORD,zjtoolbar,REJECT
+- DOMAIN-SUFFIX,9to5mac.com,BKCloud
+- DOMAIN-SUFFIX,abpchina.org,BKCloud
+- DOMAIN-SUFFIX,adblockplus.org,BKCloud
+- DOMAIN-SUFFIX,adobe.com,BKCloud
+- DOMAIN-SUFFIX,akamaized.net,BKCloud
+- DOMAIN-SUFFIX,alfredapp.com,BKCloud
+- DOMAIN-SUFFIX,amplitude.com,BKCloud
+- DOMAIN-SUFFIX,ampproject.org,BKCloud
+- DOMAIN-SUFFIX,android.com,BKCloud
+- DOMAIN-SUFFIX,angularjs.org,BKCloud
+- DOMAIN-SUFFIX,aolcdn.com,BKCloud
+- DOMAIN-SUFFIX,apkpure.com,BKCloud
+- DOMAIN-SUFFIX,appledaily.com,BKCloud
+- DOMAIN-SUFFIX,appshopper.com,BKCloud
+- DOMAIN-SUFFIX,appspot.com,BKCloud
+- DOMAIN-SUFFIX,arcgis.com,BKCloud
+- DOMAIN-SUFFIX,archive.org,BKCloud
+- DOMAIN-SUFFIX,armorgames.com,BKCloud
+- DOMAIN-SUFFIX,aspnetcdn.com,BKCloud
+- DOMAIN-SUFFIX,att.com,BKCloud
+- DOMAIN-SUFFIX,awsstatic.com,BKCloud
+- DOMAIN-SUFFIX,azureedge.net,BKCloud
+- DOMAIN-SUFFIX,azurewebsites.net,BKCloud
+- DOMAIN-SUFFIX,bing.com,BKCloud
+- DOMAIN-SUFFIX,bintray.com,BKCloud
+- DOMAIN-SUFFIX,bit.com,BKCloud
+- DOMAIN-SUFFIX,bit.ly,BKCloud
+- DOMAIN-SUFFIX,bitbucket.org,BKCloud
+- DOMAIN-SUFFIX,bjango.com,BKCloud
+- DOMAIN-SUFFIX,bkrtx.com,BKCloud
+- DOMAIN-SUFFIX,blog.com,BKCloud
+- DOMAIN-SUFFIX,blogcdn.com,BKCloud
+- DOMAIN-SUFFIX,blogger.com,BKCloud
+- DOMAIN-SUFFIX,blogsmithmedia.com,BKCloud
+- DOMAIN-SUFFIX,blogspot.com,BKCloud
+- DOMAIN-SUFFIX,blogspot.hk,BKCloud
+- DOMAIN-SUFFIX,bloomberg.com,BKCloud
+- DOMAIN-SUFFIX,box.com,BKCloud
+- DOMAIN-SUFFIX,box.net,BKCloud
+- DOMAIN-SUFFIX,cachefly.net,BKCloud
+- DOMAIN-SUFFIX,chromium.org,BKCloud
+- DOMAIN-SUFFIX,cl.ly,BKCloud
+- DOMAIN-SUFFIX,cloudflare.com,BKCloud
+- DOMAIN-SUFFIX,cloudfront.net,BKCloud
+- DOMAIN-SUFFIX,cloudmagic.com,BKCloud
+- DOMAIN-SUFFIX,cmail19.com,BKCloud
+- DOMAIN-SUFFIX,cnet.com,BKCloud
+- DOMAIN-SUFFIX,cocoapods.org,BKCloud
+- DOMAIN-SUFFIX,comodoca.com,BKCloud
+- DOMAIN-SUFFIX,crashlytics.com,BKCloud
+- DOMAIN-SUFFIX,culturedcode.com,BKCloud
+- DOMAIN-SUFFIX,d.pr,BKCloud
+- DOMAIN-SUFFIX,danilo.to,BKCloud
+- DOMAIN-SUFFIX,dayone.me,BKCloud
+- DOMAIN-SUFFIX,db.tt,BKCloud
+- DOMAIN-SUFFIX,deskconnect.com,BKCloud
+- DOMAIN-SUFFIX,disq.us,BKCloud
+- DOMAIN-SUFFIX,disqus.com,BKCloud
+- DOMAIN-SUFFIX,disquscdn.com,BKCloud
+- DOMAIN-SUFFIX,dnsimple.com,BKCloud
+- DOMAIN-SUFFIX,docker.com,BKCloud
+- DOMAIN-SUFFIX,dribbble.com,BKCloud
+- DOMAIN-SUFFIX,droplr.com,BKCloud
+- DOMAIN-SUFFIX,duckduckgo.com,BKCloud
+- DOMAIN-SUFFIX,dueapp.com,BKCloud
+- DOMAIN-SUFFIX,dytt8.net,BKCloud
+- DOMAIN-SUFFIX,edgecastcdn.net,BKCloud
+- DOMAIN-SUFFIX,edgekey.net,BKCloud
+- DOMAIN-SUFFIX,edgesuite.net,BKCloud
+- DOMAIN-SUFFIX,engadget.com,BKCloud
+- DOMAIN-SUFFIX,entrust.net,BKCloud
+- DOMAIN-SUFFIX,eurekavpt.com,BKCloud
+- DOMAIN-SUFFIX,evernote.com,BKCloud
+- DOMAIN-SUFFIX,fabric.io,BKCloud
+- DOMAIN-SUFFIX,fast.com,BKCloud
+- DOMAIN-SUFFIX,fastly.net,BKCloud
+- DOMAIN-SUFFIX,fc2.com,BKCloud
+- DOMAIN-SUFFIX,feedburner.com,BKCloud
+- DOMAIN-SUFFIX,feedly.com,BKCloud
+- DOMAIN-SUFFIX,feedsportal.com,BKCloud
+- DOMAIN-SUFFIX,fiftythree.com,BKCloud
+- DOMAIN-SUFFIX,firebaseio.com,BKCloud
+- DOMAIN-SUFFIX,flexibits.com,BKCloud
+- DOMAIN-SUFFIX,flickr.com,BKCloud
+- DOMAIN-SUFFIX,flipboard.com,BKCloud
+- DOMAIN-SUFFIX,g.co,BKCloud
+- DOMAIN-SUFFIX,gabia.net,BKCloud
+- DOMAIN-SUFFIX,geni.us,BKCloud
+- DOMAIN-SUFFIX,gfx.ms,BKCloud
+- DOMAIN-SUFFIX,ggpht.com,BKCloud
+- DOMAIN-SUFFIX,ghostnoteapp.com,BKCloud
+- DOMAIN-SUFFIX,git.io,BKCloud
+- DOMAIN-KEYWORD,github,BKCloud
+- DOMAIN-SUFFIX,globalsign.com,BKCloud
+- DOMAIN-SUFFIX,gmodules.com,BKCloud
+- DOMAIN-SUFFIX,godaddy.com,BKCloud
+- DOMAIN-SUFFIX,golang.org,BKCloud
+- DOMAIN-SUFFIX,gongm.in,BKCloud
+- DOMAIN-SUFFIX,goo.gl,BKCloud
+- DOMAIN-SUFFIX,goodreaders.com,BKCloud
+- DOMAIN-SUFFIX,goodreads.com,BKCloud
+- DOMAIN-SUFFIX,gravatar.com,BKCloud
+- DOMAIN-SUFFIX,gstatic.com,BKCloud
+- DOMAIN-SUFFIX,gvt0.com,BKCloud
+- DOMAIN-SUFFIX,hockeyapp.net,BKCloud
+- DOMAIN-SUFFIX,hotmail.com,BKCloud
+- DOMAIN-SUFFIX,icons8.com,BKCloud
+- DOMAIN-SUFFIX,ifixit.com,BKCloud
+- DOMAIN-SUFFIX,ift.tt,BKCloud
+- DOMAIN-SUFFIX,ifttt.com,BKCloud
+- DOMAIN-SUFFIX,iherb.com,BKCloud
+- DOMAIN-SUFFIX,imageshack.us,BKCloud
+- DOMAIN-SUFFIX,img.ly,BKCloud
+- DOMAIN-SUFFIX,imgur.com,BKCloud
+- DOMAIN-SUFFIX,imore.com,BKCloud
+- DOMAIN-SUFFIX,instapaper.com,BKCloud
+- DOMAIN-SUFFIX,ipn.li,BKCloud
+- DOMAIN-SUFFIX,is.gd,BKCloud
+- DOMAIN-SUFFIX,issuu.com,BKCloud
+- DOMAIN-SUFFIX,itgonglun.com,BKCloud
+- DOMAIN-SUFFIX,itun.es,BKCloud
+- DOMAIN-SUFFIX,ixquick.com,BKCloud
+- DOMAIN-SUFFIX,j.mp,BKCloud
+- DOMAIN-SUFFIX,js.revsci.net,BKCloud
+- DOMAIN-SUFFIX,jshint.com,BKCloud
+- DOMAIN-SUFFIX,jtvnw.net,BKCloud
+- DOMAIN-SUFFIX,justgetflux.com,BKCloud
+- DOMAIN-SUFFIX,kat.cr,BKCloud
+- DOMAIN-SUFFIX,klip.me,BKCloud
+- DOMAIN-SUFFIX,libsyn.com,BKCloud
+- DOMAIN-SUFFIX,linkedin.com,BKCloud
+- DOMAIN-SUFFIX,line-apps.com,BKCloud
+- DOMAIN-SUFFIX,linode.com,BKCloud
+- DOMAIN-SUFFIX,lithium.com,BKCloud
+- DOMAIN-SUFFIX,littlehj.com,BKCloud
+- DOMAIN-SUFFIX,live.com,BKCloud
+- DOMAIN-SUFFIX,live.net,BKCloud
+- DOMAIN-SUFFIX,livefilestore.com,BKCloud
+- DOMAIN-SUFFIX,llnwd.net,BKCloud
+- DOMAIN-SUFFIX,macid.co,BKCloud
+- DOMAIN-SUFFIX,macromedia.com,BKCloud
+- DOMAIN-SUFFIX,macrumors.com,BKCloud
+- DOMAIN-SUFFIX,mashable.com,BKCloud
+- DOMAIN-SUFFIX,mathjax.org,BKCloud
+- DOMAIN-SUFFIX,medium.com,BKCloud
+- DOMAIN-SUFFIX,mega.co.nz,BKCloud
+- DOMAIN-SUFFIX,mega.nz,BKCloud
+- DOMAIN-SUFFIX,megaupload.com,BKCloud
+- DOMAIN-SUFFIX,microsofttranslator.com,BKCloud
+- DOMAIN-SUFFIX,mindnode.com,BKCloud
+- DOMAIN-SUFFIX,mobile01.com,BKCloud
+- DOMAIN-SUFFIX,modmyi.com,BKCloud
+- DOMAIN-SUFFIX,msedge.net,BKCloud
+- DOMAIN-SUFFIX,myfontastic.com,BKCloud
+- DOMAIN-SUFFIX,name.com,BKCloud
+- DOMAIN-SUFFIX,nextmedia.com,BKCloud
+- DOMAIN-SUFFIX,nsstatic.net,BKCloud
+- DOMAIN-SUFFIX,nssurge.com,BKCloud
+- DOMAIN-SUFFIX,nyt.com,BKCloud
+- DOMAIN-SUFFIX,nytimes.com,BKCloud
+- DOMAIN-SUFFIX,omnigroup.com,BKCloud
+- DOMAIN-SUFFIX,onedrive.com,BKCloud
+- DOMAIN-SUFFIX,onenote.com,BKCloud
+- DOMAIN-SUFFIX,ooyala.com,BKCloud
+- DOMAIN-SUFFIX,openvpn.net,BKCloud
+- DOMAIN-SUFFIX,openwrt.org,BKCloud
+- DOMAIN-SUFFIX,orkut.com,BKCloud
+- DOMAIN-SUFFIX,osxdaily.com,BKCloud
+- DOMAIN-SUFFIX,outlook.com,BKCloud
+- DOMAIN-SUFFIX,ow.ly,BKCloud
+- DOMAIN-SUFFIX,paddleapi.com,BKCloud
+- DOMAIN-SUFFIX,parallels.com,BKCloud
+- DOMAIN-SUFFIX,parse.com,BKCloud
+- DOMAIN-SUFFIX,pdfexpert.com,BKCloud
+- DOMAIN-SUFFIX,periscope.tv,BKCloud
+- DOMAIN-SUFFIX,pinboard.in,BKCloud
+- DOMAIN-SUFFIX,pinterest.com,BKCloud
+- DOMAIN-SUFFIX,pixelmator.com,BKCloud
+- DOMAIN-SUFFIX,pixiv.net,BKCloud
+- DOMAIN-SUFFIX,playpcesor.com,BKCloud
+- DOMAIN-SUFFIX,playstation.com,BKCloud
+- DOMAIN-SUFFIX,playstation.com.hk,BKCloud
+- DOMAIN-SUFFIX,playstation.net,BKCloud
+- DOMAIN-SUFFIX,playstationnetwork.com,BKCloud
+- DOMAIN-SUFFIX,pushwoosh.com,BKCloud
+- DOMAIN-SUFFIX,rime.im,BKCloud
+- DOMAIN-SUFFIX,servebom.com,BKCloud
+- DOMAIN-SUFFIX,sfx.ms,BKCloud
+- DOMAIN-SUFFIX,shadowsocks.org,BKCloud
+- DOMAIN-SUFFIX,sharethis.com,BKCloud
+- DOMAIN-SUFFIX,shazam.com,BKCloud
+- DOMAIN-SUFFIX,skype.com,BKCloud
+- DOMAIN-SUFFIX,smartdnsBKCloud.com,BKCloud
+- DOMAIN-SUFFIX,smartmailcloud.com,BKCloud
+- DOMAIN-SUFFIX,sndcdn.com,BKCloud
+- DOMAIN-SUFFIX,sony.com,BKCloud
+- DOMAIN-SUFFIX,soundcloud.com,BKCloud
+- DOMAIN-SUFFIX,sourceforge.net,BKCloud
+- DOMAIN-SUFFIX,spotify.com,BKCloud
+- DOMAIN-SUFFIX,squarespace.com,BKCloud
+- DOMAIN-SUFFIX,sstatic.net,BKCloud
+- DOMAIN-SUFFIX,st.luluku.pw,BKCloud
+- DOMAIN-SUFFIX,stackoverflow.com,BKCloud
+- DOMAIN-SUFFIX,startpage.com,BKCloud
+- DOMAIN-SUFFIX,staticflickr.com,BKCloud
+- DOMAIN-SUFFIX,steamcommunity.com,BKCloud
+- DOMAIN-SUFFIX,symauth.com,BKCloud
+- DOMAIN-SUFFIX,symcb.com,BKCloud
+- DOMAIN-SUFFIX,symcd.com,BKCloud
+- DOMAIN-SUFFIX,tapbots.com,BKCloud
+- DOMAIN-SUFFIX,tapbots.net,BKCloud
+- DOMAIN-SUFFIX,tdesktop.com,BKCloud
+- DOMAIN-SUFFIX,techcrunch.com,BKCloud
+- DOMAIN-SUFFIX,techsmith.com,BKCloud
+- DOMAIN-SUFFIX,thepiratebay.org,BKCloud
+- DOMAIN-SUFFIX,theverge.com,BKCloud
+- DOMAIN-SUFFIX,time.com,BKCloud
+- DOMAIN-SUFFIX,timeinc.net,BKCloud
+- DOMAIN-SUFFIX,tiny.cc,BKCloud
+- DOMAIN-SUFFIX,tinypic.com,BKCloud
+- DOMAIN-SUFFIX,tmblr.co,BKCloud
+- DOMAIN-SUFFIX,todoist.com,BKCloud
+- DOMAIN-SUFFIX,trello.com,BKCloud
+- DOMAIN-SUFFIX,trustasiassl.com,BKCloud
+- DOMAIN-SUFFIX,tumblr.co,BKCloud
+- DOMAIN-SUFFIX,tumblr.com,BKCloud
+- DOMAIN-SUFFIX,tweetdeck.com,BKCloud
+- DOMAIN-SUFFIX,tweetmarker.net,BKCloud
+- DOMAIN-SUFFIX,twitch.tv,BKCloud
+- DOMAIN-SUFFIX,txmblr.com,BKCloud
+- DOMAIN-SUFFIX,typekit.net,BKCloud
+- DOMAIN-SUFFIX,ubertags.com,BKCloud
+- DOMAIN-SUFFIX,ublock.org,BKCloud
+- DOMAIN-SUFFIX,ubnt.com,BKCloud
+- DOMAIN-SUFFIX,ulyssesapp.com,BKCloud
+- DOMAIN-SUFFIX,urchin.com,BKCloud
+- DOMAIN-SUFFIX,usertrust.com,BKCloud
+- DOMAIN-SUFFIX,v.gd,BKCloud
+- DOMAIN-SUFFIX,v2ex.com,BKCloud
+- DOMAIN-SUFFIX,vimeo.com,BKCloud
+- DOMAIN-SUFFIX,vimeocdn.com,BKCloud
+- DOMAIN-SUFFIX,vine.co,BKCloud
+- DOMAIN-SUFFIX,vivaldi.com,BKCloud
+- DOMAIN-SUFFIX,vox-cdn.com,BKCloud
+- DOMAIN-SUFFIX,vsco.co,BKCloud
+- DOMAIN-SUFFIX,vultr.com,BKCloud
+- DOMAIN-SUFFIX,w.org,BKCloud
+- DOMAIN-SUFFIX,w3schools.com,BKCloud
+- DOMAIN-SUFFIX,webtype.com,BKCloud
+- DOMAIN-SUFFIX,wikiwand.com,BKCloud
+- DOMAIN-SUFFIX,wikileaks.org,BKCloud
+- DOMAIN-SUFFIX,wikimedia.org,BKCloud
+- DOMAIN-SUFFIX,wikipedia.com,BKCloud
+- DOMAIN-SUFFIX,wikipedia.org,BKCloud
+- DOMAIN-SUFFIX,windows.com,BKCloud
+- DOMAIN-SUFFIX,windows.net,BKCloud
+- DOMAIN-SUFFIX,wire.com,BKCloud
+- DOMAIN-SUFFIX,wordpress.com,BKCloud
+- DOMAIN-SUFFIX,workflowy.com,BKCloud
+- DOMAIN-SUFFIX,wp.com,BKCloud
+- DOMAIN-SUFFIX,wsj.com,BKCloud
+- DOMAIN-SUFFIX,wsj.net,BKCloud
+- DOMAIN-SUFFIX,xda-developers.com,BKCloud
+- DOMAIN-SUFFIX,xeeno.com,BKCloud
+- DOMAIN-SUFFIX,xiti.com,BKCloud
+- DOMAIN-SUFFIX,yahoo.com,BKCloud
+- DOMAIN-SUFFIX,yimg.com,BKCloud
+- DOMAIN-SUFFIX,ying.com,BKCloud
+- DOMAIN-SUFFIX,yoyo.org,BKCloud
+- DOMAIN-SUFFIX,ytimg.com,BKCloud
+- DOMAIN-SUFFIX,telegra.ph,BKCloud
+- DOMAIN-SUFFIX,telegram.org,BKCloud
+- IP-CIDR,91.108.4.0/22,BKCloud,no-resolve
+- IP-CIDR,91.108.8.0/21,BKCloud,no-resolve
+- IP-CIDR,91.108.16.0/22,BKCloud,no-resolve
+- IP-CIDR,91.108.56.0/22,BKCloud,no-resolve
+- IP-CIDR,149.154.160.0/20,BKCloud,no-resolve
+- IP-CIDR6,2001:67c:4e8::/48,BKCloud,no-resolve
+- IP-CIDR6,2001:b28:f23d::/48,BKCloud,no-resolve
+- IP-CIDR6,2001:b28:f23f::/48,BKCloud,no-resolve
+- IP-CIDR,120.232.181.162/32,BKCloud,no-resolve
+- IP-CIDR,120.241.147.226/32,BKCloud,no-resolve
+- IP-CIDR,120.253.253.226/32,BKCloud,no-resolve
+- IP-CIDR,120.253.255.162/32,BKCloud,no-resolve
+- IP-CIDR,120.253.255.34/32,BKCloud,no-resolve
+- IP-CIDR,120.253.255.98/32,BKCloud,no-resolve
+- IP-CIDR,180.163.150.162/32,BKCloud,no-resolve
+- IP-CIDR,180.163.150.34/32,BKCloud,no-resolve
+- IP-CIDR,180.163.151.162/32,BKCloud,no-resolve
+- IP-CIDR,180.163.151.34/32,BKCloud,no-resolve
+- IP-CIDR,203.208.39.0/24,BKCloud,no-resolve
+- IP-CIDR,203.208.40.0/24,BKCloud,no-resolve
+- IP-CIDR,203.208.41.0/24,BKCloud,no-resolve
+- IP-CIDR,203.208.43.0/24,BKCloud,no-resolve
+- IP-CIDR,203.208.50.0/24,BKCloud,no-resolve
+- IP-CIDR,220.181.174.162/32,BKCloud,no-resolve
+- IP-CIDR,220.181.174.226/32,BKCloud,no-resolve
+- IP-CIDR,220.181.174.34/32,BKCloud,no-resolve
+- DOMAIN,injections.adguard.org,DIRECT
+- DOMAIN,local.adguard.org,DIRECT
+- DOMAIN-SUFFIX,local,DIRECT
+- IP-CIDR,127.0.0.0/8,DIRECT
+- IP-CIDR,172.16.0.0/12,DIRECT
+- IP-CIDR,192.168.0.0/16,DIRECT
+- IP-CIDR,10.0.0.0/8,DIRECT
+- IP-CIDR,17.0.0.0/8,DIRECT
+- IP-CIDR,100.64.0.0/10,DIRECT
+- IP-CIDR,224.0.0.0/4,DIRECT
+- IP-CIDR6,fe80::/10,DIRECT
+- DOMAIN-SUFFIX,cn,DIRECT
+- DOMAIN-KEYWORD,-cn,DIRECT
+- GEOIP,CN,DIRECT
+- MATCH,BKCloud
