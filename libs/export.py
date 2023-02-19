@@ -1,3 +1,4 @@
+import math
 import PIL
 from loguru import logger
 from PIL import Image, ImageDraw, ImageFont
@@ -56,6 +57,7 @@ class ExportResult:
         self.delay_color = self.color.get('delay', [])
         self.__font = ImageFont.truetype(self.config.getFont(), self.front_size)
         self.title = self.image_config.get('title', 'FullTclash')
+        self.speedblock_width = 20
 
     @property
     def interval(self):
@@ -135,9 +137,22 @@ class ExportResult:
         width_list = []
         for i in key_list:
             key_width = self.text_width(i)  # 键的长度
-            value_width = self.text_maxwidth(self.info[i])  # 键所对应值的长度
-            max_width = max(key_width, value_width)
-            max_width = max_width + 40
+            max_width = 0
+            if self.info[i]:
+                if type(self.info[i][0]) == str:
+                    value_width = self.text_maxwidth(self.info[i])  # 键所对应值的长度
+                    max_width = max(key_width, value_width)
+                    max_width += 40
+                elif type(self.info[i][0]) == list:
+                    speedblock_count = len(self.info[i][0])
+                    speedblock_total_width = speedblock_count * self.speedblock_width
+                    key_width += 40
+                    if speedblock_total_width >= key_width:
+                        max_width = speedblock_total_width
+                    else:
+                        self.speedblock_width = math.ceil(key_width / speedblock_count)
+                        max_width = speedblock_count * self.speedblock_width
+            
             width_list.append(max_width)
         return width_list  # 测试项列的大小
 
@@ -663,7 +678,6 @@ class ExportSpeed(ExportResult):
         self.filter_exclude = self.filter.get('exclude', '')
         self.thread = str(info.pop('线程', ''))
         self.traffic = "%.1f" % info.pop('消耗流量', 0)
-        self.speedblock = info.pop('速度变化', [])
         self.info = info
         self.basedata = info.pop('节点名称', name)
         if self.basedata:
@@ -681,24 +695,30 @@ class ExportSpeed(ExportResult):
             interval_list.append(c.get('label', 0))
         a = list(set(interval_list))  # 去重加排序
         a.sort()
+        '''
         while len(a) < 7:
             a.append(99999)
         if len(a) > 7:
             return a[:7]
         else:
             return a
-
+        '''
+        return a
+    
     @property
     def colorvalue(self):
         color_list = []
         for c in self.color:
             color_list.append(c.get('value', '#f5f3f2'))
+        '''
         while len(color_list) < 7:
             color_list.append('#f5f3f2')
         if len(color_list) > 7:
             return color_list[:7]
         else:
             return color_list
+        '''
+        return color_list
 
     @logger.catch
     def exportImage(self):
@@ -765,52 +785,64 @@ class ExportSpeed(ExportResult):
                                   emoji_position_offset=(0, 6))
             else:
                 idraw.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0))
+            
+            
+            def get_color(speedvalue,default_color='#C0C0C0'):
+                for i in reversed(range(len(colorvalue))):
+                    if speedvalue >= interval[i]:
+                        return colorvalue[i]
+                return default_color
+            
             width = 100 + nodename_width
             i = 0
             # 填充颜色块
             for t1 in key_list:
-
                 if t1 == "平均速度" or t1 == "最大速度":
                     speedvalue = float(self.info[t1][t][:-2])
-                    if interval[0] <= speedvalue < interval[1]:
-                        block = color_block((info_list_length[i], 40), color_value=colorvalue[0])
-                        img.paste(block, (width, 40 * (t + 2)))
-                    elif interval[1] <= speedvalue < interval[2]:
-                        block = color_block((info_list_length[i], 40), color_value=colorvalue[1])
-                        img.paste(block, (width, 40 * (t + 2)))
-                    elif interval[2] <= speedvalue < interval[3]:
-                        block = color_block((info_list_length[i], 40), color_value=colorvalue[2])
-                        img.paste(block, (width, 40 * (t + 2)))
-                    elif interval[3] <= speedvalue < interval[4]:
-                        block = color_block((info_list_length[i], 40), color_value=colorvalue[3])
-                        img.paste(block, (width, 40 * (t + 2)))
-                    elif interval[4] <= speedvalue < interval[5]:
-                        block = color_block((info_list_length[i], 40), color_value=colorvalue[4])
-                        img.paste(block, (width, 40 * (t + 2)))
-                    elif interval[5] <= speedvalue < interval[6]:
-                        block = color_block((info_list_length[i], 40), color_value=colorvalue[5])
-                        img.paste(block, (width, 40 * (t + 2)))
-                    elif interval[6] <= speedvalue:
-                        block = color_block((info_list_length[i], 40), color_value=colorvalue[6])
-                        img.paste(block, (width, 40 * (t + 2)))
-                else:
-                    pass
+                    block = color_block((info_list_length[i], 40), color_value=get_color(speedvalue))
+                    img.paste(block, (width, 40 * (t + 2)))
                 width += info_list_length[i]
                 i += 1
             # 填充字符
             width = 100 + nodename_width
             i = 0
             for t2 in key_list:
-                if t2 == "平均速度" or t2 == "最大速度":
-                    idraw.text((self.get_mid(width, width + info_list_length[i], self.info[t2][t]), (t + 2) * 40),
-                               self.info[t2][t],
-                               font=fnt, fill=(0, 0, 0))
-                else:
-                    idraw.text((self.get_mid(width, width + info_list_length[i], self.info[t2][t]), (t + 2) * 40),
-                               self.info[t2][t],
-                               font=fnt, fill=(0, 0, 0))
+                if type(self.info[t2][t]) == str:
+                    if t2 == "平均速度" or t2 == "最大速度":
+                        idraw.text((self.get_mid(width, width + info_list_length[i], self.info[t2][t]), (t + 2) * 40),
+                            self.info[t2][t],
+                            font=fnt, fill=(0, 0, 0))
+                    else:
+                        idraw.text((self.get_mid(width, width + info_list_length[i], self.info[t2][t]), (t + 2) * 40),
+                            self.info[t2][t],
+                            font=fnt, fill=(0, 0, 0))
                 width += info_list_length[i]
                 i += 1
+            
+            # 速度变化
+            width = 100 + nodename_width + 2
+            i = 0
+            speedblock_height = 40
+            for t3 in key_list:
+                if type(self.info[t3][t]) == list and t3 == "速度变化":
+                    speedblock_x = width
+                    for speedvalue in self.info[t3][t]:
+                        max_speed = float(self.info["最大速度"][t][:-2])
+                        if(max_speed > 0.0):
+                            speedblock_ratio_height = int(speedblock_height * speedvalue / max_speed)
+                            if(speedblock_ratio_height > speedblock_height):
+                                speedblock_ratio_height = speedblock_height
+                            speedblock_y = speedblock_height * (t + 2) + (speedblock_height - speedblock_ratio_height)
+
+                            block = color_block((self.speedblock_width, speedblock_ratio_height), 
+                                color_value=get_color(speedvalue))
+                            img.paste(block, (speedblock_x, speedblock_y))
+                        speedblock_x += self.speedblock_width
+                    break
+                width += info_list_length[i]
+                i += 1
+        
+        
         '''
         :添加横竖线条
         '''
