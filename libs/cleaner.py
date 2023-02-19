@@ -1097,42 +1097,6 @@ def geturl(string: str):
         return None
 
 
-def replace(arg, old, new):
-    """
-    将arg里的某个值替换成新的值
-    :param arg: 传入的对象
-    :param old: 旧值
-    :param new: 新值
-    :return: 新的对象
-    """
-    if type(arg).__name__ == 'list':
-        new_arg = []
-        for a in arg:
-            if a == old:
-                logger.info("替换了一个值: {}-->{}".format(a, new))
-                new_arg.append(new)
-            else:
-                new_arg.append(a)
-        return new_arg
-    elif type(arg).__name__ == 'tuple':
-        new_arg = ()
-        for a in arg:
-            if a == old:
-                new_arg += (new,)
-            else:
-                new_arg += (a,)
-        return new_arg
-    elif type(arg).__name__ == 'str':
-        # 我觉得这个if分支挺废的，但我还是留了下来，给后人当个乐子。
-        if arg == old:
-            return str(new)
-        else:
-            return arg
-    else:
-        print("无可替换内容")
-        return arg
-
-
 @logger.catch
 def domain_to_ip(host: str):
     """
