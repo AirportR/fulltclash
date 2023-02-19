@@ -107,11 +107,15 @@ class AddonCleaner:
         self.blacklist = []
 
     def global_test_item(self):
+        """
+        经过去重并支持黑名单一并去除。最后返回一个新列表
+        :return:
+        """
         base_item = ['Netflix', 'Youtube', 'Disney+', 'Primevideo', 'Viu', 'steam货币', 'OpenAI',
                      '维基百科', '落地IP风险']
-        test_item = set(list(self._script.keys()) + base_item)
-        new_item = test_item - set(self.blacklist)
-        return list(new_item)
+        base_item = base_item + list(self._script.keys())
+        new_item = sorted(set(base_item)-set(self.blacklist), key=base_item.index)
+        return new_item
 
     @property
     def script(self):
