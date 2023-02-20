@@ -67,12 +67,12 @@ item: # 流媒体测试项，决定你想要测哪个项,目前仅支持以下�
 #   high: '#ffffff'
 #   veryhigh: '#ffffff'
 #  warn: '#fcc43c' #警告色块，一般为黄色或橙色
-#  watermark: #水印
-#    enable: true #是否启用
-#    text: '只是一个水印' #水印文本
-#    color: '#000000' #颜色值
-#    alpha: 16 # 透明度, 可用范围(0-255)
-#    font_size: 64 #字体大小
-#    angle: -16.0 #旋转角度
-#    row_spacing: 0 #行距
-#    start_y: 0 #纵坐标起始位置
+# watermark: #水印
+#  enable: true #是否启用
+#  text: '只是一个水印' #水印文本
+#  color: '#000000' #颜色值
+#  alpha: 16 # 透明度, 可用范围(0-255)
+#  font_size: 64 #字体大小
+#  angle: -16.0 #旋转角度
+#  row_spacing: 0 #行距
+#  start_y: 0 #纵坐标起始位置
