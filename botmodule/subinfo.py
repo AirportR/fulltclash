@@ -45,7 +45,7 @@ async def getSubInfo(_, message):
                         else:
                             await back_message.edit_text("❌密码错误,请检查后重试")
                             return
-                    else:        
+                    else:
                         await back_message.edit_text("❌身份ID不匹配，您无权查看该订阅流量信息。")
                         return
         subcl = SubCollector(url)
