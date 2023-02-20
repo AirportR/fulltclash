@@ -687,12 +687,8 @@ class ExportSpeed(ExportResult):
             max_width = 0
             if self.info[i]:
                 if i == '速度变化':
-                    speedblock_count = 0
                     key_width += 40
-                    for s in self.info[i]:
-                        if s:
-                            speedblock_count = len(s)
-                            break
+                    speedblock_count = max([len(lst) for lst in self.info[i]])
                     if speedblock_count > 0:
                         speedblock_total_width = speedblock_count * self.speedblock_width
                         if speedblock_total_width >= key_width:
