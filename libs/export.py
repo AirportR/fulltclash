@@ -69,7 +69,7 @@ class ExportResult:
                 'row_spacing': 0
                 }
         for key in watermark_default_config:
-            if not key in self.watermark:
+            if key not in self.watermark:
                 self.watermark[key] = watermark_default_config[key]
 
     @property
