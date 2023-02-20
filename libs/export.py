@@ -687,8 +687,12 @@ class ExportSpeed(ExportResult):
             max_width = 0
             if self.info[i]:
                 if i == '速度变化':
-                    speedblock_count = len(self.info[i][0])
+                    speedblock_count = 0
                     key_width += 40
+                    for s in self.info[i]:
+                        if s:
+                            speedblock_count = len(s)
+                            break
                     if speedblock_count > 0:
                         speedblock_total_width = speedblock_count * self.speedblock_width
                         if speedblock_total_width >= key_width:
@@ -702,8 +706,7 @@ class ExportSpeed(ExportResult):
                     value_width = self.text_maxwidth(self.info[i])  # 键所对应值的长度
                     max_width = max(key_width, value_width)
                     max_width += 40
-                    
-            
+
             width_list.append(max_width)
         return width_list  # 测试项列的大小
 
@@ -810,7 +813,7 @@ class ExportSpeed(ExportResult):
                     if speedvalue >= interval[i]:
                         return colorvalue[i]
                 return default_color
-            
+
             width = 100 + nodename_width + 2
             i = 0
             speedblock_height = 40
@@ -824,30 +827,30 @@ class ExportSpeed(ExportResult):
                     speedblock_x = width
                     for speedvalue in self.info[t1][t]:
                         max_speed = float(self.info["最大速度"][t][:-2])
-                        if(max_speed > 0.0):
+                        if (max_speed > 0.0):
                             speedblock_ratio_height = int(speedblock_height * speedvalue / max_speed)
-                            if(speedblock_ratio_height > speedblock_height):
+                            if (speedblock_ratio_height > speedblock_height):
                                 speedblock_ratio_height = speedblock_height
                             speedblock_y = speedblock_height * (t + 2) + (speedblock_height - speedblock_ratio_height)
 
-                            block = color_block((self.speedblock_width, speedblock_ratio_height), 
-                                color_value=get_color(speedvalue))
+                            block = color_block((self.speedblock_width, speedblock_ratio_height),
+                                                color_value=get_color(speedvalue))
                             img.paste(block, (speedblock_x, speedblock_y))
                         speedblock_x += self.speedblock_width
                 width += info_list_length[i]
                 i += 1
-            
+
             # 填充字符
             width = 100 + nodename_width
             i = 0
             for t2 in key_list:
                 if type(self.info[t2][t]) == str:
                     idraw.text((self.get_mid(width, width + info_list_length[i], self.info[t2][t]), (t + 2) * 40),
-                            self.info[t2][t],
-                            font=fnt, fill=(0, 0, 0))
+                               self.info[t2][t],
+                               font=fnt, fill=(0, 0, 0))
                 width += info_list_length[i]
                 i += 1
-        
+
         '''
         :添加横竖线条
         '''
