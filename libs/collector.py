@@ -379,57 +379,6 @@ class Collector:
         except Exception as e:
             logger.error(str(e))
 
-    async def fetch_ninfo1(self, session: aiohttp.ClientSession, proxy=None, reconnection=2):
-        """
-        自制剧检测
-        :param session:
-        :param proxy:
-        :param reconnection :重连次数
-        :return:
-        """
-        try:
-            n1 = await session.get(self.netflixurl1, proxy=proxy, timeout=5)
-            if n1 is not None:
-                self.info['netflix1'] = await n1.text()
-                self.info['ne_status_code1'] = n1.status
-            else:
-                self.info['netflix1'] = None
-                self.info['ne_status_code1'] = None
-        except ClientConnectorError as c:
-            logger.warning("Netflix请求发生错误:" + str(c))
-            if reconnection != 0:
-                await self.fetch_ninfo1(session=session, proxy=proxy, reconnection=reconnection - 1)
-        except asyncio.exceptions.TimeoutError:
-            logger.warning("Netflix请求超时，正在重新发送请求......")
-            if reconnection != 0:
-                await self.fetch_ninfo1(session=session, proxy=proxy, reconnection=reconnection - 1)
-
-    async def fetch_ninfo2(self, session: aiohttp.ClientSession, proxy=None, reconnection=2):
-        """
-        非自制剧检测
-        :param session:
-        :param proxy:
-        :param reconnection :重连次数
-        :return:
-        """
-        try:
-            n2 = await session.get(self.netflixurl2, proxy=proxy, timeout=5)
-            if n2 is not None:
-                self.info['netflix2'] = await n2.text()
-                self.info['ne_status_code2'] = n2.status
-            else:
-                self.info['netflix2'] = None
-                self.info['ne_status_code2'] = None
-
-        except ClientConnectorError as c:
-            logger.warning("Netflix请求发生错误:" + str(c))
-            if reconnection != 0:
-                await self.fetch_ninfo2(session=session, proxy=proxy, reconnection=reconnection - 1)
-        except asyncio.exceptions.TimeoutError:
-            logger.warning("Netflix请求超时，正在重新发送请求......")
-            if reconnection != 0:
-                await self.fetch_ninfo2(session=session, proxy=proxy, reconnection=reconnection - 1)
-
     async def fetch_youtube(self, session: aiohttp.ClientSession, proxy=None, reconnection=2):
         """
         Youtube解锁检测
@@ -522,35 +471,6 @@ class Collector:
             if reconnection != 0:
                 await self.fetch_dis(session=session, proxy=proxy, reconnection=reconnection - 1)
 
-    async def fetch_dazn(self, session: aiohttp.ClientSession, proxy=None, reconnection=2):
-        """
-        Dazn解锁测试
-        :param reconnection:
-        :param session:
-        :param proxy:
-        :return:
-        """
-        payload = json.dumps(
-            {"LandingPageKey": "generic", "Languages": "zh-CN,zh,en", "Platform": "web", "PlatformAttributes": {},
-             "Manufacturer": "", "PromoCode": "", "Version": "2"})
-        try:
-            r = await session.post(url=self.daznurl, proxy=proxy, data=payload, timeout=5, headers=self._headers_json)
-            if r.status == 200:
-                text = await r.json()
-                self.info['dazn'] = text
-        except ClientConnectorError as c:
-            logger.warning("Dazn请求发生错误:" + str(c))
-            if reconnection != 0:
-                await self.fetch_dis(session=session, proxy=proxy, reconnection=reconnection - 1)
-            else:
-                self.info['dazn'] = '连接错误'
-        except asyncio.exceptions.TimeoutError:
-            logger.warning("Dazn请求超时，正在重新发送请求......")
-            if reconnection != 0:
-                await self.fetch_dis(session=session, proxy=proxy, reconnection=reconnection - 1)
-            else:
-                self.info['dazn'] = '超时'
-
     async def start(self, proxy=None):
         """
         启动采集器，采用并发操作
@@ -558,14 +478,15 @@ class Collector:
         :return: all content
         """
         try:
-            session = aiohttp.ClientSession(headers=self._headers)
+            conn = aiohttp.TCPConnector(limit=0)
+            session = aiohttp.ClientSession(connector=conn, headers=self._headers)
             tasks = self.create_tasks(session, proxy=proxy)
             if tasks:
                 await asyncio.wait(tasks)
             await session.close()
             return self.info
         except Exception as e:
-            logger.error(e)
+            logger.error(str(e))
             return self.info
 
 
