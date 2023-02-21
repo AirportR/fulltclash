@@ -13,6 +13,24 @@ from botmodule.init_bot import config
 """
 
 
+def get_telegram_id_from_message(message: pyrogram.types.Message):
+    """
+    获得唯一确定身份标识的id
+    为什么我会写这个方法？因为该死的telegram里有频道匿名身份和普通用户身份，它们的id不是同一个属性。
+    :param message:
+    :return:
+    """
+    # print(message)
+    try:
+        ID = message.from_user.id
+        return ID
+    except AttributeError:
+        ID = message.sender_chat.id
+        return ID
+    except Exception as e:
+        logger.error(str(e))
+
+
 async def is_port_in_use(host='127.0.0.1', port=80):
     """
     检查主机端口是否被占用
@@ -273,11 +291,12 @@ async def check_nodes(message, nodenum, args: tuple, max_num=300):
         return True
     else:
         return False
-    
+
+
 async def check_speed_nodes(message, nodenum, args: tuple, speed_max_num=config.speednodes()):
     """
     检查获得的关键信息是否为空，以及节点数量是否大于一定数值
-    :param max_num: 最大节点数量
+    :param speed_max_num: 最大节点数量
     :param message: 消息对象
     :param nodenum: 节点数量
     :param args: 若干信息

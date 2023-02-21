@@ -30,7 +30,7 @@ async def download_script(_: Client, message: Message):
         if file_name[-3:] == '.py' and file_name != "__init__.py":
             file_path = await target.download(file_name=f'./addons/{file_name}')
             if file_path:
-                logger.info("文件已下载到本地:", file_path)
+                logger.info("文件已下载到本地:" + file_path)
                 with open(file_path, 'r', encoding='utf-8') as f:
                     await m2.edit_text("下载成功，即将进入脚本预览，每5秒翻页一次")
                     await asyncio.sleep(10)

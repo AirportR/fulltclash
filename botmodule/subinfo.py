@@ -4,10 +4,10 @@ from loguru import logger
 from pyrogram.errors import RPCError
 from libs.cleaner import geturl
 from libs.collector import SubCollector
-from botmodule.command.submanage import get_telegram_id_from_message as get_id
+from libs.check import get_telegram_id_from_message as get_id
+from libs.check import check_user
 from botmodule.init_bot import config, admin
 from libs import cleaner
-from libs.check import check_user
 
 
 async def getSubInfo(_, message):

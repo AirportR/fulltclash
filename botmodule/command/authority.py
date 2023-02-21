@@ -6,7 +6,7 @@ from async_timeout import timeout
 from loguru import logger
 from pyrogram.errors import RPCError
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from botmodule.command.submanage import get_telegram_id_from_message as get_id
+from libs.check import get_telegram_id_from_message as get_id
 from libs.cleaner import geturl, addon
 
 b1 = InlineKeyboardMarkup(
