@@ -155,7 +155,7 @@ def command_loader(app: Client):
 
 
 def callback_loader(app: Client):
-    @app.on_callback_query()
+    @app.on_callback_query(group=2)
     async def settings_test(client, callback_query):
         if await check_callback_master(callback_query, botmodule.init_bot.reloadUser()):
             return
@@ -181,6 +181,12 @@ def callback_loader(app: Client):
         else:
             break_speed.append(True)
             logger.info("测速中止")
+
+    @app.on_callback_query(filters=dynamic_data_filter('reload:addon'), group=1)
+    async def reload_addon(client, callback_query):
+        if await check_callback_master(callback_query, USER_TARGET=init_bot.admin, strict=False):
+            return
+        await botmodule.reload_addon_from_telegram(client, call=callback_query)
 
 
 async def bot_put(client, message, put_type: str, test_items: list = None, **kwargs):
