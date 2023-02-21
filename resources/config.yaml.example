@@ -23,6 +23,7 @@ item: # 流媒体测试项，决定你想要测哪个项,目前仅支持以下�
 # remoteconfig: "https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online.ini" #远程配置
 #pingurl: http://www.gstatic.com/generate_204  #自定义延迟测试URL
 #speedfile: "https://dl.google.com/dl/android/studio/install/3.4.1.0/android-studio-ide-183.5522156-windows.exe" #自定义测速文件
+#speednodes: 300 测速节点数量限制，超过将不会进行测速
 #speedthread: 4 #测速线程
 #nospeed: true #禁用测速，开启后将无法测速。
 #user: 12345678 #用户列表，/grant 命令授权的目标会保存在这（可选配置）

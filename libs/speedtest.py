@@ -287,7 +287,7 @@ async def core(message, back_message, start_time, suburl: str = None, **kwargs):
         nodename = None
         nodetype = None
     # 检查获得的数据
-    if await check.check_nodes(back_message, nodenum, (nodename, nodetype,)):
+    if await check.check_speed_nodes(back_message, nodenum, (nodename, nodetype,)):
         return info
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
     ma.addsub2provider(subname=start_time, subpath='./sub{}.yaml'.format(start_time))

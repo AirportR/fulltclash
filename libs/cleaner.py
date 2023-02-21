@@ -491,6 +491,12 @@ class ConfigManager:
     @property
     def nospeed(self) -> bool:
         return bool(self.config.get('nospeed', False))
+    
+    def speednodes(self):
+        try:
+            return self.config['speednodes']
+        except KeyError:
+            return int(300)
 
     def getFont(self):
         return self.config.get('font', "./resources/阿里巴巴普惠体-Regular.ttf")
