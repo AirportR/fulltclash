@@ -32,6 +32,7 @@ def color_block(size: tuple, color_value):
     return img_block
 
 
+# TODO(@AirportR): 需要设计个export基类，然后下面三个类继承基类，基类定义一些通用方法
 class ExportResult:
     """
     生成图片类
@@ -59,15 +60,15 @@ class ExportResult:
         self.title = self.image_config.get('title', 'FullTclash')
         self.watermark = self.image_config.get('watermark', {})
         watermark_default_config = {
-                'enable': False,
-                'text': '只是一个水印',
-                'font_size': 64,
-                'color': '#000000',
-                'alpha': 16,
-                'angle': -16.0,
-                'start_y': 0,
-                'row_spacing': 0
-                }
+            'enable': False,
+            'text': '只是一个水印',
+            'font_size': 64,
+            'color': '#000000',
+            'alpha': 16,
+            'angle': -16.0,
+            'start_y': 0,
+            'row_spacing': 0
+        }
         for key in watermark_default_config:
             if key not in self.watermark:
                 self.watermark[key] = watermark_default_config[key]
@@ -188,28 +189,28 @@ class ExportResult:
     def draw_watermark(self, original_image):
         original_image_size = original_image.size
         watermark_text = self.watermark['text']
-        
+
         super_sampling_ratio = 3
         font_size = int(self.watermark['font_size'])
-        font = ImageFont.truetype(self.config.getFont(),  font_size * super_sampling_ratio)
+        font = ImageFont.truetype(self.config.getFont(), font_size * super_sampling_ratio)
 
-        text_size = font.getsize(watermark_text) 
-        text_image = Image.new('RGBA', text_size, (255,255,255,0))
+        text_size = font.getsize(watermark_text)
+        text_image = Image.new('RGBA', text_size, (255, 255, 255, 0))
         text_draw = ImageDraw.Draw(text_image)
-        
-        rgb = tuple(int(self.watermark['color'][i:i+2], 16) for i in (1, 3, 5))
+
+        rgb = tuple(int(self.watermark['color'][i:i + 2], 16) for i in (1, 3, 5))
         text_draw.text((0, 0), watermark_text, (rgb[0], rgb[1], rgb[2], int(self.watermark['alpha'])), font=font)
 
-        rotated_text_image = text_image.rotate(float(self.watermark['angle']), expand=True, fillcolor=(0,0,0,0))
+        rotated_text_image = text_image.rotate(float(self.watermark['angle']), expand=True, fillcolor=(0, 0, 0, 0))
         rotated_text_image_size = [x // super_sampling_ratio for x in rotated_text_image.size]
         if rotated_text_image_size[0] <= 0 or rotated_text_image_size[1] <= 0:
             logger.error(f'无法添加水印，水印大小为:{rotated_text_image_size}')
             return original_image
         rotated_text_image = rotated_text_image.resize(rotated_text_image_size)
 
-        watermarks_image = Image.new('RGBA', original_image_size, (255,255,255,0))
+        watermarks_image = Image.new('RGBA', original_image_size, (255, 255, 255, 0))
 
-        x = original_image_size[0]//2 - rotated_text_image_size[0]//2
+        x = original_image_size[0] // 2 - rotated_text_image_size[0] // 2
         row_spacing = int(self.watermark['row_spacing'])
         if row_spacing < 0:
             row_spacing = 0
@@ -221,7 +222,7 @@ class ExportResult:
                 break
 
         return Image.alpha_composite(original_image, watermarks_image)
-        
+
     @logger.catch
     def exportUnlock(self):
         wtime = self.info.pop('wtime', "0")
@@ -545,7 +546,7 @@ class ExportTopo(ExportResult):
                              (255, 255, 255))
             img3.paste(img, (0, 0))
             img3.paste(img2, (0, image_height - 80))
-            
+
             if self.watermark['enable']:
                 img3 = self.draw_watermark(img3.convert("RGBA"))
             print(export_time)

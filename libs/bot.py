@@ -166,6 +166,7 @@ def callback_loader(app: Client):
         await botmodule.reload_addon_from_telegram(client, call=callback_query)
         callback_query.stop_propagation()
 
+# TODO(@AirportR): 鉴权可以融合到filter里面
     @app.on_callback_query(group=2)
     async def settings_test(client, callback_query):
         if await check_callback_master(callback_query, botmodule.init_bot.reloadUser()):

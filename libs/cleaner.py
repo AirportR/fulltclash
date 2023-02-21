@@ -491,7 +491,8 @@ class ConfigManager:
     @property
     def nospeed(self) -> bool:
         return bool(self.config.get('nospeed', False))
-    
+
+    # TODO(@AirportR): 三项speed配置可以合在一个母项中
     def speednodes(self):
         try:
             return self.config['speednodes']
