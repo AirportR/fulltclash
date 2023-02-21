@@ -88,7 +88,7 @@ class Speedtest:
         self._delta_red = self._total_red
         self._count += 1
         print("\r[" + "=" * self._count + f"> [{speed_mb:.2f} MB/s]", end="")
-        if(len(self.result) < 10):
+        if len(self.result) < 10:
             self.result.append(speed)
 
     def show_progress_full(self):
