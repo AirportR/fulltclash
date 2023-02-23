@@ -114,7 +114,7 @@ class AddonCleaner:
         base_item = ['Netflix', 'Youtube', 'Disney+', 'Primevideo', 'Viu', 'steam货币', 'OpenAI',
                      '维基百科', '落地IP风险']
         base_item = base_item + list(self._script.keys())
-        new_item = sorted(set(base_item)-set(self.blacklist), key=base_item.index)
+        new_item = sorted(set(base_item) - set(self.blacklist), key=base_item.index)
         return new_item
 
     @property
@@ -137,7 +137,7 @@ class AddonCleaner:
                     os.remove(self.path + name + '.py')
                     success_list.append(name)
                 except FileNotFoundError as f:
-                    logger.warning(f"{name} 文件不存在\t"+str(f))
+                    logger.warning(f"{name} 文件不存在\t" + str(f))
                 except PermissionError as p:
                     logger.warning(f"权限错误: {str(p)}")
                 except Exception as e:
@@ -498,6 +498,18 @@ class ConfigManager:
             return self.config['speednodes']
         except KeyError:
             return int(300)
+
+    def getBotconfig(self):
+        botconfig = self.config.get('bot', {})
+        if not botconfig:
+            return botconfig
+        if 'api_id' in botconfig:
+            logger.info(f"从配置中获取到了api_id: {botconfig['api_id']}")
+        if 'api_hash' in botconfig:
+            logger.info(f"从配置中获取到了api_hash: {botconfig['api_hash']}")
+        if 'bot_token' in botconfig:
+            logger.info(f"从配置中获取到了bot_token: {botconfig['bot_token']}")
+        return botconfig
 
     def getFont(self):
         return self.config.get('font', "./resources/阿里巴巴普惠体-Regular.ttf")

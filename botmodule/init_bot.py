@@ -39,6 +39,10 @@ except Exception as e:
 
 logger.add("./logs/fulltclash_{time}.log", rotation='7 days')
 config = ConfigManager()
+botconfig = config.getBotconfig()
+api_id = botconfig.get('api_id', None)
+api_hash = botconfig.get('api_hash', None)
+bot_token = botconfig.get('bot_token', None)
 clash_path = config.get_clash_path()  # 为clash核心运行路径, Windows系统需要加后缀名.exe
 clash_work_path = config.get_clash_work_path()  # clash工作路径
 corenum = config.config.get('clash', {}).get('core', 1)
@@ -107,14 +111,10 @@ if admin is None:
 
 logger.info("配置已加载, Telegram bot程序正在运行...")
 
-
-# # 启动了一个clash常驻进程
-# command = fr"{clash_path} -f {'./clash/proxy.yaml'} -d {clash_work_path}"
-# subp = subprocess.Popen(command.split(), encoding="utf-8")
-# time.sleep(2)
-
-# proxys.batch_start([1124 + i*2 for i in range(corenum)])
-# logger.info("程序已启动!")
+# 启动器
+pystr = "python" if sys.platform == "win32" else "python3"
+command = fr"{pystr} clash.py"
+subp = subprocess.Popen(command.split(), encoding="utf-8")
 
 
 def reloadUser():

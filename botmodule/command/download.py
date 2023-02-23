@@ -18,7 +18,7 @@ async def download_script(_: Client, message: Message):
         await asyncio.sleep(10)
         await m2.delete(revoke=False)
         return
-    m2 = await message.reply_text("正在识别脚本...")
+    m2 = await message.reply_text("正在识别脚本...", quote=True)
     # 下载文件到本地
     try:
         # print(message)
