@@ -156,6 +156,13 @@ def command_loader(app: Client):
     @app.on_message(filters.command(['setting']) & filters.user(admin), group=2)
     async def setting(client, message):
         await botmodule.setting_page(client, message)
+        
+    @app.on_message(filters.command(['fulltest']), group=1)
+    async def fulltest(client, message):
+        if await isuser(message, botmodule.init_bot.reloadUser()):
+            await message.reply("请选择排序方式:", reply_markup=botmodule.IKM2, quote=True)
+            await bot_put(client, message, "analyze")
+            await bot_put(client, message, "speed")
 
 
 def callback_loader(app: Client):
