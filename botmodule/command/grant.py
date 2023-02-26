@@ -84,7 +84,8 @@ async def user(_, message):
     text = "当前用户有:" + str(set(USER_TARGET)) + "\n共{}个".format(len(USER_TARGET))
     await message.reply(text)
 
-async def restart(client, message):
+
+async def restart(_, message):
     try:
         if int(message.from_user.id) not in admin and str(
                 message.from_user.username) not in admin:  # 如果不在USER_TARGET名单是不会有权限的
@@ -100,4 +101,4 @@ async def restart(client, message):
         os.execl(p, p, *sys.argv)
         sys.exit()
     except RPCError as r:
-        print(r)
+        logger.error(str(r))
