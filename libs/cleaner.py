@@ -501,6 +501,8 @@ class ConfigManager:
 
     def getBotconfig(self):
         botconfig = self.config.get('bot', {})
+        if botconfig is None:
+            return {}
         if not botconfig:
             return botconfig
         if 'api_id' in botconfig:

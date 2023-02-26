@@ -6,7 +6,7 @@ from pyrogram.errors import RPCError
 from pyrogram.types import BotCommand, CallbackQuery, Message
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from libs.cleaner import addon, config
-from libs.export import __version__ as version
+from libs.export import __version__
 from botmodule.init_bot import latest_version_hash as v_hash
 from addons.unlockTest.primevideo import button as b15
 from addons.unlockTest.viu import button as b18
@@ -319,7 +319,7 @@ async def select_sort(app: Client, call: CallbackQuery):
 
 
 async def setting_page(_: Client, message: Message):
-    text = config.config.get('bot', {}).get('description', f"🛠️FullTclash bot管理总枢🛠️\n\n版本: {version}({v_hash})")
+    text = config.config.get('bot', {}).get('description', f"🛠️FullTclash bot管理总枢🛠️\n\n版本: {__version__}({v_hash})")
     addon_button = InlineKeyboardButton("🧰插件管理(开发中)", callback_data="blank")
     config_button = InlineKeyboardButton("⚙️配置管理(开发中)", callback_data="blank")
     sub_button = InlineKeyboardButton("🌐订阅管理(开发中)", callback_data="blank")
