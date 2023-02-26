@@ -1,5 +1,3 @@
-import os
-import sys
 import pyrogram.types
 from loguru import logger
 from pyrogram.errors import RPCError
@@ -83,21 +81,3 @@ async def user(_, message):
     USER_TARGET = config.getuser()
     text = "当前用户有:" + str(set(USER_TARGET)) + "\n共{}个".format(len(USER_TARGET))
     await message.reply(text)
-
-    async def restart(client, message):
-    try:
-        if int(message.from_user.id) not in admin and str(
-                message.from_user.username) not in admin:  # 如果不在USER_TARGET名单是不会有权限的
-            await message.reply("⚠️您不是bot的管理员，无法使用该命令")
-            return
-    except AttributeError:
-        if int(message.sender_chat.id) not in admin:  # 如果不在USER_TARGET名单是不会有权限的
-            await message.reply("⚠️您不是bot的管理员，无法使用该命令")
-            return
-    try:
-        await message.reply("开始重启")
-        p = sys.executable
-        os.execl(p, p, *sys.argv)
-        sys.exit()
-    except RPCError as r:
-        print(r)

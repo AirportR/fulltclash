@@ -48,10 +48,6 @@ def command_loader(app: Client):
     @app.on_message(filters.command(["user"]) & filters.user(admin), group=2)
     async def user(client, message):
         await botmodule.user(client, message)
-    
-    @app.on_message(filters.command(["restart"]), group=2)
-    async def restart(client, message):
-        await botmodule.restart(client, message)
 
     @app.on_message(filters.command(["new"]), group=1)
     async def new(client, message):
