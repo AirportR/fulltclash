@@ -1,3 +1,5 @@
+import os
+import sys
 import pyrogram.types
 from loguru import logger
 from pyrogram.errors import RPCError
