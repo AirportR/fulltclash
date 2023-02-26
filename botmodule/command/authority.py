@@ -5,7 +5,7 @@ import pyrogram
 from async_timeout import timeout
 from loguru import logger
 from pyrogram.errors import RPCError
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
 from libs.check import get_telegram_id_from_message as get_id
 from libs.cleaner import geturl, addon
 
@@ -114,7 +114,7 @@ async def get_url_from_invite(_, message2):
                 await message2.reply("无效的URL")
 
 
-async def invite_pass(client: pyrogram.Client, message):
+async def invite_pass(client: pyrogram.Client, message: Message):
     # temp_queue = asyncio.Queue(maxsize=1)
     ID = str(get_id(message))
     text = str(message.text)
@@ -161,8 +161,6 @@ async def invite_pass(client: pyrogram.Client, message):
             except asyncio.TimeoutError:
                 logger.info(f"验证过期: {key2}:{ID}")
                 await bot_mes.edit_text(f"❌任务已取消\n\n原因: 接收订阅链接超时")
-                await asyncio.sleep(10)
-                await bot_mes.delete()
             if suburl:
                 from libs.bot import bot_put
                 await message.reply("✨提交成功，请返回群组查看测试结果。")
