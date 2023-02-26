@@ -145,7 +145,7 @@ def command_loader(app: Client):
         if await isuser(message, botmodule.init_bot.reloadUser()):
             await botmodule.sub_invite(client, message)
 
-    @app.on_message(filters.command(['install', 'list_script']) & filters.user(admin), group=2)
+    @app.on_message(filters.command(['install', 'list']) & filters.user(admin), group=2)
     async def install_script(client, message):
         await botmodule.download_script(client, message)
 
@@ -153,13 +153,36 @@ def command_loader(app: Client):
     async def uninstall_script(client, message):
         await botmodule.uninstall_script(client, message)
 
+    @app.on_message(filters.command(['setting']) & filters.user(admin), group=2)
+    async def setting(client, message):
+        await botmodule.setting_page(client, message)
+        
+    @app.on_message(filters.command(['fulltest']), group=1)
+    async def fulltest(client, message):
+        if await isuser(message, botmodule.init_bot.reloadUser()):
+            await message.reply("请选择排序方式:", reply_markup=botmodule.IKM2, quote=True)
+            await bot_put(client, message, "analyze")
+            await bot_put(client, message, "speed")
+
 
 def callback_loader(app: Client):
-    @app.on_callback_query()
+    @app.on_callback_query(filters=dynamic_data_filter('stop') & filters.user(botmodule.init_bot.reloadUser()), group=1)
+    async def invite_test(_, callback_query):
+        break_speed.append(True)
+        logger.info("测速中止")
+        callback_query.stop_propagation()
+
+    @app.on_callback_query(filters=dynamic_data_filter('reload:addon') & filters.user(init_bot.admin), group=1)
+    async def reload_addon(client, callback_query):
+        await botmodule.reload_addon_from_telegram(client, call=callback_query)
+        callback_query.stop_propagation()
+
+# TODO(@AirportR): 鉴权可以融合到filter里面
+    @app.on_callback_query(group=2)
     async def settings_test(client, callback_query):
-        if await check_callback_master(callback_query, botmodule.init_bot.reloadUser()):
-            return
         if callback_query.data == "blank":
+            return
+        if await check_callback_master(callback_query, botmodule.init_bot.reloadUser()):
             return
         elif "page" in callback_query.data:
             await botmodule.select_page(client, callback_query, page=int(str(callback_query.data)[4:]))
@@ -173,14 +196,6 @@ def callback_loader(app: Client):
             await asyncio.sleep(3)
             await message.delete()
             await bot_put(client, origin_message, test_type, test_items, sort=sort_str)
-
-    @app.on_callback_query(filters=dynamic_data_filter('stop'), group=1)
-    async def invite_test(_, callback_query):
-        if await check_callback_master(callback_query, USER_TARGET=botmodule.init_bot.reloadUser(), strict=False):
-            return
-        else:
-            break_speed.append(True)
-            logger.info("测速中止")
 
 
 async def bot_put(client, message, put_type: str, test_items: list = None, **kwargs):

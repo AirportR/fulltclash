@@ -5,7 +5,7 @@ from pyrogram.errors import RPCError
 from loguru import logger
 from libs import cleaner, check
 from botmodule.init_bot import config, admin
-from libs.check import check_user
+from libs.check import check_user, get_telegram_id_from_message
 
 
 async def sub_invite(_, message: pyrogram.types.Message):
@@ -178,24 +178,6 @@ async def remove(_, message):
             print(r)
     except IndexError:
         print("错误")
-
-
-def get_telegram_id_from_message(message: pyrogram.types.Message):
-    """
-    获得唯一确定身份标识的id
-    为什么我会写这个方法？因为该死的telegram里有频道匿名身份和普通用户身份，它们的id不是同一个属性。
-    :param message:
-    :return:
-    """
-    # print(message)
-    try:
-        ID = message.from_user.id
-        return ID
-    except AttributeError:
-        ID = message.sender_chat.id
-        return ID
-    except Exception as e:
-        logger.error(str(e))
 
 
 if __name__ == '__main__':

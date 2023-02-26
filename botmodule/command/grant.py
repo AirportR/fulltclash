@@ -5,6 +5,7 @@ from botmodule.init_bot import admin, config, reloadUser
 from botmodule.command.test import reloadUser as r2
 
 
+# TODO(@AirportR): grant授权方式可以更多样化
 async def grant(client, message):
     try:
         if int(message.from_user.id) not in admin and str(

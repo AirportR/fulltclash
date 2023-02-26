@@ -1,12 +1,13 @@
+import asyncio
 import hashlib
 from loguru import logger
 from pyrogram.errors import RPCError
 from libs.cleaner import geturl
 from libs.collector import SubCollector
-from botmodule.command.submanage import get_telegram_id_from_message as get_id
+from libs.check import get_telegram_id_from_message as get_id
+from libs.check import check_user
 from botmodule.init_bot import config, admin
 from libs import cleaner
-from libs.check import check_user
 
 
 async def getSubInfo(_, message):
@@ -16,9 +17,15 @@ async def getSubInfo(_, message):
         back_message = await message.reply("正在查询流量信息...")  # 发送提示
         text = str(message.text)
         url = geturl(text)
+        arglen = len(arg)
         status = False
         if not url:
-            if text:
+            if arglen == 1:
+                await back_message.edit_text("使用方法: /traffic & /subinfo & /流量查询 + <订阅链接> & <订阅名>")
+                await asyncio.sleep(5)
+                await back_message.delete()
+                return
+            else:
                 pwd = arg[2] if len(arg) > 2 else arg[1]
                 subinfo = config.get_sub(arg[1])
                 if not subinfo:
@@ -30,19 +37,17 @@ async def getSubInfo(_, message):
                     # 管理员至高权限
                     url = str(subinfo.get('url', ''))
                     status = True
-                if subowner and subowner == ID:
-                    if hashlib.sha256(pwd.encode("utf-8")).hexdigest() == subpwd:
-                        url = str(subinfo.get('url', ''))
-                        status = True
-                    else:
-                        await back_message.edit_text("❌密码错误,请检查后重试")
-                        return
                 else:
-                    await back_message.edit_text("❌身份ID不匹配，您无权查看该订阅流量信息。")
-                    return
-            else:
-                await back_message.edit_text("使用方法: /traffic & /subinfo & /流量查询 + <订阅链接>")
-                return
+                    if subowner and subowner == ID:
+                        if hashlib.sha256(pwd.encode("utf-8")).hexdigest() == subpwd:
+                            url = str(subinfo.get('url', ''))
+                            status = True
+                        else:
+                            await back_message.edit_text("❌密码错误,请检查后重试")
+                            return
+                    else:
+                        await back_message.edit_text("❌身份ID不匹配，您无权查看该订阅流量信息。")
+                        return
         subcl = SubCollector(url)
         subcl.cvt_enable = False
         subinfo = await subcl.getSubTraffic()

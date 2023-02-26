@@ -17,7 +17,7 @@ from libs.emoji_custom import TwitterPediaSource
 2、何为基础数据？
     基础数据决定了生成图片的高度（Height），它是列表，列表里面的数据一般是一组节点名，即有多少个节点就对应了info键值中的长度。
 """
-__version__ = "3.5.0"  # 版本号
+__version__ = "3.5.1"  # 版本号
 custom_source = TwitterPediaSource  # 自定义emoji风格 TwitterPediaSource
 
 
@@ -32,6 +32,7 @@ def color_block(size: tuple, color_value):
     return img_block
 
 
+# TODO(@AirportR): 需要设计个export基类，然后下面三个类继承基类，基类定义一些通用方法
 class ExportResult:
     """
     生成图片类
@@ -57,6 +58,20 @@ class ExportResult:
         self.delay_color = self.color.get('delay', [])
         self.__font = ImageFont.truetype(self.config.getFont(), self.front_size)
         self.title = self.image_config.get('title', 'FullTclash')
+        self.watermark = self.image_config.get('watermark', {})
+        watermark_default_config = {
+            'enable': False,
+            'text': '只是一个水印',
+            'font_size': 64,
+            'color': '#000000',
+            'alpha': 16,
+            'angle': -16.0,
+            'start_y': 0,
+            'row_spacing': 0
+        }
+        for key in watermark_default_config:
+            if key not in self.watermark:
+                self.watermark[key] = watermark_default_config[key]
 
     @property
     def interval(self):
@@ -170,6 +185,43 @@ class ExportResult:
         strname_width = self.text_width(str_name)
         xpath = mid_xpath - strname_width / 2
         return xpath
+
+    def draw_watermark(self, original_image):
+        original_image_size = original_image.size
+        watermark_text = self.watermark['text']
+
+        super_sampling_ratio = 3
+        font_size = int(self.watermark['font_size'])
+        font = ImageFont.truetype(self.config.getFont(), font_size * super_sampling_ratio)
+
+        text_size = font.getsize(watermark_text)
+        text_image = Image.new('RGBA', text_size, (255, 255, 255, 0))
+        text_draw = ImageDraw.Draw(text_image)
+
+        rgb = tuple(int(self.watermark['color'][i:i + 2], 16) for i in (1, 3, 5))
+        text_draw.text((0, 0), watermark_text, (rgb[0], rgb[1], rgb[2], int(self.watermark['alpha'])), font=font)
+
+        rotated_text_image = text_image.rotate(float(self.watermark['angle']), expand=True, fillcolor=(0, 0, 0, 0))
+        rotated_text_image_size = [x // super_sampling_ratio for x in rotated_text_image.size]
+        if rotated_text_image_size[0] <= 0 or rotated_text_image_size[1] <= 0:
+            logger.error(f'无法添加水印，水印大小为:{rotated_text_image_size}')
+            return original_image
+        rotated_text_image = rotated_text_image.resize(rotated_text_image_size)
+
+        watermarks_image = Image.new('RGBA', original_image_size, (255, 255, 255, 0))
+
+        x = original_image_size[0] // 2 - rotated_text_image_size[0] // 2
+        row_spacing = int(self.watermark['row_spacing'])
+        if row_spacing < 0:
+            row_spacing = 0
+        y = int(self.watermark['start_y'])
+        while True:
+            watermarks_image.paste(rotated_text_image, (x, y))
+            y += rotated_text_image_size[1] + row_spacing
+            if y >= original_image_size[1]:
+                break
+
+        return Image.alpha_composite(original_image, watermarks_image)
 
     @logger.catch
     def exportUnlock(self):
@@ -333,6 +385,8 @@ class ExportResult:
             idraw.line([(x, 40), (x, image_height - 80)], fill="#e1e1e1", width=2)
             start_x = end
         print(export_time)
+        if self.watermark['enable']:
+            img = self.draw_watermark(img.convert("RGBA"))
         img.save(r"./results/{}.png".format(export_time.replace(':', '-')))
         return export_time
 
@@ -492,11 +546,16 @@ class ExportTopo(ExportResult):
                              (255, 255, 255))
             img3.paste(img, (0, 0))
             img3.paste(img2, (0, image_height - 80))
+
+            if self.watermark['enable']:
+                img3 = self.draw_watermark(img3.convert("RGBA"))
             print(export_time)
             # img3.show()
             img3.save(r"./results/Topo{}.png".format(export_time.replace(':', '-')))
             return export_time
         else:
+            if self.watermark['enable']:
+                img = self.draw_watermark(img.convert("RGBA"))
             print(export_time)
             img.save(r"./results/Topo{}.png".format(export_time.replace(':', '-')))
             return export_time
@@ -639,6 +698,8 @@ class ExportTopo(ExportResult):
             idraw.line([(x, 40), (x, image_height - 80)], fill=(255, 255, 255), width=1)
             start_x = end
         if nodename is None and info is None:
+            if self.watermark['enable']:
+                img = self.draw_watermark(img.convert("RGBA"))
             img.save(r"./results/Topo{}.png".format(export_time.replace(':', '-')))
             print(export_time)
             return export_time
@@ -686,19 +747,22 @@ class ExportSpeed(ExportResult):
             key_width = self.text_width(i)  # 键的长度
             max_width = 0
             if self.info[i]:
-                if type(self.info[i][0]) == str:
+                if i == '速度变化':
+                    key_width += 40
+                    speedblock_count = max([len(lst) for lst in self.info[i]])
+                    if speedblock_count > 0:
+                        speedblock_total_width = speedblock_count * self.speedblock_width
+                        if speedblock_total_width >= key_width:
+                            max_width = speedblock_total_width
+                        else:
+                            self.speedblock_width = math.ceil(key_width / speedblock_count)
+                            max_width = speedblock_count * self.speedblock_width
+                    else:
+                        max_width = key_width
+                else:
                     value_width = self.text_maxwidth(self.info[i])  # 键所对应值的长度
                     max_width = max(key_width, value_width)
                     max_width += 40
-                elif type(self.info[i][0]) == list:
-                    speedblock_count = len(self.info[i][0])
-                    speedblock_total_width = speedblock_count * self.speedblock_width
-                    key_width += 40
-                    if speedblock_total_width >= key_width:
-                        max_width = speedblock_total_width
-                    else:
-                        self.speedblock_width = math.ceil(key_width / speedblock_count)
-                        max_width = speedblock_count * self.speedblock_width
 
             width_list.append(max_width)
         return width_list  # 测试项列的大小
@@ -807,40 +871,18 @@ class ExportSpeed(ExportResult):
                         return colorvalue[i]
                 return default_color
 
-            width = 100 + nodename_width
+            width = 100 + nodename_width + 2
             i = 0
+            speedblock_height = 40
             # 填充颜色块
             for t1 in key_list:
                 if t1 == "平均速度" or t1 == "最大速度":
                     speedvalue = float(self.info[t1][t][:-2])
-                    block = color_block((info_list_length[i], 40), color_value=get_color(speedvalue))
-                    img.paste(block, (width, 40 * (t + 2)))
-                width += info_list_length[i]
-                i += 1
-            # 填充字符
-            width = 100 + nodename_width
-            i = 0
-            for t2 in key_list:
-                if type(self.info[t2][t]) == str:
-                    if t2 == "平均速度" or t2 == "最大速度":
-                        idraw.text((self.get_mid(width, width + info_list_length[i], self.info[t2][t]), (t + 2) * 40),
-                                   self.info[t2][t],
-                                   font=fnt, fill=(0, 0, 0))
-                    else:
-                        idraw.text((self.get_mid(width, width + info_list_length[i], self.info[t2][t]), (t + 2) * 40),
-                                   self.info[t2][t],
-                                   font=fnt, fill=(0, 0, 0))
-                width += info_list_length[i]
-                i += 1
-
-            # 速度变化
-            width = 100 + nodename_width + 2
-            i = 0
-            speedblock_height = 40
-            for t3 in key_list:
-                if type(self.info[t3][t]) == list and t3 == "速度变化":
+                    block = color_block((info_list_length[i], speedblock_height), color_value=get_color(speedvalue))
+                    img.paste(block, (width, speedblock_height * (t + 2)))
+                elif t1 == "速度变化":
                     speedblock_x = width
-                    for speedvalue in self.info[t3][t]:
+                    for speedvalue in self.info[t1][t]:
                         max_speed = float(self.info["最大速度"][t][:-2])
                         if (max_speed > 0.0):
                             speedblock_ratio_height = int(speedblock_height * speedvalue / max_speed)
@@ -852,7 +894,17 @@ class ExportSpeed(ExportResult):
                                                 color_value=get_color(speedvalue))
                             img.paste(block, (speedblock_x, speedblock_y))
                         speedblock_x += self.speedblock_width
-                    break
+                width += info_list_length[i]
+                i += 1
+
+            # 填充字符
+            width = 100 + nodename_width
+            i = 0
+            for t2 in key_list:
+                if type(self.info[t2][t]) == str:
+                    idraw.text((self.get_mid(width, width + info_list_length[i], self.info[t2][t]), (t + 2) * 40),
+                               self.info[t2][t],
+                               font=fnt, fill=(0, 0, 0))
                 width += info_list_length[i]
                 i += 1
 
@@ -871,5 +923,7 @@ class ExportSpeed(ExportResult):
             idraw.line([(x, 40), (x, image_height - 80)], fill="#e1e1e1", width=2)
             start_x = end
         print(export_time)
+        if self.watermark['enable']:
+            img = self.draw_watermark(img.convert("RGBA"))
         img.save(r"./results/{}.png".format(export_time.replace(':', '-')))
         return export_time

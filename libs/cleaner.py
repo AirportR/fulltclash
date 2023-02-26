@@ -107,11 +107,15 @@ class AddonCleaner:
         self.blacklist = []
 
     def global_test_item(self):
+        """
+        经过去重并支持黑名单一并去除。最后返回一个新列表
+        :return:
+        """
         base_item = ['Netflix', 'Youtube', 'Disney+', 'Primevideo', 'Viu', 'steam货币', 'OpenAI',
                      '维基百科', '落地IP风险']
-        test_item = set(list(self._script.keys()) + base_item)
-        new_item = test_item - set(self.blacklist)
-        return list(new_item)
+        base_item = base_item + list(self._script.keys())
+        new_item = sorted(set(base_item) - set(self.blacklist), key=base_item.index)
+        return new_item
 
     @property
     def script(self):
@@ -133,7 +137,7 @@ class AddonCleaner:
                     os.remove(self.path + name + '.py')
                     success_list.append(name)
                 except FileNotFoundError as f:
-                    logger.warning(f"{name} 文件不存在\t"+str(f))
+                    logger.warning(f"{name} 文件不存在\t" + str(f))
                 except PermissionError as p:
                     logger.warning(f"权限错误: {str(p)}")
                 except Exception as e:
@@ -487,6 +491,27 @@ class ConfigManager:
     @property
     def nospeed(self) -> bool:
         return bool(self.config.get('nospeed', False))
+
+    # TODO(@AirportR): 三项speed配置可以合在一个母项中
+    def speednodes(self):
+        try:
+            return self.config['speednodes']
+        except KeyError:
+            return int(300)
+
+    def getBotconfig(self):
+        botconfig = self.config.get('bot', {})
+        if botconfig is None:
+            return {}
+        if not botconfig:
+            return botconfig
+        if 'api_id' in botconfig:
+            logger.info(f"从配置中获取到了api_id: {botconfig['api_id']}")
+        if 'api_hash' in botconfig:
+            logger.info(f"从配置中获取到了api_hash: {botconfig['api_hash']}")
+        if 'bot_token' in botconfig:
+            logger.info(f"从配置中获取到了bot_token: {botconfig['bot_token']}")
+        return botconfig
 
     def getFont(self):
         return self.config.get('font', "./resources/阿里巴巴普惠体-Regular.ttf")
@@ -879,7 +904,6 @@ class ReCleaner:
 
     def get_dazn_info(self):
         """
-
         :return: str: 解锁信息: [解锁(地区代码)、失败、N/A]
         """
         try:
@@ -1095,42 +1119,6 @@ def geturl(string: str):
     except IndexError:
         print("未找到URL")
         return None
-
-
-def replace(arg, old, new):
-    """
-    将arg里的某个值替换成新的值
-    :param arg: 传入的对象
-    :param old: 旧值
-    :param new: 新值
-    :return: 新的对象
-    """
-    if type(arg).__name__ == 'list':
-        new_arg = []
-        for a in arg:
-            if a == old:
-                logger.info("替换了一个值: {}-->{}".format(a, new))
-                new_arg.append(new)
-            else:
-                new_arg.append(a)
-        return new_arg
-    elif type(arg).__name__ == 'tuple':
-        new_arg = ()
-        for a in arg:
-            if a == old:
-                new_arg += (new,)
-            else:
-                new_arg += (a,)
-        return new_arg
-    elif type(arg).__name__ == 'str':
-        # 我觉得这个if分支挺废的，但我还是留了下来，给后人当个乐子。
-        if arg == old:
-            return str(new)
-        else:
-            return arg
-    else:
-        print("无可替换内容")
-        return arg
 
 
 @logger.catch

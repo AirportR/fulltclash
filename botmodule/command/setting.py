@@ -5,7 +5,9 @@ from pyrogram import types, Client
 from pyrogram.errors import RPCError
 from pyrogram.types import BotCommand, CallbackQuery, Message
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from libs.cleaner import addon
+from libs.cleaner import addon, config
+from libs.export import __version__
+from botmodule.init_bot import latest_version_hash as v_hash
 from addons.unlockTest.primevideo import button as b15
 from addons.unlockTest.viu import button as b18
 from addons.unlockTest.ip_risk import button as b19
@@ -33,7 +35,7 @@ buttons = [b1, b2, b3, b25, b15, b18, b20, b21, b19]  # , b14, b5, b16, b17, b9,
 # buttons = []
 buttons.extend(addon.init_button())
 max_page_g = int(len(buttons) / 9) + 1
-blank_g = InlineKeyboardButton(f"{1}/{max_page_g}", callback_data=f"blank")
+blank_g = InlineKeyboardButton(f"{1}/{max_page_g}", callback_data="blank")
 next_page_g = InlineKeyboardButton("➡️下一页", callback_data=f"page{2}")
 
 IKM2 = InlineKeyboardMarkup(
@@ -314,3 +316,12 @@ async def select_sort(app: Client, call: CallbackQuery):
     mess_id = call.message.id
     sort_cache[str(chat_id) + ":" + str(mess_id)] = sort_str
     await app.edit_message_text(chat_id, mess_id, "请选择想要启用的测试项: ", reply_markup=IKM)
+
+
+async def setting_page(_: Client, message: Message):
+    text = config.config.get('bot', {}).get('description', f"🛠️FullTclash bot管理总枢🛠️\n\n版本: {__version__}({v_hash})")
+    addon_button = InlineKeyboardButton("🧰插件管理(开发中)", callback_data="blank")
+    config_button = InlineKeyboardButton("⚙️配置管理(开发中)", callback_data="blank")
+    sub_button = InlineKeyboardButton("🌐订阅管理(开发中)", callback_data="blank")
+    IKM = InlineKeyboardMarkup([[addon_button], [config_button], [sub_button]])
+    await message.reply_text(text, reply_markup=IKM, quote=True)

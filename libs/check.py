@@ -6,10 +6,29 @@ import pyrogram.types
 from pyrogram.errors import RPCError
 from loguru import logger
 from pyrogram.filters import private_filter
+from botmodule.init_bot import config
 
 """
 这个模块主要是一些检查函数，用来验证某个值是否合法。一般是返回布尔值
 """
+
+
+def get_telegram_id_from_message(message: pyrogram.types.Message):
+    """
+    获得唯一确定身份标识的id
+    为什么我会写这个方法？因为该死的telegram里有频道匿名身份和普通用户身份，它们的id不是同一个属性。
+    :param message:
+    :return:
+    """
+    # print(message)
+    try:
+        ID = message.from_user.id
+        return ID
+    except AttributeError:
+        ID = message.sender_chat.id
+        return ID
+    except Exception as e:
+        logger.error(str(e))
 
 
 async def is_port_in_use(host='127.0.0.1', port=80):
@@ -265,6 +284,48 @@ async def check_nodes(message, nodenum, args: tuple, max_num=300):
         logger.warning("❌节点数量过多！已取消本次测试")
         try:
             m4 = await message.edit_text("❌节点数量过多！已取消本次测试")
+            await asyncio.sleep(10)
+            await m4.delete()
+        except RPCError as r:
+            logger.error(r)
+        return True
+    else:
+        return False
+
+
+async def check_speed_nodes(message, nodenum, args: tuple, speed_max_num=config.speednodes()):
+    """
+    检查获得的关键信息是否为空，以及节点数量是否大于一定数值
+    :param speed_max_num: 最大节点数量
+    :param message: 消息对象
+    :param nodenum: 节点数量
+    :param args: 若干信息
+    :return: bool
+    """
+    if not nodenum:
+        try:
+            m2 = await message.edit_text("❌发生错误，请检查订阅文件")
+            await asyncio.sleep(10)
+            await m2.delete()
+            return True
+        except RPCError as r:
+            logger.error(r)
+    for arg in args:
+        if arg is None:
+            try:
+                m3 = await message.edit_text("❌发生错误，请检查订阅文件")
+                await asyncio.sleep(10)
+                await m3.delete()
+            except RPCError as r:
+                logger.error(r)
+            return True
+        else:
+            pass
+    print(speed_max_num)
+    if nodenum > speed_max_num:
+        logger.warning(f"❌节点数量超过了{speed_max_num}个的限制！已取消本次测试")
+        try:
+            m4 = await message.edit_text(f"❌节点数量超过了{speed_max_num}个的限制！已取消本次测试")
             await asyncio.sleep(10)
             await m4.delete()
         except RPCError as r:
