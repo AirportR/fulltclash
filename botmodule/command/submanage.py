@@ -110,21 +110,24 @@ async def sub(_, message):
                 await message.reply(str(item))
             else:
                 subinfo = config.get_sub()
-                item = []
-                for k in subinfo.keys():
-                    item.append(k)
-                h=1
-                i=0
-                sublen = len(item)
+                item = list(subinfo.keys())
+#                h=1
+#                i=0
+#                sublen = len(item)
                 allsub=[]
-                while h <= sublen:
-                    subname = item[i]
-                    i=i+1
-                    h=h+1
-                    subinfo = config.get_sub(subname)
+                for subname in item:
+                    subsubinfo = subinfo.get(subname, {})
                     subowner  = subinfo.get('owner', '')
                     if subowner and subowner == ID:
                         allsub.append(subname)
+#                while h <= sublen:
+#                    subname = item[i]
+#                    i=i+1
+#                    h=h+1
+#                    subinfo = config.get_sub(subname)
+#                    subowner  = subinfo.get('owner', '')
+#                    if subowner and subowner == ID:
+#                        allsub.append(subname)
                 if allsub:
                     await message.reply(str(allsub))
                 else:
