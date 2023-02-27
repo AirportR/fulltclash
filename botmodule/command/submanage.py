@@ -117,7 +117,7 @@ async def sub(_, message):
                 allsub=[]
                 for subname in item:
                     subsubinfo = subinfo.get(subname, {})
-                    subowner  = subinfo.get('owner', '')
+                    subowner  = subsubinfo.get('owner', '')
                     if subowner and subowner == ID:
                         allsub.append(subname)
 #                while h <= sublen:
