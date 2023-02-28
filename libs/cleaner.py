@@ -29,6 +29,8 @@ class IPCleaner:
             org = self.get('asn_organization')
         elif self.style == "ip-api.com":
             org = self.get('isp')
+        elif self.style == "ipleak.net":
+            org = self.get('isp_name')
         else:
             org = ""
         if org:
@@ -42,6 +44,8 @@ class IPCleaner:
             ip = self.get('query')
         elif self.style == "ip.sb":
             ip = self.get('ip')
+        elif self.style == "ipleak.net":
+            ip = self.get('query_text')
         else:
             pass
         if ip:
@@ -54,6 +58,8 @@ class IPCleaner:
         if self.style == "ip-api.com":
             region_code = self.get('countryCode')
         elif self.style == "ip.sb":
+            region_code = self.get('country_code')
+        elif self.style == "ipleak.net":
             region_code = self.get('country_code')
         else:
             pass
@@ -68,6 +74,8 @@ class IPCleaner:
             city = self.get('city')
         elif self.style == "ip.sb":
             city = self.get('city')
+        elif self.style == "ipleak.net":
+            city = self.get('city_name')
         else:
             pass
         if city:
@@ -86,6 +94,10 @@ class IPCleaner:
                 return '0'
         elif self.style == "ip.sb":
             asn = self.get('asn', '0')
+            asd = "AS" + repr(asn)
+            return asd
+        elif self.style == "ipleak.net":
+            asn = self.get('as_number', '0')
             return asn
         else:
             return ''
