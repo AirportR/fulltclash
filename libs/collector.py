@@ -71,7 +71,8 @@ class IPCollector:
             return "http://ip-api.com/json/"
         elif self.style == "ip.sb":
             return "https://api.ip.sb/geoip/"
-
+        elif self.style == "ipleak.net":
+            return "https://ipleak.net/json/"
     def create_tasks(self, session: aiohttp.ClientSession, hosts: list = None, proxy=None):
         """
         创建采集任务
