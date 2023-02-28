@@ -8,7 +8,7 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from libs.cleaner import addon, config
 from libs.export import __version__
 from botmodule.init_bot import latest_version_hash as v_hash
-from addons.unlockTest.primevideo import button as b15
+from addons.unlockTest.spotify import button as b15
 from addons.unlockTest.viu import button as b18
 from addons.unlockTest.ip_risk import button as b19
 from addons.unlockTest.steam import button as b20
@@ -53,7 +53,7 @@ sort_cache = {}
 
 def reload_button():
     global buttons
-    buttons = [b1, b2, b3, b25, b15, b18, b20, b21, b19]
+    buttons = [b1, b2, b3, b25, b18, b20, b15, b21, b19]
     buttons.extend(addon.init_button())
 
 
@@ -303,8 +303,8 @@ async def select_sort(app: Client, call: CallbackQuery):
             [b_okpage],
             [b1, b2, b3],
             # 第二行
-            [b20, b15, b18],
-            [b25, b21, b19],
+            [b20, b25, b18],
+            [b15, b21, b19],
             [b_all, blank_g, next_page_g],
             [yusanjia, b_alive],
             [b_cancel, b_reverse],

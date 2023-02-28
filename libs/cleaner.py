@@ -111,7 +111,7 @@ class AddonCleaner:
         经过去重并支持黑名单一并去除。最后返回一个新列表
         :return:
         """
-        base_item = ['Netflix', 'Youtube', 'Disney+', 'Primevideo', 'Viu', 'steam货币', 'OpenAI',
+        base_item = ['Netflix', 'Youtube', 'Disney+', 'OpenAI', 'Viu', 'steam货币', 'Spotify',
                      '维基百科', '落地IP风险']
         base_item = base_item + list(self._script.keys())
         new_item = sorted(set(base_item) - set(self.blacklist), key=base_item.index)
@@ -863,9 +863,9 @@ class ReCleaner:
                 elif i == "Netflix":
                     from addons.unlockTest import netflix
                     info['Netflix'] = netflix.get_netflix_info_new(self)
-                elif i == "Primevideo":
-                    from addons.unlockTest import primevideo
-                    info['Primevideo'] = primevideo.get_primevideo_info(self)
+                elif i == "Spotify":
+                    from addons.unlockTest import spotify
+                    info['Spotify'] = spotify.get_spotify_info(self)
                 elif i == "Viu":
                     from addons.unlockTest import viu
                     info['Viu'] = viu.get_viu_info(self)

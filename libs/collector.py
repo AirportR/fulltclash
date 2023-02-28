@@ -3,6 +3,7 @@ import json
 import time
 import aiohttp
 import async_timeout
+import websockets
 from urllib.parse import quote
 from aiohttp.client_exceptions import ClientConnectorError, ContentTypeError
 from loguru import logger
@@ -265,6 +266,83 @@ class SubCollector(BaseCollector):
             return False
 
 
+class Miaospeed:
+    SlaveRequestMatrixType = ['TEST_PING_RTT', 'SPEED_AVERAGE', 'UDP_TYPE', 'SPEED_PER_SECOND', 'SPEED_MAX',
+                              'GEOIP_INBOUND', 'GEOIP_OUTBOUND',
+                              'TEST_SCRIPT', 'TEST_PING_CONN', 'TEST_PING_RTT']
+    SlaveRequestMatrixEntry = [{'Type': "SPEED_AVERAGE",
+                                'Params': str({1})},
+                               {'Type': "SPEED_MAX",
+                                'Params': str({"Name": "test01", "Address": "127.0.0.1:1111", "Type": "Socks5"})},
+                               {'Type': "SPEED_PER_SECOND",
+                                'Params': str({"Name": "test01", "Address": "127.0.0.1:1111", "Type": "Socks5"})},
+                               {'Type': "UDP_TYPE",
+                                'Params': str({"Name": "test01", "Address": "127.0.0.1:1111", "Type": "Socks5"})},
+                               ]
+    SlaveRequestBasics = {'ID': '114514',
+                          'Slave': '114514miao',
+                          'SlaveName': 'miao1',
+                          'Invoker': 'FullTclash',
+                          'Version': '1.0'}
+    SlaveRequestOptions = {'Filter': '',
+                           'Matrices': SlaveRequestMatrixEntry}
+    SlaveRequestConfigs = {
+        'DownloadURL': 'https://dl.google.com/dl/android/studio/install/3.4.1.0/android-studio-ide-183.5522156-windows.exe',
+        'DownloadDuration': 10,
+        'DownloadThreading': 4,
+        'PingAverageOver': 3,
+        'PingAddress': 'http://www.gstatic.com/generate_204',
+        'TaskThreading': 4,
+        'TaskRetry': 2,
+        'DNSServers': ['119.29.29.29'],
+        'TaskTimeout': 5,
+        'Scripts': []}
+    VendorType = 'Clash'
+    token = ''
+    SlaveRequest = {'Basics': SlaveRequestBasics,
+                    'Options': SlaveRequestOptions,
+                    'Configs': SlaveRequestConfigs,
+                    'Vendor': VendorType,
+                    'RandomSequence': 'str1',
+                    'Challenge': token}
+
+    def __init__(self, proxyconfig: list, host: str = '127.0.0.1', port: int = 1112, ):
+        """
+        初始化miaospeed
+        :param proxyconfig: 订阅配置的路径
+        """
+        self.host = host
+        self.port = port
+        self.nodes = proxyconfig
+        self.slaveRequestNode = [{'Name': 'test01', 'Payload': str(i)} for i in self.nodes]
+        self.SlaveRequest['Nodes'] = self.slaveRequestNode
+
+    async def start(self):
+        start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
+        info = []
+        from async_timeout import timeout
+        from loguru import logger
+        try:
+            async with timeout(len(self.nodes) * 10 + 1):
+                async with websockets.connect(f'ws://{self.host}:{self.port}') as websocket:
+                    payload = json.dumps(self.SlaveRequest)
+                    await websocket.send(payload)
+                    num = 0
+                    while True:
+                        response_str = await websocket.recv()
+                        num += 1
+                        logger.info(f"已接收第{num}次结果")
+                        res1 = json.loads(response_str)
+                        info.append(res1)
+        except asyncio.TimeoutError:
+            logger.info("本次测试已完成")
+        except KeyboardInterrupt:
+            pass
+        finally:
+            resdata = {start_time: info}
+            return resdata, start_time
+
+
 class Collector:
     def __init__(self):
         self.session = None
@@ -320,15 +398,12 @@ class Collector:
                     elif i == "Disney" or i == "Disney+":
                         task5 = asyncio.create_task(self.fetch_dis(session, proxy=proxy))
                         self.tasks.append(task5)
-                    elif i == "Dazn":
-                        task7 = asyncio.create_task(self.fetch_dazn(session, proxy=proxy))
-                        self.tasks.append(task7)
                     elif i == "Netflix":
                         from addons.unlockTest import netflix
                         self.tasks.append(netflix.task(self, session, proxy=proxy))
-                    elif i == "Primevideo":
-                        from addons.unlockTest import primevideo
-                        self.tasks.append(primevideo.task(self, session, proxy=proxy))
+                    elif i == "Spotify":
+                        from addons.unlockTest import spotify
+                        self.tasks.append(spotify.task(self, session, proxy=proxy))
                     elif i == "Viu":
                         from addons.unlockTest import viu
                         self.tasks.append(viu.task(self, session, proxy=proxy))
@@ -626,7 +701,13 @@ if __name__ == "__main__":
     import sys
     import os
 
+    os.chdir(os.path.abspath(os.path.join(os.getcwd(), os.pardir)))
     sys.path.append(os.path.abspath(os.path.join(os.getcwd(), os.pardir)))
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    loop.run_until_complete(delay_https_task())
+    ccnr = cleaner.ClashCleaner(r"在这里填入你的订阅路径")
+    miaospeed = Miaospeed(ccnr.getProxies())
+    resd, _start_time = loop.run_until_complete(miaospeed.start())
+    cl1 = cleaner.ConfigManager(configpath=r"./results/miaospeed{}.yaml".format(_start_time.replace(':', '-')), data=resd)
+    cl1.save(r"./results/miaospeed{}.yaml".format(_start_time.replace(':', '-')))
+    print(resd)
