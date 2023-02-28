@@ -64,6 +64,7 @@ class IPCollector:
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
                           'Chrome/102.0.5005.63 Safari/537.36'}
         self.style = config.config.get('geoip-api', 'ip-api.com')  # api来源风格 这个值取二级域名
+        self.key = config.config.get('geoip-key', '')
         self.url = self.get_style_url()
 
     def get_style_url(self):
@@ -73,6 +74,8 @@ class IPCollector:
             return "https://api.ip.sb/geoip/"
         elif self.style == "ipleak.net":
             return "https://ipleak.net/json/"
+        elif self.style == "ipdata.co":
+            return f"https://api.ipdata.co/?api-key={self.key}"
     def create_tasks(self, session: aiohttp.ClientSession, hosts: list = None, proxy=None):
         """
         创建采集任务
