@@ -10,7 +10,7 @@ class IPCleaner:
     def __init__(self, data):
         self._data = data
         self.style = config.config.get('geoip-api', 'ip-api.com')
-        logger.debug(f"当前api: {self.style}")
+        # logger.debug(f"当前api: {self.style}")
 
     def get(self, key, _default=None):
         try:
