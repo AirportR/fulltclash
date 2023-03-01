@@ -66,8 +66,8 @@ class IPCollector:
                           'Chrome/102.0.5005.63 Safari/537.36'}
         self.style = config.config.get('geoip-api', 'ip-api.com')  # api来源风格 这个值取二级域名
         self.key = config.config.get('geoip-key', '')
-        self.url = self.get_style_url()
         self.get_payload = ""
+        self.url = self.get_style_url()
 
     def get_style_url(self):
         if self.style == "ip-api.com":
@@ -79,6 +79,7 @@ class IPCollector:
         elif self.style == "ipdata.co":
             self.get_payload = f"?api-key={self.key}"
             return "https://api.ipdata.co/"
+
     def create_tasks(self, session: aiohttp.ClientSession, hosts: list = None, proxy=None):
         """
         创建采集任务
@@ -108,6 +109,9 @@ class IPCollector:
             resdata = await self.start()
             if resdata is None:
                 resdata = []
+            for r in range(len(resdata)):
+                if resdata[r] is None:
+                    resdata[r] = {}
             await session.close()
             return resdata
         except Exception as e:
@@ -139,14 +143,16 @@ class IPCollector:
         :return: json数据
         """
         if host == "N/A":
-            return None
+            return {}
         try:
             if host:
                 resp = await session.get(self.url + host + self.get_payload, proxy=proxy, timeout=12)
-                return await resp.json()
+                ipdata = await resp.json()
+                return ipdata if ipdata else None
             else:
                 resp = await session.get(self.url + self.get_payload, proxy=proxy, timeout=12)
-                return await resp.json()
+                ipdata = await resp.json()
+                return ipdata if ipdata else None
         except ClientConnectorError as c:
             logger.warning("ip查询请求发生错误:" + str(c))
             if reconnection != 0:
@@ -714,6 +720,7 @@ if __name__ == "__main__":
     ccnr = cleaner.ClashCleaner(r"在这里填入你的订阅路径")
     miaospeed = Miaospeed(ccnr.getProxies())
     resd, _start_time = loop.run_until_complete(miaospeed.start())
-    cl1 = cleaner.ConfigManager(configpath=r"./results/miaospeed{}.yaml".format(_start_time.replace(':', '-')), data=resd)
+    cl1 = cleaner.ConfigManager(configpath=r"./results/miaospeed{}.yaml".format(_start_time.replace(':', '-')),
+                                data=resd)
     cl1.save(r"./results/miaospeed{}.yaml".format(_start_time.replace(':', '-')))
     print(resd)

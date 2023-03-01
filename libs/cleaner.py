@@ -10,9 +10,12 @@ class IPCleaner:
     def __init__(self, data):
         self._data = data
         self.style = config.config.get('geoip-api', 'ip-api.com')
+        logger.debug(f"当前api: {self.style}")
 
     def get(self, key, _default=None):
         try:
+            if self._data is None:
+                return {}
             return self._data[key]
         except KeyError:
             return _default
@@ -32,7 +35,7 @@ class IPCleaner:
         elif self.style == "ipleak.net":
             org = self.get('isp_name')
         elif self.style == "ipdata.co":
-            org = self.get('asn',{}).get('name')
+            org = self.get('asn', {}).get('name')
         else:
             org = ""
         if org:
@@ -109,7 +112,7 @@ class IPCleaner:
             asd = "AS" + repr(asn)
             return asd
         elif self.style == "ipdata.co":
-            asn = self.get('asn',{}).get('asn','0')
+            asn = self.get('asn', {}).get('asn', '0')
             return asn
         else:
             return ''
