@@ -181,8 +181,8 @@ if __name__ == "__main__":
     res1 = asyncio.run(check_port(1122, 1123))
     res2 = asyncio.run(check_port(start_port, start_port+1 + corenum * 2))
     if res1 or res2:
-        print("端口检查未通过，即将退出...")
-        sleep(10)
+        print("端口检查中发现已有其他进程占用了端口，如果您已单独运行clash启动器，请忽略这条提示")
+        sleep(5)
         exit(1)
     command = fr"{clash_path} -f {'./clash/proxy.yaml'} -d {clash_work_path}"
     subp = subprocess.Popen(command.split(), encoding="utf-8")

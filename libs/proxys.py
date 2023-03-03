@@ -85,6 +85,25 @@ async def reloadConfig(filePath: str, clashHost: str = "127.0.0.1", clashPort: i
             return False
 
 
+async def reloadConfig_batch(nodenum: int, pool: dict):
+    if not await reloadConfig(filePath='./clash/proxy.yaml', clashPort=1123):
+        return False
+    try:
+        if nodenum < len(pool.get('port', [])):
+            for i in pool.get('port', [])[:nodenum]:
+                if not await reloadConfig(filePath='./clash/proxy.yaml', clashPort=i + 1):
+                    return False
+            return True
+        else:
+            for i in pool.get('port', []):
+                if not await reloadConfig(filePath='./clash/proxy.yaml', clashPort=i + 1):
+                    return False
+            return True
+    except Exception as e:
+        logger.error(str(e))
+        return False
+
+
 def start_client(path: str, workpath: str = "./clash", _config: str = './clash/proxy.yaml', ):
     # 启动了一个clash常驻进程
     command = fr"{path} -f {_config} -d {workpath}"

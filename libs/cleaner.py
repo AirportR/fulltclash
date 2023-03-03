@@ -261,6 +261,13 @@ class ClashCleaner:
         else:
             self.yaml = yaml.load(_config, Loader=yaml.FullLoader)
 
+    def setProxies(self, proxyinfo: list):
+        """
+        覆写里面的proxies键
+        :return:
+        """
+        self.yaml['proxies'] = proxyinfo
+
     def getProxies(self):
         """
         获取整个代理信息
@@ -411,9 +418,10 @@ class ClashCleaner:
         self.yaml['mode'] = mode
         logger.info("Clash 模式已被修改为:" + self.yaml['mode'])
 
-    def node_filter(self, include: str = '', exclude: str = ''):
+    def node_filter(self, include: str = '', exclude: str = '', issave=True):
         """
         节点过滤
+        :param issave: 是否保存过滤结果到文件
         :param include: 包含
         :param exclude: 排除
         :return:
@@ -467,7 +475,8 @@ class ClashCleaner:
                     logger.error(str(e))
         logger.info(f"Included {jishu1} node(s)  Excluded {jishu2} node(s)  Exported {jishu1 - jishu2} node(s)")
         self.yaml['proxies'] = result2
-        self.save(savePath=self.path)
+        if issave:
+            self.save(savePath=self.path)
 
     @logger.catch
     def save(self, savePath: str = "./sub.yaml"):

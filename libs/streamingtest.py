@@ -169,7 +169,6 @@ async def batch_test_pro(message, nodename: list, delays: list, test_items: list
 @logger.catch()
 async def core(message, back_message, start_time, suburl: str = None, media_items: list = None, thread: int = 1, **kwargs):
     """
-
     :param thread: 测试线程
     :param message: 发起测试任务的对象
     :param back_message: 回复的消息对象
@@ -286,8 +285,6 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
     except RPCError as r:
         logger.error(r)
         await back_message.edit_text("出错啦")
-    except KeyboardInterrupt:
-        await message.reply("程序已被强行中止")
     except FloodWait as e:
         logger.error(str(e))
         await asyncio.sleep(e.value)
