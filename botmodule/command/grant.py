@@ -21,7 +21,7 @@ async def grant(client, message):
     try:
         grant_text = "该成员已被加入到授权目标"
 
-        if message.reply_to_message is None:
+        if not message.reply_to_message:
             await message.reply("请先用该指令回复一个目标")
         else:
             await client.send_message(chat_id=message.chat.id,

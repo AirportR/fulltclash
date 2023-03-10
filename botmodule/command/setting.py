@@ -31,9 +31,7 @@ b_origin = InlineKeyboardButton("♾️订阅原序", callback_data="sort:订阅
 b_rhttp = InlineKeyboardButton("⬇️HTTP倒序", callback_data="sort:HTTP倒序")
 b_http = InlineKeyboardButton("⬆️HTTP升序", callback_data="sort:HTTP升序")
 buttons = [b1, b2, b3, b25, b15, b18, b20, b21, b19]  # , b14, b5, b16, b17, b9, b13, b10, b12, b22, b23,
-# b24, b4]  # 全部测试项按钮
-# buttons = []
-buttons.extend(addon.init_button())
+buttons.extend(addon.init_button(isreload=True))
 max_page_g = int(len(buttons) / 9) + 1
 blank_g = InlineKeyboardButton(f"{1}/{max_page_g}", callback_data="blank")
 next_page_g = InlineKeyboardButton("➡️下一页", callback_data=f"page{2}")

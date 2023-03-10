@@ -127,7 +127,7 @@ async def is_port_in_use(host='127.0.0.1', port=80):
         reader, writer = await asyncio.open_connection(host, port)
         writer.close()
         await writer.wait_closed()
-        print(fr"{port} 端口已被占用，请更换。")
+        # print(fr"{port} 端口已被占用，请更换。")
         return True
     except ConnectionRefusedError:
         return False

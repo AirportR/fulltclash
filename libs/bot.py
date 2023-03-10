@@ -3,14 +3,16 @@ from pyrogram import Client, filters
 from loguru import logger
 import botmodule
 from botmodule import init_bot
-from botmodule.cfilter import dynamic_data_filter
+from botmodule.cfilter import dynamic_data_filter, user_filter
 from botmodule.command.authority import get_url_from_invite
+from botmodule.utils import message_delete_queue
 from libs.myqueue import q, bot_task_queue
 from libs.check import check_user as isuser
 from libs.check import check_callback_master
 from libs.collector import reload_config as r1
 from libs.cleaner import reload_config as r2
 from libs.speedtest import break_speed
+
 
 admin = init_bot.admin  # 管理员
 task_num = 0  # 任务数
@@ -21,16 +23,32 @@ def loader(app: Client):
     callback_loader(app)
 
 
-def command_loader(app: Client):
-    @app.on_message(filters.command(["testurl"]), group=1)
-    async def testurl(_, message):
-        if await isuser(message, botmodule.init_bot.reloadUser()):
-            await message.reply("请选择排序方式:", reply_markup=botmodule.IKM2, quote=True)
+config = init_bot.config
 
-    @app.on_message(filters.command(["test"]), group=1)
+
+def command_loader(app: Client):
+    @app.on_message(filters.command(["testurl"]) & user_filter(botmodule.init_bot.reloadUser()), group=1)
+    async def testurl(_, message):
+        if len(message.command) < 2:
+            back_message = await message.reply_text('❌ 格式错误哦 QAQ，正确的食用方式为： test <任务名称>')
+            message_delete_queue.put_nowait([message.chat.id, message.id, 10])
+            message_delete_queue.put_nowait([back_message.chat.id, back_message.id, 10])
+            return
+        await message.reply("请选择排序方式:", reply_markup=botmodule.IKM2, quote=True)
+
+    @app.on_message(filters.command(["test"]) & user_filter(botmodule.init_bot.reloadUser()), group=1)
     async def test(_, message):
-        if await isuser(message, botmodule.init_bot.reloadUser()):
-            await message.reply("请选择排序方式:", reply_markup=botmodule.IKM2, quote=True)
+        if len(message.command) < 2:
+            back_message = await message.reply_text('❌ 格式错误哦 QAQ，正确的食用方式为： test <任务名称>')
+            message_delete_queue.put_nowait([message.chat.id, message.id, 10])
+            message_delete_queue.put_nowait([back_message.chat.id, back_message.id, 10])
+            return
+        if not config.get_sub(subname=message.command[1]):
+            back_message = await message.reply("❌找不到该任务名称，请检查参数是否正确 (TEST DELETE MESSAGE)")
+            message_delete_queue.put_nowait([message.chat.id, message.id, 10])
+            message_delete_queue.put_nowait([back_message.chat.id, back_message.id, 10])
+            return
+        await message.reply("请选择排序方式:", reply_markup=botmodule.IKM2, quote=True)
 
     @app.on_message(filters.command(["invite"]), group=1)
     async def invite(client, message):
@@ -164,7 +182,7 @@ def command_loader(app: Client):
             await bot_put(client, message, "analyze")
             await bot_put(client, message, "speed")
 
-    @app.on_message(filters.command(['restart']), group=2)
+    @app.on_message(filters.command(['restart', 'reboot']) & filters.user(admin), group=2)
     async def restart(client, message):
         await botmodule.restart(client, message)
 

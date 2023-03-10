@@ -8,5 +8,3 @@ from botmodule.command.download import *
 from botmodule import register
 from botmodule import subinfo
 from botmodule import debug_interface as di
-
-

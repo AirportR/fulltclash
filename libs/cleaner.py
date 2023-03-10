@@ -130,7 +130,6 @@ class AddonCleaner:
         """
         self.path = path
         self._script = {}
-        self.init_addons(path)
         self.blacklist = []
 
     def global_test_item(self):
@@ -228,9 +227,10 @@ class AddonCleaner:
                 logger.warning("测试脚本导入格式错误")
         logger.info(f"外接测试脚本成功导入数量: {num}")
 
-    @staticmethod
-    def init_button():
+    def init_button(self, isreload=False):
         try:
+            if isreload:
+                self.init_addons(self.path)
             from pyrogram.types import InlineKeyboardButton
             script = addon.script
             button = []
@@ -542,11 +542,11 @@ class ConfigManager:
         if not botconfig:
             return botconfig
         if 'api_id' in botconfig:
-            logger.info(f"从配置中获取到了api_id: {botconfig['api_id']}")
+            logger.info(f"从配置中获取到了api_id")
         if 'api_hash' in botconfig:
-            logger.info(f"从配置中获取到了api_hash: {botconfig['api_hash']}")
+            logger.info(f"从配置中获取到了api_hash")
         if 'bot_token' in botconfig:
-            logger.info(f"从配置中获取到了bot_token: {botconfig['bot_token']}")
+            logger.info(f"从配置中获取到了bot_token")
         return botconfig
 
     def getFont(self):
