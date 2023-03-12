@@ -1,7 +1,7 @@
 import math
 import PIL
 from loguru import logger
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageEnhance
 from pilmoji import Pilmoji
 from pilmoji.source import Twemoji
 import time
@@ -21,14 +21,20 @@ __version__ = "3.5.2-dev"  # 版本号
 custom_source = TwitterPediaSource  # 自定义emoji风格 TwitterPediaSource
 
 
-def color_block(size: tuple, color_value):
+def color_block(size: tuple, color_value, contrast_factor=1.05, sharpness_factor=20):
     """
-    颜色块，颜色数值推荐用十六进制表示如: #ffffff 为白色
-    :param size: tuple: (length,width)
+    颜色块，颜色数值推荐使用十六进制表示如: #ffffff 为白色
+    :param size: tuple: (length, width)
     :param color_value: 颜色值
+    :param contrast_factor: 对比值增加原因子，更大增加的对比值越来越高
+    :param sharpness_factor: 锐化值增加原因子，更大增加的锐化值越来越高
     :return: Image
     """
     img_block = Image.new('RGB', size, color_value)
+    enhancer = ImageEnhance.Contrast(img_block)
+    img_block = enhancer.enhance(contrast_factor)
+    enhancer = ImageEnhance.Sharpness(img_block)
+    img_block = enhancer.enhance(sharpness_factor)
     return img_block
 
 
@@ -50,7 +56,7 @@ class ExportResult:
             self.nodenum = len(self.basedata)
         else:
             self.nodenum = 0
-        self.front_size = 30
+        self.front_size = 38
         self.config = ConfigManager()
         self.emoji = self.config.config.get('emoji', True)  # 是否启用emoji，若否，则在输出图片时emoji将无法正常显示
         self.color = self.config.getColor()
@@ -104,7 +110,7 @@ class ExportResult:
         获取图片高度
         :return: int
         """
-        return (self.nodenum + 4) * 40
+        return (self.nodenum + 4) * 60
 
     def get_key_list(self):
         """
@@ -153,7 +159,7 @@ class ExportResult:
             key_width = self.text_width(i)  # 键的长度
             value_width = self.text_maxwidth(self.info[i])  # 键所对应值的长度
             max_width = max(key_width, value_width)
-            max_width = max_width + 40
+            max_width = max_width + 60
             width_list.append(max_width)
         return width_list  # 测试项列的大小
 
@@ -233,9 +239,9 @@ class ExportResult:
         img = Image.new("RGB", (image_width, image_height), (255, 255, 255))
         pilmoji = Pilmoji(img, source=custom_source)  # emoji表情修复
         # 绘制色块
-        bkg = Image.new('RGB', (image_width, 80), (234, 234, 234))  # 首尾部填充
+        bkg = Image.new('RGB', (image_width, 120), (234, 234, 234))  # 首尾部填充
         img.paste(bkg, (0, 0))
-        img.paste(bkg, (0, image_height - 80))
+        img.paste(bkg, (0, image_height - 120))
         idraw = ImageDraw.Draw(img)
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
@@ -247,21 +253,21 @@ class ExportResult:
         title = list1[0]
         idraw.text((self.get_mid(0, image_width, title), 3), title, font=fnt, fill=(0, 0, 0))  # 标题
         if self.emoji:
-            pilmoji.text((10, image_height - 80), text=list1[1], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 3))
+            pilmoji.text((10, image_height - 112), text=list1[1], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 3))
         else:
-            idraw.text((10, image_height - 80), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
-        idraw.text((10, image_height - 35), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
+            idraw.text((10, image_height - 112), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
+        idraw.text((10, image_height - 45), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
         '''
         :绘制标签
         '''
-        idraw.text((20, 40), '序号', font=fnt, fill=(0, 0, 0))  # 序号
-        idraw.text((self.get_mid(100, nodename_width + 100, '节点名称'), 40), '节点名称', font=fnt, fill=(0, 0, 0))  # 节点名称
+        idraw.text((20, 65), '序号', font=fnt, fill=(0, 0, 0))  # 序号
+        idraw.text((self.get_mid(100, nodename_width + 100, '节点名称'), 65), '节点名称', font=fnt, fill=(0, 0, 0))  # 节点名称
         start_x = 100 + nodename_width
         m = 0  # 记录测试项数目
         for i in info_list_length:
             x = start_x
             end = start_x + i
-            idraw.text((self.get_mid(x, end, key_list[m]), 40), key_list[m], font=fnt, fill=(0, 0, 0))
+            idraw.text((self.get_mid(x, end, key_list[m]), 65), key_list[m], font=fnt, fill=(0, 0, 0))
             start_x = end
             m = m + 1
         '''
@@ -275,32 +281,35 @@ class ExportResult:
             colorvalue = ["#f5f3f2", "#beb1aa", "#f6bec8", "#dc6b82", "#c35c5d", "#8ba3c7", "#c8161d", '#8d8b8e']
             interval = [0, 100, 200, 300, 500, 1000, 2000, 99999]
         # 填充颜色块
-        c_block = {'成功': self.color.get('yes', '#bee47e'),
-                   '失败': self.color.get('no', '#ee6b73'),
+        c_block = {'成功': self.color.get('yes', '#BEE587'),
+                   '失败': self.color.get('no', '#ef6b73'),
                    'N/A': self.color.get('na', '#8d8b8e'),
                    '待解锁': self.color.get('wait', '#dcc7e1'),
                    'low': self.color.get('iprisk', {}).get('low', '#ffffff'),
                    'medium': self.color.get('iprisk', {}).get('medium', '#ffffff'),
                    'high': self.color.get('iprisk', {}).get('high', '#ffffff'),
                    'veryhigh': self.color.get('iprisk', {}).get('veryhigh', '#ffffff'),
-                   '警告': self.color.get('warn', '#fcc43c')
+                   '警告': self.color.get('warn', '#fcc43c'),
+                   '未知': self.color.get('weizhi', '#5ccfe6'),
+                   '自制': self.color.get('zhizhi', '#ffffff'),
+                   '海外': self.color.get('haiwai', '#FFE66B'),
                    }
         for t in range(self.nodenum):
             # 序号
-            idraw.text((self.get_mid(0, 100, str(t + 1)), 40 * (t + 2)), text=str(t + 1), font=fnt, fill=(0, 0, 0))
+            idraw.text((self.get_mid(0, 100, str(t + 1)), 60 * (t + 2) + 6), text=str(t + 1), font=fnt, fill=(0, 0, 0))
             # 节点名称
             if self.emoji:
                 try:
                     # 自定义emoji源可能出错，所以捕捉了异常
-                    pilmoji.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
+                    pilmoji.text((110, 60 * (t + 2) + 5), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
                                  emoji_position_offset=(0, 6))
                 except PIL.UnidentifiedImageError:
                     logger.warning("无效符号:" + self.basedata[t])
                     pilmoji2 = Pilmoji(img, source=Twemoji)
-                    pilmoji2.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
+                    pilmoji2.text((110, 60 * (t + 2) + 5), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
                                   emoji_position_offset=(0, 6))
             else:
-                idraw.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0))
+                idraw.text((110, 60 * (t + 2) + 5), text=self.basedata[t], font=fnt, fill=(0, 0, 0))
 
             width = 100 + nodename_width
             i = 0
@@ -308,56 +317,71 @@ class ExportResult:
                 if "延迟RTT" == t1 or "HTTP延迟" == t1:
                     rtt = float(self.info[t1][t][:-2])
                     if interval[0] < rtt < interval[1]:
-                        block = color_block((info_list_length[i], 40), color_value=colorvalue[0])
-                        img.paste(block, (width, 40 * (t + 2)))
+                        block = color_block((info_list_length[i], 60), color_value=colorvalue[0])
+                        img.paste(block, (width, 60 * (t + 2)))
                     elif interval[1] <= rtt < interval[2]:
-                        block = color_block((info_list_length[i], 40), color_value=colorvalue[1])
-                        img.paste(block, (width, 40 * (t + 2)))
+                        block = color_block((info_list_length[i], 60), color_value=colorvalue[1])
+                        img.paste(block, (width, 60 * (t + 2)))
                     elif interval[2] <= rtt < interval[3]:
-                        block = color_block((info_list_length[i], 40), color_value=colorvalue[2])
-                        img.paste(block, (width, 40 * (t + 2)))
+                        block = color_block((info_list_length[i], 60), color_value=colorvalue[2])
+                        img.paste(block, (width, 60 * (t + 2)))
                     elif interval[3] <= rtt < interval[4]:
-                        block = color_block((info_list_length[i], 40), color_value=colorvalue[3])
-                        img.paste(block, (width, 40 * (t + 2)))
+                        block = color_block((info_list_length[i], 60), color_value=colorvalue[3])
+                        img.paste(block, (width, 60 * (t + 2)))
                     elif interval[4] <= rtt < interval[5]:
-                        block = color_block((info_list_length[i], 40), color_value=colorvalue[4])
-                        img.paste(block, (width, 40 * (t + 2)))
+                        block = color_block((info_list_length[i], 60), color_value=colorvalue[4])
+                        img.paste(block, (width, 60 * (t + 2)))
                     elif interval[5] <= rtt < interval[6]:
-                        block = color_block((info_list_length[i], 40), color_value=colorvalue[5])
-                        img.paste(block, (width, 40 * (t + 2)))
+                        block = color_block((info_list_length[i], 60), color_value=colorvalue[5])
+                        img.paste(block, (width, 60 * (t + 2)))
                     elif interval[6] <= rtt:
-                        block = color_block((info_list_length[i], 40), color_value=colorvalue[6])
-                        img.paste(block, (width, 40 * (t + 2)))
+                        block = color_block((info_list_length[i], 60), color_value=colorvalue[6])
+                        img.paste(block, (width, 60 * (t + 2)))
                     elif rtt == 0:
-                        block = color_block((info_list_length[i], 40), color_value=colorvalue[7])
-                        img.paste(block, (width, 40 * (t + 2)))
+                        block = color_block((info_list_length[i], 60), color_value=colorvalue[7])
+                        img.paste(block, (width, 60 * (t + 2)))
+                elif '海外' in self.info[t1][t]:
+                    block = color_block((info_list_length[i], 60), color_value=c_block['海外'])
+                    img.paste(block, (width, 60 * (t + 2)))
+                elif '国创' in self.info[t1][t]:
+                    block = color_block((info_list_length[i], 60), color_value=c_block['海外'])
+                    img.paste(block, (width, 60 * (t + 2)))
                 elif ('解锁' in self.info[t1][t] or '允许' in self.info[t1][t]) and '待' not in self.info[t1][t]:
-                    block = color_block((info_list_length[i], 40), color_value=c_block['成功'])
-                    img.paste(block, (width, 40 * (t + 2)))
+                    block = color_block((info_list_length[i], 60), color_value=c_block['成功'])
+                    img.paste(block, (width, 60 * (t + 2)))
                 elif '失败' in self.info[t1][t] or '禁止' in self.info[t1][t]:
-                    block = color_block((info_list_length[i], 40), color_value=c_block['失败'])
-                    img.paste(block, (width, 40 * (t + 2)))
+                    block = color_block((info_list_length[i], 60), color_value=c_block['失败'])
+                    img.paste(block, (width, 60 * (t + 2)))
                 elif '待解' in self.info[t1][t]:
-                    block = color_block((info_list_length[i], 40), color_value=c_block['待解锁'])
-                    img.paste(block, (width, 40 * (t + 2)))
+                    block = color_block((info_list_length[i], 60), color_value=c_block['待解锁'])
+                    img.paste(block, (width, 60 * (t + 2)))
                 elif 'N/A' in self.info[t1][t]:
-                    block = color_block((info_list_length[i], 40), color_value=c_block['N/A'])
-                    img.paste(block, (width, 40 * (t + 2)))
+                    block = color_block((info_list_length[i], 60), color_value=c_block['N/A'])
+                    img.paste(block, (width, 60 * (t + 2)))
                 elif 'Low' in self.info[t1][t]:
-                    block = color_block((info_list_length[i], 40), color_value=c_block['low'])
-                    img.paste(block, (width, 40 * (t + 2)))
+                    block = color_block((info_list_length[i], 60), color_value=c_block['low'])
+                    img.paste(block, (width, 60 * (t + 2)))
                 elif 'Medium' in self.info[t1][t]:
-                    block = color_block((info_list_length[i], 40), color_value=c_block['medium'])
-                    img.paste(block, (width, 40 * (t + 2)))
+                    block = color_block((info_list_length[i], 60), color_value=c_block['medium'])
+                    img.paste(block, (width, 60 * (t + 2)))
                 elif 'High' in self.info[t1][t] and 'Very' not in self.info[t1][t]:
-                    block = color_block((info_list_length[i], 40), color_value=c_block['high'])
-                    img.paste(block, (width, 40 * (t + 2)))
+                    block = color_block((info_list_length[i], 60), color_value=c_block['high'])
+                    img.paste(block, (width, 60 * (t + 2)))
                 elif 'Very' in self.info[t1][t]:
-                    block = color_block((info_list_length[i], 40), color_value=c_block['veryhigh'])
-                    img.paste(block, (width, 40 * (t + 2)))
+                    block = color_block((info_list_length[i], 60), color_value=c_block['veryhigh'])
+                    img.paste(block, (width, 60 * (t + 2)))
                 elif '超时' in self.info[t1][t] or '连接错误' in self.info[t1][t]:
-                    block = color_block((info_list_length[i], 40), color_value=c_block['警告'])
-                    img.paste(block, (width, 40 * (t + 2)))
+                    block = color_block((info_list_length[i], 60), color_value=c_block['警告'])
+                    img.paste(block, (width, 60 * (t + 2)))
+                elif '未知' in self.info[t1][t]:
+                    block = color_block((info_list_length[i], 60), color_value=c_block['未知'])
+                    img.paste(block, (width, 60 * (t + 2)))
+                elif '自制' in self.info[t1][t]:
+                    block = color_block((info_list_length[i], 60), color_value=c_block['自制'])
+                    img.paste(block, (width, 60 * (t + 2)))
+                elif '货币' in self.info[t1][t]:
+                    block = color_block((info_list_length[i], 60), color_value=c_block['成功'])
+                    img.paste(block, (width, 60 * (t + 2)))
                 else:
                     pass
                 width += info_list_length[i]
@@ -365,7 +389,7 @@ class ExportResult:
             width = 100 + nodename_width
             i = 0
             for t2 in key_list:
-                idraw.text((self.get_mid(width, width + info_list_length[i], self.info[t2][t]), (t + 2) * 40),
+                idraw.text((self.get_mid(width, width + info_list_length[i], self.info[t2][t]), (t + 2) * 60 + 5),
                            self.info[t2][t],
                            font=fnt, fill=(0, 0, 0))
                 width += info_list_length[i]
@@ -375,14 +399,14 @@ class ExportResult:
         '''
         # 绘制横线
         for t in range(self.nodenum + 3):
-            idraw.line([(0, 40 * (t + 1)), (image_width, 40 * (t + 1))], fill="#e1e1e1", width=2)
+            idraw.line([(0, 60 * (t + 1)), (image_width, 60 * (t + 1))], fill="#e1e1e1", width=2)
         # 绘制竖线
-        idraw.line([(100, 40), (100, 80)], fill="#e1e1e1", width=2)
+        idraw.line([(100, 60), (100, 120)], fill="#EAEAEA", width=2)
         start_x = 100 + nodename_width
         for i in info_list_length:
             x = start_x
             end = start_x + i
-            idraw.line([(x, 40), (x, image_height - 80)], fill="#e1e1e1", width=2)
+            idraw.line([(x, 60), (x, image_height - 120)], fill="#EAEAEA", width=2)
             start_x = end
         print(export_time)
         if self.watermark['enable']:
@@ -731,7 +755,7 @@ class ExportSpeed(ExportResult):
             self.nodenum = len(self.basedata)
         else:
             self.nodenum = 0
-        self.front_size = 30
+        self.front_size = 38
         self.config = ConfigManager()
         self.__font = ImageFont.truetype(self.config.getFont(), self.front_size)
         self.speedblock_width = 20
@@ -808,9 +832,9 @@ class ExportSpeed(ExportResult):
         img = Image.new("RGB", (image_width, image_height), (255, 255, 255))
         pilmoji = Pilmoji(img, source=custom_source)  # emoji表情修复
         # 绘制色块
-        bkg = Image.new('RGB', (image_width, 80), (234, 234, 234))  # 首尾部填充
+        bkg = Image.new('RGB', (image_width, 120), (234, 234, 234))  # 首尾部填充
         img.paste(bkg, (0, 0))
-        img.paste(bkg, (0, image_height - 80))
+        img.paste(bkg, (0, image_height - 120))
         idraw = ImageDraw.Draw(img)
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
@@ -822,20 +846,20 @@ class ExportSpeed(ExportResult):
         title = list1[0]
         idraw.text((self.get_mid(0, image_width, title), 5), title, font=fnt, fill=(0, 0, 0))  # 标题
         if self.emoji:
-            pilmoji.text((10, image_height - 75), text=list1[1], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 3))
+            pilmoji.text((10, image_height - 112), text=list1[1], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 3))
         else:
-            idraw.text((10, image_height - 75), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
-        idraw.text((10, image_height - 35), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
+            idraw.text((10, image_height - 112), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
+        idraw.text((10, image_height - 45), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
 
         # 绘制标签
-        idraw.text((20, 40), '序号', font=fnt, fill=(0, 0, 0))  # 序号
-        idraw.text((self.get_mid(100, nodename_width + 100, '节点名称'), 40), '节点名称', font=fnt, fill=(0, 0, 0))  # 节点名称
+        idraw.text((20, 65), '序号', font=fnt, fill=(0, 0, 0))  # 序号
+        idraw.text((self.get_mid(100, nodename_width + 100, '节点名称'), 65), '节点名称', font=fnt, fill=(0, 0, 0))  # 节点名称
         start_x = 100 + nodename_width
         m = 0  # 记录测试项数目
         for i in info_list_length:
             x = start_x
             end = start_x + i
-            idraw.text((self.get_mid(x, end, key_list[m]), 40), key_list[m], font=fnt, fill=(0, 0, 0))
+            idraw.text((self.get_mid(x, end, key_list[m]), 65), key_list[m], font=fnt, fill=(0, 0, 0))
             start_x = end
             m = m + 1
         '''
@@ -850,17 +874,17 @@ class ExportSpeed(ExportResult):
             interval = [0, 1, 5, 10, 20, 60, 100]
         for t in range(self.nodenum):
             # 序号
-            idraw.text((self.get_mid(0, 100, str(t + 1)), 40 * (t + 2)), text=str(t + 1), font=fnt, fill=(0, 0, 0))
+            idraw.text((self.get_mid(0, 100, str(t + 1)), 60 * (t + 2) + 6), text=str(t + 1), font=fnt, fill=(0, 0, 0))
             # 节点名称
             if self.emoji:
                 try:
                     # 自定义emoji源可能出错，所以捕捉了异常
-                    pilmoji.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
+                    pilmoji.text((110, 60 * (t + 2) + 5), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
                                  emoji_position_offset=(0, 6))
                 except PIL.UnidentifiedImageError:
                     logger.warning("无效符号:" + self.basedata[t])
                     pilmoji2 = Pilmoji(img, source=Twemoji)
-                    pilmoji2.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
+                    pilmoji2.text((110, 60 * (t + 2) + 5), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
                                   emoji_position_offset=(0, 6))
             else:
                 idraw.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0))
@@ -873,7 +897,7 @@ class ExportSpeed(ExportResult):
 
             width = 100 + nodename_width + 2
             i = 0
-            speedblock_height = 40
+            speedblock_height = 60
             # 填充颜色块
             for t1 in key_list:
                 if t1 == "平均速度" or t1 == "最大速度":
@@ -902,7 +926,7 @@ class ExportSpeed(ExportResult):
             i = 0
             for t2 in key_list:
                 if type(self.info[t2][t]) == str:
-                    idraw.text((self.get_mid(width, width + info_list_length[i], self.info[t2][t]), (t + 2) * 40),
+                    idraw.text((self.get_mid(width, width + info_list_length[i], self.info[t2][t]), (t + 2) * 60 + 5),
                                self.info[t2][t],
                                font=fnt, fill=(0, 0, 0))
                 width += info_list_length[i]
@@ -913,14 +937,14 @@ class ExportSpeed(ExportResult):
         '''
         # 绘制横线
         for t in range(self.nodenum + 3):
-            idraw.line([(0, 40 * (t + 1)), (image_width, 40 * (t + 1))], fill="#e1e1e1", width=1)
+            idraw.line([(0, 60 * (t + 1)), (image_width, 60 * (t + 1))], fill="#e1e1e1", width=1)
         # 绘制竖线
-        idraw.line([(100, 40), (100, 80)], fill="#e1e1e1", width=2)
+        idraw.line([(100, 60), (100, 120)], fill="#EAEAEA", width=2)
         start_x = 100 + nodename_width
         for i in info_list_length:
             x = start_x
             end = start_x + i
-            idraw.line([(x, 40), (x, image_height - 80)], fill="#e1e1e1", width=2)
+            idraw.line([(x, 60), (x, image_height - 120)], fill="#EAEAEA", width=2)
             start_x = end
         print(export_time)
         if self.watermark['enable']:
