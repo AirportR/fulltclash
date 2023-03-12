@@ -887,7 +887,7 @@ class ExportSpeed(ExportResult):
                     pilmoji2.text((110, 60 * (t + 2) + 5), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
                                   emoji_position_offset=(0, 6))
             else:
-                idraw.text((110, 40 * (t + 2)), text=self.basedata[t], font=fnt, fill=(0, 0, 0))
+                idraw.text((110, 60 * (t + 2) + 5), text=self.basedata[t], font=fnt, fill=(0, 0, 0))
 
             def get_color(speedvalue, default_color='#C0C0C0'):
                 for i in reversed(range(len(colorvalue))):
