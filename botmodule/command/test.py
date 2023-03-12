@@ -19,6 +19,36 @@ def reloadUser():
     return USER_TARGET
 
 
+def select_core(message: Message, put_type):
+    pass
+
+
+@logger.catch()
+async def process(_, message: Message, **kwargs):
+    back_message = await message.reply("任务接收成功，测试进行中...")
+    start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
+    ma = cleaner.ConfigManager('./clash/proxy.yaml')
+    suburl = kwargs.get('url', None)
+    put_type = kwargs.get('put_type', None)
+    if put_type is None:
+        await message.reply('❌不支持的测试任务类型')
+        return
+    elif put_type == 'testurl':
+        pass
+    elif put_type == 'test':
+        pass
+    elif put_type == 'speedurl':
+        pass
+    elif put_type == 'speed':
+        pass
+    elif put_type == 'analyzeurl':
+        pass
+    elif put_type == 'analyze':
+        pass
+    elif put_type == 'udp':
+        pass
+
+
 @logger.catch()
 async def testurl(_, message: Message, **kwargs):
     """
@@ -225,14 +255,14 @@ async def analyze(_, message: Message, test_type="all"):
 @logger.catch()
 async def speedurl(_, message: Message, **kwargs):
     back_message = await message.reply("╰(*°▽°*)╯速度测试进行中...", quote=True)  # 发送提示
+    start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
+    ma = cleaner.ConfigManager('./clash/proxy.yaml')
+    suburl = kwargs.get('url', None)
     if config.nospeed:
         await back_message.edit_text("❌已禁止测速服务")
         await asyncio.sleep(10)
         await back_message.delete(revoke=False)
         return
-    start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
-    ma = cleaner.ConfigManager('./clash/proxy.yaml')
-    suburl = kwargs.get('url', None)
     try:
         info = await speedtest.core(message, back_message,
                                     start_time=start_time, suburl=suburl, **kwargs)
@@ -260,13 +290,13 @@ async def speedurl(_, message: Message, **kwargs):
 @logger.catch()
 async def speed(_, message: Message):
     back_message = await message.reply("╰(*°▽°*)╯速度测试进行中...", quote=True)  # 发送提示
+    arg = cleaner.ArgCleaner().getall(str(message.text))
+    del arg[0]
     if config.nospeed:
         await back_message.edit_text("❌已禁止测速服务")
         await asyncio.sleep(10)
         await back_message.delete(revoke=False)
         return
-    arg = cleaner.ArgCleaner().getall(str(message.text))
-    del arg[0]
     try:
         if len(arg):
             subinfo = config.get_sub(subname=arg[0])

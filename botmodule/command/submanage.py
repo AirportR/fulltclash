@@ -109,7 +109,29 @@ async def sub(_, message):
                     item.append(k)
                 await message.reply(str(item))
             else:
-                await message.reply("使用方法： /sub <订阅名称> <访问密码>")
+                subinfo = config.get_sub()
+                item = list(subinfo.keys())
+#                h=1
+#                i=0
+#                sublen = len(item)
+                allsub=[]
+                for subname in item:
+                    subsubinfo = subinfo.get(subname, {})
+                    subowner  = subsubinfo.get('owner', '')
+                    if subowner and subowner == ID:
+                        allsub.append(subname)
+#                while h <= sublen:
+#                    subname = item[i]
+#                    i=i+1
+#                    h=h+1
+#                    subinfo = config.get_sub(subname)
+#                    subowner  = subinfo.get('owner', '')
+#                    if subowner and subowner == ID:
+#                        allsub.append(subname)
+                if allsub:
+                    await message.reply(str(allsub))
+                else:
+                    await message.reply("您尚未保存订阅！\n使用方法： /sub <订阅名称> <访问密码>")
     except RPCError as r:
         print(r)
 

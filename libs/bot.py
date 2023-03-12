@@ -156,13 +156,17 @@ def command_loader(app: Client):
     @app.on_message(filters.command(['setting']) & filters.user(admin), group=2)
     async def setting(client, message):
         await botmodule.setting_page(client, message)
-        
+
     @app.on_message(filters.command(['fulltest']), group=1)
     async def fulltest(client, message):
         if await isuser(message, botmodule.init_bot.reloadUser()):
             await message.reply("请选择排序方式:", reply_markup=botmodule.IKM2, quote=True)
             await bot_put(client, message, "analyze")
             await bot_put(client, message, "speed")
+
+    @app.on_message(filters.command(['restart']), group=2)
+    async def restart(client, message):
+        await botmodule.restart(client, message)
 
 
 def callback_loader(app: Client):
@@ -177,7 +181,7 @@ def callback_loader(app: Client):
         await botmodule.reload_addon_from_telegram(client, call=callback_query)
         callback_query.stop_propagation()
 
-# TODO(@AirportR): 鉴权可以融合到filter里面
+    # TODO(@AirportR): 鉴权可以融合到filter里面
     @app.on_callback_query(group=2)
     async def settings_test(client, callback_query):
         if callback_query.data == "blank":

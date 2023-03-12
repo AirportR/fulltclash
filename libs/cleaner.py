@@ -10,9 +10,12 @@ class IPCleaner:
     def __init__(self, data):
         self._data = data
         self.style = config.config.get('geoip-api', 'ip-api.com')
+        # logger.debug(f"当前api: {self.style}")
 
     def get(self, key, _default=None):
         try:
+            if self._data is None:
+                return {}
             return self._data[key]
         except KeyError:
             return _default
@@ -29,6 +32,10 @@ class IPCleaner:
             org = self.get('asn_organization')
         elif self.style == "ip-api.com":
             org = self.get('isp')
+        elif self.style == "ipleak.net":
+            org = self.get('isp_name')
+        elif self.style == "ipdata.co":
+            org = self.get('asn', {}).get('name')
         else:
             org = ""
         if org:
@@ -41,6 +48,10 @@ class IPCleaner:
         if self.style == "ip-api.com":
             ip = self.get('query')
         elif self.style == "ip.sb":
+            ip = self.get('ip')
+        elif self.style == "ipleak.net":
+            ip = self.get('query_text')
+        elif self.style == "ipdata.co":
             ip = self.get('ip')
         else:
             pass
@@ -55,6 +66,10 @@ class IPCleaner:
             region_code = self.get('countryCode')
         elif self.style == "ip.sb":
             region_code = self.get('country_code')
+        elif self.style == "ipleak.net":
+            region_code = self.get('country_code')
+        elif self.style == "ipdata.co":
+            region_code = self.get('country_code')
         else:
             pass
         if region_code:
@@ -67,6 +82,10 @@ class IPCleaner:
         if self.style == "ip-api.com":
             city = self.get('city')
         elif self.style == "ip.sb":
+            city = self.get('city')
+        elif self.style == "ipleak.net":
+            city = self.get('city_name')
+        elif self.style == "ipdata.co":
             city = self.get('city')
         else:
             pass
@@ -86,6 +105,14 @@ class IPCleaner:
                 return '0'
         elif self.style == "ip.sb":
             asn = self.get('asn', '0')
+            asd = "AS" + repr(asn)
+            return asd
+        elif self.style == "ipleak.net":
+            asn = self.get('as_number', '0')
+            asd = "AS" + repr(asn)
+            return asd
+        elif self.style == "ipdata.co":
+            asn = self.get('asn', {}).get('asn', '0')
             return asn
         else:
             return ''
@@ -111,7 +138,7 @@ class AddonCleaner:
         经过去重并支持黑名单一并去除。最后返回一个新列表
         :return:
         """
-        base_item = ['Netflix', 'Youtube', 'Disney+', 'Primevideo', 'Viu', 'steam货币', 'OpenAI',
+        base_item = ['Netflix', 'Youtube', 'Disney+', 'OpenAI', 'Viu', 'steam货币', 'Spotify',
                      '维基百科', '落地IP风险']
         base_item = base_item + list(self._script.keys())
         new_item = sorted(set(base_item) - set(self.blacklist), key=base_item.index)
@@ -233,6 +260,13 @@ class ClashCleaner:
             self.path = _config
         else:
             self.yaml = yaml.load(_config, Loader=yaml.FullLoader)
+
+    def setProxies(self, proxyinfo: list):
+        """
+        覆写里面的proxies键
+        :return:
+        """
+        self.yaml['proxies'] = proxyinfo
 
     def getProxies(self):
         """
@@ -384,9 +418,10 @@ class ClashCleaner:
         self.yaml['mode'] = mode
         logger.info("Clash 模式已被修改为:" + self.yaml['mode'])
 
-    def node_filter(self, include: str = '', exclude: str = ''):
+    def node_filter(self, include: str = '', exclude: str = '', issave=True):
         """
         节点过滤
+        :param issave: 是否保存过滤结果到文件
         :param include: 包含
         :param exclude: 排除
         :return:
@@ -440,7 +475,8 @@ class ClashCleaner:
                     logger.error(str(e))
         logger.info(f"Included {jishu1} node(s)  Excluded {jishu2} node(s)  Exported {jishu1 - jishu2} node(s)")
         self.yaml['proxies'] = result2
-        self.save(savePath=self.path)
+        if issave:
+            self.save(savePath=self.path)
 
     @logger.catch
     def save(self, savePath: str = "./sub.yaml"):
@@ -863,9 +899,9 @@ class ReCleaner:
                 elif i == "Netflix":
                     from addons.unlockTest import netflix
                     info['Netflix'] = netflix.get_netflix_info_new(self)
-                elif i == "Primevideo":
-                    from addons.unlockTest import primevideo
-                    info['Primevideo'] = primevideo.get_primevideo_info(self)
+                elif i == "Spotify":
+                    from addons.unlockTest import spotify
+                    info['Spotify'] = spotify.get_spotify_info(self)
                 elif i == "Viu":
                     from addons.unlockTest import viu
                     info['Viu'] = viu.get_viu_info(self)
