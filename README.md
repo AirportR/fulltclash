@@ -61,7 +61,17 @@ FullTclash bot 是承载其测试任务的Telegram 机器人（以下简称bot�
 - 一个clash 核心， [下载地址](https://github.com/Dreamacro/clash/releases)。（可选，可以用/resources里默认的）
 
 - 字体文件。（可选，可以用默认的）
+### 拉取源码
 
+方法1：直接下载（不会有人不知道在哪下吧？）
+
+方法2：使用git（Linux推荐，方便更新），首先安装git，然后拉取仓库。以下指令为 Ubuntu 发行版作示例，Windows自行解决。
+
+```
+apt install -y git && git clone https://github.com/AirportR/FullTclash.git && cd FullTclash
+```
+
+此方法在中国大陆可能需要代理加速，请自行解决。
 ### 环境准备
 
 - Python 3.6 以上
@@ -81,45 +91,13 @@ Linux:
 ```
 pip3 install -r requirements.txt
 ```
-
-### 拉取源码
-
-方法1：直接下载（不会有人不知道在哪下吧？）
-
-方法2：使用git（Linux推荐，方便更新），首先安装git，然后拉取仓库。以下指令为 Ubuntu 发行版作示例，Windows自行解决。
-
-```
-apt install -y git && git clone https://github.com/AirportR/FullTclash.git && cd FullTclash
-```
-
-此方法在中国大陆可能需要代理加速，请自行解决。
-
-### 获取session文件
-
-您需要在项目文件目录下，放置一个已经登陆好的.session后缀文件，这个文件是程序生成的，形如： my_bot.session
-
-方法1： 您可以参阅[这篇文档](https://docs.pyrogram.org/start/auth)，以快速获得后缀为 .session 的文件
-
-方法2： 项目根目录下有一个文件名为 login.py ，可以通过指令运行它：
-
-```
-python .\login.py
-```
-
-当程序退出后即可自动生成一个名为 my_bot.session 的文件
-
-运行后它会尝试给你输入的用户名的目标发送消息，当接收到：嗨, 我在正常工作哦！
-
-这句话时，即可说明该session文件有效，否则无效。
-
-## 赋予clash核心执行权限 (Linux)
+### 赋予clash核心执行权限 (Linux)
 
 Windows系统无需此操作
 
 ```
 chmod +x ./resources/clash-linux-amd64
 ```
-
 ### 为bot进行相关配置
 
 - 管理员配置
@@ -138,9 +116,9 @@ chmod +x ./resources/clash-linux-amd64
   ```
   #bot通讯代理
   bot:
-  proxy: 127.0.0.1:7890 #替换成自己的代理地址和端口
+   proxy: 127.0.0.1:7890 #sock5 替换成自己的代理地址和端口
   # 获取订阅时使用代理（可选）
-  proxy: 127.0.0.1:7890 #替换成自己的代理地址和端口,注意，此配置与上面的独立分开。
+  proxy: 127.0.0.1:7890 #http 替换成自己的代理地址和端口,注意，此配置与上面的独立分开。
   ```
 - 更改clash核心
 
@@ -151,8 +129,41 @@ chmod +x ./resources/clash-linux-amd64
     path: ./resources/clash-linux-amd64
     workpath: ./clash
   ```
-### 开始启动
+### 获取session文件
 
+您需要在项目文件目录下，放置一个已经登陆好的.session后缀文件，这个文件是程序生成的，形如： my_bot.session
+
+>方法1： 您可以参阅[这篇文档](https://docs.pyrogram.org/start/auth)，以快速获得后缀为 .session 的文件
+
+>方法2： 项目根目录下有一个文件名为 login.py ，可以通过指令运行它：
+
+```
+python .\login.py
+```
+
+当程序退出后即可自动生成一个名为 my_bot.session 的文件
+
+运行后它会尝试给你输入的用户名的目标发送消息，当接收到：嗨, 我在正常工作哦！
+
+这句话时，即可说明该session文件有效，否则无效。
+>方法3：可以直接在配置文件config.yaml中配置，这样程序启动后会自动读取配置文件里面的值来生成session文件(要求一定要正确)。
+```yaml
+#配置文件示例，注意缩进要正确
+bot:
+ api_id: 123456
+ api_hash: 123456ABCDefg
+ bot_token: 123456:ABCDefgh123455
+```
+如果启动后无法验证，请删除生成的mybot.session文件，此时的文件是坏的，不可用，如果不删除程序会一直使用坏的文件，不会重新生成。然后重新启动。
+### 开始启动
+目前有两种启动方式，一次启动和分开启动。区别在于，一次性启动会自动启动子进程clash core，而分开启动会先启动clash core，bot程序主体启动的时侯就不会再启动了。直观点的感受就是bot启动变快。
+>一次启动：
+配置好后，在项目目录下运行以下指令
+Windows(Linux系为python3):
+```shell
+python main.py
+```
+> 分开启动：
 在项目目录下运行以下指令
 Windows10:
 ```shell
