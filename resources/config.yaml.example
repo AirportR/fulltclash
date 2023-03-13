@@ -81,3 +81,11 @@ item: # 流媒体测试项，决定你想要测哪个项,目前仅支持以下�
 #  angle: -16.0 #旋转角度
 #  row_spacing: 0 #行距
 #  start_y: 0 #纵坐标起始位置
+# background: #背景颜色
+#  backgrounds: '#ffffff' #联通性测试背景色
+#  ins: '#ffffff' #拓扑测试入口topo背景色
+#  outs: '#ffffff' #拓扑测试出口topo背景色
+#  speedtest: '#ffffff' #速度测试
+#  speedtitle: '#EAEAEA' #速度测试标题栏颜色
+#  testtitle: '#EAEAEA' #联通性测试标题栏颜色
+#  topotitel: '#EAEAEA' #拓扑测试标题栏颜色
