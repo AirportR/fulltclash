@@ -88,4 +88,4 @@ item: # 流媒体测试项，决定你想要测哪个项,目前仅支持以下�
 #  speedtest: '#ffffff' #速度测试
 #  speedtitle: '#EAEAEA' #速度测试标题栏颜色
 #  testtitle: '#EAEAEA' #联通性测试标题栏颜色
-#  topotitel: '#EAEAEA' #拓扑测试标题栏颜色
+#  topotitle: '#EAEAEA' #拓扑测试标题栏颜色
