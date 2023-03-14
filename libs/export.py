@@ -1,7 +1,7 @@
 import math
 import PIL
 from loguru import logger
-from PIL import Image, ImageDraw, ImageFont, ImageEnhance
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 from pilmoji import Pilmoji
 from pilmoji.source import Twemoji
 import time
@@ -21,20 +21,15 @@ __version__ = "3.5.2-dev"  # 版本号
 custom_source = TwitterPediaSource  # 自定义emoji风格 TwitterPediaSource
 
 
-def color_block(size: tuple, color_value, contrast_factor=1.05, sharpness_factor=20):
+def color_block(size: tuple, color_value):
     """
-    颜色块，颜色数值推荐使用十六进制表示如: #ffffff 为白色
-    :param size: tuple: (length, width)
+    颜色块，颜色数值推荐用十六进制表示如: #ffffff 为白色
+    :param size: tuple: (length,width)
     :param color_value: 颜色值
-    :param contrast_factor: 对比值增加原因子，更大增加的对比值越来越高
-    :param sharpness_factor: 锐化值增加原因子，更大增加的锐化值越来越高
     :return: Image
     """
     img_block = Image.new('RGB', size, color_value)
-    enhancer = ImageEnhance.Contrast(img_block)
-    img_block = enhancer.enhance(contrast_factor)
-    enhancer = ImageEnhance.Sharpness(img_block)
-    img_block = enhancer.enhance(sharpness_factor)
+    img_block = ImageOps.equalize(img_block)
     return img_block
 
 
@@ -228,7 +223,6 @@ class ExportResult:
                 break
 
         return Image.alpha_composite(original_image, watermarks_image)
-
     @logger.catch
     def exportUnlock(self):
         wtime = self.info.pop('wtime', "0")
@@ -236,10 +230,13 @@ class ExportResult:
         image_width, nodename_width, info_list_length = self.get_width()
         image_height = self.get_height()
         key_list = self.get_key_list()
-        img = Image.new("RGB", (image_width, image_height), (255, 255, 255))
+        self.background = self.image_config.get('background', {})
+        B_color = self.background.get('backgrounds', '#ffffff')
+        img = Image.new("RGB", (image_width, image_height), B_color)
         pilmoji = Pilmoji(img, source=custom_source)  # emoji表情修复
         # 绘制色块
-        bkg = Image.new('RGB', (image_width, 120), (234, 234, 234))  # 首尾部填充
+        titlet = self.background.get('testtitle', '#EAEAEA')
+        bkg = Image.new('RGB', (image_width, 120), titlet)  # 首尾部填充
         img.paste(bkg, (0, 0))
         img.paste(bkg, (0, image_height - 120))
         idraw = ImageDraw.Draw(img)
@@ -503,10 +500,13 @@ class ExportTopo(ExportResult):
         image_width, info_list_length = self.get_width(compare=img2_width)
         image_height = self.get_height()
         key_list = self.get_key_list()
-        img = Image.new("RGB", (image_width, image_height), (255, 255, 255))
+        self.background = self.image_config.get('background', {})
+        T_color = self.background.get('ins', '#ffffff')
+        img = Image.new("RGB", (image_width, image_height), T_color)
         pilmoji = Pilmoji(img, source=custom_source)  # emoji表情修复
         # 绘制色块
-        bkg = Image.new('RGB', (image_width, 80), (234, 234, 234))  # 首尾部填充
+        titlea = self.background.get('topotitle', '#EAEAEA')
+        bkg = Image.new('RGB', (image_width, 80), titlea)  # 首尾部填充
         img.paste(bkg, (0, 0))
         img.paste(bkg, (0, image_height - 80))
         idraw = ImageDraw.Draw(img)
@@ -592,10 +592,13 @@ class ExportTopo(ExportResult):
         image_width, info_list_length = self.get_width(compare=img2_width)
         image_height = self.get_height()
         key_list = self.get_key_list()
-        img = Image.new("RGB", (image_width, image_height), (255, 255, 255))
+        self.background = self.image_config.get('background', {})
+        O_color = self.background.get('outs', '#ffffff')
+        img = Image.new("RGB", (image_width, image_height), O_color)
         pilmoji = Pilmoji(img, source=custom_source)  # emoji表情修复
         # 绘制色块
-        bkg = Image.new('RGB', (image_width, 80), (234, 234, 234))  # 首尾部填充
+        titlea = self.background.get('topotitle', '#EAEAEA')
+        bkg = Image.new('RGB', (image_width, 80), titlea)  # 首尾部填充
         img.paste(bkg, (0, 0))
         img.paste(bkg, (0, image_height - 80))
         idraw = ImageDraw.Draw(img)
@@ -829,10 +832,13 @@ class ExportSpeed(ExportResult):
         image_width, nodename_width, info_list_length = self.get_width()
         image_height = self.get_height()
         key_list = self.get_key_list()
-        img = Image.new("RGB", (image_width, image_height), (255, 255, 255))
+        self.background = self.image_config.get('background', {})
+        P_color = self.background.get('speedtest', '#ffffff')
+        img = Image.new("RGB", (image_width, image_height), P_color)
         pilmoji = Pilmoji(img, source=custom_source)  # emoji表情修复
         # 绘制色块
-        bkg = Image.new('RGB', (image_width, 120), (234, 234, 234))  # 首尾部填充
+        titles = self.background.get('speedtitle', '#EAEAEA')
+        bkg = Image.new('RGB', (image_width, 120), titles)  # 首尾部填充
         img.paste(bkg, (0, 0))
         img.paste(bkg, (0, image_height - 120))
         idraw = ImageDraw.Draw(img)
