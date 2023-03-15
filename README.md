@@ -2,21 +2,15 @@
 
 基于clash 核心运作的、进行全量订阅测试的telegram机器人
 
-## 最近更新(3.5.1)
+## 最近更新(3.5.2)
 
-3.5.1版本更新如下特性：
+3.5.2版本更新如下特性：
 
-✨ 新增Dockerfile文件。用以支持docker平台启动。
-🚗 新增一键三连测指令 /fulltest。[@Avwwww 的pr](https://github.com/AirportR/FullTclash/tree/081ce53fa1d9d804932c34f56aa18b17550e6400)
-🚗 安装脚本将支持自动翻页预览脚本源代码。从自动安装改为手动确认安装。
-🐛 修复速度变化的颜色快超出绘图范围问题。
-✨ 新增从配置文件读取api_id、api_hash、bot_token。前往配置样例模板查看使用方法。（⚠️注意，此方式对于已生成的session文件无法覆盖。如果需要从配置生成文件，请先删除之前的。）
-✨ 新增从配置文件设置速度测试的节点数量限制。[@kogekiplay 的pr](https://github.com/AirportR/FullTclash/tree/3b0d68f3047e8a6402e021cfab40a31a3231a1cb)
-✨ 支持绘图水印。前往配置样例模板查看配置方法。
-✨ 支持Docker启动。但需要您自行通过Dockerfile文件生成可以镜像。如果有此方面需求，请联系我或在群里反馈。
-🐛 修复速度测试偶现绘图问题。[@欧阳逸洛 的pr](https://github.com/AirportR/FullTclash/tree/ae9f9e66dc31b71e0fb7da7c329cf7da03c16c54)
-🐛 修复subinfo指令部分可能问题。[@kogekiplay 的pr](https://github.com/AirportR/FullTclash/tree/d8316dc461953731e754c342c2866f7ad8c19fd0)
-
+✨ 移除内置的Primevideo流媒体检测项，以Spotify代替。
+✨ 新增两个geoip的api地址，域名为 ipleak.net ipdata.co，其中ipdata.co需要配置geoip-key才能正常使用。[@kogekiplay 的pr](https://github.com/AirportR/FullTclash/tree/8a11b791c9e0920ef04e76f47d0c00bbf3b927a1) [@mlmmlm的pr](https://github.com/AirportR/FullTclash/tree/cc226c7a00f569abe67a489331fff5b00a16d66f)
+✨ 支持bot重启，输入 /restart 即可重启bot。 [@cpploveme的pr](https://github.com/AirportR/FullTclash/tree/bce9dd06c81b19c70acb5457986e39b804b9c6fe)
+🚗 /sub 指令用户可列出自己的订阅。[@kogekiplay 的pr](https://github.com/AirportR/FullTclash/tree/5af6ac05b8c8ff340c8b13b5dd9c12ba6b45a460)
+🚗 优化bot启动提示。
 历史更新请到TG频道查看: 
 
 https://t.me/FullTClash
