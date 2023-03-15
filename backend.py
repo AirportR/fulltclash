@@ -3,6 +3,7 @@ import contextlib
 import copy
 import socket
 import time
+import os
 from collections import Counter
 from operator import itemgetter
 from typing import Union
@@ -11,7 +12,7 @@ import aiohttp
 import socks
 from aiohttp_socks import ProxyConnector
 from loguru import logger
-
+from libs.collector import proxies
 from libs import cleaner, collector, proxys, pynat, sorter
 
 # 重写整个测试核心，技术栈分离。
@@ -73,7 +74,7 @@ class Basecore:
         return rtt
 
     def join_proxy(self, proxyinfo: list):
-        cl = cleaner.ClashCleaner(f'./clash/default.yaml')
+        cl = cleaner.ClashCleaner(':memory:')
         cl.setProxies(proxyinfo)
         cl.node_filter(self._include_text, self._exclude_text, issave=False)  # 从配置文件过滤文件
         cl.save(savePath=f'./clash/sub{self.start_time}.yaml')
@@ -92,6 +93,11 @@ class Basecore:
         """
         cl1 = cleaner.ConfigManager(configpath=fr"./results/{self.start_time}.yaml", data=info)
         cl1.save(fr"./results/{self.start_time}.yaml")
+        if GCONFIG.config.get('clash',{}).get('allow-caching', False):
+            try:
+                os.remove(fr"./clash/sub{self.start_time}.yaml")
+            except Exception as e:
+                print(e)
 
 
 # 部分内容已被修改  Some codes has been modified
@@ -336,7 +342,7 @@ class SpeedCore(Basecore):
         if SpeedCore.check_speed_nodes(nodenum, (nodename, nodetype,)):
             return info
         # 重载配置文件
-        ma = cleaner.ConfigManager('./clash/proxy.yaml')
+        ma = cleaner.ConfigManager(':memory:')
         ma.addsub2provider(subname=self.start_time, subpath=f'./sub{self.start_time}.yaml')
         ma.save('./clash/proxy.yaml')
         if not await proxys.reloadConfig(filePath='./clash/proxy.yaml', clashPort=1123):
@@ -520,7 +526,7 @@ class ScriptCore(Basecore):
         if SpeedCore.check_speed_nodes(nodenum, (nodename, nodetype,)):
             return info
         # 重载配置文件
-        ma = cleaner.ConfigManager('./clash/proxy.yaml')
+        ma = cleaner.ConfigManager(':memory:')
         ma.addsub2provider(subname=self.start_time, subpath=f'./sub{self.start_time}.yaml')
         ma.save('./clash/proxy.yaml')
         if not await proxys.reloadConfig_batch(nodenum, pool):
@@ -556,14 +562,6 @@ class TopoCore(Basecore):
 
     def __init__(self):
         super().__init__()
-
-    def saveresult(self, info: dict, path=None):
-        """
-        保存测试结果
-        :return:
-        """
-        cl1 = cleaner.ConfigManager(configpath=fr"./results/Topo{self.start_time}.yaml", data=info)
-        cl1.save(fr"./results/Topo{self.start_time}.yaml")
 
     @staticmethod
     async def topo(file_path: str):
@@ -664,7 +662,7 @@ class TopoCore(Basecore):
             if nodenum % psize != 0:
                 print("╰(*°▽°*)╯节点链路拓扑测试进行中...\n\n" +
                       "当前进度:\n" + "100" +
-                      "%     [" + str(progress) + "/" + str(nodenum) + "]")
+                      "%     [" + str(nodenum) + "/" + str(nodenum) + "]")
             return resdata
 
     async def core(self, proxyinfo: list, test_type='all'):
@@ -683,7 +681,7 @@ class TopoCore(Basecore):
         if SpeedCore.check_speed_nodes(nodenum, (nodename, nodetype,), 1000):
             return info1, info2
         # 重载配置文件
-        ma = cleaner.ConfigManager('./clash/proxy.yaml')
+        ma = cleaner.ConfigManager(':memory:')
         ma.addsub2provider(subname=self.start_time, subpath=f'./sub{self.start_time}.yaml')
         ma.save('./clash/proxy.yaml')
         if not await proxys.reloadConfig_batch(nodenum, pool):
@@ -736,10 +734,39 @@ class TopoCore(Basecore):
         return info1, info2
 
 
+def check_init():
+    import os
+    dirs = os.listdir()
+    if "clash" in dirs and "logs" in dirs and "results" in dirs:
+        return
+    logger.info("检测到初次使用，正在初始化...")
+    if not os.path.isdir('clash'):
+        os.mkdir("clash")
+        logger.info("创建文件夹: clash 用于保存订阅")
+    if not os.path.isdir('logs'):
+        os.mkdir("logs")
+        logger.info("创建文件夹: logs 用于保存日志")
+    if not os.path.isdir('results'):
+        os.mkdir("results")
+        logger.info("创建文件夹: results 用于保存测试结果")
+
+
+def select_core(index: int):
+    if index == 1 or index == 'speed':
+        return SpeedCore()
+    elif index == 2 or index == 'analyze' or index == 'topo':
+        return TopoCore()
+    elif index == 3 or index == 'script':
+        return ScriptCore()
+    else:
+        raise TypeError("Unknown test type, please input again.\n未知的测试类型，请重新输入!")
+
+
 if __name__ == '__main__':
     import sys
     import getopt
 
+    check_init()
     # os.chdir(os.path.abspath(os.path.join(os.getcwd(), os.pardir)))
     # sys.path.append(os.path.abspath(os.path.join(os.getcwd(), os.pardir)))
     help_text = """
@@ -777,8 +804,8 @@ Usage(使用帮助):
         raise ValueError("Unable start the tasks,please input the config path.\n请输入配置文件路径")
     with open(config_path, 'r', encoding='utf-8') as fp:
         data = cleaner.ClashCleaner(fp)
-        proxies = data.getProxies()
+        my_proxies = data.getProxies()
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    resd = loop.run_until_complete(core.core(proxies))
+    resd = loop.run_until_complete(core.core(my_proxies))
     print(resd)

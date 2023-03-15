@@ -25,7 +25,6 @@ async def main():
     proxy_port = input("Please enter your proxy_port:")
     master = str(input("Please enter your username:"))
     try:
-        int(proxy_port)
         if not proxy_addr or not proxy_port:
             proxies = None
         else:

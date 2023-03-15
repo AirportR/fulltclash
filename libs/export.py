@@ -1,10 +1,14 @@
 import math
+from typing import Union
+
 import PIL
 from loguru import logger
 from PIL import Image, ImageDraw, ImageFont
 from pilmoji import Pilmoji
 from pilmoji.source import Twemoji
 import time
+
+from glovar import __version__ as _vsion
 from libs.cleaner import ConfigManager
 from libs.emoji_custom import TwitterPediaSource
 
@@ -17,7 +21,7 @@ from libs.emoji_custom import TwitterPediaSource
 2、何为基础数据？
     基础数据决定了生成图片的高度（Height），它是列表，列表里面的数据一般是一组节点名，即有多少个节点就对应了info键值中的长度。
 """
-__version__ = "3.5.2-dev"  # 版本号
+__version__ = "3.5.3-dev"  # 版本号，版本号将移动到glovar.py 这里的变量将废弃
 custom_source = TwitterPediaSource  # 自定义emoji风格 TwitterPediaSource
 
 
@@ -32,7 +36,28 @@ def color_block(size: tuple, color_value):
     return img_block
 
 
-# TODO(@AirportR): 需要设计个export基类，然后下面三个类继承基类，基类定义一些通用方法
+class BaseExport:
+    def __init__(self, primarykey: Union[list, tuple], allinfo: dict):
+        """
+        所有绘图类的基类，primarykey为主键，计算主键的长度，主键决定整张图片的高度
+        """
+        self.basedata = primarykey
+        self.version = _vsion
+        self.allinfo = allinfo
+        self.info = self.getPrintinfo()
+
+    def getPrintinfo(self):
+        """
+        为了统一长度，self.info 一定和主键长度对齐
+        """
+        new_info = {}
+        for k, v in self.allinfo.items():
+            if len(v) != len(self.basedata):
+                continue
+            new_info[k] = v
+        return new_info
+
+
 class ExportResult:
     """
     生成图片类
