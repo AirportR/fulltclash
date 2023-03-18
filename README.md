@@ -222,3 +222,15 @@ python3 main.py
   - [pyyaml](https://github.com/yaml/pyyaml)
   
   - [requests](https://github.com/psf/requests)
+## 如何给本项目做贡献：
+1. 在本项目的主GitHub仓库进行fork，你可以只fork dev的分支。
+2. 在你的计算机上使用git clone来下载你fork后的仓库
+3. 在下载好的进行修改
+4. 执行git add .（请不要忘记句号！！！）
+5. 执行git commit，并输入你做出的更改
+6. 回到你的仓库，发起pr请求，等待下一步（通过/驳回/修改）
+
+如果不这样做可能会：
+1. 仓库维护者看到的是一片绿色加号，根本不知道你改了什么
+2. 你的操作会很麻烦，可能还会改错文件
+3. 维护者很难看懂你都干了些什么
