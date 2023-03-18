@@ -175,7 +175,7 @@ def batch_start(portlist: list, proxy_file_path="./clash/proxy.yaml"):
 def check_init():
     import os
     dirs = os.listdir('./clash')
-    if "proxy.yaml" in dirs:
+    if "proxy.yaml" in dirs and 'default.yaml' in dirs:
         return
     print("检测到关键文件不存在，正在初始化...")
     with open('./clash/proxy.yaml', 'w', encoding='utf-8') as fp:
