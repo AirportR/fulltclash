@@ -11,3 +11,5 @@ emoji==1.7.0
 loguru>=0.6.0
 aiohttp_socks==0.7.1
 websockets==10.3
+tzlocal==4.1
+cryptography==36.0.2

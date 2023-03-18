@@ -171,7 +171,7 @@ async def core(message, back_message, start_time, suburl: str = None, test_type=
     # 检查获得的数据
     if await check.check_nodes(back_message, nodenum, ()):
         return info1, info2
-    ma = cleaner.ConfigManager('./clash/proxy.yaml')
+    ma = cleaner.ConfigManager(':memory:')
     ma.addsub2provider(subname=start_time, subpath='./sub{}.yaml'.format(start_time))
     ma.save('./clash/proxy.yaml')
     # 重载配置文件

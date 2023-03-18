@@ -127,7 +127,7 @@ async def is_port_in_use(host='127.0.0.1', port=80):
         reader, writer = await asyncio.open_connection(host, port)
         writer.close()
         await writer.wait_closed()
-        print(fr"{port} 端口已被占用，请更换。")
+        # print(fr"{port} 端口已被占用，请更换。")
         return True
     except ConnectionRefusedError:
         return False
@@ -172,14 +172,83 @@ def batch_start(portlist: list, proxy_file_path="./clash/proxy.yaml"):
     clashconf.save(proxy_file_path)
 
 
+def check_init():
+    import os
+    dirs = os.listdir('./clash')
+    if "proxy.yaml" in dirs:
+        return
+    print("检测到关键文件不存在，正在初始化...")
+    with open('./clash/proxy.yaml', 'w', encoding='utf-8') as fp:
+        fp.write("""
+allow-lan: false
+bind-address: '*'
+dns:
+  default-nameserver:
+  - 119.29.29.29
+  - 223.5.5.5
+  enable: false
+  enhanced-mode: redir-host
+  fallback:
+  - https://208.67.222.222/dns-query
+  - https://public.dns.iij.jp/dns-query
+  - https://101.6.6.6:8443/dns-query
+  fallback-filter:
+    geoip: true
+    geoip-code: CN
+  listen: 0.0.0.0:53
+  nameserver:
+  - 119.29.29.29
+  - 223.5.5.5
+  - 114.114.114.114
+external-controller: 127.0.0.1:1123
+ipv6: true
+log-level: info
+mixed-port: 1122
+mode: rule
+proxies: null
+proxy-groups:
+- name: auto
+  type: select
+  use:
+  - Default
+proxy-providers:
+  Default:
+    health-check:
+      enable: true
+      interval: 600000
+      url: http://www.gstatic.com/generate_204
+    path: ./default.yaml
+    type: file
+rules:
+- DOMAIN-KEYWORD,stun,auto
+- DOMAIN-SUFFIX,gstatic.com,auto
+- DOMAIN-KEYWORD,gstatic,auto
+- DOMAIN-SUFFIX,google.com,auto
+- DOMAIN-KEYWORD,google,auto
+- DOMAIN,google.com,auto
+- DOMAIN-SUFFIX,bilibili.com,auto
+- DOMAIN-KEYWORD,bilibili,auto
+- DOMAIN,bilibili.com,auto
+- DOMAIN-SUFFIX,microsoft.com,auto
+- DOMAIN-SUFFIX,cachefly.net,auto
+- DOMAIN-SUFFIX,apple.com,auto
+- DOMAIN-SUFFIX,cdn-apple.com,auto
+- SRC-IP-CIDR,192.168.1.201/32,DIRECT
+- IP-CIDR,127.0.0.0/8,DIRECT
+- GEOIP,CN,DIRECT
+- MATCH,auto
+        """)
+
+
 if __name__ == "__main__":
+    check_init()
     config = ConfigManager()
     clash_path = config.get_clash_path()  # 为clash核心运行路径, Windows系统需要加后缀名.exe
     clash_work_path = config.get_clash_work_path()  # clash工作路径
     corenum = config.config.get('clash', {}).get('core', 1)
     start_port = config.config.get('clash', {}).get('startup', 1124)
     res1 = asyncio.run(check_port(1122, 1123))
-    res2 = asyncio.run(check_port(start_port, start_port+1 + corenum * 2))
+    res2 = asyncio.run(check_port(start_port, start_port + 1 + corenum * 2))
     if res1 or res2:
         print("端口检查中发现已有其他进程占用了端口，如果您已单独运行clash启动器，请忽略这条提示")
         sleep(5)

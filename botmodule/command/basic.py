@@ -4,8 +4,7 @@ from loguru import logger
 from pyrogram.errors import RPCError
 from libs.check import check_user
 from botmodule import init_bot
-from libs.export import __version__
-
+from glovar import __version__
 
 tourist_text = f"""
     欢迎使用FullTclash bot,目前可用指令有:
@@ -53,7 +52,7 @@ admin_text = f"""
 /traffic & /subinfo & /流量查询 & /流量 <订阅链接> & <订阅名> [游客]获取流量信息
 
 测试指令
-/test <订阅名> <包含过滤器> <排除过滤器> [用户]进行流媒体测试
+/test <订阅名> <包含过滤器> <排除过滤器> [用户] 进行流媒体测试
 /speed <订阅名> <包含过滤器> <排除过滤器> [用户]进行速度测试
 /analyze & /topo <订阅名> [用户]进行节点链路拓扑测试
 /inbound <订阅名> [用户]仅作入口分析

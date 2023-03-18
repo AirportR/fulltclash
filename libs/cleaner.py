@@ -130,7 +130,6 @@ class AddonCleaner:
         """
         self.path = path
         self._script = {}
-        self.init_addons(path)
         self.blacklist = []
 
     def global_test_item(self):
@@ -228,9 +227,10 @@ class AddonCleaner:
                 logger.warning("测试脚本导入格式错误")
         logger.info(f"外接测试脚本成功导入数量: {num}")
 
-    @staticmethod
-    def init_button():
+    def init_button(self, isreload=False):
         try:
+            if isreload:
+                self.init_addons(self.path)
             from pyrogram.types import InlineKeyboardButton
             script = addon.script
             button = []
@@ -241,6 +241,69 @@ class AddonCleaner:
         except Exception as e:
             logger.error(str(e))
             return []
+
+
+def preTemplate():
+    template_text = """
+allow-lan: false
+bind-address: '*'
+dns:
+  default-nameserver:
+  - 119.29.29.29
+  - 223.5.5.5
+  enable: false
+  enhanced-mode: redir-host
+  fallback:
+  - https://208.67.222.222/dns-query
+  - https://public.dns.iij.jp/dns-query
+  - https://101.6.6.6:8443/dns-query
+  fallback-filter:
+    geoip: true
+    geoip-code: CN
+  listen: 0.0.0.0:53
+  nameserver:
+  - 119.29.29.29
+  - 223.5.5.5
+  - 114.114.114.114
+external-controller: 127.0.0.1:1123
+ipv6: true
+log-level: info
+mixed-port: 1122
+mode: rule
+proxies: null
+proxy-groups:
+- name: auto
+  type: select
+  use:
+  - Default
+proxy-providers:
+  Default:
+    health-check:
+      enable: true
+      interval: 600000
+      url: http://www.gstatic.com/generate_204
+    path: ./default.yaml
+    type: file
+rules:
+- DOMAIN-KEYWORD,stun,auto
+- DOMAIN-SUFFIX,gstatic.com,auto
+- DOMAIN-KEYWORD,gstatic,auto
+- DOMAIN-SUFFIX,google.com,auto
+- DOMAIN-KEYWORD,google,auto
+- DOMAIN,google.com,auto
+- DOMAIN-SUFFIX,bilibili.com,auto
+- DOMAIN-KEYWORD,bilibili,auto
+- DOMAIN,bilibili.com,auto
+- DOMAIN-SUFFIX,microsoft.com,auto
+- DOMAIN-SUFFIX,cachefly.net,auto
+- DOMAIN-SUFFIX,apple.com,auto
+- DOMAIN-SUFFIX,cdn-apple.com,auto
+- SRC-IP-CIDR,192.168.1.201/32,DIRECT
+- IP-CIDR,127.0.0.0/8,DIRECT
+- GEOIP,CN,DIRECT
+- MATCH,auto
+        """
+    return template_text
 
 
 class ClashCleaner:
@@ -254,6 +317,9 @@ class ClashCleaner:
         """
         self.path = ''
         self.yaml = {}
+        if _config == ':memory:':
+            self.yaml = yaml.safe_load(preTemplate())
+            return
         if type(_config).__name__ == 'str':
             with open(_config, 'r', encoding="UTF-8") as fp:
                 self.yaml = yaml.load(fp, Loader=yaml.FullLoader)
@@ -426,6 +492,7 @@ class ClashCleaner:
         :param exclude: 排除
         :return:
         """
+        logger.info(f'Node filter text>> included: {include}, excluded: {exclude}')
         result = []
         result2 = []
         nodelist = self.getProxies()
@@ -497,6 +564,10 @@ class ConfigManager:
         self.yaml = {}
         self.config = None
         flag = 0
+        if configpath == ':memory:':
+            self.config = yaml.safe_load(preTemplate())
+            self.yaml.update(self.config)
+            return
         try:
             with open(configpath, "r", encoding="UTF-8") as fp:
                 self.config = yaml.load(fp, Loader=yaml.FullLoader)
@@ -542,11 +613,11 @@ class ConfigManager:
         if not botconfig:
             return botconfig
         if 'api_id' in botconfig:
-            logger.info(f"从配置中获取到了api_id: {botconfig['api_id']}")
+            logger.info(f"从配置中获取到了api_id")
         if 'api_hash' in botconfig:
-            logger.info(f"从配置中获取到了api_hash: {botconfig['api_hash']}")
+            logger.info(f"从配置中获取到了api_hash")
         if 'bot_token' in botconfig:
-            logger.info(f"从配置中获取到了bot_token: {botconfig['bot_token']}")
+            logger.info(f"从配置中获取到了bot_token")
         return botconfig
 
     def getFont(self):
@@ -717,6 +788,11 @@ class ConfigManager:
                 self.yaml['admin'] = adminlist
         except TypeError:
             logger.error("删除失败")
+
+    def add_slave(self, slave_id: str, key_path: str, username: str, comment: str = '-'):
+        slaveconfig = self.config.get('slaveconfig', {})
+        slaveconfig[slave_id] = {'public-key': key_path, 'username': username, 'comment': comment}
+        self.yaml['slaveconfig'] = slaveconfig
 
     @logger.catch
     def add_user(self, user: list or str or int):

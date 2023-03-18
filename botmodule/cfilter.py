@@ -1,5 +1,8 @@
 from pyrogram import filters
+from libs import check
 
+
+# custom filter
 
 def dynamic_data_filter(data):
     async def func(flt, _, query):
@@ -9,8 +12,8 @@ def dynamic_data_filter(data):
     return filters.create(func, data=data)
 
 
-def my_filter(queue):
+def user_filter(user: list):
     async def func(flt, _, message):
-        return flt.queue.empty()
+        return await check.check_user(message, flt.user)
 
-    return filters.create(func, queue=queue)
+    return filters.create(func, user=user)

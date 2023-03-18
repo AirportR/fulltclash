@@ -58,6 +58,7 @@ async def testurl(_, message: Message, **kwargs):
     :param kwargs:
     :return:
     """
+
     back_message = await message.reply("╰(*°▽°*)╯联通性测试进行中...")
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
@@ -88,6 +89,7 @@ async def testurl(_, message: Message, **kwargs):
 
 @logger.catch()
 async def test(_, message: Message, **kwargs):
+
     back_message = await message.reply("╰(*°▽°*)╯联通性测试进行中...")  # 发送提示
     arg = cleaner.ArgCleaner().getall(str(message.text))
     del arg[0]

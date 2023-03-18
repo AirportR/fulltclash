@@ -4,11 +4,12 @@ import time
 import subprocess
 from loguru import logger
 from libs.cleaner import ConfigManager
+from libs.safe import gen_key
 
 
 def check_init():
     dirs = os.listdir()
-    if "clash" in dirs and "logs" in dirs and "results" in dirs:
+    if "clash" in dirs and "logs" in dirs and "results" in dirs and 'key' in dirs:
         return
     logger.info("检测到初次使用，正在初始化...")
     if not os.path.isdir('clash'):
@@ -20,6 +21,16 @@ def check_init():
     if not os.path.isdir('results'):
         os.mkdir("results")
         logger.info("创建文件夹: results 用于保存测试结果")
+    if not os.path.isdir('key'):
+        os.mkdir("key")
+        logger.info("创建文件夹: key 用于保存公钥")
+    dirs = os.listdir('./key')
+    if "fulltclash-public.pem" in dirs:
+        return
+    if "fulltclash-private.pem" in dirs:
+        return
+    logger.info("正在初始化公私钥")
+    gen_key()
 
 
 check_init()
@@ -52,7 +63,7 @@ config.reload()
 USER_TARGET = config.getuser()  # 这是用户列表，从配置文件读取
 logger.info("管理员名单加载:" + str(admin))
 # 你的机器人的用户名
-USERNAME = "@xxxx_bot"
+USERNAME = "@vvFullTclashBot"
 port = config.get_proxy_port()
 try:
     _proxy = config.get_bot_proxy(isjoint=False).split(':')
@@ -66,7 +77,8 @@ try:
     else:
         proxy_username = _proxy[2]
         proxy_password = _proxy[3]
-        logger.info("当前代理设置为: " + proxy_host + ":" + proxy_port + "\n" + "用户名：" + proxy_username + "密码：" + proxy_password)
+        logger.info(
+            "当前代理设置为: " + proxy_host + ":" + proxy_port + "\n" + "用户名：" + proxy_username + "密码：" + proxy_password)
 except AttributeError as attr:
     logger.info(str(attr))
     proxy_host = None
@@ -80,14 +92,8 @@ except Exception as e:
     proxy_username = None
     proxy_password = None
 # 如果是在国内环境，则需要代理环境以供程序连接上TG
-if port:
-    logger.warning("当前使用旧版代理方案，今后可能会废弃proxyport该键值对，建议使用新版方案: proxy键值对")
-    proxies = {
-        "scheme": "socks5",  # "socks4", "socks5" and "http" are supported
-        "hostname": "127.0.0.1",
-        "port": port
-    }
-elif proxy_host and proxy_port and proxy_username and proxy_password:
+
+if proxy_host and proxy_port and proxy_username and proxy_password:
     proxies = {
         "scheme": "socks5",  # "socks4", "socks5" and "http" are supported
         "hostname": proxy_host,
