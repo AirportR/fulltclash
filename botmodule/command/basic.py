@@ -4,8 +4,7 @@ from loguru import logger
 from pyrogram.errors import RPCError
 from libs.check import check_user
 from botmodule import init_bot
-from libs.export import __version__
-
+from glovar import __version__
 
 tourist_text = f"""
     欢迎使用FullTclash bot,目前可用指令有:
