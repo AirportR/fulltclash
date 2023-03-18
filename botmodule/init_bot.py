@@ -4,11 +4,12 @@ import time
 import subprocess
 from loguru import logger
 from libs.cleaner import ConfigManager
+from libs.safe import gen_key
 
 
 def check_init():
     dirs = os.listdir()
-    if "clash" in dirs and "logs" in dirs and "results" in dirs:
+    if "clash" in dirs and "logs" in dirs and "results" in dirs and 'key' in dirs:
         return
     logger.info("检测到初次使用，正在初始化...")
     if not os.path.isdir('clash'):
@@ -20,6 +21,16 @@ def check_init():
     if not os.path.isdir('results'):
         os.mkdir("results")
         logger.info("创建文件夹: results 用于保存测试结果")
+    if not os.path.isdir('key'):
+        os.mkdir("key")
+        logger.info("创建文件夹: key 用于保存公钥")
+    dirs = os.listdir('./key')
+    if "fulltclash-public.pem" in dirs:
+        return
+    if "fulltclash-private.pem" in dirs:
+        return
+    logger.info("正在初始化公私钥")
+    gen_key()
 
 
 check_init()
@@ -66,7 +77,8 @@ try:
     else:
         proxy_username = _proxy[2]
         proxy_password = _proxy[3]
-        logger.info("当前代理设置为: " + proxy_host + ":" + proxy_port + "\n" + "用户名：" + proxy_username + "密码：" + proxy_password)
+        logger.info(
+            "当前代理设置为: " + proxy_host + ":" + proxy_port + "\n" + "用户名：" + proxy_username + "密码：" + proxy_password)
 except AttributeError as attr:
     logger.info(str(attr))
     proxy_host = None

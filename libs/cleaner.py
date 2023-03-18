@@ -789,6 +789,11 @@ class ConfigManager:
         except TypeError:
             logger.error("删除失败")
 
+    def add_slave(self, slave_id: str, key_path: str, username: str, comment: str = '-'):
+        slaveconfig = self.config.get('slaveconfig', {})
+        slaveconfig[slave_id] = {'public-key': key_path, 'username': username, 'comment': comment}
+        self.yaml['slaveconfig'] = slaveconfig
+
     @logger.catch
     def add_user(self, user: list or str or int):
         """

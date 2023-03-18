@@ -1,4 +1,6 @@
 import asyncio
+
+import pyrogram.types
 from pyrogram import Client, filters
 from loguru import logger
 import botmodule
@@ -12,7 +14,6 @@ from libs.check import check_callback_master
 from libs.collector import reload_config as r1
 from libs.cleaner import reload_config as r2
 from libs.speedtest import break_speed
-
 
 admin = init_bot.admin  # 管理员
 task_num = 0  # 任务数
@@ -185,6 +186,15 @@ def command_loader(app: Client):
     @app.on_message(filters.command(['restart', 'reboot']) & filters.user(admin), group=2)
     async def restart(client, message):
         await botmodule.restart(client, message)
+
+    @app.on_message(filters.command(['connect']) & filters.user(admin), group=2)
+    async def conn(client, message):
+        await botmodule.conn(client, message)
+
+    @app.on_message(filters.command('resp'), group=0)
+    async def resp(client, message):
+        await botmodule.response(client, message)
+        message.stop_propagation()
 
 
 def callback_loader(app: Client):

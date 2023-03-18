@@ -3,7 +3,7 @@ from loguru import logger
 from botmodule import init_bot
 
 bot_token = init_bot.bot_token
-__version__ = '3.5.2'
+__version__ = '3.5.3'
 app = Client("my_bot",
              api_id=init_bot.api_id,
              api_hash=init_bot.api_hash,
