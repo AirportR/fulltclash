@@ -240,7 +240,7 @@ rules:
         """)
     with open('./clash/default.yaml', 'w', encoding='utf-8') as fp:
         fp.write("""
-        allow-lan: false
+allow-lan: false
 bind-address: '*'
 dns:
   default-nameserver:
@@ -287,6 +287,7 @@ rules:
 - SRC-PORT,7777,DIRECT
 - MATCH,auto
 """)
+
 
 if __name__ == "__main__":
     check_init()
