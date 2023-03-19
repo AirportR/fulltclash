@@ -3,7 +3,7 @@ from typing import Union
 
 import PIL
 from loguru import logger
-from PIL import Image, ImageDraw, ImageFont, ImageOps
+from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageColor
 from pilmoji import Pilmoji
 from pilmoji.source import Twemoji
 import time
@@ -213,41 +213,32 @@ class ExportResult:
         return xpath
 
     def draw_watermark(self, original_image):
-        original_image_size = original_image.size
         watermark_text = self.watermark['text']
-
-        super_sampling_ratio = 3
-        font_size = int(self.watermark['font_size'])
-        font = ImageFont.truetype(self.config.getFont(), font_size * super_sampling_ratio)
-
-        text_size = font.getsize(watermark_text)
-        text_image = Image.new('RGBA', text_size, (255, 255, 255, 0))
+        font = ImageFont.truetype(self.config.getFont(), int(self.watermark['font_size']))
+        text_image = Image.new('RGBA', font.getsize(watermark_text), (255, 255, 255, 0))
         text_draw = ImageDraw.Draw(text_image)
 
-        rgb = tuple(int(self.watermark['color'][i:i + 2], 16) for i in (1, 3, 5))
-        text_draw.text((0, 0), watermark_text, (rgb[0], rgb[1], rgb[2], int(self.watermark['alpha'])), font=font)
+        rgb = ImageColor.getrgb(self.watermark['color'])
+        rgba = (rgb[0], rgb[1], rgb[2], (int(self.watermark['alpha'])))
+        text_draw.text((0, 0), watermark_text, rgba, font=font)
 
-        rotated_text_image = text_image.rotate(float(self.watermark['angle']), expand=True, fillcolor=(0, 0, 0, 0))
-        rotated_text_image_size = [x // super_sampling_ratio for x in rotated_text_image.size]
-        if rotated_text_image_size[0] <= 0 or rotated_text_image_size[1] <= 0:
-            logger.error(f'无法添加水印，水印大小为:{rotated_text_image_size}')
-            return original_image
-        rotated_text_image = rotated_text_image.resize(rotated_text_image_size)
-
-        watermarks_image = Image.new('RGBA', original_image_size, (255, 255, 255, 0))
-
-        x = original_image_size[0] // 2 - rotated_text_image_size[0] // 2
+        angle = float(self.watermark['angle'])
+        rotated_text_image = text_image.rotate(angle, expand=True, fillcolor=(0, 0, 0, 0), resample=Image.Resampling.BILINEAR)
+        watermarks_image = Image.new('RGBA', original_image.size, (255, 255, 255, 0))
+        
+        x = original_image.size[0] // 2 - rotated_text_image.size[0] // 2
         row_spacing = int(self.watermark['row_spacing'])
         if row_spacing < 0:
             row_spacing = 0
         y = int(self.watermark['start_y'])
         while True:
             watermarks_image.paste(rotated_text_image, (x, y))
-            y += rotated_text_image_size[1] + row_spacing
-            if y >= original_image_size[1]:
+            y += rotated_text_image.size[1] + row_spacing
+            if y >= original_image.size[1]:
                 break
 
         return Image.alpha_composite(original_image, watermarks_image)
+   
     @logger.catch
     def exportUnlock(self):
         wtime = self.info.pop('wtime', "0")
