@@ -1,3 +1,4 @@
+import abc
 import contextlib
 import re
 from io import BytesIO
@@ -11,6 +12,7 @@ from emoji import demojize
 自定义的emoji表情源
 保留原作者信息
 author: https://github.com/Oreomeow
+修改: 增加本地源
 """
 
 
@@ -104,6 +106,40 @@ class TossFacePediaSource(EmojiPediaSource):
 
     STYLE = "toss-face/342/"
 
+class LocalSource(pilmoji.source.BaseSource):
+    def get_emoji(self, emoji: str, /) -> Optional[BytesIO]:
+        file_path = self.get_file_path(emoji)
+        try:
+            with open(file_path, "rb") as file:
+                return BytesIO(file.read())
+        except FileNotFoundError:
+            pass
+        return None
+    
+    def get_discord_emoji(self, id: int, /) -> Optional[BytesIO]:
+        raise NotImplementedError
+    
+    @abc.abstractmethod
+    def get_file_path(self,emoji: str)-> str:
+        return None
+
+class TwemojiLocalSource(LocalSource):
+    '''
+    图片源：https://github.com/twitter/twemoji/tree/master/assets/72x72
+    安装路径：./resources/emoji/twemoji
+    '''
+    def get_file_path(self,emoji: str)-> str:
+        code_points = [f'{ord(c):x}' for c in emoji]
+        return f"./resources/emoji/twemoji/{'-'.join(code_points)}.png"
+
+class OpenmojiLocalSource(LocalSource):
+    '''
+    图片源：https://github.com/hfg-gmuend/openmoji/tree/master/color/72x72
+    安装路径：./resources/emoji/openmoji
+    '''
+    def get_file_path(self,emoji: str)-> str:
+        code_points = [f'{ord(c):04X}' for c in emoji]
+        return f"./resources/emoji/openmoji/{'-'.join(code_points)}.png"
 
 __all__ = [
     "ApplePediaSource",
@@ -117,6 +153,8 @@ __all__ = [
     "SkypePediaSource",
     "JoyPixelsPediaSource",
     "TossFacePediaSource",
+    "TwemojiLocalSource",
+    "OpenmojiLocalSource",
 ]
 
 

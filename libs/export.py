@@ -10,7 +10,7 @@ import time
 
 from glovar import __version__ as _vsion
 from libs.cleaner import ConfigManager
-from libs.emoji_custom import TwitterPediaSource
+import libs.emoji_custom as emoji_source
 
 """
 这是将测试的结果输出为图片的模块。
@@ -22,7 +22,7 @@ from libs.emoji_custom import TwitterPediaSource
     基础数据决定了生成图片的高度（Height），它是列表，列表里面的数据一般是一组节点名，即有多少个节点就对应了info键值中的长度。
 """
 __version__ = "3.5.3-dev"  # 版本号，版本号将移动到glovar.py 这里的变量将废弃
-custom_source = TwitterPediaSource  # 自定义emoji风格 TwitterPediaSource
+#custom_source = TwitterPediaSource  # 自定义emoji风格 TwitterPediaSource
 
 
 def color_block(size: tuple, color_value):
@@ -78,12 +78,20 @@ class ExportResult:
             self.nodenum = 0
         self.front_size = 38
         self.config = ConfigManager()
+        
         self.emoji = self.config.config.get('emoji', True)  # 是否启用emoji，若否，则在输出图片时emoji将无法正常显示
+        emoji_source_name = self.config.config.get('emoji_source', "TwitterPediaSource")
+        if  emoji_source_name in emoji_source.__all__:
+            self.emoji_source = getattr(emoji_source, emoji_source_name)
+        else:
+            self.emoji_source = emoji_source.TwitterPediaSource
+       
         self.color = self.config.getColor()
         self.image_config = self.config.config.get('image', {})
         self.delay_color = self.color.get('delay', [])
         self.__font = ImageFont.truetype(self.config.getFont(), self.front_size)
         self.title = self.image_config.get('title', 'FullTclash')
+        
         self.watermark = self.image_config.get('watermark', {})
         watermark_default_config = {
             'enable': False,
@@ -249,7 +257,7 @@ class ExportResult:
         self.background = self.image_config.get('background', {})
         B_color = self.background.get('backgrounds', '#ffffff')
         img = Image.new("RGB", (image_width, image_height), B_color)
-        pilmoji = Pilmoji(img, source=custom_source)  # emoji表情修复
+        pilmoji = Pilmoji(img, source=self.emoji_source)  # emoji表情修复
         # 绘制色块
         titlet = self.background.get('testtitle', '#EAEAEA')
         bkg = Image.new('RGB', (image_width, 120), titlet)  # 首尾部填充
@@ -519,7 +527,7 @@ class ExportTopo(ExportResult):
         self.background = self.image_config.get('background', {})
         T_color = self.background.get('ins', '#ffffff')
         img = Image.new("RGB", (image_width, image_height), T_color)
-        pilmoji = Pilmoji(img, source=custom_source)  # emoji表情修复
+        pilmoji = Pilmoji(img, source=self.emoji_source)  # emoji表情修复
         # 绘制色块
         titlea = self.background.get('topotitle', '#EAEAEA')
         bkg = Image.new('RGB', (image_width, 80), titlea)  # 首尾部填充
@@ -611,7 +619,7 @@ class ExportTopo(ExportResult):
         self.background = self.image_config.get('background', {})
         O_color = self.background.get('outs', '#ffffff')
         img = Image.new("RGB", (image_width, image_height), O_color)
-        pilmoji = Pilmoji(img, source=custom_source)  # emoji表情修复
+        pilmoji = Pilmoji(img, source=self.emoji_source)  # emoji表情修复
         # 绘制色块
         titlea = self.background.get('topotitle', '#EAEAEA')
         bkg = Image.new('RGB', (image_width, 80), titlea)  # 首尾部填充
@@ -851,7 +859,7 @@ class ExportSpeed(ExportResult):
         self.background = self.image_config.get('background', {})
         P_color = self.background.get('speedtest', '#ffffff')
         img = Image.new("RGB", (image_width, image_height), P_color)
-        pilmoji = Pilmoji(img, source=custom_source)  # emoji表情修复
+        pilmoji = Pilmoji(img, source=self.emoji_source)  # emoji表情修复
         # 绘制色块
         titles = self.background.get('speedtitle', '#EAEAEA')
         bkg = Image.new('RGB', (image_width, 120), titles)  # 首尾部填充
