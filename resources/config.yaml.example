@@ -32,6 +32,7 @@ item: # 流媒体测试项，决定你想要测哪个项,目前仅支持以下�
 #nospeed: true #禁用测速，开启后将无法测速。
 #user: 12345678 #用户列表，/grant 命令授权的目标会保存在这（可选配置）
 #emoji: true # 是否启用emoji，若否，则在输出图片时emoji将无法正常显示。关闭该项可解决部分图片生成失败的问题。（可选配置）
+#emoji_source: 'TwitterPediaSource' # 如果是本地源需要先下载源放入 ./resources/emoji 目录（可选配置）
 #clash:
 # path: './resources/clash-linux-amd64' # clash核心的位置,此样例为linux-amd64配置样例，windows可以不配置该项（可选配置）
 # workpath: './clash' # clash的工作目录，工作目录这里指的是clash读取配置文件的目录，请勿与操作系统上的概念混淆（可选配置）

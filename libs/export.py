@@ -3,14 +3,14 @@ from typing import Union
 
 import PIL
 from loguru import logger
-from PIL import Image, ImageDraw, ImageFont, ImageOps
+from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageColor
 from pilmoji import Pilmoji
 from pilmoji.source import Twemoji
 import time
 
 from glovar import __version__ as _vsion
 from libs.cleaner import ConfigManager
-from libs.emoji_custom import TwitterPediaSource
+import libs.emoji_custom as emoji_source
 
 """
 这是将测试的结果输出为图片的模块。
@@ -22,7 +22,7 @@ from libs.emoji_custom import TwitterPediaSource
     基础数据决定了生成图片的高度（Height），它是列表，列表里面的数据一般是一组节点名，即有多少个节点就对应了info键值中的长度。
 """
 __version__ = "3.5.3-dev"  # 版本号，版本号将移动到glovar.py 这里的变量将废弃
-custom_source = TwitterPediaSource  # 自定义emoji风格 TwitterPediaSource
+#custom_source = TwitterPediaSource  # 自定义emoji风格 TwitterPediaSource
 
 
 def color_block(size: tuple, color_value):
@@ -78,12 +78,20 @@ class ExportResult:
             self.nodenum = 0
         self.front_size = 38
         self.config = ConfigManager()
+        
         self.emoji = self.config.config.get('emoji', True)  # 是否启用emoji，若否，则在输出图片时emoji将无法正常显示
+        emoji_source_name = self.config.config.get('emoji_source', "TwitterPediaSource")
+        if  emoji_source_name in emoji_source.__all__:
+            self.emoji_source = getattr(emoji_source, emoji_source_name)
+        else:
+            self.emoji_source = emoji_source.TwitterPediaSource
+       
         self.color = self.config.getColor()
         self.image_config = self.config.config.get('image', {})
         self.delay_color = self.color.get('delay', [])
         self.__font = ImageFont.truetype(self.config.getFont(), self.front_size)
         self.title = self.image_config.get('title', 'FullTclash')
+        
         self.watermark = self.image_config.get('watermark', {})
         watermark_default_config = {
             'enable': False,
@@ -213,41 +221,32 @@ class ExportResult:
         return xpath
 
     def draw_watermark(self, original_image):
-        original_image_size = original_image.size
         watermark_text = self.watermark['text']
-
-        super_sampling_ratio = 3
-        font_size = int(self.watermark['font_size'])
-        font = ImageFont.truetype(self.config.getFont(), font_size * super_sampling_ratio)
-
-        text_size = font.getsize(watermark_text)
-        text_image = Image.new('RGBA', text_size, (255, 255, 255, 0))
+        font = ImageFont.truetype(self.config.getFont(), int(self.watermark['font_size']))
+        text_image = Image.new('RGBA', font.getsize(watermark_text), (255, 255, 255, 0))
         text_draw = ImageDraw.Draw(text_image)
 
-        rgb = tuple(int(self.watermark['color'][i:i + 2], 16) for i in (1, 3, 5))
-        text_draw.text((0, 0), watermark_text, (rgb[0], rgb[1], rgb[2], int(self.watermark['alpha'])), font=font)
+        rgb = ImageColor.getrgb(self.watermark['color'])
+        rgba = (rgb[0], rgb[1], rgb[2], (int(self.watermark['alpha'])))
+        text_draw.text((0, 0), watermark_text, rgba, font=font)
 
-        rotated_text_image = text_image.rotate(float(self.watermark['angle']), expand=True, fillcolor=(0, 0, 0, 0))
-        rotated_text_image_size = [x // super_sampling_ratio for x in rotated_text_image.size]
-        if rotated_text_image_size[0] <= 0 or rotated_text_image_size[1] <= 0:
-            logger.error(f'无法添加水印，水印大小为:{rotated_text_image_size}')
-            return original_image
-        rotated_text_image = rotated_text_image.resize(rotated_text_image_size)
-
-        watermarks_image = Image.new('RGBA', original_image_size, (255, 255, 255, 0))
-
-        x = original_image_size[0] // 2 - rotated_text_image_size[0] // 2
+        angle = float(self.watermark['angle'])
+        rotated_text_image = text_image.rotate(angle, expand=True, fillcolor=(0, 0, 0, 0), resample=Image.Resampling.BILINEAR)
+        watermarks_image = Image.new('RGBA', original_image.size, (255, 255, 255, 0))
+        
+        x = original_image.size[0] // 2 - rotated_text_image.size[0] // 2
         row_spacing = int(self.watermark['row_spacing'])
         if row_spacing < 0:
             row_spacing = 0
         y = int(self.watermark['start_y'])
         while True:
             watermarks_image.paste(rotated_text_image, (x, y))
-            y += rotated_text_image_size[1] + row_spacing
-            if y >= original_image_size[1]:
+            y += rotated_text_image.size[1] + row_spacing
+            if y >= original_image.size[1]:
                 break
 
         return Image.alpha_composite(original_image, watermarks_image)
+   
     @logger.catch
     def exportUnlock(self):
         wtime = self.info.pop('wtime', "0")
@@ -258,7 +257,7 @@ class ExportResult:
         self.background = self.image_config.get('background', {})
         B_color = self.background.get('backgrounds', '#ffffff')
         img = Image.new("RGB", (image_width, image_height), B_color)
-        pilmoji = Pilmoji(img, source=custom_source)  # emoji表情修复
+        pilmoji = Pilmoji(img, source=self.emoji_source)  # emoji表情修复
         # 绘制色块
         titlet = self.background.get('testtitle', '#EAEAEA')
         bkg = Image.new('RGB', (image_width, 120), titlet)  # 首尾部填充
@@ -528,7 +527,7 @@ class ExportTopo(ExportResult):
         self.background = self.image_config.get('background', {})
         T_color = self.background.get('ins', '#ffffff')
         img = Image.new("RGB", (image_width, image_height), T_color)
-        pilmoji = Pilmoji(img, source=custom_source)  # emoji表情修复
+        pilmoji = Pilmoji(img, source=self.emoji_source)  # emoji表情修复
         # 绘制色块
         titlea = self.background.get('topotitle', '#EAEAEA')
         bkg = Image.new('RGB', (image_width, 80), titlea)  # 首尾部填充
@@ -620,7 +619,7 @@ class ExportTopo(ExportResult):
         self.background = self.image_config.get('background', {})
         O_color = self.background.get('outs', '#ffffff')
         img = Image.new("RGB", (image_width, image_height), O_color)
-        pilmoji = Pilmoji(img, source=custom_source)  # emoji表情修复
+        pilmoji = Pilmoji(img, source=self.emoji_source)  # emoji表情修复
         # 绘制色块
         titlea = self.background.get('topotitle', '#EAEAEA')
         bkg = Image.new('RGB', (image_width, 80), titlea)  # 首尾部填充
@@ -860,7 +859,7 @@ class ExportSpeed(ExportResult):
         self.background = self.image_config.get('background', {})
         P_color = self.background.get('speedtest', '#ffffff')
         img = Image.new("RGB", (image_width, image_height), P_color)
-        pilmoji = Pilmoji(img, source=custom_source)  # emoji表情修复
+        pilmoji = Pilmoji(img, source=self.emoji_source)  # emoji表情修复
         # 绘制色块
         titles = self.background.get('speedtitle', '#EAEAEA')
         bkg = Image.new('RGB', (image_width, 120), titles)  # 首尾部填充
