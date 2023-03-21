@@ -22,7 +22,9 @@ import libs.emoji_custom as emoji_source
     基础数据决定了生成图片的高度（Height），它是列表，列表里面的数据一般是一组节点名，即有多少个节点就对应了info键值中的长度。
 """
 __version__ = "3.5.3-dev"  # 版本号，版本号将移动到glovar.py 这里的变量将废弃
-#custom_source = TwitterPediaSource  # 自定义emoji风格 TwitterPediaSource
+
+
+# custom_source = TwitterPediaSource  # 自定义emoji风格 TwitterPediaSource
 
 
 def color_block(size: tuple, color_value):
@@ -78,20 +80,20 @@ class ExportResult:
             self.nodenum = 0
         self.front_size = 38
         self.config = ConfigManager()
-        
-        self.emoji = self.config.config.get('emoji', True)  # 是否启用emoji，若否，则在输出图片时emoji将无法正常显示
-        emoji_source_name = self.config.config.get('emoji_source', "TwitterPediaSource")
-        if  emoji_source_name in emoji_source.__all__:
+
+        self.emoji = self.config.config.get('emoji', {}).get('enable', True)  # 是否启用emoji，若否，则在输出图片时emoji将无法正常显示
+        emoji_source_name = self.config.config.get('emoji', {}).get('emoji-source', "TwitterPediaSource")
+        if emoji_source_name in emoji_source.__all__:
             self.emoji_source = getattr(emoji_source, emoji_source_name)
         else:
             self.emoji_source = emoji_source.TwitterPediaSource
-       
+        print(self.emoji_source.__name__)
         self.color = self.config.getColor()
         self.image_config = self.config.config.get('image', {})
         self.delay_color = self.color.get('delay', [])
         self.__font = ImageFont.truetype(self.config.getFont(), self.front_size)
         self.title = self.image_config.get('title', 'FullTclash')
-        
+        self.background = self.image_config.get('background', {})
         self.watermark = self.image_config.get('watermark', {})
         watermark_default_config = {
             'enable': False,
@@ -231,9 +233,10 @@ class ExportResult:
         text_draw.text((0, 0), watermark_text, rgba, font=font)
 
         angle = float(self.watermark['angle'])
-        rotated_text_image = text_image.rotate(angle, expand=True, fillcolor=(0, 0, 0, 0), resample=Image.Resampling.BILINEAR)
+        rotated_text_image = text_image.rotate(angle, expand=True, fillcolor=(0, 0, 0, 0),
+                                               resample=Image.Resampling.BILINEAR)
         watermarks_image = Image.new('RGBA', original_image.size, (255, 255, 255, 0))
-        
+
         x = original_image.size[0] // 2 - rotated_text_image.size[0] // 2
         row_spacing = int(self.watermark['row_spacing'])
         if row_spacing < 0:
@@ -246,7 +249,7 @@ class ExportResult:
                 break
 
         return Image.alpha_composite(original_image, watermarks_image)
-   
+
     @logger.catch
     def exportUnlock(self):
         wtime = self.info.pop('wtime', "0")
@@ -254,7 +257,6 @@ class ExportResult:
         image_width, nodename_width, info_list_length = self.get_width()
         image_height = self.get_height()
         key_list = self.get_key_list()
-        self.background = self.image_config.get('background', {})
         B_color = self.background.get('backgrounds', '#ffffff')
         img = Image.new("RGB", (image_width, image_height), B_color)
         pilmoji = Pilmoji(img, source=self.emoji_source)  # emoji表情修复
@@ -274,7 +276,8 @@ class ExportResult:
         title = list1[0]
         idraw.text((self.get_mid(0, image_width, title), 3), title, font=fnt, fill=(0, 0, 0))  # 标题
         if self.emoji:
-            pilmoji.text((10, image_height - 112), text=list1[1], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 3))
+            pilmoji.text((10, image_height - 112), text=list1[1], font=fnt, fill=(0, 0, 0),
+                         emoji_position_offset=(0, 3))
         else:
             idraw.text((10, image_height - 112), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
         idraw.text((10, image_height - 45), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
@@ -415,9 +418,6 @@ class ExportResult:
                            font=fnt, fill=(0, 0, 0))
                 width += info_list_length[i]
                 i += 1
-        '''
-        :添加横竖线条
-        '''
         # 绘制横线
         for t in range(self.nodenum + 3):
             idraw.line([(0, 60 * (t + 1)), (image_width, 60 * (t + 1))], fill="#e1e1e1", width=2)
@@ -429,10 +429,12 @@ class ExportResult:
             end = start_x + i
             idraw.line([(x, 60), (x, image_height - 120)], fill="#EAEAEA", width=2)
             start_x = end
-        print(export_time)
+        # 绘制水印
         if self.watermark['enable']:
             img = self.draw_watermark(img.convert("RGBA"))
+        # 保存结果
         img.save(r"./results/{}.png".format(export_time.replace(':', '-')))
+        print(export_time)
         return export_time
 
 
@@ -451,11 +453,9 @@ class ExportTopo(ExportResult):
             self.basedata = self.info.get('节点名称', []) if '节点名称' in self.info else self.info.get('地区', [])
         else:
             self.basedata = self.info.get('节点名称', name) if '节点名称' in self.info else self.info.get('地区', [])
-        self.emoji = self.config.config.get('emoji', True)  # 是否启用emoji，若否，则在输出图片时emoji将无法正常显示
         self.wtime = self.info.pop('wtime', "未知")
         self.nodenum = len(self.basedata)
         self.front_size = 30
-        self.config = ConfigManager()
         self.__font = ImageFont.truetype(self.config.getFont(), self.front_size)
         # self.image_config = self.config.config.get('image', {})
         # self.title = self.image_config.get('title', 'FullTclash')
@@ -765,9 +765,7 @@ class ExportSpeed(ExportResult):
         :param info:
         """
         super().__init__({}, [])
-        self.config = ConfigManager()
         self.color = self.config.getColor().get('speed', [])
-        self.emoji = self.config.config.get('emoji', True)  # 是否启用emoji，若否，则在输出图片时emoji将无法正常显示
         if info is None:
             info = {}
         self.wtime = info.pop('wtime', "-1")
@@ -778,12 +776,8 @@ class ExportSpeed(ExportResult):
         self.traffic = "%.1f" % info.pop('消耗流量', 0)
         self.info = info
         self.basedata = info.pop('节点名称', name)
-        if self.basedata:
-            self.nodenum = len(self.basedata)
-        else:
-            self.nodenum = 0
+        self.nodenum = len(self.basedata) if self.basedata else 0
         self.front_size = 38
-        self.config = ConfigManager()
         self.__font = ImageFont.truetype(self.config.getFont(), self.front_size)
         self.speedblock_width = 20
 
@@ -860,7 +854,7 @@ class ExportSpeed(ExportResult):
         P_color = self.background.get('speedtest', '#ffffff')
         img = Image.new("RGB", (image_width, image_height), P_color)
         pilmoji = Pilmoji(img, source=self.emoji_source)  # emoji表情修复
-        # 绘制色块
+        # 绘制背景板
         titles = self.background.get('speedtitle', '#EAEAEA')
         bkg = Image.new('RGB', (image_width, 120), titles)  # 首尾部填充
         img.paste(bkg, (0, 0))
@@ -869,14 +863,15 @@ class ExportSpeed(ExportResult):
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
         list1 = [f"{self.title} - 速度测试",
-                 f"版本:{__version__}    总共耗时: {self.wtime}s   消耗流量: {self.traffic}MB   线程: {self.thread}" +
+                 f"版本:{__version__}    总共耗时: {self.wtime}s   消耗流量: {self.traffic}MB   线程: {self.thread}  " +
                  f"过滤器: {self.filter_include} <-> {self.filter_exclude}",
-                 "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time)]
+                 f"测试时间: {export_time}  测试结果仅供参考,以实际情况为准"]
         export_time = export_time.replace(':', '-')
         title = list1[0]
         idraw.text((self.get_mid(0, image_width, title), 5), title, font=fnt, fill=(0, 0, 0))  # 标题
         if self.emoji:
-            pilmoji.text((10, image_height - 112), text=list1[1], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 3))
+            pilmoji.text((10, image_height - 112), text=list1[1], font=fnt, fill=(0, 0, 0),
+                         emoji_position_offset=(0, 3))
         else:
             idraw.text((10, image_height - 112), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
         idraw.text((10, image_height - 45), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
@@ -902,6 +897,13 @@ class ExportSpeed(ExportResult):
             # 默认值
             colorvalue = ["#f5f3f2", "#beb1aa", "#f6bec8", "#dc6b82", "#c35c5d", "#8ba3c7", "#c8161d"]
             interval = [0, 1, 5, 10, 20, 60, 100]
+
+        def get_color(_speedvalue, default_color='#C0C0C0'):
+            for _i in reversed(range(len(colorvalue))):
+                if _speedvalue >= interval[_i]:
+                    return colorvalue[_i]
+            return default_color
+
         for t in range(self.nodenum):
             # 序号
             idraw.text((self.get_mid(0, 100, str(t + 1)), 60 * (t + 2) + 6), text=str(t + 1), font=fnt, fill=(0, 0, 0))
@@ -919,12 +921,6 @@ class ExportSpeed(ExportResult):
             else:
                 idraw.text((110, 60 * (t + 2) + 5), text=self.basedata[t], font=fnt, fill=(0, 0, 0))
 
-            def get_color(speedvalue, default_color='#C0C0C0'):
-                for i in reversed(range(len(colorvalue))):
-                    if speedvalue >= interval[i]:
-                        return colorvalue[i]
-                return default_color
-
             width = 100 + nodename_width + 2
             i = 0
             speedblock_height = 60
@@ -938,9 +934,9 @@ class ExportSpeed(ExportResult):
                     speedblock_x = width
                     for speedvalue in self.info[t1][t]:
                         max_speed = float(self.info["最大速度"][t][:-2])
-                        if (max_speed > 0.0):
+                        if max_speed > 0.0:
                             speedblock_ratio_height = int(speedblock_height * speedvalue / max_speed)
-                            if (speedblock_ratio_height > speedblock_height):
+                            if speedblock_ratio_height > speedblock_height:
                                 speedblock_ratio_height = speedblock_height
                             speedblock_y = speedblock_height * (t + 2) + (speedblock_height - speedblock_ratio_height)
 
@@ -962,9 +958,6 @@ class ExportSpeed(ExportResult):
                 width += info_list_length[i]
                 i += 1
 
-        '''
-        :添加横竖线条
-        '''
         # 绘制横线
         for t in range(self.nodenum + 3):
             idraw.line([(0, 60 * (t + 1)), (image_width, 60 * (t + 1))], fill="#e1e1e1", width=1)
@@ -976,8 +969,10 @@ class ExportSpeed(ExportResult):
             end = start_x + i
             idraw.line([(x, 60), (x, image_height - 120)], fill="#EAEAEA", width=2)
             start_x = end
-        print(export_time)
+        # 绘制水印
         if self.watermark['enable']:
             img = self.draw_watermark(img.convert("RGBA"))
+        # 保存结果
         img.save(r"./results/{}.png".format(export_time.replace(':', '-')))
+        print(export_time)
         return export_time

@@ -1,3 +1,4 @@
+import asyncio
 import os
 import sys
 import time
@@ -6,8 +7,21 @@ from loguru import logger
 from libs.cleaner import ConfigManager
 from libs.safe import gen_key
 
+config = ConfigManager()
+
 
 def check_init():
+    emoji_source = config.config.get('emoji', {}).get('emoji-source', '')
+    if config.config.get('emoji', {}).get('enable', True) and emoji_source=='TwemojiLocalSource':
+        from libs.emoji_custom import TwemojiLocalSource
+        if not os.path.isdir('./resources/emoji/twemoji'):
+            twemoji = TwemojiLocalSource()
+            logger.info("正在初始化本地emoji...")
+            asyncio.get_event_loop().run_until_complete(twemoji.download_emoji(proxy=config.get_proxy()))
+            if twemoji.init_emoji(twemoji.savepath):
+                logger.info("初始化emoji成功")
+            else:
+                logger.warning("初始化emoji失败")
     dirs = os.listdir()
     if "clash" in dirs and "logs" in dirs and "results" in dirs and 'key' in dirs:
         return
@@ -49,7 +63,7 @@ except Exception as e:
     latest_version_hash = "Unavailable"
 
 logger.add("./logs/fulltclash_{time}.log", rotation='7 days')
-config = ConfigManager()
+
 botconfig = config.getBotconfig()
 api_id = botconfig.get('api_id', None)
 api_hash = botconfig.get('api_hash', None)
