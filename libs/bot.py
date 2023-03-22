@@ -39,7 +39,7 @@ def command_loader(app: Client):
             return
         await message.reply("请选择排序方式:", reply_markup=botmodule.IKM2, quote=True)
 
-    @app.on_message(filters.command(["invite"] & allfilter(0)), group=1)
+    @app.on_message(filters.command(["invite"]) & allfilter(0), group=1)
     async def invite(client, message):
         await botmodule.invite(client, message)
 
