@@ -563,6 +563,61 @@ class ExportTopo(ExportResult):
                     idraw.text((self.get_mid(width, width + info_list_length[i], self.info[t1][t]), (t + 2) * 40),
                                self.info[t1][t],
                                font=fnt, fill=(0, 0, 0))
+
+                elif t1 == "栈":
+                    #这里直接使用paste贴图
+                    try:
+                        if self.emoji:
+                           if self.info[t1][t] == "4":
+                              img_to_paste = Image.open("image/4.png")
+
+                              img_to_paste = img_to_paste.resize((25, 25))
+
+                              paste_location = (width + int((40 - img_to_paste.size[0]) / 2) + 30,
+                                               (t + 2) * 60 + int((60 - img_to_paste.size[1]) / 2))
+
+                              img.paste(img_to_paste, paste_location)
+
+                           elif self.info[t1][t] == "6":
+                               img_to_paste = Image.open("image/6.png")
+
+                               img_to_paste = img_to_paste.resize((25, 25))
+
+                               paste_location = (width + int((40 - img_to_paste.size[0]) / 2) + 30,
+                                                 (t + 2) * 60 + int((60 - img_to_paste.size[1]) / 2))
+
+                               img.paste(img_to_paste, paste_location)
+                           elif self.info[t1][t] == "46":
+                               img_to_paste_4 = Image.open("image/4.png")
+                               img_to_paste_4 = img_to_paste_4.resize((25, 25))
+
+                               img_to_paste_6 = Image.open("image/6.png")
+                               img_to_paste_6 = img_to_paste_6.resize((25, 25))
+
+                               paste_location_4 = (width + int((40 - img_to_paste_4.size[0]) / 2) + 20,
+                                                   (t + 2) * 60 + int((60 - img_to_paste_4.size[1]) / 2))
+
+                               paste_location_6 = (width + int((40 - img_to_paste_6.size[0]) / 2) + 60,
+                                                   (t + 2) * 60 + int((60 - img_to_paste_6.size[1]) / 2))
+
+                               img.paste(img_to_paste_4, paste_location_4)
+                               img.paste(img_to_paste_6, paste_location_6)
+
+                        else:
+                            idraw.text((width + 40, (t + 2) * 60), self.info[t1][t], font=fnt, fill=(0, 0, 0))
+                    except PIL.UnidentifiedImageError:
+                        logger.warning("无效符号:" + self.basedata[t])
+                        pilmoji2 = Pilmoji(img, source=Twemoji)
+                        pilmoji2.text((width + 40, (t + 2) * 60),
+                                      self.info[t1][t],
+                                      font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
+                    except Exception as e:
+                        logger.error(str(e))
+                        idraw.text((width + 40, (t + 2) * 60), self.info[t1][t], font=fnt, fill=(0, 0, 0))
+                    idraw.line(
+                        [(width, (t + 3) * 60), (width + info_list_length[i], (t + 3) * 60)],
+                        fill="#e1e1e1", width=2)
+
                 else:
                     idraw.text((self.get_mid(width, width + info_list_length[i], str(self.info[t1][t])), (t + 2) * 40),
                                str(self.info[t1][t]),
@@ -675,6 +730,60 @@ class ExportTopo(ExportResult):
                         idraw.line([(width, (t + 3 + cu_offset2) * 40),
                                     (width + info_list_length[i], (t + 3 + cu_offset2) * 40)],
                                    fill="#e1e1e1", width=2)
+                elif t1 == "栈":
+                        try:
+                            #这里直接使用paste贴图
+                            if self.emoji:
+                                if self.info[t1][t] == "4":
+                                    img_to_paste = Image.open("image/4.png")
+
+                                    img_to_paste = img_to_paste.resize((25, 25))
+
+                                    paste_location = (width + int((40 - img_to_paste.size[0]) / 2) + 30,
+                                                      (t + 2) * 60 + int((60 - img_to_paste.size[1]) / 2))
+
+                                    img.paste(img_to_paste, paste_location)
+
+                                elif self.info[t1][t] == "6":
+                                    img_to_paste = Image.open("image/6.png")
+
+                                    img_to_paste = img_to_paste.resize((25, 25))
+
+                                    paste_location = (width + int((40 - img_to_paste.size[0]) / 2) + 30,
+                                                      (t + 2) * 60 + int((60 - img_to_paste.size[1]) / 2))
+
+                                    img.paste(img_to_paste, paste_location)
+                                elif self.info[t1][t] == "46":
+                                    img_to_paste_4 = Image.open("image/4.png")
+                                    img_to_paste_4 = img_to_paste_4.resize((25, 25))
+
+                                    img_to_paste_6 = Image.open("image/6.png")
+                                    img_to_paste_6 = img_to_paste_6.resize((25, 25))
+
+                                    paste_location_4 = (width + int((40 - img_to_paste_4.size[0]) / 2) + 25,
+                                                        (t + 2) * 60 + int((60 - img_to_paste_4.size[1]) / 2))
+
+                                    paste_location_6 = (width + int((40 - img_to_paste_6.size[0]) / 2) + 65,
+                                                        (t + 2) * 60 + int((60 - img_to_paste_6.size[1]) / 2))
+
+                                    img.paste(img_to_paste_4, paste_location_4)
+                                    img.paste(img_to_paste_6, paste_location_6)
+
+                            else:
+                                idraw.text((width + 40, (t + 2) * 60), self.info[t1][t], font=fnt, fill=(0, 0, 0))
+                        except PIL.UnidentifiedImageError:
+                            logger.warning("无效符号:" + self.basedata[t])
+                            pilmoji2 = Pilmoji(img, source=Twemoji)
+                            pilmoji2.text((width + 40, (t + 2) * 60),
+                                          self.info[t1][t],
+                                          font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
+                        except Exception as e:
+                            logger.error(str(e))
+                            idraw.text((width + 40, (t + 2) * 60), self.info[t1][t], font=fnt, fill=(0, 0, 0))
+                        idraw.line(
+                            [(width, (t + 3) * 60), (width + info_list_length[i], (t + 3) * 60)],
+                            fill="#e1e1e1", width=2)
+
                 elif t1 == "簇":
                     if t < len(cu):
                         temp = self.info[t1][t]
