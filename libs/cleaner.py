@@ -389,7 +389,39 @@ class ClashCleaner:
         except TypeError:
             logger.warning("读取节点信息失败！")
             return None
-
+    def nodehost(self, _filter: str = ''):
+        """
+        获取节点域名
+        :return: list
+        """
+        y = []
+        try:
+            for i in self.yaml['proxies']:
+                y.append(i['server'])
+            return y
+        except TypeError:
+            logger.warning("读取节点信息失败！")
+            return None
+    
+    @staticmethod
+    def count_element(y: list = None):
+        """
+        返回入站域名信息,本质上是统计一个列表里每个元素出现的次数
+        :return: dict
+        """
+        dip = {}
+        if y is None:
+            return None
+        else:
+            nodehosts = y
+        try:
+            for key in nodehosts:
+                dip[key] = dip.get(key, 0) + 1
+            return dip
+        except Exception as e:
+            logger.error(str(e))
+            return None
+        
     def nodesAddr(self, name=None):
         """
         获取节点地址
@@ -811,13 +843,11 @@ class ConfigManager:
                 userlist.extend(old)
             newuserlist = list(set(userlist))  # 去重
             self.yaml['user'] = newuserlist
-            # logger.info("添加成功")
-            return True
+            logger.info("添加成功")
         except KeyError:
             newuserlist = list(set(userlist))  # 去重
             self.yaml['user'] = newuserlist
             logger.info("添加成功")
-            return True
 
     @logger.catch
     def del_user(self, user: list or str or int):
@@ -1238,16 +1268,62 @@ def geturl(string: str):
 @logger.catch
 def domain_to_ip(host: str):
     """
-    将域名转成ip
+    将域名转成IPv4和IPv6地址
     :param host:
-    :return:
+    :return: 返回IP地址列表,如果无法解析返回None
     """
     try:
-        ip = socket.gethostbyname(host)
+        results = socket.getaddrinfo(host, None, socket.AF_UNSPEC, socket.SOCK_STREAM)
+        ips = set()
+        for result in results:
+            ips.add(result[4][0])
+        ip = list(ips)
         return ip
     except socket.gaierror:
         return None
 
+def count(host: str):
+    ips = domain_to_ip(host)
+    if ips is None:
+        return None
+    sunny = len(ips[0])
+    if all(len(ip) > 15 for ip in ips):
+        return '6'
+    elif all(len(ip) < 16 and len(ip) != 0 for ip in ips):
+        return '4'
+    elif any(len(ip) > 15 for ip in ips):
+        if sunny > 15:
+           return '64'
+        else:
+           return '46'
+    else:
+        return None    
+def batch_ipstack(host: list):
+    """
+    批量将域名转成栈列表
+    :param host: 一个列表
+    :return:
+    """
+    ipstack = []
+    for h in host:
+        if type(h).__name__ == 'dict':
+            try:
+                ipss = count(h['server'])
+                if ipss:
+                    h['server'] = ipss
+                else:
+                    h['server'] = "N/A"
+                ipstack.append(h)
+            except KeyError:
+                h['server'] = "N/A"
+                ipstack.append(h)
+        else:
+            ipss = count(h)
+            if ipss:
+                ipstack.append(ipss)
+            else:
+                ipstack.append("N/A")
+    return ipstack
 
 def batch_domain2ip(host: list):
     """
@@ -1259,9 +1335,9 @@ def batch_domain2ip(host: list):
     for h in host:
         if type(h).__name__ == 'dict':
             try:
-                ip = domain_to_ip(h['server'])
-                if ip:
-                    h['server'] = ip
+                ips = domain_to_ip(h['server'])
+                if ips:
+                    h['server'] = ips[0] or ips[1]
                 else:
                     h['server'] = "N/A"
                 ipaddrs.append(h)
@@ -1269,9 +1345,9 @@ def batch_domain2ip(host: list):
                 h['server'] = "N/A"
                 ipaddrs.append(h)
         else:
-            ip = domain_to_ip(h)
-            if ip:
-                ipaddrs.append(ip)
+            ips = domain_to_ip(h)
+            if ips:
+                ipaddrs.append(ips[0] or ips[1])
             else:
                 ipaddrs.append("N/A")
     return ipaddrs
