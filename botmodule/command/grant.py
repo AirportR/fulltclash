@@ -21,9 +21,19 @@ async def grant(client: Client, message: pyrogram.types.Message):
             return
     try:
         grant_text = "该成员已被加入到授权目标"
-
+        _args = [x for x in str(message.text).strip().split(' ') if x != '']
         if not message.reply_to_message:
-            await message.reply("请先用该指令回复一个目标")
+            if len(_args) < 2:
+                await message.reply("请先用该指令回复一个目标")
+            else:
+                for i in _args[1:]:
+                    config.add_user(i)
+                logger.info("授权id:" + str(_args[1:]))
+                config.reload()
+                r2()
+                reloadUser()
+                back_msg = await message.reply(f"已授权{len(_args)-1}个目标: \n{str(_args[1:])}")
+                message_delete_queue.put_nowait((back_msg.chat.id, back_msg.id, 10))
         else:
             back_msg = await client.send_message(chat_id=message.chat.id,
                                                  text=grant_text,
@@ -55,8 +65,20 @@ async def ungrant(_, message: pyrogram.types.Message):
             return
     try:
         ungrant_text = "该成员已被移出授权目标"
+        _args = [x for x in str(message.text).strip().split(' ') if x != '']
         if message.reply_to_message is None:
-            await message.reply("请先用该指令回复一个目标")
+            if len(_args) < 2:
+                back_msg = await message.reply("请先用该指令回复一个目标")
+                message_delete_queue.put_nowait((back_msg.chat.id, back_msg.id, 10))
+            else:
+                for i in _args[1:]:
+                    config.del_user(i)
+                config.reload()
+                r2()
+                reloadUser()
+                logger.info(f"{len(_args)-1}个目标已取消授权: \n{str(_args[1:])}")
+                back_msg = await message.reply(f"{len(_args)-1}个目标已取消授权: \n{str(_args[1:])}")
+                message_delete_queue.put_nowait((back_msg.chat.id, back_msg.id, 10))
         else:
             try:
                 ungrant_id = int(message.reply_to_message.from_user.id)
@@ -66,7 +88,8 @@ async def ungrant(_, message: pyrogram.types.Message):
             config.reload()
             r2()
             reloadUser()
-            await message.reply(ungrant_text)
+            back_msg = await message.reply(ungrant_text)
+            message_delete_queue.put_nowait((back_msg.chat.id, back_msg.id, 10))
 
     except RPCError as r:
         logger.error(str(r))
@@ -75,11 +98,11 @@ async def ungrant(_, message: pyrogram.types.Message):
 async def user(_, message):
     try:
         if int(message.from_user.id) not in admin and str(
-                message.from_user.username) not in admin:  # 如果不在USER_TARGET名单是不会有权限的
+                message.from_user.username) not in admin:
             await message.reply("⚠️您不是bot的管理员，无法使用该命令")
             return
     except AttributeError:
-        if int(message.sender_chat.id) not in admin:  # 如果不在USER_TARGET名单是不会有权限的
+        if int(message.sender_chat.id) not in admin:
             await message.reply("⚠️您不是bot的管理员，无法使用该命令")
             return
     USER_TARGET = config.getuser()

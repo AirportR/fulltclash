@@ -1,14 +1,12 @@
 import math
+import time
 from typing import Union
-
-import PIL
 from loguru import logger
-from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageColor
+from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageColor, UnidentifiedImageError
 from pilmoji import Pilmoji
 from pilmoji.source import Twemoji
-import time
 
-from glovar import __version__ as _vsion
+from glovar import __version__
 from libs.cleaner import ConfigManager
 import libs.emoji_custom as emoji_source
 
@@ -21,10 +19,6 @@ import libs.emoji_custom as emoji_source
 2、何为基础数据？
     基础数据决定了生成图片的高度（Height），它是列表，列表里面的数据一般是一组节点名，即有多少个节点就对应了info键值中的长度。
 """
-__version__ = "3.5.3-dev"  # 版本号，版本号将移动到glovar.py 这里的变量将废弃
-
-
-# custom_source = TwitterPediaSource  # 自定义emoji风格 TwitterPediaSource
 
 
 def color_block(size: tuple, color_value):
@@ -45,7 +39,7 @@ class BaseExport:
         所有绘图类的基类，primarykey为主键，计算主键的长度，主键决定整张图片的高度
         """
         self.basedata = primarykey
-        self.version = _vsion
+        self.version = __version__
         self.allinfo = allinfo
         self.info = self.getPrintinfo()
 
@@ -323,7 +317,7 @@ class ExportResult:
                     # 自定义emoji源可能出错，所以捕捉了异常
                     pilmoji.text((110, 60 * (t + 2) + 5), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
                                  emoji_position_offset=(0, 6))
-                except PIL.UnidentifiedImageError:
+                except UnidentifiedImageError:
                     logger.warning("无效符号:" + self.basedata[t])
                     pilmoji2 = Pilmoji(img, source=Twemoji)
                     pilmoji2.text((110, 60 * (t + 2) + 5), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
@@ -703,7 +697,7 @@ class ExportTopo(ExportResult):
                                          font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
                         else:
                             idraw.text((width + 10, (t + 2) * 40), self.info[t1][t], font=fnt, fill=(0, 0, 0))
-                    except PIL.UnidentifiedImageError:
+                    except UnidentifiedImageError:
                         logger.warning("无效符号:" + self.basedata[t])
                         pilmoji2 = Pilmoji(img, source=Twemoji)
                         pilmoji2.text((width + 10, (t + 2) * 40),
@@ -909,7 +903,7 @@ class ExportSpeed(ExportResult):
                     # 自定义emoji源可能出错，所以捕捉了异常
                     pilmoji.text((110, 60 * (t + 2) + 5), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
                                  emoji_position_offset=(0, 6))
-                except PIL.UnidentifiedImageError:
+                except UnidentifiedImageError:
                     logger.warning("无效符号:" + self.basedata[t])
                     pilmoji2 = Pilmoji(img, source=Twemoji)
                     pilmoji2.text((110, 60 * (t + 2) + 5), text=self.basedata[t], font=fnt, fill=(0, 0, 0),

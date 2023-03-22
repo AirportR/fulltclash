@@ -1,19 +1,15 @@
 import time
 import asyncio
-import tzlocal
-from loguru import logger
 
-from glovar import app
+from loguru import logger
+from pyrogram import Client
 import pyrogram.errors.exceptions.forbidden_403
 import pyrogram.errors.exceptions.bad_request_400
 
 from botmodule.utils import message_delete_queue
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-
-scheduler = AsyncIOScheduler(timezone=str(tzlocal.get_localzone()))
 
 
-async def cron_delete_message():
+async def cron_delete_message(app: Client):
     # logger.info('Start Cron Delete Message')
     delete_messages = []
     while True:
@@ -40,5 +36,3 @@ async def cron_delete_message():
         except Exception as e:
             logger.error(f'2. Delete Message: {e}')
             continue
-
-# scheduler.add_job(cron_delete_message, 'interval', seconds=2)

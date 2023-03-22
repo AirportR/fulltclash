@@ -1,9 +1,13 @@
+import tzlocal
 from pyrogram import Client
 from loguru import logger
 from botmodule import init_bot
-
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from cron import cron_delete_message as cdm
 bot_token = init_bot.bot_token
+# 项目版本号
 __version__ = '3.5.3'
+# 客户端
 app = Client("my_bot",
              api_id=init_bot.api_id,
              api_hash=init_bot.api_hash,
@@ -13,6 +17,10 @@ app = Client("my_bot",
              ipv6=False
              )
 
+scheduler = AsyncIOScheduler(timezone=str(tzlocal.get_localzone()))
+scheduler.start()
+print("""# --------------------------- [ Start bot AsyncIOScheduler Successful ] ---------------------------- # """)
+scheduler.add_job(cdm, 'interval', seconds=10, id='delete1', name="Delete the telegram message", args=(app,))
 
 # ---------------------------- [ Set bot Commands] ---------------------------- #
 # def set_commands():
@@ -72,3 +80,6 @@ def bot_info(_app):
     # else:
     #     logger.info(f'Congratulations, bot have access to message !')
     print("""# ---------------------------- [ Check Bot Successful ] ---------------------------- #   """)
+
+
+

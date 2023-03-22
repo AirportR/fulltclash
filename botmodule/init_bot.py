@@ -129,7 +129,7 @@ if admin is None:
     time.sleep(5)
     sys.exit(1)
 
-logger.info("配置已加载, Telegram bot程序正在运行...")
+logger.info("配置已加载, Telegram bot程序开始运行...")
 
 # 启动器
 pystr = "python" if sys.platform == "win32" else "python3"
