@@ -577,6 +577,7 @@ class ExportTopo(ExportResult):
                                self.info[t1][t],
                                font=fnt, fill=(0, 0, 0))
                 elif t1 == "栈":
+                    #这里直接使用paste贴图
                     try:
                         if self.emoji:
                            if self.info[t1][t] == "4":
@@ -743,6 +744,7 @@ class ExportTopo(ExportResult):
                                    fill="#e1e1e1", width=2)
                 elif t1 == "栈":
                         try:
+                            #这里直接使用paste贴图
                             if self.emoji:
                                 if self.info[t1][t] == "4":
                                     img_to_paste = Image.open("image/4.png")
