@@ -3,7 +3,7 @@ import asyncio
 from loguru import logger
 from pyrogram.errors import RPCError
 from libs.check import check_user
-from botmodule import init_bot
+from botmodule import init_bot, message_delete_queue
 from glovar import __version__
 
 tourist_text = f"""
@@ -66,8 +66,8 @@ admin_text = f"""
 /register & /baipiao <注册地址> [用户]远程注册并返回一个订阅（必须是V2board且无邮箱验证）
 /new <订阅链接> <订阅名> <访问密码> [用户]新增一个订阅
 /sub [管理]查看所有已保存的订阅
-/grant <回复一个目标> [管理]授权一个目标
-/ungrant <回复一个目标> [管理]取消授权一个目标
+/grant <回复一个目标> / <...若干UID> [管理]授权一个目标
+/ungrant <回复一个目标> / <...若干UID> [管理]取消授权一个目标
 /user [管理]查看所有授权用户的id
 /remove [管理]移除一个或多个订阅
 /install <回复一个文件>安装脚本
@@ -83,8 +83,7 @@ async def version(_, message):
     try:
         version_hash = init_bot.latest_version_hash
         back_message = await message.reply(f"FullTclash版本: {__version__} (__{version_hash}__)")
-        await asyncio.sleep(30)
-        await back_message.delete()
+        message_delete_queue.put_nowait((back_message.chat.id, back_message.id, 30))
     except RPCError as r:
         logger.error(str(r))
 
@@ -102,7 +101,6 @@ async def helps(_, message):
             send_text = tourist_text
     try:
         back_message = await message.reply(send_text)
-        await asyncio.sleep(30)
-        await back_message.delete()
+        message_delete_queue.put_nowait((back_message.chat.id, back_message.id, 30))
     except RPCError as r:
         logger.error(str(r))

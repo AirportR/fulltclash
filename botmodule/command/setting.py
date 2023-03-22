@@ -6,7 +6,7 @@ from pyrogram.errors import RPCError
 from pyrogram.types import BotCommand, CallbackQuery, Message
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from libs.cleaner import addon, config
-from libs.export import __version__
+from glovar import __version__
 from botmodule.init_bot import latest_version_hash as v_hash
 from addons.unlockTest.spotify import button as b15
 from addons.unlockTest.viu import button as b18

@@ -80,4 +80,3 @@ def allfilter(group: int, *args, **kwargs):
         return user_filter(reloadUser())
     else:
         return filters.create(lambda x: True)
-
