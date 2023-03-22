@@ -2,13 +2,14 @@ import os
 import sys
 import pyrogram.types
 from loguru import logger
+from pyrogram import Client
 from pyrogram.errors import RPCError
 from botmodule.init_bot import admin, config, reloadUser
 from botmodule.command.test import reloadUser as r2
+from botmodule.utils import message_delete_queue
 
 
-# TODO(@AirportR): grant授权方式可以更多样化
-async def grant(client, message):
+async def grant(client: Client, message: pyrogram.types.Message):
     try:
         if int(message.from_user.id) not in admin and str(
                 message.from_user.username) not in admin:  # 如果不在USER_TARGET名单是不会有权限的
@@ -24,9 +25,10 @@ async def grant(client, message):
         if not message.reply_to_message:
             await message.reply("请先用该指令回复一个目标")
         else:
-            await client.send_message(chat_id=message.chat.id,
-                                      text=grant_text,
-                                      reply_to_message_id=message.reply_to_message.id)
+            back_msg = await client.send_message(chat_id=message.chat.id,
+                                                 text=grant_text,
+                                                 reply_to_message_id=message.reply_to_message.id)
+            message_delete_queue.put_nowait((back_msg.chat.id, back_msg.id, 10))
             try:
                 grant_id = int(message.reply_to_message.from_user.id)
             except AttributeError:

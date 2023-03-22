@@ -811,11 +811,13 @@ class ConfigManager:
                 userlist.extend(old)
             newuserlist = list(set(userlist))  # 去重
             self.yaml['user'] = newuserlist
-            logger.info("添加成功")
+            # logger.info("添加成功")
+            return True
         except KeyError:
             newuserlist = list(set(userlist))  # 去重
             self.yaml['user'] = newuserlist
             logger.info("添加成功")
+            return True
 
     @logger.catch
     def del_user(self, user: list or str or int):

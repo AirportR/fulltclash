@@ -80,7 +80,7 @@ def command_loader(app: Client):
     async def analyzeurl(client, message):
         await bot_put(client, message, "analyzeurl")
 
-    @app.on_message(filters.command(["analyze", "topo"] & allfilter(1)), group=1)
+    @app.on_message(filters.command(["analyze", "topo"]) & allfilter(1), group=1)
     async def analyze(client, message):
         await bot_put(client, message, "analyze")
 
@@ -183,7 +183,6 @@ def callback_loader(app: Client):
         await botmodule.reload_addon_from_telegram(client, call=callback_query)
         callback_query.stop_propagation()
 
-    # TODO(@AirportR): 鉴权可以融合到filter里面
     @app.on_callback_query(group=2)
     async def settings_test(client, callback_query):
         if callback_query.data == "blank":
