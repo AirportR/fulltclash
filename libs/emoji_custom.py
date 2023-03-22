@@ -131,6 +131,23 @@ class LocalSource(pilmoji.source.BaseSource):
         pass
 
 
+class OpenmojiLocalSource(LocalSource):
+    """
+    图片源：https://github.com/hfg-gmuend/openmoji/tree/master/color/72x72
+    安装路径：./resources/emoji/openmoji
+    """
+
+    def get_discord_emoji(self, _id: int, /) -> Optional[BytesIO]:
+        pass
+
+    def get_file_path(self, emoji: str) -> str:
+        code_points = [f'{ord(c):04X}' for c in emoji]
+        return f"./resources/emoji/openmoji/{'-'.join(code_points)}.png"
+
+    def download_emoji(self, download_url):
+        pass
+
+
 class TwemojiLocalSource(LocalSource):
     """
     图片源：https://github.com/twitter/twemoji/tree/master/assets/72x72
@@ -191,25 +208,10 @@ class TwemojiLocalSource(LocalSource):
 
     def get_file_path(self, emoji: str) -> str:
         code_points = [f'{ord(c):x}' for c in emoji]
+        if emoji == "4️⃣" or emoji == '6️⃣':
+            del code_points[1]
         file_path = f"./resources/emoji/twemoji/assets/72x72/{'-'.join(code_points)}.png"
         return file_path
-
-
-class OpenmojiLocalSource(LocalSource):
-    """
-    图片源：https://github.com/hfg-gmuend/openmoji/tree/master/color/72x72
-    安装路径：./resources/emoji/openmoji
-    """
-
-    def get_discord_emoji(self, _id: int, /) -> Optional[BytesIO]:
-        pass
-
-    def get_file_path(self, emoji: str) -> str:
-        code_points = [f'{ord(c):04X}' for c in emoji]
-        return f"./resources/emoji/openmoji/{'-'.join(code_points)}.png"
-
-    def download_emoji(self, download_url):
-        pass
 
 
 __all__ = [
@@ -230,15 +232,13 @@ __all__ = [
 
 if __name__ == "__main__":
     from PIL import Image, ImageFont
-
     my_string = """
-    Hello, world! 👋 Here are some emojis: 🎨 🌊 😎
+    Hello, world! Here are some emojis: 4️
     """
-
     with Image.new("RGB", (550, 80), (255, 255, 255)) as image:
         font = ImageFont.truetype("arial.ttf", 24)
 
-        with pilmoji.Pilmoji(image, source=TwitterPediaSource) as pilmoji:
+        with pilmoji.Pilmoji(image, source=TwemojiLocalSource) as pilmoji:
             pilmoji.text((10, 10), my_string.strip(), (0, 0, 0), font)
 
         image.show()
