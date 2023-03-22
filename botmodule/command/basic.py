@@ -3,7 +3,7 @@ import asyncio
 from loguru import logger
 from pyrogram.errors import RPCError
 from libs.check import check_user
-from botmodule import init_bot
+from botmodule import init_bot, message_delete_queue
 from glovar import __version__
 
 tourist_text = f"""
@@ -83,8 +83,7 @@ async def version(_, message):
     try:
         version_hash = init_bot.latest_version_hash
         back_message = await message.reply(f"FullTclash版本: {__version__} (__{version_hash}__)")
-        await asyncio.sleep(30)
-        await back_message.delete()
+        message_delete_queue.put_nowait((back_message.chat.id, back_message.id, 30))
     except RPCError as r:
         logger.error(str(r))
 
@@ -102,7 +101,6 @@ async def helps(_, message):
             send_text = tourist_text
     try:
         back_message = await message.reply(send_text)
-        await asyncio.sleep(30)
-        await back_message.delete()
+        message_delete_queue.put_nowait((back_message.chat.id, back_message.id, 30))
     except RPCError as r:
         logger.error(str(r))

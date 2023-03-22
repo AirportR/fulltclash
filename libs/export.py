@@ -1,4 +1,5 @@
 import math
+import time
 from typing import Union
 from loguru import logger
 from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageColor, UnidentifiedImageError
