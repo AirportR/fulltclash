@@ -582,7 +582,7 @@ class ExportTopo(ExportResult):
                            if self.info[t1][t] == "4":
                               img_to_paste = Image.open("image/4.png")
 
-                              img_to_paste = img_to_paste.resize((20, 20))
+                              img_to_paste = img_to_paste.resize((25, 25))
 
                               paste_location = (width + int((40 - img_to_paste.size[0]) / 2) + 30,
                                                (t + 2) * 60 + int((60 - img_to_paste.size[1]) / 2))
@@ -592,7 +592,7 @@ class ExportTopo(ExportResult):
                            elif self.info[t1][t] == "6":
                                img_to_paste = Image.open("image/6.png")
 
-                               img_to_paste = img_to_paste.resize((20, 20))
+                               img_to_paste = img_to_paste.resize((25, 25))
 
                                paste_location = (width + int((40 - img_to_paste.size[0]) / 2) + 30,
                                                  (t + 2) * 60 + int((60 - img_to_paste.size[1]) / 2))
@@ -600,10 +600,10 @@ class ExportTopo(ExportResult):
                                img.paste(img_to_paste, paste_location)
                            elif self.info[t1][t] == "46":
                                img_to_paste_4 = Image.open("image/4.png")
-                               img_to_paste_4 = img_to_paste_4.resize((20, 20))
+                               img_to_paste_4 = img_to_paste_4.resize((25, 25))
 
                                img_to_paste_6 = Image.open("image/6.png")
-                               img_to_paste_6 = img_to_paste_6.resize((20, 20))
+                               img_to_paste_6 = img_to_paste_6.resize((25, 25))
 
                                paste_location_4 = (width + int((40 - img_to_paste_4.size[0]) / 2) + 20,
                                                    (t + 2) * 60 + int((60 - img_to_paste_4.size[1]) / 2))
@@ -747,7 +747,7 @@ class ExportTopo(ExportResult):
                                 if self.info[t1][t] == "4":
                                     img_to_paste = Image.open("image/4.png")
 
-                                    img_to_paste = img_to_paste.resize((20, 20))
+                                    img_to_paste = img_to_paste.resize((25, 25))
 
                                     paste_location = (width + int((40 - img_to_paste.size[0]) / 2) + 30,
                                                       (t + 2) * 60 + int((60 - img_to_paste.size[1]) / 2))
@@ -757,7 +757,7 @@ class ExportTopo(ExportResult):
                                 elif self.info[t1][t] == "6":
                                     img_to_paste = Image.open("image/6.png")
 
-                                    img_to_paste = img_to_paste.resize((20, 20))
+                                    img_to_paste = img_to_paste.resize((25, 25))
 
                                     paste_location = (width + int((40 - img_to_paste.size[0]) / 2) + 30,
                                                       (t + 2) * 60 + int((60 - img_to_paste.size[1]) / 2))
@@ -765,10 +765,10 @@ class ExportTopo(ExportResult):
                                     img.paste(img_to_paste, paste_location)
                                 elif self.info[t1][t] == "46":
                                     img_to_paste_4 = Image.open("image/4.png")
-                                    img_to_paste_4 = img_to_paste_4.resize((20, 20))
+                                    img_to_paste_4 = img_to_paste_4.resize((25, 25))
 
                                     img_to_paste_6 = Image.open("image/6.png")
-                                    img_to_paste_6 = img_to_paste_6.resize((20, 20))
+                                    img_to_paste_6 = img_to_paste_6.resize((25, 25))
 
                                     paste_location_4 = (width + int((40 - img_to_paste_4.size[0]) / 2) + 25,
                                                         (t + 2) * 60 + int((60 - img_to_paste_4.size[1]) / 2))
