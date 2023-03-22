@@ -74,10 +74,7 @@ class ExportResult:
         self.filter_include = self.filter.get('include', '')
         self.filter_exclude = self.filter.get('exclude', '')
         self.sort = self.info.pop('sort', '订阅原序')
-        if self.basedata:
-            self.nodenum = len(self.basedata)
-        else:
-            self.nodenum = 0
+        self.nodenum = len(self.basedata) if self.basedata else 0
         self.front_size = 38
         self.config = ConfigManager()
 
@@ -87,7 +84,6 @@ class ExportResult:
             self.emoji_source = getattr(emoji_source, emoji_source_name)
         else:
             self.emoji_source = emoji_source.TwitterPediaSource
-        print(self.emoji_source.__name__)
         self.color = self.config.getColor()
         self.image_config = self.config.config.get('image', {})
         self.delay_color = self.color.get('delay', [])
