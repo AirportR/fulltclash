@@ -6,7 +6,8 @@ import aiohttp
 from loguru import logger
 from pyrogram.errors import RPCError, FloodWait
 
-from libs import cleaner, collector, sorter, check, proxys
+from libs import cleaner, collector, sorter, check, proxys, ipstack
+
 
 """
 这个模块是拓扑测试（出入口落地分析）的具体实现
@@ -15,11 +16,15 @@ proxies = collector.proxies
 
 
 async def topo(file_path: str):
-    info = {'地区': [], 'AS编号': [], '组织': [], '入口ip段': []}
+    info = {'地区': [], 'AS编号': [], '组织': [], '栈': [], '入口ip段': []}
     cl = cleaner.ClashCleaner(file_path)
     co = collector.IPCollector()
     session = aiohttp.ClientSession()
-    nodename, inboundinfo, cl = sorter.sort_nodename_topo(cl)
+    node_addrs = cl.nodehost()
+    node_addr_count = cl.count_element(node_addrs)
+    nodename, inboundinfo, cl= sorter.sort_nodename_topo(cl)
+    ipstack_list = cleaner.batch_ipstack(node_addr_count)
+    info['栈'] = ipstack_list
     if nodename and inboundinfo and cl:
         # 拿地址，已经转换了域名为ip,hosts变量去除了N/A
         hosts = list(inboundinfo.keys())
@@ -59,6 +64,7 @@ async def topo(file_path: str):
 @logger.catch()
 async def batch_topo(message, nodename: list, pool: dict, proxygroup='auto'):
     resdata = []
+    ipstackes = []
     progress = 0
     sending_time = 0
     host = pool.get('host', [])
@@ -68,16 +74,19 @@ async def batch_topo(message, nodename: list, pool: dict, proxygroup='auto'):
     logger.info("接受任务数量: {} 线程数: {}".format(nodenum, psize))
     if psize <= 0:
         logger.error("无可用的代理程序接口")
-        return []
+        return [], []
     await check.progress(message, 0, nodenum, 0, "╰(*°▽°*)╯节点链路拓扑测试进行中...")
     if nodenum < psize:
         for i in range(nodenum):
             proxys.switchProxy_old(proxyName=nodename[i], proxyGroup=proxygroup, clashHost=host[i],
                                    clashPort=port[i] + 1)
+
         ipcol = collector.IPCollector()
         sub_res = await ipcol.batch(proxyhost=host[:nodenum], proxyport=port[:nodenum])
         resdata.extend(sub_res)
-        return resdata
+        ipstat = await ipstack.get_ips(proxyhost=host[:nodenum], proxyport=port[:nodenum])
+        ipstackes.append({'ips': ipstat})
+        return resdata, ipstackes
     else:
         subbatch = nodenum // psize
         for s in range(subbatch):
@@ -88,6 +97,8 @@ async def batch_topo(message, nodename: list, pool: dict, proxygroup='auto'):
             ipcol = collector.IPCollector()
             sub_res = await ipcol.batch(proxyhost=host, proxyport=port)
             resdata.extend(sub_res)
+            ipstat = await ipstack.get_ips(proxyhost=host, proxyport=port)
+            ipstackes.append({'ips': ipstat})
             # 反馈进度
 
             progress += psize
@@ -106,11 +117,12 @@ async def batch_topo(message, nodename: list, pool: dict, proxygroup='auto'):
             sub_res = await ipcol.batch(proxyhost=host[:nodenum % psize],
                                         proxyport=port[:nodenum % psize])
             resdata.extend(sub_res)
-
+            ipstat = await ipstack.get_ips(proxyhost=host[:nodenum % psize], proxyport=port[:nodenum % psize])
+            ipstackes.append({'ips': ipstat})
         # 最终进度条
         if nodenum % psize != 0:
             await check.progress(message, nodenum, nodenum, 100, "╰(*°▽°*)╯节点链路拓扑测试进行中...")
-        return resdata
+        return resdata, ipstackes
 
 
 async def core(message, back_message, start_time, suburl: str = None, test_type="all", thread: int = 1, **kwargs):
@@ -204,12 +216,14 @@ async def core(message, back_message, start_time, suburl: str = None, test_type=
     # 启动链路拓扑测试
     try:
         info2 = {}
-        res = await batch_topo(back_message, nodename, pool)
+        res, ras = await batch_topo(back_message, nodename, pool)
         if res:
             country_code = []
             asn = []
             org = []
             ipaddr = []
+            ipstackes = []
+
             for j in res:
                 ipcl = cleaner.IPCleaner(j)
                 country_code.append(ipcl.get_country_code())
@@ -217,6 +231,7 @@ async def core(message, back_message, start_time, suburl: str = None, test_type=
                 org.append(ipcl.get_org())
                 ip = ipcl.get_ip()
                 ipaddr.append(ip)
+                #ipstackes.append(ips)
                 # if len(ip) < 16:  # v4地址最大长度为15
                 #     try:
                 #         old_ip = ip.split('.')
@@ -226,18 +241,22 @@ async def core(message, back_message, start_time, suburl: str = None, test_type=
                 #     ipaddr.append(new_ip)
                 # else:
                 #     ipaddr.append("?")
+            for dictionary in ras:
+                if 'ips' in dictionary:
+                    ipstackes.extend(dictionary['ips'])
             out_num = info1.get('出口数量', [])
             num_c = 1
             d0 = []
             for i in out_num:
                 d0 += [num_c for _ in range(int(i))]
                 num_c += 1
-            all_data = zip(d0, country_code, asn, org, ipaddr, nodename)
+            b6 = ipstackes
+            all_data = zip(d0, country_code, asn, org, ipaddr, nodename, b6)
             sorted_data = sorted(all_data, key=itemgetter(4), reverse=True)
-            d0, d1, d2, d3, d4, d5 = zip(*sorted_data)
+            d0, d1, d2, d3, d4, d5, d6 = zip(*sorted_data)
             d4_count = Counter(d4)
             results4 = [v for k, v in d4_count.items()]
-            info2.update({'入口': d0, '地区': d1, 'AS编号': d2, '组织': d3, '簇': results4})
+            info2.update({'入口': d0, '地区': d1, 'AS编号': d2, '组织': d3, '栈': d6, '簇': results4})
             info2.update({'节点名称': d5})
         # 计算测试消耗时间
         wtime = "%.1f" % float(time.time() - s1)
