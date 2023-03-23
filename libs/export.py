@@ -1,12 +1,15 @@
 import math
-import time
 from typing import Union
+
+import PIL
 from loguru import logger
-from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageColor, UnidentifiedImageError
+from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageColor
 from pilmoji import Pilmoji
 from pilmoji.source import Twemoji
+import time
+import emoji
 
-from glovar import __version__
+from glovar import __version__ as _vsion
 from libs.cleaner import ConfigManager
 import libs.emoji_custom as emoji_source
 
@@ -19,6 +22,10 @@ import libs.emoji_custom as emoji_source
 2、何为基础数据？
     基础数据决定了生成图片的高度（Height），它是列表，列表里面的数据一般是一组节点名，即有多少个节点就对应了info键值中的长度。
 """
+__version__ = "3.5.3-dev"  # 版本号，版本号将移动到glovar.py 这里的变量将废弃
+
+
+# custom_source = TwitterPediaSource  # 自定义emoji风格 TwitterPediaSource
 
 
 def color_block(size: tuple, color_value):
@@ -39,7 +46,7 @@ class BaseExport:
         所有绘图类的基类，primarykey为主键，计算主键的长度，主键决定整张图片的高度
         """
         self.basedata = primarykey
-        self.version = __version__
+        self.version = _vsion
         self.allinfo = allinfo
         self.info = self.getPrintinfo()
 
@@ -68,7 +75,10 @@ class ExportResult:
         self.filter_include = self.filter.get('include', '')
         self.filter_exclude = self.filter.get('exclude', '')
         self.sort = self.info.pop('sort', '订阅原序')
-        self.nodenum = len(self.basedata) if self.basedata else 0
+        if self.basedata:
+            self.nodenum = len(self.basedata)
+        else:
+            self.nodenum = 0
         self.front_size = 38
         self.config = ConfigManager()
 
@@ -78,6 +88,7 @@ class ExportResult:
             self.emoji_source = getattr(emoji_source, emoji_source_name)
         else:
             self.emoji_source = emoji_source.TwitterPediaSource
+        print(self.emoji_source.__name__)
         self.color = self.config.getColor()
         self.image_config = self.config.config.get('image', {})
         self.delay_color = self.color.get('delay', [])
@@ -270,7 +281,7 @@ class ExportResult:
                          emoji_position_offset=(0, 3))
         else:
             idraw.text((10, image_height - 112), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
-        idraw.text((10, image_height - 45), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
+        idraw.text((10, image_height - 55), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
         '''
         :绘制标签
         '''
@@ -317,7 +328,7 @@ class ExportResult:
                     # 自定义emoji源可能出错，所以捕捉了异常
                     pilmoji.text((110, 60 * (t + 2) + 5), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
                                  emoji_position_offset=(0, 6))
-                except UnidentifiedImageError:
+                except PIL.UnidentifiedImageError:
                     logger.warning("无效符号:" + self.basedata[t])
                     pilmoji2 = Pilmoji(img, source=Twemoji)
                     pilmoji2.text((110, 60 * (t + 2) + 5), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
@@ -445,7 +456,7 @@ class ExportTopo(ExportResult):
             self.basedata = self.info.get('节点名称', name) if '节点名称' in self.info else self.info.get('地区', [])
         self.wtime = self.info.pop('wtime', "未知")
         self.nodenum = len(self.basedata)
-        self.front_size = 30
+        self.front_size = 38
         self.__font = ImageFont.truetype(self.config.getFont(), self.front_size)
         # self.image_config = self.config.config.get('image', {})
         # self.title = self.image_config.get('title', 'FullTclash')
@@ -471,7 +482,8 @@ class ExportTopo(ExportResult):
         return img_width, infolist_width
 
     def get_height(self):
-        return (self.nodenum + 4) * (self.front_size + 10)
+        heightlist = (self.nodenum + 4) * 60
+        return heightlist
 
     def text_width(self, text: str):
         """
@@ -516,13 +528,13 @@ class ExportTopo(ExportResult):
         key_list = self.get_key_list()
         self.background = self.image_config.get('background', {})
         T_color = self.background.get('ins', '#ffffff')
-        img = Image.new("RGBA", (image_width, image_height), T_color)
+        img = Image.new("RGB", (image_width, image_height), T_color)
         pilmoji = Pilmoji(img, source=self.emoji_source)  # emoji表情修复
         # 绘制色块
         titlea = self.background.get('topotitle', '#EAEAEA')
-        bkg = Image.new('RGBA', (image_width, 80), titlea)  # 首尾部填充
+        bkg = Image.new('RGB', (image_width, 120), titlea)  # 首尾部填充
         img.paste(bkg, (0, 0))
-        img.paste(bkg, (0, image_height - 80))
+        img.paste(bkg, (0, image_height - 120))
         idraw = ImageDraw.Draw(img)
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
@@ -533,114 +545,138 @@ class ExportTopo(ExportResult):
         idraw.text((self.get_mid(0, image_width, title), 1), title, font=fnt, fill=(0, 0, 0))  # 标题
 
         if self.emoji:
-            pilmoji.text((10, image_height - 80), text=list1[1], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
+            pilmoji.text((10, image_height - 120), text=list1[1], font=fnt, fill=(0, 0, 0),
+                         emoji_position_offset=(0, 6))
         else:
-            idraw.text((10, image_height - 80), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
-        idraw.text((10, image_height - 40), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
+            idraw.text((10, image_height - 120), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
+        idraw.text((10, image_height - 60), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
         # 绘制标签
-        idraw.text((20, 40), '序号', font=fnt, fill=(0, 0, 0))  # 序号
+        idraw.text((20, 60), '序号', font=fnt, fill=(0, 0, 0))  # 序号
         start_x = 100
         m = 0  # 记录测试项数目
         for i in info_list_length:
             x = start_x
             end = start_x + i
-            idraw.text((self.get_mid(x, end, key_list[m]), 40), key_list[m], font=fnt, fill=(0, 0, 0))
+            idraw.text((self.get_mid(x, end, key_list[m]), 60), key_list[m], font=fnt, fill=(0, 0, 0))
             start_x = end
             m = m + 1
         # 内容填充
         # cu = self.info.pop('簇', [1 for _ in range(self.nodenum)])
         for t in range(self.nodenum):
             # 序号
-            idraw.text((self.get_mid(0, 100, str(t + 1)), 40 * (t + 2)), text=str(t + 1), font=fnt, fill=(0, 0, 0))
+            idraw.text((self.get_mid(0, 100, str(t + 1)), 60 * (t + 2)), text=str(t + 1), font=fnt, fill=(0, 0, 0))
             width = 100
             i = 0
             for t1 in key_list:
                 if t1 == "组织":
-                    idraw.text((width + 10, (t + 2) * 40),
+                    idraw.text((width + 10, (t + 2) * 60),
                                self.info[t1][t],
                                font=fnt, fill=(0, 0, 0))
                 elif t1 == "AS编号":
-                    idraw.text((self.get_mid(width, width + info_list_length[i], self.info[t1][t]), (t + 2) * 40),
+                    idraw.text((self.get_mid(width, width + info_list_length[i], self.info[t1][t]), (t + 2) * 60),
                                self.info[t1][t],
                                font=fnt, fill=(0, 0, 0))
-
                 elif t1 == "栈":
-                    # 这里直接使用paste贴图
                     try:
                         if self.emoji:
-                            if self.info[t1][t] == "4":
-                                img_to_paste = Image.open("image/4.png")
-                                img_to_paste.convert("RGBA")
-                                img_to_paste = img_to_paste.resize((25, 25))
+                           if self.info[t1][t] == "4":
+                              img_to_paste = Image.open("resources/image/4.png")
 
-                                paste_location = (width + int((40 - img_to_paste.size[0]) / 2) + 30,
-                                                  (t + 2) * 40 + int((40 - img_to_paste.size[1]) / 2))
+                              img_to_paste = img_to_paste.resize((25, 25))
 
-                                img.paste(img_to_paste, paste_location)
+                              paste_location = (width + int((40 - img_to_paste.size[0]) / 2) + 30,
+                                               (t + 2) * 60 + int((60 - img_to_paste.size[1]) / 2))
 
-                            elif self.info[t1][t] == "6":
-                                img_to_paste = Image.open("image/6.png")
-                                img_to_paste.convert("RGBA")
-                                img_to_paste = img_to_paste.resize((25, 25))
+                              img.paste(img_to_paste, paste_location)
 
-                                paste_location = (width + int((40 - img_to_paste.size[0]) / 2) + 30,
-                                                  (t + 2) * 40 + int((40 - img_to_paste.size[1]) / 2))
+                           elif self.info[t1][t] == "6":
+                               img_to_paste = Image.open("resources/image/6.png")
 
-                                img.paste(img_to_paste, paste_location)
-                            elif self.info[t1][t] == "46":
-                                img_to_paste_4 = Image.open("image/4.png")
-                                img_to_paste_4.convert("RGBA")
-                                img_to_paste_4 = img_to_paste_4.resize((25, 25))
+                               img_to_paste = img_to_paste.resize((25, 25))
 
-                                img_to_paste_6 = Image.open("image/6.png")
-                                img_to_paste_6.convert("RGBA")
-                                img_to_paste_6 = img_to_paste_6.resize((25, 25))
+                               paste_location = (width + int((40 - img_to_paste.size[0]) / 2) + 30,
+                                                 (t + 2) * 60 + int((60 - img_to_paste.size[1]) / 2))
 
-                                paste_location_4 = (width + int((40 - img_to_paste_4.size[0]) / 2) + 20,
-                                                    (t + 2) * 40 + int((40 - img_to_paste_4.size[1]) / 2))
+                               img.paste(img_to_paste, paste_location)
+                           elif self.info[t1][t] == "46":
+                               img_to_paste_4 = Image.open("resources/image/4.png")
+                               img_to_paste_4 = img_to_paste_4.resize((25, 25))
 
-                                paste_location_6 = (width + int((40 - img_to_paste_6.size[0]) / 2) + 60,
-                                                    (t + 2) * 40 + int((40 - img_to_paste_6.size[1]) / 2))
+                               img_to_paste_6 = Image.open("resources/image/6.png")
+                               img_to_paste_6 = img_to_paste_6.resize((25, 25))
 
-                                img.paste(img_to_paste_4, paste_location_4)
-                                img.paste(img_to_paste_6, paste_location_6)
+                               paste_location_4 = (width + int((40 - img_to_paste_4.size[0]) / 2) + 20,
+                                                   (t + 2) * 60 + int((60 - img_to_paste_4.size[1]) / 2))
+
+                               paste_location_6 = (width + int((40 - img_to_paste_6.size[0]) / 2) + 60,
+                                                   (t + 2) * 60 + int((60 - img_to_paste_6.size[1]) / 2))
+
+                               img.paste(img_to_paste_4, paste_location_4)
+                               img.paste(img_to_paste_6, paste_location_6)
+                               
+                           elif self.info[t1][t] == "64":
+                               img_to_paste_4 = Image.open("resources/image/4.png")
+                               img_to_paste_4 = img_to_paste_4.resize((25, 25))
+
+                               img_to_paste_6 = Image.open("resources/image/6.png")
+                               img_to_paste_6 = img_to_paste_6.resize((25, 25))
+
+                               paste_location_4 = (width + int((40 - img_to_paste_4.size[0]) / 2) + 20,
+                                                   (t + 2) * 60 + int((60 - img_to_paste_4.size[1]) / 2))
+
+                               paste_location_6 = (width + int((40 - img_to_paste_6.size[0]) / 2) + 60,
+                                                   (t + 2) * 60 + int((60 - img_to_paste_6.size[1]) / 2))
+
+                               img.paste(img_to_paste_6, paste_location_4)
+                               img.paste(img_to_paste_4, paste_location_6)
+                           else:
+                               img_to_paste = Image.open("resources/image/no.png")
+
+                               img_to_paste = img_to_paste.resize((25, 25))
+
+                               paste_location = (width + int((40 - img_to_paste.size[0]) / 2) + 30,
+                                                 (t + 2) * 60 + int((60 - img_to_paste.size[1]) / 2))
+                                                
+                               img.paste(img_to_paste, paste_location)
+                            
+                            
 
                         else:
-                            idraw.text((width + 40, (t + 2) * 40), self.info[t1][t], font=fnt, fill=(0, 0, 0))
-                    except UnidentifiedImageError:
+                            idraw.text((width + 40, (t + 2) * 60), self.info[t1][t], font=fnt, fill=(0, 0, 0))
+                    except PIL.UnidentifiedImageError:
                         logger.warning("无效符号:" + self.basedata[t])
                         pilmoji2 = Pilmoji(img, source=Twemoji)
-                        pilmoji2.text((width + 40, (t + 2) * 40),
+                        pilmoji2.text((width + 40, (t + 2) * 60),
                                       self.info[t1][t],
                                       font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
                     except Exception as e:
                         logger.error(str(e))
-                        idraw.text((width + 40, (t + 2) * 40), self.info[t1][t], font=fnt, fill=(0, 0, 0))
+                        idraw.text((width + 40, (t + 2) * 60), self.info[t1][t], font=fnt, fill=(0, 0, 0))
                     idraw.line(
-                        [(width, (t + 3) * 40), (width + info_list_length[i], (t + 3) * 40)],
-                        fill="#e1e1e1", width=1)
+                        [(width, (t + 3) * 60), (width + info_list_length[i], (t + 3) * 60)],
+                        fill="#e1e1e1", width=2)
 
                 else:
-                    idraw.text((self.get_mid(width, width + info_list_length[i], str(self.info[t1][t])), (t + 2) * 40),
+                    idraw.text((self.get_mid(width, width + info_list_length[i], str(self.info[t1][t])), (t + 2) * 60),
                                str(self.info[t1][t]),
                                font=fnt, fill=(0, 0, 0))
                 width += info_list_length[i]
                 i += 1
         # 绘制横线
         for t in range(self.nodenum + 3):
-            idraw.line([(0, 40 * (t + 1)), (image_width, 40 * (t + 1))], fill="#e1e1e1", width=1)
+            idraw.line([(0, 60 * (t + 1)), (image_width, 60 * (t + 1))], fill="#e1e1e1", width=1)
         start_x = 100
         for i in info_list_length:
             x = start_x
             end = start_x + i
-            idraw.line([(x, 40), (x, image_height - 80)], fill=(255, 255, 255), width=1)
+            idraw.line([(x, 60), (x, image_height - 120)], fill=(255, 255, 255), width=1)
             start_x = end
         if info2 and nodename:
             img2, image_height2, image_width2 = self.exportTopoOutbound(nodename, info2, img2_width=image_width)
-            img3 = Image.new("RGBA", (max(image_width, image_width2), image_height + image_height2 - 80),
+            img3 = Image.new("RGB", (max(image_width, image_width2), image_height + image_height2 - 120),
                              (255, 255, 255))
             img3.paste(img, (0, 0))
-            img3.paste(img2, (0, image_height - 80))
+            img3.paste(img2, (0, image_height - 120))
 
             if self.watermark['enable']:
                 img3 = self.draw_watermark(img3.convert("RGBA"))
@@ -665,13 +701,13 @@ class ExportTopo(ExportResult):
         key_list = self.get_key_list()
         self.background = self.image_config.get('background', {})
         O_color = self.background.get('outs', '#ffffff')
-        img = Image.new("RGBA", (image_width, image_height), O_color)
+        img = Image.new("RGB", (image_width, image_height), O_color)
         pilmoji = Pilmoji(img, source=self.emoji_source)  # emoji表情修复
         # 绘制色块
         titlea = self.background.get('topotitle', '#EAEAEA')
-        bkg = Image.new('RGB', (image_width, 80), titlea)  # 首尾部填充
+        bkg = Image.new('RGB', (image_width, 120), titlea)  # 首尾部填充
         img.paste(bkg, (0, 0))
-        img.paste(bkg, (0, image_height - 80))
+        img.paste(bkg, (0, image_height - 120))
         idraw = ImageDraw.Draw(img)
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
@@ -681,18 +717,18 @@ class ExportTopo(ExportResult):
         title = list1[0]
         idraw.text((self.get_mid(0, image_width, title), 1), title, font=fnt, fill=(0, 0, 0))  # 标题
         if self.emoji:
-            pilmoji.text((10, image_height - 80), text=list1[1], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
+            pilmoji.text((10, image_height - 120), text=list1[1], font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
         else:
-            idraw.text((10, image_height - 80), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
-        idraw.text((10, image_height - 40), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
+            idraw.text((10, image_height - 120), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
+        idraw.text((10, image_height - 60), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
         # 绘制标签
-        idraw.text((20, 40), '序号', font=fnt, fill=(0, 0, 0))  # 序号
+        idraw.text((20, 60), '序号', font=fnt, fill=(0, 0, 0))  # 序号
         start_x = 100
         m = 0  # 记录测试项数目
         for i in info_list_length:
             x = start_x
             end = start_x + i
-            idraw.text((self.get_mid(x, end, key_list[m]), 40), key_list[m], font=fnt, fill=(0, 0, 0))
+            idraw.text((self.get_mid(x, end, key_list[m]), 60), key_list[m], font=fnt, fill=(0, 0, 0))
             start_x = end
             m = m + 1
         # 绘制横线
@@ -704,8 +740,8 @@ class ExportTopo(ExportResult):
         cu_offset2 = 0
         for t in range(self.nodenum):
             # 序号
-            idraw.text((self.get_mid(0, 100, str(t + 1)), 40 * (t + 2)), text=str(t + 1), font=fnt, fill=(0, 0, 0))
-            idraw.line([(0, 40 * (t + 3)), (100, 40 * (t + 3))], fill="#e1e1e1", width=2)
+            idraw.text((self.get_mid(0, 100, str(t + 1)), 60 * (t + 2)), text=str(t + 1), font=fnt, fill=(0, 0, 0))
+            idraw.line([(0, 60 * (t + 3)), (100, 60 * (t + 3))], fill="#e1e1e1", width=2)
             width = 100
             i = 0
             if t < len(cu):
@@ -715,141 +751,148 @@ class ExportTopo(ExportResult):
                 if t1 == "地区" or t1 == "AS编号":
                     if t < len(cu):
                         temp = cu[t]
-                        y = ((t + 2) * 40 + (t + 2) * 40 + (40 * (temp - 1))) / 2 + cu_offset * 40
+                        y = ((t + 2) * 60 + (t + 2) * 60 + (60 * (temp - 1))) / 2 + cu_offset * 60
                         idraw.text((self.get_mid(width, width + info_list_length[i], str(self.info[t1][t])), y),
                                    str(self.info[t1][cu_offset + t]),
                                    font=fnt, fill=(0, 0, 0))
-                        idraw.line([(width, (t + 3 + cu_offset2) * 40),
-                                    (width + info_list_length[i], (t + 3 + cu_offset2) * 40)],
+                        idraw.line([(width, (t + 3 + cu_offset2) * 60),
+                                    (width + info_list_length[i], (t + 3 + cu_offset2) * 60)],
                                    fill="#e1e1e1", width=2)
                 elif t1 == "组织":
                     if t < len(cu):
                         temp = cu[t]
-                        y = ((t + 2) * 40 + (t + 2) * 40 + (40 * (temp - 1))) / 2 + cu_offset * 40
+                        y = ((t + 2) * 60 + (t + 2) * 60 + (60 * (temp - 1))) / 2 + cu_offset * 60
                         idraw.text((width + 10, y),
                                    str(self.info[t1][cu_offset + t]),
                                    font=fnt, fill=(0, 0, 0))
-                        idraw.line([(width, (t + 3 + cu_offset2) * 40),
-                                    (width + info_list_length[i], (t + 3 + cu_offset2) * 40)],
+                        idraw.line([(width, (t + 3 + cu_offset2) * 60),
+                                    (width + info_list_length[i], (t + 3 + cu_offset2) * 60)],
                                    fill="#e1e1e1", width=2)
                 elif t1 == "栈":
-                    try:
-                        # 这里直接使用paste贴图
-                        if self.emoji:
-                            if self.info[t1][t] == "4":
-                                img_to_paste = Image.open("image/4.png")
-                                img_to_paste.convert("RGBA")
-                                img_to_paste = img_to_paste.resize((25, 25))
+                        try:
+                            if self.emoji:
+                                if self.info[t1][t] == "4":
+                                    img_to_paste = Image.open("resources/image/4.png")
 
-                                paste_location = (width + int((40 - img_to_paste.size[0]) / 2) + 30,
-                                                  (t + 2) * 40 + int((40 - img_to_paste.size[1]) / 2))
+                                    img_to_paste = img_to_paste.resize((25, 25))
 
-                                img.paste(img_to_paste, paste_location)
+                                    paste_location = (width + int((40 - img_to_paste.size[0]) / 2) + 30,
+                                                      (t + 2) * 60 + int((60 - img_to_paste.size[1]) / 2))
 
-                            elif self.info[t1][t] == "6":
-                                img_to_paste = Image.open("image/6.png")
-                                img_to_paste.convert("RGBA")
-                                img_to_paste = img_to_paste.resize((25, 25))
+                                    img.paste(img_to_paste, paste_location)
 
-                                paste_location = (width + int((40 - img_to_paste.size[0]) / 2) + 30,
-                                                  (t + 2) * 40 + int((40 - img_to_paste.size[1]) / 2))
+                                elif self.info[t1][t] == "6":
+                                    img_to_paste = Image.open("resources/image/6.png")
 
-                                img.paste(img_to_paste, paste_location)
-                            elif self.info[t1][t] == "46":
-                                img_to_paste_4 = Image.open("image/4.png")
-                                img_to_paste_4.convert("RGBA")
-                                img_to_paste_4 = img_to_paste_4.resize((25, 25))
+                                    img_to_paste = img_to_paste.resize((25, 25))
 
-                                img_to_paste_6 = Image.open("image/6.png")
-                                img_to_paste_6.convert("RGBA")
-                                img_to_paste_6 = img_to_paste_6.resize((25, 25))
+                                    paste_location = (width + int((40 - img_to_paste.size[0]) / 2) + 30,
+                                                      (t + 2) * 60 + int((60 - img_to_paste.size[1]) / 2))
 
-                                paste_location_4 = (width + int((40 - img_to_paste_4.size[0]) / 2) + 25,
-                                                    (t + 2) * 40 + int((40 - img_to_paste_4.size[1]) / 2))
+                                    img.paste(img_to_paste, paste_location)
+                                elif self.info[t1][t] == "46":
+                                    img_to_paste_4 = Image.open("resources/image/4.png")
+                                    img_to_paste_4 = img_to_paste_4.resize((25, 25))
 
-                                paste_location_6 = (width + int((40 - img_to_paste_6.size[0]) / 2) + 65,
-                                                    (t + 2) * 40 + int((40 - img_to_paste_6.size[1]) / 2))
+                                    img_to_paste_6 = Image.open("resources/image/6.png")
+                                    img_to_paste_6 = img_to_paste_6.resize((25, 25))
 
-                                img.paste(img_to_paste_4, paste_location_4)
-                                img.paste(img_to_paste_6, paste_location_6)
+                                    paste_location_4 = (width + int((40 - img_to_paste_4.size[0]) / 2) + 25,
+                                                        (t + 2) * 60 + int((60 - img_to_paste_4.size[1]) / 2))
 
-                        else:
-                            idraw.text((width + 40, (t + 2) * 40), self.info[t1][t], font=fnt, fill=(0, 0, 0))
-                    except UnidentifiedImageError:
-                        logger.warning("无效符号:" + self.basedata[t])
-                        pilmoji2 = Pilmoji(img, source=Twemoji)
-                        pilmoji2.text((width + 40, (t + 2) * 40),
-                                      self.info[t1][t],
-                                      font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
-                    except Exception as e:
-                        logger.error(str(e))
-                        idraw.text((width + 40, (t + 2) * 40), self.info[t1][t], font=fnt, fill=(0, 0, 0))
-                    idraw.line(
-                        [(width, (t + 3) * 40), (width + info_list_length[i], (t + 3) * 40)],
-                        fill="#e1e1e1", width=2)
+                                    paste_location_6 = (width + int((40 - img_to_paste_6.size[0]) / 2) + 65,
+                                                        (t + 2) * 60 + int((60 - img_to_paste_6.size[1]) / 2))
+
+                                    img.paste(img_to_paste_4, paste_location_4)
+                                    img.paste(img_to_paste_6, paste_location_6)
+                                else:
+                                    img_to_paste = Image.open("resources/image/no.png")
+
+                                    img_to_paste = img_to_paste.resize((25, 25))
+
+                                    paste_location = (width + int((40 - img_to_paste.size[0]) / 2) + 30,
+                                                      (t + 2) * 60 + int((60 - img_to_paste.size[1]) / 2))
+                                                    
+                                    img.paste(img_to_paste, paste_location)
+
+                            else:
+                                idraw.text((width + 40, (t + 2) * 60), self.info[t1][t], font=fnt, fill=(0, 0, 0))
+                        except PIL.UnidentifiedImageError:
+                            logger.warning("无效符号:" + self.basedata[t])
+                            pilmoji2 = Pilmoji(img, source=Twemoji)
+                            pilmoji2.text((width + 40, (t + 2) * 60),
+                                          self.info[t1][t],
+                                          font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
+                        except Exception as e:
+                            logger.error(str(e))
+                            idraw.text((width + 40, (t + 2) * 60), self.info[t1][t], font=fnt, fill=(0, 0, 0))
+                        idraw.line(
+                            [(width, (t + 3) * 60), (width + info_list_length[i], (t + 3) * 60)],
+                            fill="#e1e1e1", width=2)
+
 
                 elif t1 == "簇":
                     if t < len(cu):
                         temp = self.info[t1][t]
-                        y = ((t + 2) * 40 + (t + 2) * 40 + (40 * (temp - 1))) / 2 + cu_offset * 40
+                        y = ((t + 2) * 60 + (t + 2) * 60 + (60 * (temp - 1))) / 2 + cu_offset * 60
                         idraw.text((self.get_mid(width, width + info_list_length[i], str(self.info[t1][t])), y),
                                    str(self.info[t1][t]),
                                    font=fnt, fill=(0, 0, 0))
                         if cu[t] > 1:
                             cu_offset += cu[t] - 1
-                        idraw.line([(width, (t + 3 + cu_offset2) * 40),
-                                    (width + info_list_length[i], (t + 3 + cu_offset2) * 40)],
+                        idraw.line([(width, (t + 3 + cu_offset2) * 60),
+                                    (width + info_list_length[i], (t + 3 + cu_offset2) * 60)],
                                    fill="#e1e1e1", width=2)
                     else:
                         pass
                 elif t1 == "节点名称":
                     try:
                         if self.emoji:
-                            pilmoji.text((width + 10, (t + 2) * 40),
+                            pilmoji.text((width + 10, (t + 2) * 60),
                                          self.info[t1][t],
                                          font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
                         else:
-                            idraw.text((width + 10, (t + 2) * 40), self.info[t1][t], font=fnt, fill=(0, 0, 0))
-                    except UnidentifiedImageError:
+                            idraw.text((width + 10, (t + 2) * 60), self.info[t1][t], font=fnt, fill=(0, 0, 0))
+                    except PIL.UnidentifiedImageError:
                         logger.warning("无效符号:" + self.basedata[t])
                         pilmoji2 = Pilmoji(img, source=Twemoji)
-                        pilmoji2.text((width + 10, (t + 2) * 40),
+                        pilmoji2.text((width + 10, (t + 2) * 60),
                                       self.info[t1][t],
                                       font=fnt, fill=(0, 0, 0), emoji_position_offset=(0, 6))
                     except Exception as e:
                         logger.error(str(e))
-                        idraw.text((width + 10, (t + 2) * 40), self.info[t1][t], font=fnt, fill=(0, 0, 0))
+                        idraw.text((width + 10, (t + 2) * 60), self.info[t1][t], font=fnt, fill=(0, 0, 0))
                     idraw.line(
-                        [(width, (t + 3) * 40), (width + info_list_length[i], (t + 3) * 40)],
+                        [(width, (t + 3) * 60), (width + info_list_length[i], (t + 3) * 60)],
                         fill="#e1e1e1", width=2)
                 elif t1 == "入口":
                     text = str(self.info[t1][t])
                     pre_text = str(self.info[t1][t - 1]) if t > 0 else str(self.info[t1][0])
                     if t == 0:
                         idraw.text(
-                            (self.get_mid(width, width + info_list_length[i], str(self.info[t1][t])), (t + 2) * 40),
+                            (self.get_mid(width, width + info_list_length[i], str(self.info[t1][t])), (t + 2) * 60),
                             str(self.info[t1][t]),
                             font=fnt, fill=(0, 0, 0))
                     elif text != pre_text:
                         idraw.text(
-                            (self.get_mid(width, width + info_list_length[i], text), (t + 2) * 40),
+                            (self.get_mid(width, width + info_list_length[i], text), (t + 2) * 60),
                             text,
                             font=fnt, fill=(0, 0, 0))
                     else:
                         pass
                 else:
-                    idraw.text((self.get_mid(width, width + info_list_length[i], str(self.info[t1][t])), (t + 2) * 40),
+                    idraw.text((self.get_mid(width, width + info_list_length[i], str(self.info[t1][t])), (t + 2) * 60),
                                str(self.info[t1][t]),
                                font=fnt, fill=(0, 0, 0))
                 width += info_list_length[i]
                 i += 1
-        idraw.line([(0, 40), (image_width, 40)], fill="#e1e1e1", width=2)
-        idraw.line([(0, image_height - 40), (image_width, image_height - 40)], fill="#e1e1e1", width=2)
+        idraw.line([(0, 60), (image_width, 60)], fill="#e1e1e1", width=2)
+        idraw.line([(0, image_height - 60), (image_width, image_height - 60)], fill="#e1e1e1", width=2)
         start_x = 100
         for i in info_list_length:
             x = start_x
             end = start_x + i
-            idraw.line([(x, 40), (x, image_height - 80)], fill=(255, 255, 255), width=1)
+            idraw.line([(x, 60), (x, image_height - 120)], fill=(255, 255, 255), width=1)
             start_x = end
         if nodename is None and info is None:
             if self.watermark['enable']:
@@ -977,7 +1020,7 @@ class ExportSpeed(ExportResult):
                          emoji_position_offset=(0, 3))
         else:
             idraw.text((10, image_height - 112), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
-        idraw.text((10, image_height - 45), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
+        idraw.text((10, image_height - 55), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
 
         # 绘制标签
         idraw.text((20, 65), '序号', font=fnt, fill=(0, 0, 0))  # 序号
@@ -1016,7 +1059,7 @@ class ExportSpeed(ExportResult):
                     # 自定义emoji源可能出错，所以捕捉了异常
                     pilmoji.text((110, 60 * (t + 2) + 5), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
                                  emoji_position_offset=(0, 6))
-                except UnidentifiedImageError:
+                except PIL.UnidentifiedImageError:
                     logger.warning("无效符号:" + self.basedata[t])
                     pilmoji2 = Pilmoji(img, source=Twemoji)
                     pilmoji2.text((110, 60 * (t + 2) + 5), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
