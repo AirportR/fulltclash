@@ -1282,22 +1282,28 @@ def domain_to_ip(host: str):
     except socket.gaierror:
         return None
 
-def count(host: str):
+def count(host):
     ips = domain_to_ip(host)
     if ips is None:
         return None
-    sunny = len(ips[0])
-    if all(len(ip) > 15 for ip in ips):
-        return '6'
-    elif all(len(ip) < 16 and len(ip) != 0 for ip in ips):
-        return '4'
-    elif any(len(ip) > 15 for ip in ips):
-        if sunny > 15:
-           return '64'
+
+    ipv4_count = 0
+    ipv6_count = 0
+
+    for ip in ips:
+        if ":" in ip:
+            ipv6_count += 1
         else:
-           return '46'
+            ipv4_count += 1
+
+    if ipv4_count > 0 and ipv6_count == 0:
+        return "4"
+    elif ipv6_count > 0 and ipv4_count == 0:
+        return "6"
+    elif ipv4_count > 0 and ipv6_count > 0:
+        return "46"
     else:
-        return None    
+        return None 
 def batch_ipstack(host: list):
     """
     批量将域名转成栈列表
@@ -1337,7 +1343,7 @@ def batch_domain2ip(host: list):
             try:
                 ips = domain_to_ip(h['server'])
                 if ips:
-                    h['server'] = ips[0] or ips[1]
+                    h['server'] = ips[0]
                 else:
                     h['server'] = "N/A"
                 ipaddrs.append(h)
@@ -1347,7 +1353,7 @@ def batch_domain2ip(host: list):
         else:
             ips = domain_to_ip(h)
             if ips:
-                ipaddrs.append(ips[0] or ips[1])
+                ipaddrs.append(ips[0])
             else:
                 ipaddrs.append("N/A")
     return ipaddrs
