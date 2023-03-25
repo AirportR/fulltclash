@@ -93,7 +93,7 @@ class Basecore:
         """
         cl1 = cleaner.ConfigManager(configpath=fr"./results/{self.start_time}.yaml", data=info)
         cl1.save(fr"./results/{self.start_time}.yaml")
-        if GCONFIG.config.get('clash',{}).get('allow-caching', False):
+        if GCONFIG.config.get('clash', {}).get('allow-caching', False):
             try:
                 os.remove(fr"./clash/sub{self.start_time}.yaml")
             except Exception as e:
