@@ -3,7 +3,7 @@ from pyrogram import Client, filters
 from loguru import logger
 import botmodule
 from botmodule import init_bot
-from botmodule.cfilter import dynamic_data_filter, allfilter
+from botmodule.cfilter import dynamic_data_filter, allfilter, reloaduser
 from botmodule.command.authority import get_url_from_invite
 from botmodule.utils import message_delete_queue
 from libs.myqueue import q, bot_task_queue
@@ -27,10 +27,12 @@ config = init_bot.config
 
 def command_loader(app: Client):
     @app.on_message(filters.command(["testurl"]) & allfilter(1), group=1)
+    @reloaduser()
     async def testurl(_, message):
         await message.reply("请选择排序方式:", reply_markup=botmodule.IKM2, quote=True)
 
     @app.on_message(filters.command(["test"]) & allfilter(1), group=1)
+    @reloaduser()
     async def test(_, message):
         if not config.get_sub(subname=message.command[1]):
             back_message = await message.reply("❌找不到该任务名称，请检查参数是否正确 (TEST DELETE MESSAGE)")
@@ -39,32 +41,36 @@ def command_loader(app: Client):
             return
         await message.reply("请选择排序方式:", reply_markup=botmodule.IKM2, quote=True)
 
-    @app.on_message(filters.command(["invite"]) & allfilter(0), group=1)
+    @app.on_message(filters.command(["invite"]), group=1)
+    @reloaduser()
     async def invite(client, message):
         await botmodule.invite(client, message)
 
-    @app.on_message(filters.command(["grant"]), group=2)
+    @app.on_message(filters.command(["grant"]) & allfilter(2), group=2)
     async def grant(client, message):
         await botmodule.grant(client, message)
 
-    @app.on_message(filters.command(["ungrant"]), group=2)
+    @app.on_message(filters.command(["ungrant"]) & allfilter(2), group=2)
     async def ungrant(client, message):
         await botmodule.ungrant(client, message)
 
-    @app.on_message(filters.command(["user"]) & filters.user(admin), group=2)
+    @app.on_message(filters.command(["user"]) & allfilter(2), group=2)
     async def user(client, message):
         await botmodule.user(client, message)
 
     @app.on_message(filters.command(["new"]) & allfilter(1), group=1)
+    @reloaduser()
     async def new(client, message):
         await botmodule.new(client, message)
 
     @app.on_message(filters.command(["remove"]), group=1)
+    @reloaduser()
     async def remove(client, message):
         if await isuser(message, botmodule.init_bot.reloadUser()):
             await botmodule.remove(client, message)
 
-    @app.on_message(filters.command(["sub"]) & allfilter(0), group=1)
+    @app.on_message(filters.command(["sub"]), group=1)
+    @reloaduser()
     async def sub(client, message):
         await botmodule.sub(client, message)
 
@@ -77,14 +83,16 @@ def command_loader(app: Client):
         await botmodule.version(client, message)
 
     @app.on_message(filters.command(["analyzeurl", "topourl"]) & allfilter(1), group=1)
+    @reloaduser()
     async def analyzeurl(client, message):
         await bot_put(client, message, "analyzeurl")
 
     @app.on_message(filters.command(["analyze", "topo"]) & allfilter(1), group=1)
+    @reloaduser()
     async def analyze(client, message):
         await bot_put(client, message, "analyze")
 
-    @app.on_message(filters.command(["reload"]) & filters.user(admin), group=2)
+    @app.on_message(filters.command(["reload"]) & allfilter(2), group=2)
     async def reload_testmember(_, message):
         botmodule.reloadUser()
         r1()
@@ -92,30 +100,37 @@ def command_loader(app: Client):
         await message.reply("已重载配置")
 
     @app.on_message(filters.command(["register", "baipiao"]) & allfilter(1), group=1)
+    @reloaduser()
     async def regis(client, message):
         await botmodule.register.baipiao(client, message)
 
     @app.on_message(filters.command(["inbound"]) & allfilter(1), group=1)
+    @reloaduser()
     async def inbound(client, message):
         await botmodule.analyze(client, message, test_type="inbound")
 
     @app.on_message(filters.command(["inboundurl"]) & allfilter(1), group=1)
+    @reloaduser()
     async def inboundurl(client, message):
         await botmodule.analyzeurl(client, message, test_type="inbound")
 
     @app.on_message(filters.command(["outbound"]) & allfilter(1), group=1)
+    @reloaduser()
     async def outbound(client, message):
         await bot_put(client, message, "outbound")
 
     @app.on_message(filters.command(["outboundurl"]) & allfilter(1), group=1)
+    @reloaduser()
     async def outboundurl(client, message):
         await bot_put(client, message, "outboundurl")
 
     @app.on_message(filters.command(["speed"]) & allfilter(1), group=1)
+    @reloaduser()
     async def speed(client, message):
         await bot_put(client, message, "speed")
 
     @app.on_message(filters.command(["speedurl"]) & allfilter(1), group=1)
+    @reloaduser()
     async def speedurl(client, message):
         await bot_put(client, message, "speedurl")
 
@@ -123,7 +138,7 @@ def command_loader(app: Client):
     async def subinfo(client, message):
         await botmodule.subinfo.getSubInfo(client, message)
 
-    @app.on_message(filters.command(["map"]) & filters.user(admin), group=2)
+    @app.on_message(filters.command(["map"]) & allfilter(2), group=2)
     async def debug(client, message):
         await botmodule.di.debug_interface(client, message)
 
@@ -135,33 +150,35 @@ def command_loader(app: Client):
     async def temp(client, message):
         await get_url_from_invite(client, message)
 
-    @app.on_message(filters.command(["share"]) & allfilter(0), group=1)
+    @app.on_message(filters.command(["share"]), group=1)
+    @reloaduser()
     async def share(client, message):
         await botmodule.sub_invite(client, message)
 
-    @app.on_message(filters.command(['install', 'list']) & filters.user(admin), group=2)
+    @app.on_message(filters.command(['install', 'list']) & allfilter(2), group=2)
     async def install_script(client, message):
         await botmodule.download_script(client, message)
 
-    @app.on_message(filters.command(['uninstall']) & filters.user(admin), group=2)
+    @app.on_message(filters.command(['uninstall']) & allfilter(2), group=2)
     async def uninstall_script(client, message):
         await botmodule.uninstall_script(client, message)
 
-    @app.on_message(filters.command(['setting']) & filters.user(admin), group=2)
+    @app.on_message(filters.command(['setting']) & allfilter(2), group=2)
     async def setting(client, message):
         await botmodule.setting_page(client, message)
 
-    @app.on_message(filters.command(['fulltest']) & allfilter(0), group=1)
+    @app.on_message(filters.command(['fulltest']), group=1)
+    @reloaduser()
     async def fulltest(client, message):
         await message.reply("请选择排序方式:", reply_markup=botmodule.IKM2, quote=True)
         await bot_put(client, message, "analyze")
         await bot_put(client, message, "speed")
 
-    @app.on_message(filters.command(['restart', 'reboot']) & filters.user(admin), group=2)
+    @app.on_message(filters.command(['restart', 'reboot']) & allfilter(2), group=2)
     async def restart(client, message):
         await botmodule.restart(client, message)
 
-    @app.on_message(filters.command(['connect']) & filters.user(admin), group=2)
+    @app.on_message(filters.command(['connect']) & allfilter(2), group=2)
     async def conn(client, message):
         await botmodule.conn(client, message)
 
@@ -223,9 +240,9 @@ async def bot_put(client, message, put_type: str, test_items: list = None, **kwa
         r1(test_items)
         r2(test_items)
         await mes.edit_text("任务已提交")
+        message_delete_queue.put_nowait((mes.chat.id, mes.id, 5))
         await asyncio.sleep(3)
         await bot_task_queue(client, message, put_type, q, **kwargs)
-        await mes.delete()
         task_num -= 1
 
     except AttributeError as a:

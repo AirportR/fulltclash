@@ -653,7 +653,7 @@ class ConfigManager:
         return botconfig
 
     def getFont(self):
-        return self.config.get('font', "./resources/阿里巴巴普惠体-Regular.ttf")
+        return self.config.get('font', "./resources/alibaba-Regular.ttf")
 
     def getColor(self):
         return self.config.get('image', {}).get('color', {})

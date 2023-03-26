@@ -20,15 +20,52 @@ def dynamic_data_filter(data):
     return filters.create(func, data=data)
 
 
-def user_filter(user: list):
+def admin_filter():
     """
-    检查用户是否在配置文件所加载的的列表中
+    检查管理员是否在配置文件所加载的的列表中
     """
 
-    async def func(flt, _, message):
-        return await check.check_user(message, flt.user)
+    async def func(_, __, message):
+        try:
+            if int(message.from_user.id) not in admin and str(
+                    message.from_user.username) not in admin:  # 如果不在USER_TARGET名单是不会有权限的
+                back_message = await message.reply("❌您不是bot的管理员，无法操作。")
+                message_delete_queue.put_nowait([back_message.chat.id, back_message.id, 10])
+                return False
+            else:
+                return True
+        except AttributeError:
+            if int(message.sender_chat.id) not in admin:  # 如果不在USER_TARGET名单是不会有权限的
+                back_message = await message.reply("❌您不是bot的管理员，无法操作。")
+                message_delete_queue.put_nowait([back_message.chat.id, back_message.id, 10])
+                return False
+            else:
+                return True
+        except Exception as e:
+            print(e)
+            return False
 
-    return filters.create(func, user=user)
+    return filters.create(func)
+
+
+def reloaduser():
+    """
+    检查用户是否在配置文件所加载的的列表中，这是一个装饰器.
+    """
+
+    def wrapper(func):
+        async def inner(client, message):
+            user = reloadUser()
+            result = await check.check_user(message, user)
+            if result:
+                await func(client, message)
+            else:
+                print("未通过")
+                return
+
+        return inner
+
+    return wrapper
 
 
 def getErrorText(text: str):
@@ -73,10 +110,9 @@ def allfilter(group: int, *args, **kwargs):
     所有自定义filter
     """
     if group == 1:
-        return user_filter(reloadUser()) & command_argnum_filter()
+        return command_argnum_filter()
     elif group == 2:
-        return filters.user(admin)
-    elif group == 0:
-        return user_filter(reloadUser())
+        return admin_filter()
     else:
+        print("未知权限组")
         return filters.create(lambda x: True)
