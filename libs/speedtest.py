@@ -202,7 +202,7 @@ async def batch_speed(message: Message, nodename: list, proxygroup='auto'):
             sending_time += 10
             try:
                 # 实时反馈进度
-                await message.edit_text("╰(*°▽°*)╯速度测试进行中...\n\n" +
+                await message.edit_text("速度测试进行中...\n\n" +
                                         "当前进度:\n" + p_text +
                                         "%     [" + str(progress) + "/" + str(nodenum) + "]", reply_markup=IKM)
             except RPCError as r:
@@ -233,7 +233,7 @@ async def batch_udp(message, nodename: list, proxygroup='auto'):
         if cal >= sending_time:
             sending_time += 10
             try:
-                await message.edit_text("╰(*°▽°*)╯UDP类型测试进行中...\n\n" +
+                await message.edit_text("UDP类型测试进行中...\n\n" +
                                         "当前进度:\n" + p_text +
                                         "%     [" + str(progress) + "/" + str(nodenum) + "]")  # 实时反馈进度
             except RPCError as r:

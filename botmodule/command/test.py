@@ -58,7 +58,7 @@ async def testurl(_, message: Message, **kwargs):
     :param kwargs:
     :return:
     """
-    back_message = await message.reply("╰(*°▽°*)╯联通性测试进行中...")
+    back_message = await message.reply("联通性测试进行中...")
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
     suburl = kwargs.get('url', None)
@@ -88,7 +88,7 @@ async def testurl(_, message: Message, **kwargs):
 
 @logger.catch()
 async def test(_, message: Message, **kwargs):
-    back_message = await message.reply("╰(*°▽°*)╯联通性测试进行中...")  # 发送提示
+    back_message = await message.reply("联通性测试进行中...")  # 发送提示
     arg = cleaner.ArgCleaner().getall(str(message.text))
     del arg[0]
     try:
@@ -132,7 +132,7 @@ async def test(_, message: Message, **kwargs):
 
 @logger.catch()
 async def analyzeurl(_, message: Message, test_type="all", **kwargs):
-    back_message = await message.reply("╰(*°▽°*)╯节点链路拓扑测试进行中...")  # 发送提示
+    back_message = await message.reply("节点链路拓扑测试进行中...")  # 发送提示
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
     suburl = kwargs.get('url', None)
@@ -185,7 +185,7 @@ async def analyzeurl(_, message: Message, test_type="all", **kwargs):
 
 @logger.catch()
 async def analyze(_, message: Message, test_type="all"):
-    back_message = await message.reply("╰(*°▽°*)╯节点链路拓扑测试进行中...")  # 发送提示
+    back_message = await message.reply("节点链路拓扑测试进行中...")  # 发送提示
     arg = cleaner.ArgCleaner().getall(str(message.text))
     del arg[0]
     try:
@@ -254,7 +254,7 @@ async def analyze(_, message: Message, test_type="all"):
 
 @logger.catch()
 async def speedurl(_, message: Message, **kwargs):
-    back_message = await message.reply("╰(*°▽°*)╯速度测试进行中...", quote=True)  # 发送提示
+    back_message = await message.reply("速度测试进行中...", quote=True)  # 发送提示
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
     suburl = kwargs.get('url', None)
@@ -289,7 +289,7 @@ async def speedurl(_, message: Message, **kwargs):
 
 @logger.catch()
 async def speed(_, message: Message):
-    back_message = await message.reply("╰(*°▽°*)╯速度测试进行中...", quote=True)  # 发送提示
+    back_message = await message.reply("速度测试进行中...", quote=True)  # 发送提示
     arg = cleaner.ArgCleaner().getall(str(message.text))
     del arg[0]
     if config.nospeed:
