@@ -6,17 +6,17 @@ from libs import cleaner
 """
 
 
-def ping(ping: list, proxyname: list):
+def ping(_ping: list, proxyname: list):
     """
     用ping值排序，值从低到高。
-    排序思路：先将超时的节点单独分离到一个字典，原来的字典剔除超时节点，开始依靠延迟数字进行排序。然后从排好的结果中拿数据。最后加上超时的数据。
+    排序思路：先将超时的节点单独分离到新字典，原来的字典剔除超时节点，开始依靠延迟数字进行排序。然后从排好的结果中拿数据。最后加上超时的数据。
     那两个变量进行存放，var1存放排好节点名，var2存放排好的延迟。两者是对应的。
     :return: 排序好的 [节点名] [延迟]
     """
     delays = {}
     timeout_item = {}
     for t in range(len(proxyname)):
-        delays[proxyname[t]] = ping[t]
+        delays[proxyname[t]] = _ping[t]
 
     for k, v in delays.items():
         if v == -1:
@@ -52,7 +52,7 @@ def sort_nodename_topo(_cleaner: cleaner.ClashCleaner):
             list1.append(n['server'])
         cl.yaml['proxies'] = addrs2
         nodename = cl.nodesName()
-        info = cleaner.ClashCleaner.count_element(list1)
+        info = cleaner.ClashCleaner.count_elem(list1)
         return nodename, info, cl
     except Exception as e:
         logger.error(str(e))

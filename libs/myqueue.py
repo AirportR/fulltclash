@@ -35,7 +35,8 @@ async def bot_task_queue(client: Client, message, task_type: str, qu: asyncio.Qu
     elif "outbound" in task_type and "url" not in task_type:
         await botmodule.analyze(client, message, test_type="outbound")
     elif "outboundurl" in task_type:
-        await botmodule.analyzeurl(client, message, test_type="outbound", include_text=in_text, exclude_text=ex_text, url=suburl)
+        await botmodule.analyzeurl(client, message, test_type="outbound", include_text=in_text, exclude_text=ex_text,
+                                   url=suburl)
     elif "speed" in task_type and "url" not in task_type:
         await botmodule.speed(client, message)
     elif "speedurl" in task_type:

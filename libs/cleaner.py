@@ -174,6 +174,9 @@ class AddonCleaner:
             return success_list
 
     def init_addons(self, path: str):
+        """
+        动态加载测速脚本
+        """
         try:
             di = os.listdir(path)
         except FileNotFoundError:
@@ -228,6 +231,9 @@ class AddonCleaner:
         logger.info(f"外接测试脚本成功导入数量: {num}")
 
     def init_button(self, isreload=False):
+        """
+        初始化bot内联按钮
+        """
         try:
             if isreload:
                 self.init_addons(self.path)
@@ -244,6 +250,9 @@ class AddonCleaner:
 
 
 def preTemplate():
+    """
+    内置模板。防止用户误删除项目文件导致出错，无法进行测试。
+    """
     template_text = """
 allow-lan: false
 bind-address: '*'
@@ -389,6 +398,7 @@ class ClashCleaner:
         except TypeError:
             logger.warning("读取节点信息失败！")
             return None
+
     def nodehost(self, _filter: str = ''):
         """
         获取节点域名
@@ -402,7 +412,7 @@ class ClashCleaner:
         except TypeError:
             logger.warning("读取节点信息失败！")
             return None
-    
+
     @staticmethod
     def count_element(y: list = None):
         """
@@ -421,7 +431,7 @@ class ClashCleaner:
         except Exception as e:
             logger.error(str(e))
             return None
-        
+
     def nodesAddr(self, name=None):
         """
         获取节点地址
@@ -454,7 +464,7 @@ class ClashCleaner:
             return None
 
     @staticmethod
-    def count_element(addrs: list = None):
+    def count_elem(addrs: list = None):
         """
         返回入站ip信息,本质上是统计一个列表里每个元素出现的次数
         :return: dict
@@ -586,7 +596,7 @@ class ClashCleaner:
 @logger.catch()
 class ConfigManager:
     """
-    配置清洗
+    配置清洗，以及预处理配置在这里进行。
     """
 
     def __init__(self, configpath="./resources/config.yaml", data: dict = None):
@@ -957,6 +967,7 @@ class ConfigManager:
             self.yaml['proxy-groups'][0]['use'].append(subname)
 
 
+"""内置一个配置全局变量，后续项目开发可以统一读取这个，./botmodule/init_bot.py 中也有一个"""
 config = ConfigManager()
 media_item = config.get_media_item()
 addon = AddonCleaner()
@@ -972,6 +983,10 @@ def reload_config(media: list = None):
 
 
 class ReCleaner:
+    """
+    预测试结果清洗类
+    """
+
     def __init__(self, data: dict):
         self.data = data
         self._sum = 0
@@ -1130,6 +1145,10 @@ class ReCleaner:
 
 
 class ResultCleaner:
+    """
+    测速结果的处理类，负责将得到的数据进行排序，重命名等操作
+    """
+
     def __init__(self, info: dict):
         self.data = info
 
@@ -1230,25 +1249,18 @@ class ArgCleaner:
         self.string = string
 
     def getall(self, string: str = None):
+        """
+        分割一段字符串中的参数，返回参数列表
+        """
         if string is None:
             if self.string is None:
                 return None
             arg = self.string.strip().split(' ')
-            c = 0
-            while len(arg) > c:
-                if arg[c] == '':
-                    del arg[c]
-                else:
-                    c += 1
+            arg = [x for x in arg if x != '']
             return arg
         else:
             arg = string.strip().split(' ')
-            c = 0
-            while len(arg) > c:
-                if arg[c] == '':
-                    del arg[c]
-                else:
-                    c += 1
+            arg = [x for x in arg if x != '']
             return arg
 
 
@@ -1282,6 +1294,7 @@ def domain_to_ip(host: str):
     except socket.gaierror:
         return None
 
+
 def count(host):
     ips = domain_to_ip(host)
     if ips is None:
@@ -1303,7 +1316,9 @@ def count(host):
     elif ipv4_count > 0 and ipv6_count > 0:
         return "46"
     else:
-        return None 
+        return None
+
+
 def batch_ipstack(host: list):
     """
     批量将域名转成栈列表
@@ -1331,6 +1346,7 @@ def batch_ipstack(host: list):
                 ipstack.append("N/A")
     return ipstack
 
+
 def batch_domain2ip(host: list):
     """
     批量将域名转成ip地址
@@ -1357,71 +1373,3 @@ def batch_domain2ip(host: list):
             else:
                 ipaddrs.append("N/A")
     return ipaddrs
-
-
-def get_airport_info(text: str = None):
-    """
-    过去特定格式的信息
-    :return:
-    """
-    jcid = jcname = jctime = jcurl = jcgroup = jccomment = jcchannel = jcowner = ''
-    try:
-        a = text if text is not None else ''
-        b = a.split('\n')
-        p1 = re.search('[序编]?号[:：]?.*(\d)+', a)
-        if p1 is not None:
-            jcid = p1.group()
-        b.pop(0)
-        prename = b.pop(0) if len(b) else ''
-        names = prename.split(' ')
-        for n in names:
-            if n:
-                if n[0] == '#':
-                    jcname += n[1:] + ' '
-                else:
-                    jcname += n + ' '
-        prename = re.search("名称[:：]?.*", a)
-        if prename is not None:
-            jcname = prename.group()[3:]
-        timepattern = re.compile(r"时间[:：].?(\d+\W\d+\W\d+)")
-        pretime = timepattern.search(a)
-        if pretime is not None:
-            jctime = pretime.group()[3:]
-        preurl = re.search("官网[:：].*", a)
-        if preurl is not None:
-            jcurl = preurl.group()[3:]
-        pretgg1 = re.search("群组[:：].*@\w+", a)
-        if pretgg1 is not None:
-            jcgroup = pretgg1.group()[3:]
-        else:
-            pretgg2 = re.search("群组[:：].*", a)
-            if pretgg2 is not None:
-                jcgroup = pretgg2.group()[3:]
-        pretgc1 = re.search("频道[:：].*@\w+", a)
-        if pretgc1 is not None:
-            jcchannel = pretgc1.group()[3:]
-        else:
-            pretgc2 = re.search("频道[:：].*", a)
-            if pretgc2 is not None:
-                jcchannel = pretgc2.group()[3:]
-        commentp = re.compile("[说明|简要介绍|备注][:：]?.*")
-        pre_comment = commentp.search(a)
-        if pre_comment is not None:
-            t = pre_comment.group()
-            index1 = t.find(':')
-            index2 = t.find('：')
-            if index1 > 0:
-                jccomment = t[index1 + 1:]
-            elif index2 > 0:
-                jccomment = t[index2 + 1:]
-        # print(jcid)
-        # print(jcname)
-        # print(jctime)
-        # print(jcurl)
-        # print(jcgroup)
-        # print(jcchannel)
-        # print(jccomment)
-        return jcid, jcname, jctime, jcurl, jcgroup, jcchannel, jccomment, jcowner
-    except Exception as e:
-        logger.error(str(e))
-        return jcid, jcname, jctime, jcurl, jcgroup, jcchannel, jccomment, jcowner

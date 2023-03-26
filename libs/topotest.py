@@ -8,7 +8,6 @@ from pyrogram.errors import RPCError, FloodWait
 
 from libs import cleaner, collector, sorter, check, proxys, ipstack
 
-
 """
 这个模块是拓扑测试（出入口落地分析）的具体实现
 """
@@ -21,8 +20,8 @@ async def topo(file_path: str):
     co = collector.IPCollector()
     session = aiohttp.ClientSession()
     node_addrs = cl.nodehost()
-    node_addr_count = cl.count_element(node_addrs)
-    nodename, inboundinfo, cl= sorter.sort_nodename_topo(cl)
+    node_addr_count = cl.count_elem(node_addrs)
+    nodename, inboundinfo, cl = sorter.sort_nodename_topo(cl)
     ipstack_list = cleaner.batch_ipstack(node_addr_count)
     info['栈'] = ipstack_list
     if nodename and inboundinfo and cl:
@@ -238,7 +237,7 @@ async def core(message, back_message, start_time, suburl: str = None, test_type=
                 org.append(ipcl.get_org())
                 ip = ipcl.get_ip()
                 ipaddr.append(ip)
-                #ipstackes.append(ips)
+                # ipstackes.append(ips)
                 # if len(ip) < 16:  # v4地址最大长度为15
                 #     try:
                 #         old_ip = ip.split('.')
@@ -300,4 +299,6 @@ if __name__ == "__main__":
 
     async def test():
         pass
+
+
     loop.run_until_complete(test())

@@ -1,6 +1,8 @@
 # 这是一个批量启动clash子进程的脚本
 import asyncio
 import subprocess
+import time
+
 import yaml
 from time import sleep
 
@@ -287,6 +289,7 @@ rules:
 - SRC-PORT,7777,DIRECT
 - MATCH,auto
 """)
+    time.sleep(2)
 
 
 if __name__ == "__main__":

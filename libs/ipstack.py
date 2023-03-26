@@ -1,7 +1,10 @@
 import aiohttp
 import asyncio
 
+from loguru import logger
 
+
+@logger.catch()
 async def get_ip(url, session, proxy):
     try:
         async with session.get(url, proxy=proxy) as response:
@@ -9,8 +12,10 @@ async def get_ip(url, session, proxy):
                 return await response.text()
             else:
                 return None
-    except:
+    except Exception as e:
+        logger.info(str(e))
         return None
+
 
 async def get_ips(proxyhost: list, proxyport: list):
     v4url = "http://v4.ipv6-test.com/api/myip.php"
@@ -23,7 +28,7 @@ async def get_ips(proxyhost: list, proxyport: list):
             proxy = f"http://{proxyhost[i]}:{proxyport[i]}"
             tasks.append(asyncio.ensure_future(get_ip(v4url, session, proxy)))
             tasks.append(asyncio.ensure_future(get_ip(v6url, session, proxy)))
-            #await asyncio.sleep(0.1)
+            # await asyncio.sleep(0.1)
         for i in range(0, len(tasks), 2):
             res1, res2 = await asyncio.gather(tasks[i], tasks[i + 1])
             if res1 and res2:
@@ -42,6 +47,3 @@ async def get_ips(proxyhost: list, proxyport: list):
             else:
                 results.append('N/A')
     return results
-
-
-

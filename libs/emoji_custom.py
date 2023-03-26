@@ -12,15 +12,16 @@ from emoji import demojize
 
 """
 自定义的emoji表情源
-保留原作者信息
-author: https://github.com/Oreomeow
-修改: 增加本地源
 """
 
 
 class EmojiPediaSource(pilmoji.source.DiscordEmojiSourceMixin):
-    """A base source that fetches emojis from emojipedia."""
-
+    """
+    A base source that fetches emojis from emojipedia.
+    保留原作者信息
+    author: https://github.com/Oreomeow
+    修改: 增加本地源
+    """
     BASE_EMOJIPEDIA_URL: ClassVar[str] = "https://em-content.zobj.net/thumbs/120/"
     STYLE: ClassVar[Optional[str]] = None
 
@@ -110,6 +111,9 @@ class TossFacePediaSource(EmojiPediaSource):
 
 
 class LocalSource(pilmoji.source.BaseSource):
+    """
+    emoji本地源基类
+    """
     def get_emoji(self, emoji: str, /) -> Optional[BytesIO]:
         file_path = self.get_file_path(emoji)
         try:

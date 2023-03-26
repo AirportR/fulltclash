@@ -7,9 +7,8 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageColor
 from pilmoji import Pilmoji
 from pilmoji.source import Twemoji
 import time
-import emoji
 
-from glovar import __version__ as _vsion
+from glovar import __version__
 from libs.cleaner import ConfigManager
 import libs.emoji_custom as emoji_source
 
@@ -22,10 +21,6 @@ import libs.emoji_custom as emoji_source
 2、何为基础数据？
     基础数据决定了生成图片的高度（Height），它是列表，列表里面的数据一般是一组节点名，即有多少个节点就对应了info键值中的长度。
 """
-__version__ = "3.5.3-dev"  # 版本号，版本号将移动到glovar.py 这里的变量将废弃
-
-
-# custom_source = TwitterPediaSource  # 自定义emoji风格 TwitterPediaSource
 
 
 def color_block(size: tuple, color_value):
@@ -46,7 +41,7 @@ class BaseExport:
         所有绘图类的基类，primarykey为主键，计算主键的长度，主键决定整张图片的高度
         """
         self.basedata = primarykey
-        self.version = _vsion
+        self.version = __version__
         self.allinfo = allinfo
         self.info = self.getPrintinfo()
 
@@ -62,6 +57,7 @@ class BaseExport:
         return new_info
 
 
+# TODO@AiprortR 绘图类需要重写，现如今的框架不够好
 class ExportResult:
     """
     生成图片类
@@ -107,7 +103,7 @@ class ExportResult:
         }
         for key in watermark_default_config:
             if key not in self.watermark:
-                self.watermark[key] = watermark_default_config[key]
+                self.watermark[key] = watermark_default_config.get(key)
 
     @property
     def interval(self):

@@ -165,7 +165,8 @@ async def batch_test_pro(message, nodename: list, delays: list, test_items: list
 
 
 @logger.catch()
-async def core(message, back_message, start_time, suburl: str = None, media_items: list = None, thread: int = 1, **kwargs):
+async def core(message, back_message, start_time, suburl: str = None, media_items: list = None, thread: int = 1,
+               **kwargs):
     """
     :param thread: 测试线程
     :param message: 发起测试任务的对象
