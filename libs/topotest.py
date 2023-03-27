@@ -7,6 +7,7 @@ from loguru import logger
 from pyrogram.errors import RPCError, FloodWait
 
 from libs import cleaner, collector, sorter, check, proxys, ipstack
+from libs.cleaner import config
 
 """
 这个模块是拓扑测试（出入口落地分析）的具体实现
@@ -71,6 +72,7 @@ async def topo(file_path: str):
 async def batch_topo(message, nodename: list, pool: dict, proxygroup='auto'):
     resdata = []
     ipstackes = []
+    analyzetext = config.config.get('bot', {}).get('analyzetext', "⏳节点拓扑分析测试进行中...")
     progress = 0
     sending_time = 0
     host = pool.get('host', [])
@@ -81,7 +83,7 @@ async def batch_topo(message, nodename: list, pool: dict, proxygroup='auto'):
     if psize <= 0:
         logger.error("无可用的代理程序接口")
         return [], []
-    await check.progress(message, 0, nodenum, 0, "╰(*°▽°*)╯节点链路拓扑测试进行中...")
+    await check.progress(message, 0, nodenum, 0, analyzetext)
     if nodenum < psize:
         for i in range(nodenum):
             proxys.switchProxy_old(proxyName=nodename[i], proxyGroup=proxygroup, clashHost=host[i],
@@ -111,7 +113,7 @@ async def batch_topo(message, nodename: list, pool: dict, proxygroup='auto'):
             cal = progress / nodenum * 100
             # 判断进度条，每隔10%发送一次反馈，有效防止洪水等待(FloodWait)
             if cal > sending_time:
-                await check.progress(message, progress, nodenum, cal, "╰(*°▽°*)╯节点链路拓扑测试进行中...")
+                await check.progress(message, progress, nodenum, cal, analyzetext)
                 sending_time += 20
 
         if nodenum % psize != 0:
@@ -127,7 +129,7 @@ async def batch_topo(message, nodename: list, pool: dict, proxygroup='auto'):
             ipstackes.append({'ips': ipstat})
         # 最终进度条
         if nodenum % psize != 0:
-            await check.progress(message, nodenum, nodenum, 100, "╰(*°▽°*)╯节点链路拓扑测试进行中...")
+            await check.progress(message, nodenum, nodenum, 100, analyzetext)
         return resdata, ipstackes
 
 

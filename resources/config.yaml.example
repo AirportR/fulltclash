@@ -17,6 +17,9 @@ item: # 流媒体测试项，决定你想要测哪个项,目前仅支持以下�
 # api_id: "123456" # Telegram的api_id
 # api_hash: "ABCDEFG" # Telegram的api_hash
 # bot_token: "123456:ABCDEFG" #bot的token
+# scripttext: "⏳联通性测试进行中..."  # 解锁脚本测试进度条自定义文本
+# analyzetext: "⏳节点测试拓扑进行中..."  # 拓扑测试进度条自定义文本
+# speedtext: "⏳速度测试进行中..."  # 速度测试进度条自定义文本
 #proxy: "host:端口" # http配置代理(非socks5)，括号内可选用于下载获取订阅链接，订阅链接国内打不开可尝试开启（可选配置）,本机提供的代理可以这样填: '127.0.0.1:7890'
 #如果要http代理要验证，配置格式为: proxy: "用户名:密码@host:端口" 比如: user1:112233@127.0.0.1:7890
 #geoip-api: "ip-api.com" # GEOIP 测试api ，取二级域名,目前支持 ip-api.com ip.sb ipleak.net ipdata.co 四种，其中 ipdata 需要配置下面的geoip-key

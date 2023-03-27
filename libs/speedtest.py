@@ -13,6 +13,7 @@ from pyrogram.errors import RPCError
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
 
 from libs import cleaner, check, collector, proxys, pynat
+from libs.cleaner import config
 
 # ----------------------------------------------------------------------------------------------------------------------
 """
@@ -162,6 +163,7 @@ async def start(
 # 以下为 另一部分
 async def batch_speed(message: Message, nodename: list, proxygroup='auto'):
     info = {}
+    speedtext = config.config.get('bot', {}).get('speedtext', "⏳速度测试进行中...")
     progress = 0
     sending_time = 0
     nodenum = len(nodename)
@@ -202,7 +204,7 @@ async def batch_speed(message: Message, nodename: list, proxygroup='auto'):
             sending_time += 10
             try:
                 # 实时反馈进度
-                await message.edit_text("╰(*°▽°*)╯速度测试进行中...\n\n" +
+                await message.edit_text(speedtext+"\n\n" +
                                         "当前进度:\n" + p_text +
                                         "%     [" + str(progress) + "/" + str(nodenum) + "]", reply_markup=IKM)
             except RPCError as r:
@@ -212,6 +214,7 @@ async def batch_speed(message: Message, nodename: list, proxygroup='auto'):
 
 async def batch_udp(message, nodename: list, proxygroup='auto'):
     info = {}
+    udptext = config.config.get('bot', {}).get('udptext', "⏳UDP类型测试进行中...")
     progress = 0
     sending_time = 0
     nodenum = len(nodename)
@@ -233,7 +236,7 @@ async def batch_udp(message, nodename: list, proxygroup='auto'):
         if cal >= sending_time:
             sending_time += 10
             try:
-                await message.edit_text("╰(*°▽°*)╯UDP类型测试进行中...\n\n" +
+                await message.edit_text(udptext+"\n\n" +
                                         "当前进度:\n" + p_text +
                                         "%     [" + str(progress) + "/" + str(nodenum) + "]")  # 实时反馈进度
             except RPCError as r:
