@@ -171,11 +171,11 @@ async def batch_test_pro(message, nodename: list, delays: list, test_items: list
                 info[test_items[j]].extend(res)
         # 最终进度条
         cal = progress / nodenum
-        bar_length = 26
+        bar_length = 27
         num_eq = int(cal * bar_length)
         num_space = bar_length - num_eq
         if nodenum % psize != 0:
-            bar = '=' * num_eq + ' ' * num_space
+            bar = '=' * num_eq
             bar_with_frame = '[{}]'.format(bar)
             await check.progress(message, nodenum, nodenum, 100, scripttext + '\n' + '\n' + bar_with_frame)
         logger.info(str(info))
