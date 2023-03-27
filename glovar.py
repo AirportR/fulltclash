@@ -7,7 +7,7 @@ from cron import cron_delete_message as cdm
 
 bot_token = init_bot.bot_token
 # 项目版本号
-__version__ = '3.5.3'
+__version__ = '3.5.4-dev'
 # 客户端
 app = Client("my_bot",
              api_id=init_bot.api_id,
