@@ -2,6 +2,7 @@ import asyncio
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pyrogram.types import Message
+from pyrogram import enums
 from pyrogram.errors import RPCError, FloodWait
 from loguru import logger
 import botmodule.init_bot
@@ -50,7 +51,7 @@ async def process(_, message: Message, **kwargs):
 
 
 @logger.catch()
-async def testurl(_, message: Message, **kwargs):
+async def testurl(app, message: Message, **kwargs):
     """
 
     :param _:
@@ -58,7 +59,8 @@ async def testurl(_, message: Message, **kwargs):
     :param kwargs:
     :return:
     """
-    back_message = await message.reply("╰(*°▽°*)╯联通性测试进行中...")
+    scripttext = config.config.get('bot', {}).get('scripttext', "⏳联通性测试进行中...")
+    back_message = await message.reply(scripttext)
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
     suburl = kwargs.get('url', None)
@@ -74,6 +76,7 @@ async def testurl(_, message: Message, **kwargs):
                 stime = await loop.run_in_executor(
                     pool, ex.exportUnlock)
             # 发送回TG
+            await message.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
             await check.check_photo(message, back_message, stime, wtime)
             ma.delsub2provider(subname=start_time)
             ma.save(savePath='./clash/proxy.yaml')
@@ -88,7 +91,8 @@ async def testurl(_, message: Message, **kwargs):
 
 @logger.catch()
 async def test(_, message: Message, **kwargs):
-    back_message = await message.reply("╰(*°▽°*)╯联通性测试进行中...")  # 发送提示
+    scripttext = config.config.get('bot', {}).get('scripttext', "⏳联通性测试进行中...")
+    back_message = await message.reply(scripttext)  # 发送提示
     arg = cleaner.ArgCleaner().getall(str(message.text))
     del arg[0]
     try:
@@ -113,6 +117,7 @@ async def test(_, message: Message, **kwargs):
                     stime = await loop.run_in_executor(
                         pool, ex.exportUnlock)
                 # 发送回TG
+                await message.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
                 await check.check_photo(message, back_message, stime, wtime)
                 ma.delsub2provider(subname=start_time)
                 ma.save(savePath='./clash/proxy.yaml')
@@ -132,7 +137,8 @@ async def test(_, message: Message, **kwargs):
 
 @logger.catch()
 async def analyzeurl(_, message: Message, test_type="all", **kwargs):
-    back_message = await message.reply("╰(*°▽°*)╯节点链路拓扑测试进行中...")  # 发送提示
+    analyzetext = config.config.get('bot', {}).get('analyzetext', "⏳节点拓扑分析测试进行中...")
+    back_message = await message.reply(analyzetext)  # 发送提示
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
     suburl = kwargs.get('url', None)
@@ -171,6 +177,7 @@ async def analyzeurl(_, message: Message, test_type="all", **kwargs):
                     stime = export.ExportTopo(name=None, info=info1).exportTopoInbound(info2.get('节点名称', []), info2,
                                                                                        img2_width=image_width2)
                 # 发送回TG
+                await message.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
                 await check.check_photo(message, back_message, 'Topo' + stime, wtime)
                 ma.delsub2provider(subname=start_time)
                 ma.save(savePath='./clash/proxy.yaml')
@@ -185,7 +192,8 @@ async def analyzeurl(_, message: Message, test_type="all", **kwargs):
 
 @logger.catch()
 async def analyze(_, message: Message, test_type="all"):
-    back_message = await message.reply("╰(*°▽°*)╯节点链路拓扑测试进行中...")  # 发送提示
+    analyzetext = config.config.get('bot', {}).get('analyzetext', "⏳节点拓扑分析测试进行中...")
+    back_message = await message.reply(analyzetext)  # 发送提示
     arg = cleaner.ArgCleaner().getall(str(message.text))
     del arg[0]
     try:
@@ -212,6 +220,7 @@ async def analyze(_, message: Message, test_type="all"):
                         loop = asyncio.get_running_loop()
                         stime = await loop.run_in_executor(
                             pool, ex.exportTopoInbound)
+                    await message.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
                     await check.check_photo(message, back_message, 'Topo' + stime, wtime)
                     ma.delsub2provider(subname=start_time)
                     ma.save(savePath='./clash/proxy.yaml')
@@ -233,6 +242,7 @@ async def analyze(_, message: Message, test_type="all"):
                         stime = export.ExportTopo(name=None, info=info1).exportTopoInbound(info2.get('节点名称', []), info2,
                                                                                            img2_width=image_width2)
                     # 发送回TG
+                    await message.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
                     await check.check_photo(message, back_message, 'Topo' + stime, wtime)
                     ma.delsub2provider(subname=start_time)
                     ma.save(savePath='./clash/proxy.yaml')
@@ -254,7 +264,8 @@ async def analyze(_, message: Message, test_type="all"):
 
 @logger.catch()
 async def speedurl(_, message: Message, **kwargs):
-    back_message = await message.reply("╰(*°▽°*)╯速度测试进行中...", quote=True)  # 发送提示
+    speedtext = config.config.get('bot', {}).get('speedtext', "⏳速度测试进行中...")
+    back_message = await message.reply(speedtext, quote=True)  # 发送提示
     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
     ma = cleaner.ConfigManager('./clash/proxy.yaml')
     suburl = kwargs.get('url', None)
@@ -277,6 +288,7 @@ async def speedurl(_, message: Message, **kwargs):
                 stime = await loop.run_in_executor(
                     pool, ex.exportImage)
             # 发送回TG
+            await message.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
             await check.check_photo(message, back_message, stime, wtime)
     except RPCError as r:
         logger.error(str(r))
@@ -289,7 +301,8 @@ async def speedurl(_, message: Message, **kwargs):
 
 @logger.catch()
 async def speed(_, message: Message):
-    back_message = await message.reply("╰(*°▽°*)╯速度测试进行中...", quote=True)  # 发送提示
+    speedtext = config.config.get('bot', {}).get('speedtext', "⏳速度测试进行中...")
+    back_message = await message.reply(speedtext, quote=True)  # 发送提示
     arg = cleaner.ArgCleaner().getall(str(message.text))
     del arg[0]
     if config.nospeed:
@@ -320,6 +333,7 @@ async def speed(_, message: Message):
                     stime = await loop.run_in_executor(
                         pool, ex.exportImage)
                 # 发送回TG
+                await message.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
                 await check.check_photo(message, back_message, stime, wtime)
         else:
             await back_message.edit_text("❌无接受参数，使用方法: /speed <订阅名>")

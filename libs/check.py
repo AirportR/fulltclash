@@ -7,6 +7,7 @@ from pyrogram.errors import RPCError
 from loguru import logger
 from pyrogram.filters import private_filter
 from botmodule.init_bot import config
+from botmodule.utils import message_delete_queue
 
 """
 这个模块主要是一些检查函数，用来验证某个值是否合法。一般是返回布尔值
@@ -44,7 +45,7 @@ async def is_port_in_use(host='127.0.0.1', port=80):
         await writer.wait_closed()
         logger.warning(fr"{port} 已被占用，请更换。")
         return True
-    except ConnectionRefusedError as c:
+    except ConnectionRefusedError:
         return False
 
 
@@ -118,9 +119,10 @@ async def check_subowner(message, back_message, subinfo: dict, admin: list, pass
     except AttributeError:
         ID = message.sender_chat.id
     if not subinfo:
-        await back_message.edit_text("❌找不到该任务名称，请检查参数是否正确")
-        await asyncio.sleep(10)
-        await back_message.delete()
+        await back_message.edit_text("❌找不到该任务名称，请检查参数是否正确 (TEST DELETE MESSAGE)")
+        message_delete_queue.put_nowait([message.chat.id, message.id, 10])
+        message_delete_queue.put_nowait([back_message.chat.id, back_message.id, 10])
+        # await back_message.delete()
         return False
     subpwd = subinfo.get('password', '')
     subowner = subinfo.get('owner', '')
@@ -167,8 +169,9 @@ async def check_user(message, USER_TARGET: list, isalert=True):
                 if int(message.from_user.id) not in USER_TARGET:
                     if isalert:
                         m2 = await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
-                        await asyncio.sleep(10)
-                        await m2.delete()
+                        message_delete_queue.put_nowait((m2.chat.id, m2.id, 10))
+                        # await asyncio.sleep(10)
+                        # await m2.delete()
                     return False
                 else:
                     return True
@@ -178,8 +181,9 @@ async def check_user(message, USER_TARGET: list, isalert=True):
             if int(message.from_user.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
                 if isalert:
                     m2 = await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
-                    await asyncio.sleep(10)
-                    await m2.delete()
+                    message_delete_queue.put_nowait((m2.chat.id, m2.id, 10))
+                    # await asyncio.sleep(10)
+                    # await m2.delete()
                 return False
             else:
                 return True
@@ -187,8 +191,9 @@ async def check_user(message, USER_TARGET: list, isalert=True):
         if int(message.sender_chat.id) not in USER_TARGET:  # 如果不在USER_TARGET名单是不会有权限的
             if isalert:
                 m2 = await message.reply("⚠️您似乎没有使用权限，请联系bot的管理员获取授权")
-                await asyncio.sleep(10)
-                await m2.delete()
+                message_delete_queue.put_nowait((m2.chat.id, m2.id, 10))
+                # await asyncio.sleep(10)
+                # await m2.delete()
             return False
         else:
             return True
@@ -224,8 +229,9 @@ async def check_url(message, url):
     if not url:
         try:
             m2 = await message.edit_text("⚠️无效的订阅地址，请检查后重试。")
-            await asyncio.sleep(10)
-            await m2.delete()
+            message_delete_queue.put_nowait((m2.chat.id, m2.id, 10))
+            # await asyncio.sleep(10)
+            # await m2.delete()
         except RPCError as r:
             logger.error(r)
         return True
@@ -243,8 +249,9 @@ async def check_sub(message, subconfig):
         logger.warning("ERROR: 无法获取到订阅文件")
         try:
             m2 = await message.edit_text("ERROR: 无法获取到订阅文件")
-            await asyncio.sleep(10)
-            await m2.delete()
+            message_delete_queue.put_nowait((m2.chat.id, m2.id, 10))
+            # await asyncio.sleep(10)
+            # await m2.delete()
         except RPCError as r:
             logger.error(r)
         return True
@@ -264,8 +271,9 @@ async def check_nodes(message, nodenum, args: tuple, max_num=300):
     if not nodenum:
         try:
             m2 = await message.edit_text("❌发生错误，请检查订阅文件")
-            await asyncio.sleep(10)
-            await m2.delete()
+            message_delete_queue.put_nowait((m2.chat.id, m2.id, 10))
+            # await asyncio.sleep(10)
+            # await m2.delete()
             return True
         except RPCError as r:
             logger.error(r)
@@ -273,8 +281,9 @@ async def check_nodes(message, nodenum, args: tuple, max_num=300):
         if arg is None:
             try:
                 m3 = await message.edit_text("❌发生错误，请检查订阅文件")
-                await asyncio.sleep(10)
-                await m3.delete()
+                message_delete_queue.put_nowait((m3.chat.id, m3.id, 10))
+                # await asyncio.sleep(10)
+                # await m3.delete()
             except RPCError as r:
                 logger.error(r)
             return True
@@ -284,8 +293,9 @@ async def check_nodes(message, nodenum, args: tuple, max_num=300):
         logger.warning("❌节点数量过多！已取消本次测试")
         try:
             m4 = await message.edit_text("❌节点数量过多！已取消本次测试")
-            await asyncio.sleep(10)
-            await m4.delete()
+            message_delete_queue.put_nowait((m4.chat.id, m4.id, 10))
+            # await asyncio.sleep(10)
+            # await m4.delete()
         except RPCError as r:
             logger.error(r)
         return True
@@ -305,8 +315,9 @@ async def check_speed_nodes(message, nodenum, args: tuple, speed_max_num=config.
     if not nodenum:
         try:
             m2 = await message.edit_text("❌发生错误，请检查订阅文件")
-            await asyncio.sleep(10)
-            await m2.delete()
+            message_delete_queue.put_nowait((m2.chat.id, m2.id, 10))
+            # await asyncio.sleep(10)
+            # await m2.delete()
             return True
         except RPCError as r:
             logger.error(r)
@@ -314,20 +325,22 @@ async def check_speed_nodes(message, nodenum, args: tuple, speed_max_num=config.
         if arg is None:
             try:
                 m3 = await message.edit_text("❌发生错误，请检查订阅文件")
-                await asyncio.sleep(10)
-                await m3.delete()
+                message_delete_queue.put_nowait((m3.chat.id, m3.id, 10))
+                # await asyncio.sleep(10)
+                # await m3.delete()
             except RPCError as r:
                 logger.error(r)
             return True
         else:
             pass
-    print(speed_max_num)
+    # print(speed_max_num)
     if nodenum > speed_max_num:
         logger.warning(f"❌节点数量超过了{speed_max_num}个的限制！已取消本次测试")
         try:
             m4 = await message.edit_text(f"❌节点数量超过了{speed_max_num}个的限制！已取消本次测试")
-            await asyncio.sleep(10)
-            await m4.delete()
+            message_delete_queue.put_nowait((m4.chat.id, m4.id, 10))
+            # await asyncio.sleep(10)
+            # await m4.delete()
         except RPCError as r:
             logger.error(r)
         return True
@@ -347,8 +360,9 @@ async def check_photo(message: pyrogram.types.Message, back_message, name, wtime
     try:
         if name == '' or name is None:
             m2 = await back_message.edit_text("⚠️生成图片失败,可能原因: 节点过多/网络不稳定")
-            await asyncio.sleep(10)
-            await m2.delete()
+            message_delete_queue.put_nowait((m2.chat.id, m2.id, 10))
+            # await asyncio.sleep(10)
+            # await m2.delete()
         else:
             await message.reply_document(r"./results/{}.png".format(name),
                                          caption="⏱️总共耗时: {}s".format(wtime))

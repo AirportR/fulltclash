@@ -35,8 +35,6 @@ def reload_config(media: list = None):
     media_items = config.get_media_item()
     if media is not None:
         media_items = media
-        # print(media_items)
-    # print(media_items)
 
 
 class BaseCollector:
@@ -59,6 +57,10 @@ class BaseCollector:
 
 
 class IPCollector:
+    """
+    GEOIP 测试采集类
+    """
+
     def __init__(self):
         self.tasks = []
         self._headers = {
@@ -179,6 +181,10 @@ class SubCollector(BaseCollector):
 
     @logger.catch()
     def __init__(self, suburl: str, include: str = '', exclude: str = ''):
+        """
+        这里在初始化中读取了subconverter的相关配置，但是由于sunconverter无人维护，容易出问题，因此之后我不会再维护此功能。也就是在下载订阅时
+        订阅转换
+        """
         super().__init__()
         self.text = None
         self._headers = {'User-Agent': 'clash'}  # 这个请求头是获取流量信息的关键
@@ -191,13 +197,15 @@ class SubCollector(BaseCollector):
         self.code_include = quote(include, encoding='utf-8')
         self.code_exclude = quote(exclude, encoding='utf-8')
         self.cvt_host = str(self.subconvertor.get('host', '127.0.0.1:25500'))
-        self.cvt_url = f"http://{self.cvt_host}/sub?target=clash&new_name=true&url={self.codeurl}&include={self.code_include}&exclude={self.code_exclude}"
+        self.cvt_url = f"http://{self.cvt_host}/sub?target=clash&new_name=true&url={self.codeurl}" \
+                       + f"&include={self.code_include}&exclude={self.code_exclude}"
         self.sub_remote_config = self.subconvertor.get('remoteconfig', '')
         self.config_include = quote(self.subconvertor.get('include', ''), encoding='utf-8')  # 这两个
         self.config_exclude = quote(self.subconvertor.get('exclude', ''), encoding='utf-8')
         # print(f"配置文件过滤,包含：{self.config_include} 排除：{self.config_exclude}")
         if self.config_include or self.config_exclude:
-            self.cvt_url = f"http://{self.cvt_host}/sub?target=clash&new_name=true&url={self.cvt_url}&include={self.code_include}&exclude={self.code_exclude}"
+            self.cvt_url = f"http://{self.cvt_host}/sub?target=clash&new_name=true&url={self.cvt_url}" \
+                           + f"&include={self.code_include}&exclude={self.code_exclude}"
         if self.sub_remote_config:
             self.sub_remote_config = quote(self.sub_remote_config, encoding='utf-8')
             self.cvt_url = self.cvt_url + "&config=" + self.sub_remote_config
@@ -299,7 +307,8 @@ class Miaospeed:
     SlaveRequestOptions = {'Filter': '',
                            'Matrices': SlaveRequestMatrixEntry}
     SlaveRequestConfigs = {
-        'DownloadURL': 'https://dl.google.com/dl/android/studio/install/3.4.1.0/android-studio-ide-183.5522156-windows.exe',
+        'DownloadURL': 'https://dl.google.com/dl/android/studio/install/3.4.1.0/' +
+                       'android-studio-ide-183.5522156-windows.exe',
         'DownloadDuration': 10,
         'DownloadThreading': 4,
         'PingAverageOver': 3,
@@ -371,7 +380,8 @@ class Collector:
         self.ipurl = "https://api.ip.sb/geoip"
         self.youtubeurl = "https://www.youtube.com/premium"
         self.youtubeHeaders = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.87 Safari/537.36',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ' +
+                          'Chrome/80.0.3987.87 Safari/537.36',
             'Accept-Language': 'en'
         }
         self.youtubeCookie = {

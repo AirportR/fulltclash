@@ -1,3 +1,4 @@
+
 allow-lan: false
 bind-address: '*'
 dns:

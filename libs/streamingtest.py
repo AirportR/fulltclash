@@ -4,6 +4,7 @@ import time
 from pyrogram.errors import RPCError, FloodWait
 from loguru import logger
 from libs import cleaner, collector, proxys, check
+from libs.cleaner import config
 
 """
 这个模块是流媒体测试的具体实现
@@ -20,8 +21,6 @@ async def unit(test_items: list, delay: int, host="127.0.0.1", port=1122):
     :return: list 返回test_items对应顺序的信息
     """
     info = []
-    # delay2 = await collector.delay_https_task(proxy=f"http://{host}:{port}", times=3)
-    delay2 = 0
     if delay == 0:
         logger.warning("超时节点，跳过测试")
         for t in test_items:
@@ -83,6 +82,7 @@ async def batch_test_pro(message, nodename: list, delays: list, test_items: list
     info = {}
     progress = 0
     sending_time = 0
+    scripttext = config.config.get('bot', {}).get('scripttext', "⏳联通性测试进行中...")
     host = pool.get('host', [])
     port = pool.get('port', [])
     psize = len(port)
@@ -94,7 +94,7 @@ async def batch_test_pro(message, nodename: list, delays: list, test_items: list
     if psize <= 0:
         logger.error("无可用的代理程序接口")
         return {}
-    await check.progress(message, 0, nodenum, 0, "╰(*°▽°*)╯联通性测试进行中...")
+    await check.progress(message, 0, nodenum, 0, scripttext)
     if nodenum < psize:
         for i in range(len(port[:nodenum])):
             proxys.switchProxy_old(proxyName=nodename[i], proxyGroup=proxygroup, clashHost=host[i],
@@ -132,7 +132,7 @@ async def batch_test_pro(message, nodename: list, delays: list, test_items: list
             cal = progress / nodenum * 100
             # 判断进度条，每隔10%发送一次反馈，有效防止洪水等待(FloodWait)
             if cal > sending_time:
-                await check.progress(message, progress, nodenum, cal, "╰(*°▽°*)╯联通性测试进行中...")
+                await check.progress(message, progress, nodenum, cal, scripttext)
                 sending_time += 20
             # 简单处理一下数据
             res = []
@@ -161,13 +161,14 @@ async def batch_test_pro(message, nodename: list, delays: list, test_items: list
                 info[test_items[j]].extend(res)
         # 最终进度条
         if nodenum % psize != 0:
-            await check.progress(message, nodenum, nodenum, 100, "╰(*°▽°*)╯联通性测试进行中...")
+            await check.progress(message, nodenum, nodenum, 100, scripttext)
         logger.info(str(info))
         return info
 
 
 @logger.catch()
-async def core(message, back_message, start_time, suburl: str = None, media_items: list = None, thread: int = 1, **kwargs):
+async def core(message, back_message, start_time, suburl: str = None, media_items: list = None, thread: int = 1,
+               **kwargs):
     """
     :param thread: 测试线程
     :param message: 发起测试任务的对象
@@ -231,7 +232,7 @@ async def core(message, back_message, start_time, suburl: str = None, media_item
     # 检查获得的数据
     if await check.check_nodes(back_message, nodenum, (nodename, nodetype,)):
         return info
-    ma = cleaner.ConfigManager('./clash/proxy.yaml')
+    ma = cleaner.ConfigManager(':memory:')
     ma.addsub2provider(subname=start_time, subpath='./sub{}.yaml'.format(start_time))
     ma.save('./clash/proxy.yaml')
     # 重载配置文件
