@@ -239,14 +239,14 @@ async def batch_udp(message, nodename: list, proxygroup='auto'):
 
         progress += 1
         cal = progress / nodenum
-        bar_length = 26
+        bar_length = 27
         num_eq = int(cal * bar_length)
         num_space = bar_length - num_eq
         p_text = "%.2f" % (cal * 100)
         # 判断进度条，每隔10%发送一次反馈，有效防止洪水等待(FloodWait)
         if cal * 100 >= sending_time:
             sending_time += 10
-            bar = '=' * num_eq + ' ' * num_space
+            bar = '=' * num_eq
             bar_with_frame = '[{}]'.format(bar)
             try:
                 await message.edit_text(udptext+"\n\n" + bar_with_frame + "\n\n" +
