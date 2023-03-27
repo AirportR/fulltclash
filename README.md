@@ -2,15 +2,31 @@
 
 基于clash 核心运作的、进行全量订阅测试的telegram机器人
 
-## 最近更新(3.5.2)
+## 最近更新(3.5.3)
 
-3.5.2版本更新如下特性：
+3.5.3版本更新如下特性：
 
-✨ 移除内置的Primevideo流媒体检测项，以Spotify代替。
-✨ 新增两个geoip的api地址，域名为 ipleak.net ipdata.co，其中ipdata.co需要配置geoip-key才能正常使用。[@kogekiplay 的pr](https://github.com/AirportR/FullTclash/tree/8a11b791c9e0920ef04e76f47d0c00bbf3b927a1) [@mlmmlm的pr](https://github.com/AirportR/FullTclash/tree/cc226c7a00f569abe67a489331fff5b00a16d66f)
-✨ 支持bot重启，输入 /restart 即可重启bot。 [@cpploveme的pr](https://github.com/AirportR/FullTclash/tree/bce9dd06c81b19c70acb5457986e39b804b9c6fe)
-🚗 /sub 指令用户可列出自己的订阅。[@kogekiplay 的pr](https://github.com/AirportR/FullTclash/tree/5af6ac05b8c8ff340c8b13b5dd9c12ba6b45a460)
-🚗 优化bot启动提示。
+✏️3.5.3版本更新如下特性：
+
+⚠️ emoji: True 配置写法更改为：
+emoji:
+ enable: true
+ emoji-source: 'TwemojiLocalSource' #本地源
+✨ 支持自定义测试文本， 详见config.yaml.example：bot: 
+✨ 支持本地emoji pr: [@ouyangyiluo ](https://github.com/AirportR/FullTclash/commit/79a9d7e3eaf84315cf271b705c67f65cf8429c9e)。使用方法详见 config.yaml.example 。设置本地源后，启动bot即可自动下载导入。
+✨ 拓扑测试中添加IP双栈检测。pr: [@mlmmlm](https://github.com/AirportR/FullTclash/commit/ddabcceb318d49196ec6d01adca0e27baa7fd993)
+✨ 支持 /grant、/ungrant 通过 /grant UID1 UID2 ... 的参数方式授权/解除用户。
+➕ 联通性绘图的行间距从40到60。并优化了一定的色彩，增加几个绘图标签 pr: [@mlmmlm](https://github.com/AirportR/FullTclash/commit/35a2f436d12fb648a2fc527a160a4c71f8e92b4c)
+🖼 支持自定义绘图背景颜色。pr: [@mlmmlm](https://github.com/AirportR/FullTclash/commit/33bf4a393b77d95568628b3981faaa40cd2d5361)
+➕ 新增是否允许缓存订阅配置项。暂不生效。
+🚗 优化了很多代码。[详见](https://github.com/AirportR/FullTclash/commit/4bd47d5cf6afff93c777de1164be60d02f27881f)
+🚗 优化绘图水印。pr: [@ouyangyiluo](https://github.com/AirportR/FullTclash/commit/40f7ab31c3371cb254b7b463481414a8b8896484)
+🚗 优化双栈检测。pr: [@mlmmlm](https://github.com/AirportR/FullTclash/commit/9d52fec83613c1c5c4a61a056fd4aef6938a2e0f)
+🐛 修复权限验证问题。[详见](https://github.com/AirportR/FullTclash/commit/d96201e840b81c90b8ba6f290911289d7279ae0d)
+✨ bot发送文件到TG时会出现正在发送文件的提示。
+📖 新增许多代码注释。
+📖 新增关于对代码贡献提交请求的说明 pr: [@Kuroshimacat ](https://github.com/AirportR/FullTclash/commit/76f96450b7c34ff6b77fcf9ba39dcbac3d95adcd)
+
 历史更新请到TG频道查看: 
 
 https://t.me/FullTClash
