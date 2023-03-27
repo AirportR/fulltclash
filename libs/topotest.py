@@ -139,11 +139,11 @@ async def batch_topo(message, nodename: list, pool: dict, proxygroup='auto'):
             ipstackes.append({'ips': ipstat})
         # 最终进度条
         cal = progress / nodenum
-        bar_length = 26
+        bar_length = 27
         num_eq = int(cal * bar_length)
         num_space = bar_length - num_eq
         if nodenum % psize != 0:
-            bar = '=' * num_eq + ' ' * num_space
+            bar = '=' * num_eq
             bar_with_frame = '[{}]'.format(bar)
             await check.progress(message, nodenum, nodenum, 100, analyzetext + '\n' + '\n' + bar_with_frame)
         return resdata, ipstackes
