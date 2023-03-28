@@ -1,5 +1,7 @@
 import asyncio
+
 from pyrogram import Client, filters
+from pyrogram.types import CallbackQuery
 from loguru import logger
 import botmodule
 from botmodule import init_bot
@@ -11,7 +13,7 @@ from libs.check import check_user as isuser
 from libs.check import check_callback_master
 from libs.collector import reload_config as r1
 from libs.cleaner import reload_config as r2
-from libs.speedtest import break_speed
+from backend import break_speed
 
 admin = init_bot.admin  # 管理员
 task_num = 0  # 任务数
@@ -190,9 +192,11 @@ def command_loader(app: Client):
 
 def callback_loader(app: Client):
     @app.on_callback_query(filters=dynamic_data_filter('stop') & filters.user(botmodule.init_bot.reloadUser()), group=1)
-    async def invite_test(_, callback_query):
+    async def invite_test(_, callback_query: CallbackQuery):
         break_speed.append(True)
         logger.info("测速中止")
+        backmsg = await callback_query.message.edit_text("❌测速任务已取消")
+        message_delete_queue.put_nowait((backmsg.chat.id, backmsg.id, 10))
         callback_query.stop_propagation()
 
     @app.on_callback_query(filters=dynamic_data_filter('reload:addon') & filters.user(init_bot.admin), group=1)

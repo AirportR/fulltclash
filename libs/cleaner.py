@@ -320,14 +320,14 @@ class ClashCleaner:
     yaml配置清洗
     """
 
-    def __init__(self, _config):
+    def __init__(self, _config, _config2: str = None):
         """
         :param _config: 传入一个文件对象，或者一个字符串,文件对象需指向 yaml/yml 后缀文件
         """
         self.path = ''
         self.yaml = {}
         if _config == ':memory:':
-            self.yaml = yaml.safe_load(preTemplate())
+            self.yaml = yaml.safe_load(preTemplate()) if _config2 is None else yaml.safe_load(_config2)
             return
         if type(_config).__name__ == 'str':
             with open(_config, 'r', encoding="UTF-8") as fp:

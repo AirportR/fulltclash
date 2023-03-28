@@ -2,10 +2,10 @@ import asyncio
 import json
 import os
 import subprocess
+import yaml
 from time import sleep
-
+import ctypes
 import aiohttp
-import async_timeout
 import requests
 from aiohttp import ClientConnectorError
 from loguru import logger
@@ -14,6 +14,11 @@ from libs.cleaner import ClashCleaner, config
 """
 这个模块主要是一些对clash restful api的python实现
 """
+os.getcwd()
+__lib = ctypes.cdll.LoadLibrary(r".\libs\fulltclash.dll")
+_setProxy = getattr(__lib, 'setProxy')
+_setProxy.argtypes = [ctypes.c_char_p, ctypes.c_int64]
+_setProxy.restype = ctypes.c_char_p
 
 
 # 切换节点
@@ -37,25 +42,27 @@ def switchProxy_old(proxyName, proxyGroup, clashHost: str = "127.0.0.1", clashPo
         logger.error(e)
 
 
-async def switchProxy(proxyName, proxyGroup, clashHost: str = "127.0.0.1", clashPort: int = 1123):
+def switchProxy(_nodeinfo: dict, _index: int) -> bool:
     """
-    切换clash核心中的代理节点，此版本为aiohttp库实现
-    :param proxyName: 想要切换代理节点的名称
-    :param proxyGroup: 代理组名称
-    :param clashHost: clash的地址
-    :param clashPort: clash的api端口
-    :return: response
+    切换clash核心中的代理节点，会将数据直接发往动态链接库
+    :param _nodeinfo: 节点信息
+    :param _index: 索引
+    :return: bool
     """
-    url = "http://{}:{}/proxies/{}".format(clashHost, str(clashPort), proxyGroup)
-    payload = json.dumps({"name": proxyName})
-    _headers = {'Content-Type': 'application/json'}
+    if type(_nodeinfo).__name__ != "dict":
+        return False
     try:
-        with async_timeout.timeout(10):
-            async with aiohttp.ClientSession() as session:
-                async with session.put(url, headers=_headers, data=payload) as r:
-                    return r
+        _payload = yaml.dump({'proxies': _nodeinfo})
+        _status = _setProxy(_payload.encode(), _index)
+        if not _status:
+            logger.info(f"切换节点: {_nodeinfo.get('name', 'not found')} 成功")
+            return True
+        else:
+            logger.error(str(_status))
+            return False
     except Exception as e:
-        logger.error(e)
+        logger.error(str(e))
+        return False
 
 
 async def reloadConfig(filePath: str, clashHost: str = "127.0.0.1", clashPort: int = 1123):

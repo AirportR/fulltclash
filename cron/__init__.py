@@ -6,7 +6,35 @@ from pyrogram import Client
 import pyrogram.errors.exceptions.forbidden_403
 import pyrogram.errors.exceptions.bad_request_400
 
-from botmodule.utils import message_delete_queue
+from botmodule.utils import message_delete_queue, message_edit_queue
+
+
+async def cron_edit_message(app: Client):
+    edit_messages = []
+    while True:
+        try:
+            edit_messages.append(message_edit_queue.get_nowait())
+        except asyncio.queues.QueueEmpty:
+            break
+    for edit_message in edit_messages:
+        try:
+            message = await app.get_messages(edit_message[0], edit_message[1])
+            if int(message.date.timestamp()) + edit_message[3] < int(time.time()):
+                try:
+                    IKM = edit_message[4] if len(edit_message) > 4 else None
+                    await app.edit_message_text(edit_message[0], edit_message[1], edit_message[2], reply_markup=IKM)
+                except pyrogram.errors.exceptions.forbidden_403.MessageDeleteForbidden as e:
+                    logger.error(e)
+                    continue
+                except Exception as e:
+                    logger.error(f'1. Edit Message: {e}')
+                    continue
+                logger.info(f'于: {message.chat.title} ({edit_message[0]}) 编辑ID: {message.id} 成功.')
+            else:
+                message_edit_queue.put_nowait(edit_message)
+        except Exception as e:
+            logger.error(f'2. Edit Message: {e}')
+            continue
 
 
 async def cron_delete_message(app: Client):

@@ -4,6 +4,7 @@ from loguru import logger
 from botmodule import init_bot
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from cron import cron_delete_message as cdm
+from cron import cron_edit_message as cem
 
 bot_token = init_bot.bot_token
 # 项目版本号
@@ -22,6 +23,7 @@ scheduler = AsyncIOScheduler(timezone=str(tzlocal.get_localzone()))
 scheduler.start()
 print("""# --------------------------- [ Start bot AsyncIOScheduler Successful ] ---------------------------- # """)
 scheduler.add_job(cdm, 'interval', seconds=10, id='delete1', name="Delete the telegram message", args=(app,))
+scheduler.add_job(cem, 'interval', seconds=5, id='edit1', name="Edit the telegram message", args=(app,))
 
 
 # ---------------------------- [ Set bot Commands] ---------------------------- #

@@ -1,5 +1,6 @@
 # 这是一个批量启动clash子进程的脚本
 import asyncio
+import ctypes
 import subprocess
 import time
 
@@ -148,6 +149,21 @@ def start_client(path: str, workpath: str = "./clash", _config: str = './clash/p
     _command = fr"{path} -f {_config} -d {workpath}"
     subprocess.Popen(_command.split(), encoding="utf-8")
     sleep(2)
+
+
+async def new_batch_start(portlist: list):
+    # __lib = ctypes.cdll.LoadLibrary(r"./libs/fulltclash.dll")
+    # _myclash = getattr(__lib, 'myclash')
+    # _myclash.argtypes = [ctypes.c_char_p]
+    # _myclash.restype = None
+    from libs.proxys import __lib
+    _myclash = getattr(__lib, 'myclash')
+    _myclash.argtypes = [ctypes.c_char_p, ctypes.c_longlong]
+    _loop = asyncio.get_running_loop()
+    # create a task for myclash
+    addr = ["127.0.0.1:"+str(p) for p in portlist]
+    for _i in range(len(addr)):
+        _loop.run_in_executor(None, _myclash, addr[_i].encode(), _i)
 
 
 def batch_start(portlist: list, proxy_file_path="./clash/proxy.yaml"):

@@ -1,11 +1,13 @@
 import asyncio
 import json
+import ssl
 import time
 import aiohttp
 import async_timeout
 import websockets
 from urllib.parse import quote
 from aiohttp.client_exceptions import ClientConnectorError, ContentTypeError
+from aiohttp_socks import ProxyConnector, ProxyConnectionError
 from loguru import logger
 from libs import cleaner
 
@@ -104,17 +106,22 @@ class IPCollector:
 
     async def batch(self, proxyhost: list, proxyport: list):
         try:
-            session = aiohttp.ClientSession()
+            session_pool = []
             length = min(len(proxyhost), len(proxyport))
             for i in range(length):
-                self.create_tasks(session=session, hosts=None, proxy=f"http://{proxyhost[i]}:{proxyport[i]}")
+                conn = ProxyConnector(host=proxyhost[i], port=proxyport[i], limit=0)
+                session = aiohttp.ClientSession(connector=conn)
+                session_pool.append(session)
+            for i in range(length):
+                self.create_tasks(session=session_pool[i], hosts=None, proxy=None)
             resdata = await self.start()
             if resdata is None:
                 resdata = []
             for r in range(len(resdata)):
                 if resdata[r] is None:
                     resdata[r] = {}
-            await session.close()
+            for i in range(length):
+                await session_pool[i].close()
             return resdata
         except Exception as e:
             logger.error(str(e))
@@ -253,11 +260,12 @@ class SubCollector(BaseCollector):
             logger.warning(c)
             return []
 
-    async def getSubConfig(self, save_path: str, proxy=proxies):
+    async def getSubConfig(self, save_path: str = "./", proxy=proxies, inmemory: bool = False):
         """
         获取订阅配置文件
         :param save_path: 订阅保存路径
         :param proxy:
+        :param inmemory: 直接返回数据到内存，不保存到本地
         :return: 获得一个文件: sub.yaml, bool : True or False
         """
         _headers = {'User-Agent': 'clash'}
@@ -269,6 +277,8 @@ class SubCollector(BaseCollector):
             async with aiohttp.ClientSession(headers=_headers) as session:
                 async with session.get(suburl, proxy=proxy, timeout=20) as response:
                     if response.status == 200:
+                        if inmemory:
+                            return await response.content.read()
                         with open(save_path, 'wb+') as fd:
                             while True:
                                 chunk = await response.content.read()
@@ -557,6 +567,11 @@ class Collector:
                     self.info['disney'] = "失败"
                 logger.info("disney+ 成功访问")
                 dis2.close()
+        except ssl.SSLError:
+            if reconnection != 0:
+                await self.fetch_dis(session=session, proxy=proxy, reconnection=reconnection - 1)
+            else:
+                self.info['disney'] = '证书错误'
         except ClientConnectorError as c:
             logger.warning("disney+请求发生错误:" + str(c))
             if reconnection != 0:
@@ -568,21 +583,32 @@ class Collector:
             if reconnection != 0:
                 await self.fetch_dis(session=session, proxy=proxy, reconnection=reconnection - 1)
 
-    async def start(self, proxy=None):
+    async def start(self, host: str, port: int, proxy=None):
         """
         启动采集器，采用并发操作
+        :param host:
+        :param port:
         :param proxy: using proxy
         :return: all content
         """
         try:
-            conn = aiohttp.TCPConnector(limit=0)
+            conn = ProxyConnector(host=host, port=port, limit=0)
             session = aiohttp.ClientSession(connector=conn, headers=self._headers)
             tasks = self.create_tasks(session, proxy=proxy)
             if tasks:
                 await asyncio.wait(tasks)
             await session.close()
             return self.info
+        except ConnectionRefusedError as e:
+            logger.error(str(e))
+            return self.info
+        except ProxyConnectionError as e:
+            logger.error(str(e))
+            return self.info
         except Exception as e:
+            logger.error(str(e))
+            return self.info
+        except ssl.SSLError as e:
             logger.error(str(e))
             return self.info
 

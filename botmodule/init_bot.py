@@ -12,7 +12,7 @@ config = ConfigManager()
 
 def check_init():
     emoji_source = config.config.get('emoji', {}).get('emoji-source', '')
-    if config.config.get('emoji', {}).get('enable', True) and emoji_source=='TwemojiLocalSource':
+    if config.config.get('emoji', {}).get('enable', True) and emoji_source == 'TwemojiLocalSource':
         from libs.emoji_custom import TwemojiLocalSource
         if not os.path.isdir('./resources/emoji/twemoji'):
             twemoji = TwemojiLocalSource()
@@ -133,8 +133,19 @@ logger.info("配置已加载, Telegram bot程序开始运行...")
 
 # 启动器
 pystr = "python" if sys.platform == "win32" else "python3"
-command = fr"{pystr} clash.py"
-subp = subprocess.Popen(command.split(), encoding="utf-8")
+# command = fr"{pystr} clash.py"
+# subp = subprocess.Popen(command.split(), encoding="utf-8")
+from clash import new_batch_start, check_port
+
+start_port = config.config.get('clash', {}).get('startup', 1122)
+
+port_list = [start_port + i * 2 for i in range(corenum)]
+loop = asyncio.new_event_loop()
+res2 = loop.run_until_complete(check_port(start_port, start_port + 1 + corenum * 2))
+if res2:
+    print("端口检查中发现已有其他进程占用了端口，如果您已单独运行clash启动器，请忽略这条提示")
+    exit(1)
+loop.run_until_complete(new_batch_start(port_list))
 
 
 def reloadUser():
