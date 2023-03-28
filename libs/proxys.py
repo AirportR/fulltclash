@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import sys
 import subprocess
 import yaml
 from time import sleep
@@ -15,7 +16,8 @@ from libs.cleaner import ClashCleaner, config
 这个模块主要是一些对clash restful api的python实现
 """
 os.getcwd()
-__lib = ctypes.cdll.LoadLibrary(r".\libs\fulltclash.dll")
+__lib = ctypes.cdll.LoadLibrary(r"./libs/fulltclash.so") if sys.platform.startswith("linux") \
+    else ctypes.cdll.LoadLibrary(r".\libs\fulltclash.dll")
 _setProxy = getattr(__lib, 'setProxy')
 _setProxy.argtypes = [ctypes.c_char_p, ctypes.c_int64]
 _setProxy.restype = ctypes.c_char_p

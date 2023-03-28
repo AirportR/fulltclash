@@ -143,7 +143,7 @@ port_list = [start_port + i * 2 for i in range(corenum)]
 loop = asyncio.new_event_loop()
 res2 = loop.run_until_complete(check_port(start_port, start_port + 1 + corenum * 2))
 if res2:
-    print("端口检查中发现已有其他进程占用了端口，如果您已单独运行clash启动器，请忽略这条提示")
+    print("端口检查中发现已有其他进程占用了端口，请更换端口，程序目前已退出")
     exit(1)
 loop.run_until_complete(new_batch_start(port_list))
 
