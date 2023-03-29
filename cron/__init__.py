@@ -33,7 +33,7 @@ async def cron_edit_message(app: Client):
                 except Exception as e:
                     logger.error(f'1. Edit Message: {e}')
                     continue
-                logger.info(f'于: {message.chat.title} ({edit_message[0]}) 编辑ID: {message.id} 成功.')
+                # logger.info(f'于: {message.chat.title} ({edit_message[0]}) 编辑ID: {message.id} 成功.')
             else:
                 message_edit_queue.put_nowait(edit_message)
         except Exception as e:

@@ -136,6 +136,11 @@ async def process(_, message: Message, **kwargs):
             return
         sub = collector.SubCollector(suburl=suburl, include=include_text, exclude=exclude_text)
         subconfig = await sub.getSubConfig(inmemory=True)
+        if isinstance(subconfig, bool):
+            logger.warning("获取订阅失败!")
+            await back_message.edit_text("❌获取订阅失败！")
+            message_delete_queue.put_nowait((back_message.chat.id, back_message.id, 10))
+            return
         proxyinfo = cleaner.ClashCleaner(':memory:', subconfig).getProxies()
         info = await core.core(proxyinfo)
         await select_export(message, back_message, put_type, info)
@@ -150,6 +155,8 @@ async def process(_, message: Message, **kwargs):
         subconfig = await sub.getSubConfig(inmemory=True)
         if isinstance(subconfig, bool):
             logger.warning("获取订阅失败!")
+            await back_message.edit_text("❌获取订阅失败！")
+            message_delete_queue.put_nowait((back_message.chat.id, back_message.id, 10))
             return
         proxyinfo = cleaner.ClashCleaner(':memory:', subconfig).getProxies()
         info = await core.core(proxyinfo)

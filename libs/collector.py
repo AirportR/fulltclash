@@ -725,7 +725,7 @@ async def delay_https(session: aiohttp.ClientSession, proxy=None, testurl=config
         return 0
 
 
-async def delay_https_task(collector=None, session: aiohttp.ClientSession = None, proxy=None, times=5):
+async def delay_https_task(session: aiohttp.ClientSession = None, collector=None, proxy=None, times=5):
     if session is None:
         async with aiohttp.ClientSession() as session:
             tasks = [asyncio.create_task(delay_https(session=session, proxy=proxy)) for _ in range(times)]
@@ -745,7 +745,7 @@ async def delay_https_task(collector=None, session: aiohttp.ClientSession = None
         http_delay = sum(sum_num) / len(sum_num) if len(sum_num) else 0
         http_delay = "%.0fms" % (http_delay * 1000)
         http_delay = int(http_delay[:-2])
-        # print("http平均延迟:", http_delay)
+        print("http平均延迟:", http_delay)
         if collector is not None:
             collector.info['HTTP延迟'] = http_delay
         return http_delay

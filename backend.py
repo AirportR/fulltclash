@@ -55,29 +55,6 @@ class Basecore:
         else:
             return rtt
 
-    async def http_latency(self, nodenum):
-        """
-        HTTP延迟测试
-        :param nodenum: 节点数量
-        :return:
-        """
-        # 延迟测试需要重写，这里先用假的代替
-        rtt = [100 + i * 20 for i in range(nodenum)]
-        # logger.info("开始测试延迟...")
-        # old_rtt = await collector.delay_providers(providername=self.start_time)
-        # rtt1 = Basecore.check_rtt(old_rtt, nodenum)
-        # print("第一次延迟:", rtt1)
-        # await asyncio.sleep(0.1)
-        # old_rtt = await collector.delay_providers(providername=self.start_time)
-        # rtt2 = Basecore.check_rtt(old_rtt, nodenum)
-        # print("第二次延迟:", rtt2)
-        # await asyncio.sleep(0.1)
-        # old_rtt = await collector.delay_providers(providername=self.start_time)
-        # rtt3 = Basecore.check_rtt(old_rtt, nodenum)
-        # print("第三次延迟:", rtt3)
-        # rtt = cleaner.ResultCleaner.get_http_latency([rtt1, rtt2, rtt3])
-        return rtt
-
     def join_proxy(self, proxyinfo: list):
         self._config.setProxies(proxyinfo)
         self._config.node_filter(self._pre_include_text, self._pre_exclude_text, issave=False)  # 从配置文件过滤文件
@@ -315,12 +292,16 @@ class SpeedCore(Basecore):
         sending_time = 0
         speedtext = GCONFIG.config.get('bot', {}).get('speedtext', "⏳速度测试进行中...")
         nodenum = len(nodelist)
-        test_items = ["平均速度", "最大速度", "速度变化", "UDP类型"]
+        test_items = ["HTTP延迟", "平均速度", "最大速度", "速度变化", "UDP类型"]
         for item in test_items:
             info[item] = []
         info["消耗流量"] = 0  # 单位:MB
         for name in nodelist:
             proxys.switchProxy(name, 0)
+            conn = ProxyConnector(host="127.0.0.1", port=port, limit=0)
+            session = aiohttp.ClientSession(connector=conn)
+            delay = await collector.delay_https_task(session, times=3)
+            await session.close()
             udptype, _, _, _, _ = self.nat_type_test('127.0.0.1', proxyport=port)
             if udptype is None:
                 udptype = "Unknown"
@@ -330,7 +311,7 @@ class SpeedCore(Basecore):
             speedresult = [v / 1024 / 1024 for v in res[2]]
             traffic_used = float("%.2f" % (res[3] / 1024 / 1024))
             info["消耗流量"] += traffic_used
-            res2 = [avgspeed, maxspeed, speedresult, udptype]
+            res2 = [delay, avgspeed, maxspeed, speedresult, udptype]
             for i in range(len(test_items)):
                 info[test_items[i]].append(res2[i])
 
@@ -362,14 +343,14 @@ class SpeedCore(Basecore):
             return info
         # 开始测试
         s1 = time.time()
-        rtt = await self.http_latency(nodenum)  # HTTP延迟测试
-        print("HTTP延迟: ", rtt)
+        # rtt = await self.http_latency(nodenum)  # HTTP延迟测试
+        # print("HTTP延迟: ", rtt)
         try:
             break_speed.clear()
             speedinfo = await self.batch_speed(nodelist, port=start_port)
             info['节点名称'] = nodename
             info['类型'] = nodetype
-            info['HTTP延迟'] = rtt
+            # info['HTTP延迟'] = rtt
             info.update(speedinfo)
             info = cleaner.ResultCleaner(info).start()
             # 计算测试消耗时间
@@ -396,16 +377,19 @@ class ScriptCore(Basecore):
         self.edit = (chat_id, message_id)
 
     @staticmethod
-    async def unit(test_items: list, delay: int, host="127.0.0.1", port=1122):
+    async def unit(test_items: list, host="127.0.0.1", port=1122):
         """
         以一个节点的所有测试项为一个基本单元unit,返回单个节点的测试结果
         :param port: 代理端口
         :param host: 代理主机名
         :param test_items: [Netflix,disney+,etc...]
-        :param delay: 节点延迟，可选参数，若为0，则测试项全部返回N/A
         :return: list 返回test_items对应顺序的信息
         """
         info = []
+        conn = ProxyConnector(host=host, port=port, limit=0)
+        session = aiohttp.ClientSession(connector=conn)
+        delay = await collector.delay_https_task(session, times=3)
+        await session.close()
         if delay == 0:
             logger.warning("超时节点，跳过测试")
             for t in test_items:
@@ -431,7 +415,7 @@ class ScriptCore(Basecore):
                     logger.error("KeyError: 无法找到 " + item + " 测试项")
             return info
 
-    async def batch_test_pro(self, nodename: list, delays: list, test_items: list, pool: dict):
+    async def batch_test_pro(self, nodename: list, test_items: list, pool: dict):
         info = {}
         progress = 0
         sending_time = 0
@@ -451,7 +435,7 @@ class ScriptCore(Basecore):
         if nodenum < psize:
             for i in range(len(port[:nodenum])):
                 proxys.switchProxy(nodename[i], i)
-                task = asyncio.create_task(self.unit(test_items, delays[i], host=host[i], port=port[i]))
+                task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i]))
                 tasks.append(task)
             done = await asyncio.gather(*tasks)
             # 简单处理一下数据
@@ -471,8 +455,7 @@ class ScriptCore(Basecore):
                 tasks.clear()
                 for i in range(psize):
                     proxys.switchProxy(nodename[s * psize + i], i)
-                    task = asyncio.create_task(self.unit(test_items, delays[s * psize + i],
-                                                         host=host[i], port=port[i]))
+                    task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i]))
                     tasks.append(task)
                 done = await asyncio.gather(*tasks)
 
@@ -501,7 +484,7 @@ class ScriptCore(Basecore):
                 for i in range(nodenum % psize):
                     proxys.switchProxy(nodename[subbatch * psize + i], i)
                     task = asyncio.create_task(
-                        self.unit(test_items, delays[subbatch * psize + i], host=host[i], port=port[i]))
+                        self.unit(test_items, host=host[i], port=port[i]))
                     tasks.append(task)
                 done = await asyncio.gather(*tasks)
 
@@ -539,11 +522,9 @@ class ScriptCore(Basecore):
             return info
         # 开始测试
         s1 = time.time()
-        rtt = await self.http_latency(nodenum)  # HTTP延迟测试
-        print("HTTP延迟: ", rtt)
         info['节点名称'] = nodename
         info['类型'] = nodetype
-        test_info = await self.batch_test_pro(nodelist, rtt, test_items, pool)
+        test_info = await self.batch_test_pro(nodelist, test_items, pool)
         info['HTTP延迟'] = test_info.pop('HTTP延迟')
         info.update(test_info)
         sort = kwargs.get('sort', "订阅原序")
