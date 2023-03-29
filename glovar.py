@@ -5,7 +5,7 @@ from botmodule import init_bot
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from cron import cron_delete_message as cdm
 from cron import cron_edit_message as cem
-
+from libs.proxys import stopclash
 bot_token = init_bot.bot_token
 # 项目版本号
 __version__ = '3.5.4-dev'

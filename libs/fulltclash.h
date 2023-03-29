@@ -74,8 +74,9 @@ typedef struct { void *data; GoInt len; GoInt cap; } GoSlice;
 extern "C" {
 #endif
 
-extern __declspec(dllexport) void myclash(char* addr, GoInt index);
-extern __declspec(dllexport) char* setProxy(char* oldstr, GoInt index);
+extern void myclash(char* addr, GoInt index);
+extern char* setProxy(char* oldstr, GoInt index);
+extern void stop(GoInt flag);
 
 #ifdef __cplusplus
 }

@@ -687,7 +687,6 @@ class TopoCore(Basecore):
         # 开始测试
         s1 = time.time()
         info1, hosts, cl = await self.topo()
-        nodename = cl.nodesName()
         if test_type == "inbound":
             wtime = "%.1f" % float(time.time() - s1)
             info1['wtime'] = wtime

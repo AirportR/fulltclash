@@ -19,6 +19,10 @@ async def cron_edit_message(app: Client):
     for edit_message in edit_messages:
         try:
             message = await app.get_messages(edit_message[0], edit_message[1])
+            if message is None:
+                continue
+            if message.date is None:
+                continue
             if int(message.date.timestamp()) + edit_message[3] < int(time.time()):
                 try:
                     IKM = edit_message[4] if len(edit_message) > 4 else None

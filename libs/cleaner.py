@@ -1273,7 +1273,6 @@ def geturl(string: str):
         url = pattern.findall(text)[0]  # 列表中第一个项为订阅地址
         return url
     except IndexError:
-        print("未找到URL")
         return None
 
 

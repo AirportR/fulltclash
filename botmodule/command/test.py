@@ -114,13 +114,11 @@ async def select_export(msg: Message, backmsg: Message, put_type: str, info: dic
 async def process(_, message: Message, **kwargs):
     back_message = await message.reply("⏳任务接收成功，测试进行中...")
     tgtext = str(message.text)
-    print(tgtext)
-    print(message.command)
     tgargs = cleaner.ArgCleaner().getall(tgtext)
     suburl = cleaner.geturl(tgtext) if kwargs.get('url', None) is None else kwargs.get('url', None)
     put_type = kwargs.get('put_type', '') if kwargs.get('put_type', '') \
         else message.command[0] if message.command is not None else tgargs[0][1:]
-    print(put_type)
+    print("测试指令", put_type)
     if not put_type:
         await message.reply('❌不支持的测试任务类型')
         message_delete_queue.put_nowait((back_message.chat.id, back_message.id, 10))
@@ -150,6 +148,9 @@ async def process(_, message: Message, **kwargs):
             return
         sub = collector.SubCollector(suburl=suburl, include=include_text, exclude=exclude_text)
         subconfig = await sub.getSubConfig(inmemory=True)
+        if isinstance(subconfig, bool):
+            logger.warning("获取订阅失败!")
+            return
         proxyinfo = cleaner.ClashCleaner(':memory:', subconfig).getProxies()
         info = await core.core(proxyinfo)
         await select_export(message, back_message, put_type, info)

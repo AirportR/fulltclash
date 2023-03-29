@@ -67,6 +67,12 @@ def switchProxy(_nodeinfo: dict, _index: int) -> bool:
         return False
 
 
+def stopclash():
+    stop = getattr(__lib, 'stop')
+    stop.argtypes = [ctypes.c_int64]
+    stop(1)
+
+
 async def reloadConfig(filePath: str, clashHost: str = "127.0.0.1", clashPort: int = 1123):
     """
     若重载成功返回True，否则为False

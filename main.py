@@ -1,5 +1,7 @@
+import sys
+
 from libs import bot
-from glovar import app as myapp, bot_info
+from glovar import app as myapp, bot_info, stopclash
 from pyrogram import idle
 from botmodule import init_bot
 
@@ -12,6 +14,13 @@ def start():
     bot_info(myapp)
     idle()
     myapp.stop()
+
+
+def _quit_(signum, frame):
+    print('')
+    print('stop clash')
+    stopclash()
+    sys.exit()
 
 
 if __name__ == "__main__":

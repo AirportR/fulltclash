@@ -277,8 +277,15 @@ class SubCollector(BaseCollector):
             async with aiohttp.ClientSession(headers=_headers) as session:
                 async with session.get(suburl, proxy=proxy, timeout=20) as response:
                     if response.status == 200:
+                        data = b''
                         if inmemory:
-                            return await response.content.read()
+                            while True:
+                                chunk = await response.content.read()
+                                if not chunk:
+                                    logger.info("获取订阅成功")
+                                    break
+                                data += chunk
+                            return data
                         with open(save_path, 'wb+') as fd:
                             while True:
                                 chunk = await response.content.read()

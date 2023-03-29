@@ -1,4 +1,5 @@
 import os
+import signal
 import sys
 import pyrogram.types
 from loguru import logger
@@ -32,7 +33,7 @@ async def grant(client: Client, message: pyrogram.types.Message):
                 config.reload()
                 r2()
                 reloadUser()
-                back_msg = await message.reply(f"已授权{len(_args)-1}个目标: \n{str(_args[1:])}")
+                back_msg = await message.reply(f"已授权{len(_args) - 1}个目标: \n{str(_args[1:])}")
                 message_delete_queue.put_nowait((back_msg.chat.id, back_msg.id, 10))
         else:
             back_msg = await client.send_message(chat_id=message.chat.id,
@@ -76,8 +77,8 @@ async def ungrant(_, message: pyrogram.types.Message):
                 config.reload()
                 r2()
                 reloadUser()
-                logger.info(f"{len(_args)-1}个目标已取消授权: \n{str(_args[1:])}")
-                back_msg = await message.reply(f"{len(_args)-1}个目标已取消授权: \n{str(_args[1:])}")
+                logger.info(f"{len(_args) - 1}个目标已取消授权: \n{str(_args[1:])}")
+                back_msg = await message.reply(f"{len(_args) - 1}个目标已取消授权: \n{str(_args[1:])}")
                 message_delete_queue.put_nowait((back_msg.chat.id, back_msg.id, 10))
         else:
             try:
@@ -110,7 +111,7 @@ async def user(_, message):
     await message.reply(text)
 
 
-async def restart(_, message):
+async def restart_or_killme(_, message, kill=False):
     try:
         if int(message.from_user.id) not in admin and str(
                 message.from_user.username) not in admin:  # 如果不在USER_TARGET名单是不会有权限的
@@ -121,9 +122,13 @@ async def restart(_, message):
             await message.reply("⚠️您不是bot的管理员，无法使用该命令")
             return
     try:
-        await message.reply("开始重启")
-        p = sys.executable
-        os.execl(p, p, *sys.argv)
-        sys.exit()
+        if kill:
+            await message.reply("再见~")
+            os.kill(os.getpid(), signal.SIGINT)
+        else:
+            await message.reply("开始重启(大约等待五秒)")
+            p = sys.executable
+            os.execl(p, p, *sys.argv)
+            sys.exit()
     except RPCError as r:
         logger.error(str(r))

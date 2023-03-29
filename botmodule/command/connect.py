@@ -1,14 +1,53 @@
-import io
+import asyncio
+
 from loguru import logger
 from pyrogram.types import Message
 from pyrogram import Client
-from libs import safe
-from botmodule.init_bot import config
+# from libs import safe
+from botmodule.init_bot import config, corenum
+from botmodule import restart_or_killme
 from botmodule.utils import message_delete_queue
 from libs.cleaner import ArgCleaner
 from libs.check import get_telegram_id_from_message as getid
+from libs.proxys import stopclash
+from clash import new_batch_start, check_port
 
 connect_list = {}
+
+
+async def startclash(app: Client, message: Message):
+    tgargs = [i for i in str(message.text).split(" ") if i != '']
+    if len(tgargs) < 2:
+        backmsg = await message.reply("使用方法: /clash start或 /clash stop")
+        message_delete_queue.put_nowait((backmsg.chat.id, backmsg.id, 10))
+        return
+    start_or_stop = tgargs[1] if len(tgargs) > 1 else ''
+    if start_or_stop == "start":
+        backmsg = await message.reply("正在启动clash核心...")
+        start_port = config.config.get('clash', {}).get('startup', 1122)
+        port_list = [start_port + i * 2 for i in range(corenum)]
+        res2 = await check_port(start_port, start_port + 1 + corenum * 2)
+        if res2:
+            print("端口检查中发现已有其他进程占用了端口，请更换端口")
+            await backmsg.edit_text("端口检查中发现已有其他进程占用了端口，请更换端口")
+            return
+        # 启动器
+        # pystr = "python" if sys.platform == "win32" else "python3"
+        # command = fr"{pystr} clash.py"
+        # subp = subprocess.Popen(command.split(), encoding="utf-8")
+        await new_batch_start(port_list)
+        await backmsg.edit_text("✅clash已启动\n\n注意: 目前启动clash后将无法按Ctrl+C退出，请先进行 /clash stop 操作")
+        message_delete_queue.put_nowait((backmsg.chat.id, backmsg.id, 10))
+        return
+    elif start_or_stop == "stop":
+        await message.reply("正在停止clash核心...")
+        stopclash()
+        await restart_or_killme(app, message)
+        return
+    else:
+        backmsg = await message.reply("⚠️未识别的参数，请检查参数")
+        message_delete_queue.put_nowait((backmsg.chat.id, backmsg.id, 10))
+        return
 
 
 async def conn(app: Client, message: Message):

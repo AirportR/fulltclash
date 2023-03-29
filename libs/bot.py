@@ -178,7 +178,15 @@ def command_loader(app: Client):
 
     @app.on_message(filters.command(['restart', 'reboot']) & allfilter(2), group=2)
     async def restart(client, message):
-        await botmodule.restart(client, message)
+        await botmodule.restart_or_killme(client, message)
+
+    @app.on_message(filters.command(['clash']) & allfilter(2), group=2)
+    async def clash(client, message):
+        await botmodule.startclash(client, message)
+
+    @app.on_message(filters.command(['exit', 'killme']) & allfilter(2), group=2)
+    async def killme(client, message):
+        await botmodule.restart_or_killme(client, message, kill=True)
 
     @app.on_message(filters.command(['connect']) & allfilter(2), group=2)
     async def conn(client, message):
