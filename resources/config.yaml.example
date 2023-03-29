@@ -30,7 +30,7 @@ item: # 流媒体测试项，决定你想要测哪个项,目前仅支持以下�
 # remoteconfig: "https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online.ini" #远程配置
 #pingurl: http://www.gstatic.com/generate_204  #自定义延迟测试URL
 #speedfile: "https://dl.google.com/dl/android/studio/install/3.4.1.0/android-studio-ide-183.5522156-windows.exe" #自定义测速文件
-#speednodes: 300 测速节点数量限制，超过将不会进行测速
+#speednodes: 300 # 测速节点数量限制，超过将不会进行测速
 #speedthread: 4 #测速线程
 #nospeed: true #禁用测速，开启后将无法测速。
 #user: 12345678 #用户列表，/grant 命令授权的目标会保存在这（可选配置）
@@ -42,6 +42,7 @@ item: # 流媒体测试项，决定你想要测哪个项,目前仅支持以下�
 # workpath: './clash' # clash的工作目录，工作目录这里指的是clash读取配置文件的目录，请勿与操作系统上的概念混淆（可选配置）
 # allow-caching: false  #是否缓存测试过程产生的订阅，若否，则测试完成后会自动删除测试订阅，以免造成空间浪费。
 # core: 4 # 核心数，数量越多测试速度越快，但代价是内存会大量占用(每个核心大概10M)，自己的机子多少内存自己平衡
+# auto-start: false # bot启动时顺带启动,若为false则需要在 bot上输入/clash start 手动启动，默认false
 # startup: 1124 起始端口。表示从此端口开始往下数占用数量，比如核心数为4，就会占用[1124,1125,1126,1127,1128,1129,1130,1131]共8个端口，遇到端口占用时可配置此项。推荐10000以上作为初始端口
 #font: './resources/苹方黑体-准-简.ttf' #自定义字体，这里填字体的路径
 
