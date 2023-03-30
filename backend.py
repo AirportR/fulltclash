@@ -13,7 +13,7 @@ from aiohttp_socks import ProxyConnector
 from loguru import logger
 from libs.collector import proxies
 from libs import cleaner, collector, proxys, pynat, sorter, ipstack
-from cron import message_edit_queue, message_delete_queue
+from cron import message_edit_queue
 
 # 重写整个测试核心，技术栈分离。
 
@@ -346,8 +346,6 @@ class SpeedCore(Basecore):
         nodename, nodetype, nodenum, nodelist = self.getnodeinfo()
         # 进行节点数量检查
         if self.check_speed_nodes(nodenum, (nodename, nodetype,)):
-            message_edit_queue.put((self.edit[0], self.edit[1], "❌节点数量超出了限制，已取消测试", 1))
-            message_delete_queue.put_nowait((self.edit[0], self.edit[1], 10))
             return info
         # 开始测试
         s1 = time.time()
@@ -535,9 +533,7 @@ class ScriptCore(Basecore):
         # 订阅加载
         nodename, nodetype, nodenum, nodelist = self.getnodeinfo()
         # 进行节点数量检查
-        if SpeedCore.check_speed_nodes(nodenum, (nodename, nodetype,), 500):
-            message_edit_queue.put((self.edit[0], self.edit[1], "❌节点数量超出了限制，已取消测试", 1))
-            message_delete_queue.put_nowait((self.edit[0], self.edit[1], 10))
+        if SpeedCore.check_speed_nodes(nodenum, (nodename, nodetype,)):
             return info
         # 开始测试
         s1 = time.time()
@@ -604,6 +600,13 @@ class TopoCore(Basecore):
                         try:
                             old_ip = host.split('.')[:2]
                             new_ip = old_ip[0] + "." + old_ip[1] + ".*.*"
+                        except IndexError:
+                            new_ip = host
+                        new_hosts.append(new_ip)
+                    elif len(host) > 15:
+                        try:
+                            old_ip = host.split(':')[2:4]
+                            new_ip = "*:*:" + old_ip[0] + ":" + old_ip[1] + ":*:*"
                         except IndexError:
                             new_ip = host
                         new_hosts.append(new_ip)
@@ -705,8 +708,6 @@ class TopoCore(Basecore):
         nodename, nodetype, nodenum, nodelist = self.getnodeinfo()
         # 进行节点数量检查
         if SpeedCore.check_speed_nodes(nodenum, (nodename, nodetype,), 1000):
-            message_edit_queue.put((self.edit[0], self.edit[1], "❌节点数量超出了限制，已取消测试", 1))
-            message_delete_queue.put_nowait((self.edit[0], self.edit[1], 10))
             return {'inbound': info1, 'outbound': info2}
         # 开始测试
         s1 = time.time()
