@@ -327,8 +327,13 @@ class ClashCleaner:
         self.path = ''
         self.yaml = {}
         if _config == ':memory:':
-            self.yaml = yaml.safe_load(preTemplate()) if _config2 is None else yaml.safe_load(_config2)
-            return
+            try:
+                self.yaml = yaml.safe_load(preTemplate()) if _config2 is None else yaml.safe_load(_config2)
+                return
+            except Exception as e:
+                logger.error(str(e))
+                self.yaml = {}
+                return
         if type(_config).__name__ == 'str':
             with open(_config, 'r', encoding="UTF-8") as fp:
                 self.yaml = yaml.load(fp, Loader=yaml.FullLoader)
@@ -352,10 +357,10 @@ class ClashCleaner:
             return self.yaml['proxies']
         except KeyError:
             logger.warning("读取节点信息失败！")
-            return None
+            return []
         except TypeError:
             logger.warning("读取节点信息失败！")
-            return None
+            return []
 
     def nodesCount(self):
         """
