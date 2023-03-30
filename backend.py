@@ -661,9 +661,11 @@ class TopoCore(Basecore):
                 message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
             return resdata, ipstackes
 
-    async def core(self, proxyinfo: list, test_type='all', **kwargs):
+    async def core(self, proxyinfo: list, **kwargs):
         info1 = {}  # 存放测试结果
         info2 = {}  # 存放测试结果
+        test_type = kwargs.get('test_type', 'all')
+        print(test_type)
         # 先把节点信息写入文件
         self.join_proxy(proxyinfo)
         # 获取可供测试的测试端口

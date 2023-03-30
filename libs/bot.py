@@ -108,7 +108,7 @@ def command_loader(app: Client):
     @app.on_message(filters.command(["inbound"]) & allfilter(1), group=1)
     @reloaduser()
     async def inbound(client, message):
-        await bot_put(client, message, "inbound")
+        await bot_put(client, message, "inbound", test_type='inbound')
 
     @app.on_message(filters.command(["inboundurl"]) & allfilter(1), group=1)
     @reloaduser()
@@ -118,12 +118,12 @@ def command_loader(app: Client):
     @app.on_message(filters.command(["outbound"]) & allfilter(1), group=1)
     @reloaduser()
     async def outbound(client, message):
-        await bot_put(client, message, "outbound", test_type='inbound')
+        await bot_put(client, message, "outbound", test_type='outbound')
 
     @app.on_message(filters.command(["outboundurl"]) & allfilter(1), group=1)
     @reloaduser()
     async def outboundurl(client, message):
-        await bot_put(client, message, "outboundurl")
+        await bot_put(client, message, "outboundurl", test_type='outbound')
 
     @app.on_message(filters.command(["speed"]) & allfilter(1), group=1)
     @reloaduser()
