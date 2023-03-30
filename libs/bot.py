@@ -68,8 +68,7 @@ def command_loader(app: Client):
     @app.on_message(filters.command(["remove"]), group=1)
     @reloaduser()
     async def remove(client, message):
-        if await isuser(message, botmodule.init_bot.reloadUser()):
-            await botmodule.remove(client, message)
+        await botmodule.remove(client, message)
 
     @app.on_message(filters.command(["sub"]), group=1)
     @reloaduser()
@@ -109,17 +108,17 @@ def command_loader(app: Client):
     @app.on_message(filters.command(["inbound"]) & allfilter(1), group=1)
     @reloaduser()
     async def inbound(client, message):
-        await botmodule.analyze(client, message, test_type="inbound")
+        await bot_put(client, message, "inbound")
 
     @app.on_message(filters.command(["inboundurl"]) & allfilter(1), group=1)
     @reloaduser()
     async def inboundurl(client, message):
-        await botmodule.analyzeurl(client, message, test_type="inbound")
+        await bot_put(client, message, "inboundurl", test_type='inbound')
 
     @app.on_message(filters.command(["outbound"]) & allfilter(1), group=1)
     @reloaduser()
     async def outbound(client, message):
-        await bot_put(client, message, "outbound")
+        await bot_put(client, message, "outbound", test_type='inbound')
 
     @app.on_message(filters.command(["outboundurl"]) & allfilter(1), group=1)
     @reloaduser()

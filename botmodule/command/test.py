@@ -33,7 +33,8 @@ def select_core(put_type: str, message: Message):
             ]
         )
         return SpeedCore(message.chat.id, message.id, IKM)
-    elif put_type.startswith("analyze") or put_type.startswith("topo"):
+    elif put_type.startswith("analyze") or put_type.startswith("topo") or put_type.startswith("inbound") or \
+            put_type.startswith("outbound"):
         return TopoCore(message.chat.id, message.id)
     elif put_type.startswith("test"):
         return ScriptCore(message.chat.id, message.id)
@@ -142,7 +143,7 @@ async def process(_, message: Message, **kwargs):
             message_delete_queue.put_nowait((back_message.chat.id, back_message.id, 10))
             return
         proxyinfo = cleaner.ClashCleaner(':memory:', subconfig).getProxies()
-        info = await core.core(proxyinfo)
+        info = await core.core(proxyinfo, **kwargs)
         await select_export(message, back_message, put_type, info)
     else:
         subinfo = config.get_sub(subname=tgargs[1])
@@ -159,7 +160,7 @@ async def process(_, message: Message, **kwargs):
             message_delete_queue.put_nowait((back_message.chat.id, back_message.id, 10))
             return
         proxyinfo = cleaner.ClashCleaner(':memory:', subconfig).getProxies()
-        info = await core.core(proxyinfo)
+        info = await core.core(proxyinfo, **kwargs)
         await select_export(message, back_message, put_type, info)
 
 

@@ -661,7 +661,7 @@ class TopoCore(Basecore):
                 message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
             return resdata, ipstackes
 
-    async def core(self, proxyinfo: list, test_type='all'):
+    async def core(self, proxyinfo: list, test_type='all', **kwargs):
         info1 = {}  # 存放测试结果
         info2 = {}  # 存放测试结果
         # 先把节点信息写入文件
