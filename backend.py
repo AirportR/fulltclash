@@ -12,7 +12,7 @@ import socks
 from aiohttp_socks import ProxyConnector
 from loguru import logger
 from libs.collector import proxies
-from libs import cleaner, collector, proxys, pynat, sorter
+from libs import cleaner, collector, proxys, pynat, sorter, ipstack
 from cron import message_edit_queue
 
 # 重写整个测试核心，技术栈分离。
@@ -550,11 +550,15 @@ class TopoCore(Basecore):
         self.edit = (chat_id, message_id)
 
     async def topo(self):
-        info = {'地区': [], 'AS编号': [], '组织': [], '入口ip段': []}
+        info = {'地区': [], 'AS编号': [], '组织': [], '栈': [], '入口ip段': []}
         cl = copy.deepcopy(self._config)
         co = collector.IPCollector()
         session = aiohttp.ClientSession()
+        node_addrs = cl.nodehost()
+        node_addr_count = cl.count_elem(node_addrs)
         nodename, inboundinfo, cl = sorter.sort_nodename_topo(cl)
+        ipstack_list = cleaner.batch_ipstack(node_addr_count)
+        info['栈'] = ipstack_list
         if nodename and inboundinfo and cl:
             # 拿地址，已经转换了域名为ip,hosts变量去除了N/A
             hosts = list(inboundinfo.keys())
@@ -592,6 +596,7 @@ class TopoCore(Basecore):
 
     async def batch_topo(self, nodename: list, pool: dict):
         resdata = []
+        ipstackes = []
         progress = 0
         sending_time = 0
         analyzetext = GCONFIG.config.get('bot', {}).get('analyzetext', "⏳节点拓扑分析测试进行中...")
@@ -610,7 +615,9 @@ class TopoCore(Basecore):
             ipcol = collector.IPCollector()
             sub_res = await ipcol.batch(proxyhost=host[:nodenum], proxyport=port[:nodenum])
             resdata.extend(sub_res)
-            return resdata
+            ipstat = await ipstack.get_ips(proxyhost=host[:nodenum], proxyport=port[:nodenum])
+            ipstackes.append({'ips': ipstat})
+            return resdata, ipstackes
         else:
             subbatch = nodenum // psize
             for s in range(subbatch):
@@ -620,6 +627,8 @@ class TopoCore(Basecore):
                 ipcol = collector.IPCollector()
                 sub_res = await ipcol.batch(proxyhost=host, proxyport=port)
                 resdata.extend(sub_res)
+                ipstat = await ipstack.get_ips(proxyhost=host, proxyport=port)
+                ipstackes.append({'ips': ipstat})
                 # 反馈进度
 
                 progress += psize
@@ -640,6 +649,8 @@ class TopoCore(Basecore):
                 sub_res = await ipcol.batch(proxyhost=host[:nodenum % psize],
                                             proxyport=port[:nodenum % psize])
                 resdata.extend(sub_res)
+                ipstat = await ipstack.get_ips(proxyhost=host[:nodenum % psize], proxyport=port[:nodenum % psize])
+                ipstackes.append({'ips': ipstat})
 
             # 最终进度条
             if nodenum % psize != 0:
@@ -648,7 +659,7 @@ class TopoCore(Basecore):
                     nodenum) + "]"
                 print(edit_text)
                 message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
-            return resdata
+            return resdata, ipstackes
 
     async def core(self, proxyinfo: list, test_type='all'):
         info1 = {}  # 存放测试结果
@@ -676,12 +687,13 @@ class TopoCore(Basecore):
         # 启动链路拓扑测试
         try:
             info2 = {}
-            res = await self.batch_topo(nodelist, pool)
+            res, ras = await self.batch_topo(nodelist, pool)
             if res:
                 country_code = []
                 asn = []
                 org = []
                 ipaddr = []
+                ipstackes = []
                 for j in res:
                     ipcl = cleaner.IPCleaner(j)
                     country_code.append(ipcl.get_country_code())
@@ -689,18 +701,22 @@ class TopoCore(Basecore):
                     org.append(ipcl.get_org())
                     ip = ipcl.get_ip()
                     ipaddr.append(ip)
+                for dictionary in ras:
+                    if 'ips' in dictionary:
+                        ipstackes.extend(dictionary['ips'])
                 out_num = info1.get('出口数量', [])
                 num_c = 1
                 d0 = []
                 for i in out_num:
                     d0 += [num_c for _ in range(int(i))]
                     num_c += 1
-                all_data = zip(d0, country_code, asn, org, ipaddr, nodename)
+                b6 = ipstackes
+                all_data = zip(d0, country_code, asn, org, ipaddr, nodename, b6)
                 sorted_data = sorted(all_data, key=itemgetter(4), reverse=True)
-                d0, d1, d2, d3, d4, d5 = zip(*sorted_data)
+                d0, d1, d2, d3, d4, d5, d6 = zip(*sorted_data)
                 d4_count = Counter(d4)
                 results4 = [v for k, v in d4_count.items()]
-                info2.update({'入口': d0, '地区': d1, 'AS编号': d2, '组织': d3, '簇': results4})
+                info2.update({'入口': d0, '地区': d1, 'AS编号': d2, '组织': d3, '栈': d6, '簇': results4})
                 info2.update({'节点名称': d5})
                 # 计算测试消耗时间
                 wtime = "%.1f" % float(time.time() - s1)
