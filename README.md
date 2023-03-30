@@ -50,9 +50,9 @@ FullTclash bot 是承载其测试任务的Telegram 机器人（以下简称bot�
 
 流媒体测试:
 
-![测试图片](https://upload.cc/i1/2022/09/11/fEY9zU.png)
+![测试图片](https://upload.cc/i1/2023/03/30/xyTGRu.png)
 
-![测试图片](https://upload.cc/i1/2022/09/11/0w2sMB.png)
+![测试图片](https://upload.cc/i1/2023/03/30/1gdtWf.png)
 
 ## 如何开始
 
@@ -68,8 +68,6 @@ FullTclash bot 是承载其测试任务的Telegram 机器人（以下简称bot�
   
   这步不会请Google。
 
-- 一个clash 核心， [下载地址](https://github.com/Dreamacro/clash/releases)。（可选，可以用/resources里默认的）
-
 - 字体文件。（可选，可以用默认的）
 ### 拉取源码
 
@@ -84,7 +82,7 @@ apt install -y git && git clone https://github.com/AirportR/FullTclash.git && cd
 此方法在中国大陆可能需要代理加速，请自行解决。
 ### 环境准备
 
-- Python 3.6 以上
+- Python 3.7 以上
 
 - 以及各种相关包依赖
 
@@ -110,6 +108,7 @@ chmod +x ./resources/clash-linux-amd64
 ```
 ### 为bot进行相关配置
 
+以下为启动bot的最低要求（如果您是新手，建议先以最低要求把bot跑起来，否则自己乱改配置容易出现不可预知的错误。）
 - 管理员配置
   
   新建一个名为config.yaml的文件，项目有模板例子名为./resources/config.yaml.example,在config.yaml中写入如下信息： 
@@ -117,6 +116,7 @@ chmod +x ./resources/clash-linux-amd64
   ```
   admin:
   - 12345678 # 改成自己的telegram uid
+  - 8765431 # 这是第二行，表示第二个管理员，没有第二个管理员就把该行删除。
   ```
 
 - 代理配置
@@ -126,19 +126,12 @@ chmod +x ./resources/clash-linux-amd64
   ```
   #bot通讯代理
   bot:
-   proxy: 127.0.0.1:7890 #sock5 替换成自己的代理地址和端口
+   proxy: 127.0.0.1:7890 #socks5 替换成自己的代理地址和端口
   # 获取订阅时使用代理（可选）
   proxy: 127.0.0.1:7890 #http 替换成自己的代理地址和端口,注意，此配置与上面的独立分开。
   ```
-- 更改clash核心
 
-  如果您想在非Windows平台运行此程序，请在配置文件中指定对应平台的clash可执行文件：
-  ```yaml
-  # 以Ubuntu为例:
-  clash:
-    path: ./resources/clash-linux-amd64
-    workpath: ./clash
-  ```
+  
 ### 获取session文件
 
 您需要在项目文件目录下，放置一个已经登陆好的.session后缀文件，这个文件是程序生成的，形如： my_bot.session
@@ -166,29 +159,14 @@ bot:
 ```
 如果启动后无法验证，请删除生成的mybot.session文件，此时的文件是坏的，不可用，如果不删除程序会一直使用坏的文件，不会重新生成。然后重新启动。
 ### 开始启动
-目前有两种启动方式，一次启动和分开启动。区别在于，一次性启动会自动启动子进程clash core，而分开启动会先启动clash core，bot程序主体启动的时侯就不会再启动了。直观点的感受就是bot启动变快。
->一次启动：
 配置好后，在项目目录下运行以下指令
-Windows(Linux系为python3):
-```shell
-python main.py
-```
-> 分开启动：
-在项目目录下运行以下指令
-Windows10:
-```shell
-python clash.py
-```
-在第二个窗口运行:
+
+>Windows:
 ```shell
 python main.py
 ```
 
-Ubuntu: 
-```shell
-python3 clash.py
-```
-在第二个窗口运行:
+>Ubuntu(Linux):
 ```shell
 python3 main.py
 ```
@@ -200,7 +178,8 @@ python3 main.py
 即可开始测试
 
 /help 可查看所有命令说明
-
+### Docker启动
+教程文档待更新
 ### 为程序设置进程守护(Linux)
 
 由于Linux系统特性，关闭ssh连接后，前台程序会被关闭。您需要设置进程守护，才能在后台不间断地运行程序。具体方法Google搜索即可。
