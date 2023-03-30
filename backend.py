@@ -291,6 +291,9 @@ class SpeedCore(Basecore):
         progress = 0
         sending_time = 0
         speedtext = GCONFIG.config.get('bot', {}).get('speedtext', "⏳速度测试进行中...")
+        progress_bars = GCONFIG.config.get('bot', {}).get('bar', "=")
+        bracketsleft = GCONFIG.config.get('bot', {}).get('bleft', "[")
+        bracketsright = GCONFIG.config.get('bot', {}).get('bright', "]")
         nodenum = len(nodelist)
         test_items = ["HTTP延迟", "平均速度", "最大速度", "速度变化", "UDP类型"]
         for item in test_items:
@@ -323,7 +326,10 @@ class SpeedCore(Basecore):
             p_text = "%.2f" % cal
             if cal >= sending_time:
                 sending_time += 10
-                edit_text = f"{speedtext}\n\n" + "当前进度:\n" + p_text + "%     [" + str(progress) + "/" + str(
+                equal_signs = int(cal / 5)
+                space_count = 20 - equal_signs
+                progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + "  " * space_count + f"{bracketsright}"
+                edit_text = f"{speedtext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + p_text + "%     [" + str(progress) + "/" + str(
                     nodenum) + "]"
                 print(edit_text)
                 message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1, self.IKM))
@@ -422,6 +428,9 @@ class ScriptCore(Basecore):
         progress = 0
         sending_time = 0
         scripttext = GCONFIG.config.get('bot', {}).get('scripttext', "⏳联通性测试进行中...")
+        progress_bars = GCONFIG.config.get('bot', {}).get('bar', "=")
+        bracketsleft = GCONFIG.config.get('bot', {}).get('bleft', "[")
+        bracketsright = GCONFIG.config.get('bot', {}).get('bright', "]")
         host = pool.get('host', [])
         port = pool.get('port', [])
         psize = len(port)
@@ -468,7 +477,10 @@ class ScriptCore(Basecore):
                 # 判断进度条，每隔10%发送一次反馈，有效防止洪水等待(FloodWait)
                 if cal > sending_time:
                     sending_time += 20
-                    edit_text = f"{scripttext}\n\n" + "当前进度:\n" + p_text + "%     [" + str(progress) + "/" + str(
+                    equal_signs = int(cal / 5)
+                    space_count = 20 - equal_signs
+                    progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + "  " * space_count + f"{bracketsright}"
+                    edit_text = f"{scripttext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + p_text + "%     [" + str(progress) + "/" + str(
                         nodenum) + "]"
                     print(edit_text)
                     message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
@@ -497,9 +509,12 @@ class ScriptCore(Basecore):
                         res.append(d[j])
                     info[test_items[j]].extend(res)
         # 最终进度条
+        bar_length = 20
         if nodenum % psize != 0:
             progress += nodenum % psize
-            edit_text = f"{scripttext}\n\n" + "当前进度:\n" + '100' + "%     [" + str(progress) + "/" + str(
+            bar = f"{progress_bars}" * bar_length
+            bar_with_frame = f"{bracketsleft}" + f"{bar}" + f"{bracketsright}"
+            edit_text = f"{scripttext}\n\n" + bar_with_frame + "\n\n" + "当前进度:\n" + '100' + "%     [" + str(progress) + "/" + str(
                 nodenum) + "]"
             print(edit_text)
             message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
@@ -604,6 +619,9 @@ class TopoCore(Basecore):
         progress = 0
         sending_time = 0
         analyzetext = GCONFIG.config.get('bot', {}).get('analyzetext', "⏳节点拓扑分析测试进行中...")
+        progress_bars = GCONFIG.config.get('bot', {}).get('bar', "=")
+        bracketsleft = GCONFIG.config.get('bot', {}).get('bleft', "[")
+        bracketsright = GCONFIG.config.get('bot', {}).get('bright', "]")
         host = pool.get('host', [])
         port = pool.get('port', [])
         psize = len(port)
@@ -640,7 +658,10 @@ class TopoCore(Basecore):
                 p_text = "%.2f" % cal
                 if cal >= sending_time:
                     sending_time += 10
-                    edit_text = "⏳节点拓扑测试进行中...\n\n" + "当前进度:\n" + p_text + "%     [" + str(progress) + "/" + str(
+                    equal_signs = int(cal / 5)
+                    space_count = 20 - equal_signs
+                    progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + "  " * space_count + f"{bracketsright}"
+                    edit_text = "⏳节点拓扑测试进行中...\n\n" + progress_bar + "\n\n" + "当前进度:\n" + p_text + "%     [" + str(progress) + "/" + str(
                         nodenum) + "]"
                     print(edit_text)
                     message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
@@ -657,9 +678,12 @@ class TopoCore(Basecore):
                 ipstackes.append({'ips': ipstat})
 
             # 最终进度条
+            bar_length = 20
             if nodenum % psize != 0:
                 progress += nodenum % psize
-                edit_text = f"{analyzetext}\n\n" + "当前进度:\n" + '100' + "%     [" + str(progress) + "/" + str(
+                bar = f"{progress_bars}" * bar_length
+                bar_with_frame = f"{bracketsleft}" + f"{bar}" + f"{bracketsright}"
+                edit_text = f"{analyzetext}\n\n" + bar_with_frame + "\n\n" + "当前进度:\n" + '100' + "%     [" + str(progress) + "/" + str(
                     nodenum) + "]"
                 print(edit_text)
                 message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
