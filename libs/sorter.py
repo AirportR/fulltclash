@@ -45,15 +45,22 @@ def sort_nodename_topo(_cleaner: cleaner.ClashCleaner):
     try:
         cl = _cleaner
         proxylist = cl.getProxies()
+        ipstack = [p['server'] for p in proxylist]
+        for i, p in enumerate(proxylist):
+           p['ipstart'] = ipstack[i]
+        ipstack_list = cleaner.batch_ipstack(proxylist)           
         ipaddrs = cleaner.batch_domain2ip(proxylist)
         addrs2 = sorted(ipaddrs, key=lambda i: i['server'])
         list1 = []
+        dict1 = {}
         for n in addrs2:
             list1.append(n['server'])
+            dict1.setdefault(n['server'],n['ipstart'])
         cl.yaml['proxies'] = addrs2
         nodename = cl.nodesName()
         info = cleaner.ClashCleaner.count_elem(list1)
-        return nodename, info, cl
+        ipsdata = dict1
+        return nodename, info, cl, ipsdata
     except Exception as e:
         logger.error(str(e))
         return None, None, None
