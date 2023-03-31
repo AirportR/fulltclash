@@ -608,6 +608,13 @@ class TopoCore(Basecore):
                         except IndexError:
                             new_ip = host
                         new_hosts.append(new_ip)
+                    elif len(host) > 15:
+                        try:
+                            old_ip = host.split(':')[2:4]
+                            new_ip = "*:*:" + old_ip[0] + ":" + old_ip[1] + ":*:*"
+                        except IndexError:
+                            new_ip = host
+                        new_hosts.append(new_ip)
                     else:
                         new_hosts.append(host)
                 info.update({'入口ip段': new_hosts})
