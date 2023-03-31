@@ -575,10 +575,9 @@ class TopoCore(Basecore):
         co = collector.IPCollector()
         session = aiohttp.ClientSession()
         node_addrs = cl.nodehost()
-        node_addr_count = cl.count_elem(node_addrs)
-        nodename, inboundinfo, cl = sorter.sort_nodename_topo(cl)
-        ipstack_list = cleaner.batch_ipstack(node_addr_count)
-        info['栈'] = ipstack_list
+        nodename, inboundinfo, cl, ipstack_list = sorter.sort_nodename_topo(cl)
+        ipstack_lists = list(ipstack_list.values())
+        info['栈'] = ipstack_lists
         if nodename and inboundinfo and cl:
             # 拿地址，已经转换了域名为ip,hosts变量去除了N/A
             hosts = list(inboundinfo.keys())
