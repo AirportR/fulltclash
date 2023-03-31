@@ -3,17 +3,19 @@ import asyncio
 import async_timeout
 from aiohttp_socks import ProxyConnector, ProxyConnectionError
 
+
 async def get_ip(url, session):
     try:
-        async with session.get(url, timeout=5) as response: 
+        async with session.get(url, timeout=5) as response:
             if response.status == 200:
                 return await response.text()
             else:
                 return None
-    except (ProxyConnectionError, asyncio.TimeoutError) as e:  
+    except (ProxyConnectionError, asyncio.TimeoutError) as e:
         return None
     except Exception as e:
         return None
+
 
 async def get_ips(proxyhost: list, proxyport: list):
     v4url = "http://v4.ipv6-test.com/api/myip.php"

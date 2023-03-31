@@ -328,9 +328,10 @@ class SpeedCore(Basecore):
                 sending_time += 10
                 equal_signs = int(cal / 5)
                 space_count = 20 - equal_signs
-                progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + "  " * space_count + f"{bracketsright}"
-                edit_text = f"{speedtext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + p_text + "%     [" + str(progress) + "/" + str(
-                    nodenum) + "]"
+                progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + "  " * space_count + \
+                               f"{bracketsright}"
+                edit_text = f"{speedtext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + p_text + \
+                            "%     [" + str(progress) + "/" + str(nodenum) + "]"
                 print(edit_text)
                 message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1, self.IKM))
 
@@ -431,6 +432,7 @@ class ScriptCore(Basecore):
         progress_bars = GCONFIG.config.get('bot', {}).get('bar', "=")
         bracketsleft = GCONFIG.config.get('bot', {}).get('bleft', "[")
         bracketsright = GCONFIG.config.get('bot', {}).get('bright', "]")
+        # corestartup = GCONFIG.config.get('clash', {}).get('startup', 1122)
         host = pool.get('host', [])
         port = pool.get('port', [])
         psize = len(port)
@@ -460,7 +462,6 @@ class ScriptCore(Basecore):
             return info
         else:
             subbatch = nodenum // psize
-
             for s in range(subbatch):
                 logger.info("当前批次: " + str(s + 1))
                 tasks.clear()
@@ -469,7 +470,6 @@ class ScriptCore(Basecore):
                     task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i]))
                     tasks.append(task)
                 done = await asyncio.gather(*tasks)
-
                 # 反馈进度
                 progress += psize
                 cal = progress / nodenum * 100
@@ -479,11 +479,12 @@ class ScriptCore(Basecore):
                     sending_time += 20
                     equal_signs = int(cal / 5)
                     space_count = 20 - equal_signs
-                    progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + "  " * space_count + f"{bracketsright}"
-                    edit_text = f"{scripttext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + p_text + "%     [" + str(progress) + "/" + str(
-                        nodenum) + "]"
+                    progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + \
+                                   "  " * space_count + f"{bracketsright}"
+                    edit_text = f"{scripttext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + \
+                                p_text + "%     [" + str(progress) + "/" + str(nodenum) + "]"
                     print(edit_text)
-                    message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
+                    message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 2))
                 # 简单处理一下数据
                 res = []
                 for j in range(len(test_items)):
@@ -501,7 +502,6 @@ class ScriptCore(Basecore):
                         self.unit(test_items, host=host[i], port=port[i]))
                     tasks.append(task)
                 done = await asyncio.gather(*tasks)
-
                 res = []
                 for j in range(len(test_items)):
                     res.clear()
@@ -514,10 +514,11 @@ class ScriptCore(Basecore):
             progress += nodenum % psize
             bar = f"{progress_bars}" * bar_length
             bar_with_frame = f"{bracketsleft}" + f"{bar}" + f"{bracketsright}"
-            edit_text = f"{scripttext}\n\n" + bar_with_frame + "\n\n" + "当前进度:\n" + '100' + "%     [" + str(progress) + "/" + str(
+            edit_text = f"{scripttext}\n\n" + bar_with_frame + "\n\n" + "当前进度:\n" + '100' + "%     [" + str(
+                progress) + "/" + str(
                 nodenum) + "]"
             print(edit_text)
-            message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
+            message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 2))
         logger.info(str(info))
         return info
 
@@ -660,9 +661,10 @@ class TopoCore(Basecore):
                     sending_time += 10
                     equal_signs = int(cal / 5)
                     space_count = 20 - equal_signs
-                    progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + "  " * space_count + f"{bracketsright}"
-                    edit_text = "⏳节点拓扑测试进行中...\n\n" + progress_bar + "\n\n" + "当前进度:\n" + p_text + "%     [" + str(progress) + "/" + str(
-                        nodenum) + "]"
+                    progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + \
+                                   "  " * space_count + f"{bracketsright}"
+                    edit_text = "⏳节点拓扑测试进行中...\n\n" + progress_bar + "\n\n" + "当前进度:\n" + \
+                                p_text + "%     [" + str(progress) + "/" + str(nodenum) + "]"
                     print(edit_text)
                     message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
 
@@ -683,7 +685,8 @@ class TopoCore(Basecore):
                 progress += nodenum % psize
                 bar = f"{progress_bars}" * bar_length
                 bar_with_frame = f"{bracketsleft}" + f"{bar}" + f"{bracketsright}"
-                edit_text = f"{analyzetext}\n\n" + bar_with_frame + "\n\n" + "当前进度:\n" + '100' + "%     [" + str(progress) + "/" + str(
+                edit_text = f"{analyzetext}\n\n" + bar_with_frame + "\n\n" + "当前进度:\n" + '100' + "%     [" + str(
+                    progress) + "/" + str(
                     nodenum) + "]"
                 print(edit_text)
                 message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))

@@ -9,7 +9,6 @@ from botmodule.cfilter import dynamic_data_filter, allfilter, reloaduser
 from botmodule.command.authority import get_url_from_invite
 from botmodule.utils import message_delete_queue
 from libs.myqueue import q, bot_task_queue
-from libs.check import check_user as isuser
 from libs.check import check_callback_master
 from libs.collector import reload_config as r1
 from libs.cleaner import reload_config as r2
@@ -172,8 +171,8 @@ def command_loader(app: Client):
     @reloaduser()
     async def fulltest(client, message):
         await message.reply("请选择排序方式:", reply_markup=botmodule.IKM2, quote=True)
-        await bot_put(client, message, "analyze")
-        await bot_put(client, message, "speed")
+        await bot_put(client, message, "analyze", coreindex=2)
+        await bot_put(client, message, "speed", coreindex=1)
 
     @app.on_message(filters.command(['restart', 'reboot']) & allfilter(2), group=2)
     async def restart(client, message):
@@ -228,7 +227,7 @@ def callback_loader(app: Client):
             sort_str = botmodule.get_sort_str(message)
             await asyncio.sleep(3)
             await message.delete()
-            await bot_put(client, origin_message, test_type, test_items, sort=sort_str)
+            await bot_put(client, origin_message, test_type, test_items, sort=sort_str, coreindex=3)
 
 
 async def bot_put(client, message, put_type: str, test_items: list = None, **kwargs):

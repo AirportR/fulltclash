@@ -4,7 +4,7 @@ import ctypes
 import subprocess
 import time
 from concurrent.futures import ThreadPoolExecutor
-
+import threading
 import yaml
 from time import sleep
 
@@ -152,19 +152,23 @@ def start_client(path: str, workpath: str = "./clash", _config: str = './clash/p
     sleep(2)
 
 
-async def new_batch_start(portlist: list):
+def new_batch_start(portlist: list):
     # __lib = ctypes.cdll.LoadLibrary(r"./libs/fulltclash.dll")
     # _myclash = getattr(__lib, 'myclash')
     # _myclash.argtypes = [ctypes.c_char_p]
     # _myclash.restype = None
-    from libs.proxys import __lib
-    _myclash = getattr(__lib, 'myclash')
+    from libs.proxys import lib, Clash
+    _myclash = getattr(lib, 'myclash')
     _myclash.argtypes = [ctypes.c_char_p, ctypes.c_longlong]
     # create a task for myclash
-    addr = ["127.0.0.1:"+str(p) for p in portlist]
-    _loop = asyncio.get_running_loop()
+    addr = ["127.0.0.1:" + str(p) for p in portlist]
+    _loop = asyncio.new_event_loop()
+    # with ThreadPoolExecutor(len(portlist)) as pool:
+    #     for _i in range(len(addr)):
+    #         _loop.run_in_executor(pool, _myclash, addr[_i].encode(), _i)
     for _i in range(len(addr)):
-        _loop.run_in_executor(None, _myclash, addr[_i].encode(), _i)
+        clash = Clash(portlist[_i], _i)
+        clash.start()
 
 
 def batch_start(portlist: list, proxy_file_path="./clash/proxy.yaml"):
@@ -326,12 +330,13 @@ if __name__ == "__main__":
     # subp = subprocess.Popen(command.split(), encoding="utf-8")
 
     sleep(2)
-    new_batch_start([start_port+i*2 for i in range(corenum)])
+    new_batch_start([start_port + i * 2 for i in range(corenum)])
     # batch_start([start_port + i * 2 for i in range(corenum)])
     print("Clash核心进程已启动!")
     try:
         # subp.wait()
         import signal
+
         signal.signal(signal.SIGINT, signal.SIG_DFL)
     except KeyboardInterrupt:
         exit()

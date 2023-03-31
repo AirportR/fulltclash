@@ -3,6 +3,8 @@ import json
 import os
 import sys
 import subprocess
+import threading
+
 import yaml
 from time import sleep
 import ctypes
@@ -16,11 +18,26 @@ from libs.cleaner import ClashCleaner, config
 这个模块主要是一些对clash restful api的python实现
 """
 os.getcwd()
-__lib = ctypes.cdll.LoadLibrary(r"./libs/fulltclash.so") if sys.platform.startswith("linux") \
+lib = ctypes.cdll.LoadLibrary(r"./libs/fulltclash.so") if sys.platform.startswith("linux") \
     else ctypes.cdll.LoadLibrary(r".\libs\fulltclash.dll")
-_setProxy = getattr(__lib, 'setProxy')
+_setProxy = getattr(lib, 'setProxy')
 _setProxy.argtypes = [ctypes.c_char_p, ctypes.c_int64]
 _setProxy.restype = ctypes.c_char_p
+
+
+class Clash(threading.Thread):  # 继承父类threading.Thread
+    def __init__(self, _port, _index: int):
+        threading.Thread.__init__(self)
+        self._port = _port
+        self._index = _index
+
+    def run(self):  # 把要执行的代码写到run函数里面 线程在创建后会直接运行run函数
+
+        _myclash = lib.myclash
+        _myclash.argtypes = [ctypes.c_char_p, ctypes.c_longlong]
+        # create a task for myclash
+        _addr = "127.0.0.1:" + str(self._port)
+        _myclash(_addr.encode(), self._index)
 
 
 # 切换节点
@@ -68,7 +85,7 @@ def switchProxy(_nodeinfo: dict, _index: int) -> bool:
 
 
 def stopclash():
-    stop = getattr(__lib, 'stop')
+    stop = getattr(lib, 'stop')
     stop.argtypes = [ctypes.c_int64]
     stop(1)
 

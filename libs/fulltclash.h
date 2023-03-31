@@ -77,6 +77,7 @@ extern "C" {
 extern void myclash(char* addr, GoInt index);
 extern char* setProxy(char* oldstr, GoInt index);
 extern void stop(GoInt flag);
+extern void exitProc();
 
 #ifdef __cplusplus
 }

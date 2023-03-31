@@ -8,7 +8,7 @@ from pyrogram.errors import RPCError
 from botmodule.init_bot import admin, config, reloadUser
 from botmodule.command.test import reloadUser as r2
 from botmodule.utils import message_delete_queue
-
+from libs.proxys import stopclash
 
 async def grant(client: Client, message: pyrogram.types.Message):
     try:
@@ -124,6 +124,7 @@ async def restart_or_killme(_, message, kill=False):
     try:
         if kill:
             await message.reply("再见~")
+            stopclash()
             os.kill(os.getpid(), signal.SIGINT)
         else:
             await message.reply("开始重启(大约等待五秒)")

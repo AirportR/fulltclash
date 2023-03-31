@@ -21,6 +21,10 @@ async def startclash(app: Client, message: Message):
         backmsg = await message.reply("使用方法: /clash start或 /clash stop")
         message_delete_queue.put_nowait((backmsg.chat.id, backmsg.id, 10))
         return
+    if config.config.get('clash', {}).get('auto-start', False):
+        backmsg = await message.reply("您在配置中设置了bot启动时clash核心自动启动，此命令已被禁用。\nclash:\n auto-start: true\n")
+        message_delete_queue.put_nowait((backmsg.chat.id, backmsg.id, 10))
+        return
     start_or_stop = tgargs[1] if len(tgargs) > 1 else ''
     if start_or_stop == "start":
         backmsg = await message.reply("正在启动clash核心...")
@@ -35,13 +39,12 @@ async def startclash(app: Client, message: Message):
         # pystr = "python" if sys.platform == "win32" else "python3"
         # command = fr"{pystr} clash.py"
         # subp = subprocess.Popen(command.split(), encoding="utf-8")
-        await new_batch_start(port_list)
+        new_batch_start(port_list)
         await backmsg.edit_text("✅clash已启动\n\n注意: 目前启动clash后将无法按Ctrl+C退出，请先进行 /clash stop 操作")
         message_delete_queue.put_nowait((backmsg.chat.id, backmsg.id, 10))
         return
     elif start_or_stop == "stop":
         await message.reply("正在停止clash核心...")
-        stopclash()
         await restart_or_killme(app, message)
         return
     else:

@@ -22,10 +22,11 @@ def reloadUser():
     return USER_TARGET
 
 
-def select_core(put_type: str, message: Message):
+def select_core(put_type: str, message: Message, **kwargs):
     """
     1 为速度核心， 2为拓扑核心， 3为解锁脚本测试核心
     """
+    index = kwargs.get('coreindex', None)
     if put_type.startswith("speed"):
         IKM = InlineKeyboardMarkup(
             [
@@ -38,14 +39,29 @@ def select_core(put_type: str, message: Message):
         return TopoCore(message.chat.id, message.id)
     elif put_type.startswith("test"):
         return ScriptCore(message.chat.id, message.id)
+    elif isinstance(index, int):
+        if index in (1, 2, 3):
+            if index == 1:
+                IKM = InlineKeyboardMarkup(
+                    [
+                        [InlineKeyboardButton("👋中止测速", callback_data='stop')],
+                    ]
+                )
+                return SpeedCore(message.chat.id, message.id, IKM)
+            elif index == 2:
+                return TopoCore(message.chat.id, message.id)
+            elif index == 3:
+                return ScriptCore(message.chat.id, message.id)
+        else:
+            raise TypeError("Unknown test type, please input again.\n未知的测试类型，请重新输入!")
     else:
         raise TypeError("Unknown test type, please input again.\n未知的测试类型，请重新输入!")
 
 
 @logger.catch()
-async def select_export(msg: Message, backmsg: Message, put_type: str, info: dict):
+async def select_export(msg: Message, backmsg: Message, put_type: str, info: dict, **kwargs):
     try:
-        if put_type.startswith("speed"):
+        if put_type.startswith("speed") or kwargs.get('coreindex', -1) == 1:
             if info:
                 wtime = info.get('wtime', "-1")
                 # stime = export.ExportSpeed(name=None, info=info).exportImage()
@@ -58,7 +74,7 @@ async def select_export(msg: Message, backmsg: Message, put_type: str, info: dic
                 await msg.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
                 await check.check_photo(msg, backmsg, stime, wtime)
         elif put_type.startswith("analyze") or put_type.startswith("topo") or put_type.startswith("inbound") \
-                or put_type.startswith("outbound"):
+                or put_type.startswith("outbound") or kwargs.get('coreindex', -1) == 2:
             info1 = info.get('inbound', {})
             info2 = info.get('outbound', {})
             if info1:
@@ -92,7 +108,7 @@ async def select_export(msg: Message, backmsg: Message, put_type: str, info: dic
                     # 发送回TG
                     await msg.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
                     await check.check_photo(msg, backmsg, 'Topo' + stime, wtime)
-        elif put_type.startswith("test"):
+        elif put_type.startswith("test") or kwargs.get('coreindex', -1) == 3:
             if info:
                 wtime = info.get('wtime', "-1")
                 # 生成图片
@@ -125,7 +141,7 @@ async def process(_, message: Message, **kwargs):
         await message.reply('❌不支持的测试任务类型')
         message_delete_queue.put_nowait((back_message.chat.id, back_message.id, 10))
         return
-    core = select_core(put_type, back_message)
+    core = select_core(put_type, back_message, **kwargs)
     include_text = tgargs[2] if len(tgargs) > 2 else ''
     exclude_text = tgargs[3] if len(tgargs) > 3 else ''
     include_text = kwargs.get('include_text', '') if kwargs.get('include_text', '') else include_text
@@ -145,7 +161,7 @@ async def process(_, message: Message, **kwargs):
             return
         proxyinfo = cleaner.ClashCleaner(':memory:', subconfig).getProxies()
         info = await core.core(proxyinfo, **kwargs)
-        await select_export(message, back_message, put_type, info)
+        await select_export(message, back_message, put_type, info, **kwargs)
     else:
         subinfo = config.get_sub(subname=tgargs[1])
         pwd = tgargs[4] if len(tgargs) > 4 else tgargs[1]
@@ -162,7 +178,7 @@ async def process(_, message: Message, **kwargs):
             return
         proxyinfo = cleaner.ClashCleaner(':memory:', subconfig).getProxies()
         info = await core.core(proxyinfo, **kwargs)
-        await select_export(message, back_message, put_type, info)
+        await select_export(message, back_message, put_type, info, **kwargs)
 
 
 # @logger.catch()

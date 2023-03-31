@@ -136,6 +136,7 @@ logger.info("配置已加载, Telegram bot程序开始运行...")
 
 
 def start_clash():
+    print("开始启动clash core")
     if config.config.get('clash', {}).get('auto-start', False):
         loop = asyncio.get_event_loop()
         start_port = config.config.get('clash', {}).get('startup', 1122)
@@ -148,7 +149,8 @@ def start_clash():
         # pystr = "python" if sys.platform == "win32" else "python3"
         # command = fr"{pystr} clash.py"
         # subp = subprocess.Popen(command.split(), encoding="utf-8")
-        loop.run_until_complete(new_batch_start(port_list))
+        # loop.run_until_complete(new_batch_start(port_list))
+        new_batch_start(port_list)
 
 
 start_clash()
