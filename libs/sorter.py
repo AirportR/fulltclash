@@ -63,4 +63,4 @@ def sort_nodename_topo(_cleaner: cleaner.ClashCleaner):
         return nodename, info, cl, ipsdata
     except Exception as e:
         logger.error(str(e))
-        return None, None, None
+        return None, None, None, None
