@@ -41,7 +41,6 @@ class BaseExport:
         所有绘图类的基类，primarykey为主键，计算主键的长度，主键决定整张图片的高度
         """
         self.basedata = primarykey
-        self.version = __version__
         self.allinfo = allinfo
         self.info = self.getPrintinfo()
 

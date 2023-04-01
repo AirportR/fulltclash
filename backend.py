@@ -574,7 +574,7 @@ class TopoCore(Basecore):
         cl = copy.deepcopy(self._config)
         co = collector.IPCollector()
         session = aiohttp.ClientSession()
-        node_addrs = cl.nodehost()
+        # node_addrs = cl.nodehost()
         nodename, inboundinfo, cl, ipstack_list = sorter.sort_nodename_topo(cl)
         ipstack_lists = list(ipstack_list.values())
         info['栈'] = ipstack_lists
@@ -720,11 +720,13 @@ class TopoCore(Basecore):
         # 开始测试
         s1 = time.time()
         info1, hosts, cl = await self.topo()
+        nodelist = cl.getProxies()
+        nodename = cl.nodesName()
+        print("入口测试结束: ", info1)
         if test_type == "inbound":
             wtime = "%.1f" % float(time.time() - s1)
             info1['wtime'] = wtime
             return {'inbound': info1, 'outbound': info2}
-
         # 启动链路拓扑测试
         try:
             info2 = {}
@@ -746,6 +748,7 @@ class TopoCore(Basecore):
                     if 'ips' in dictionary:
                         ipstackes.extend(dictionary['ips'])
                 out_num = info1.get('出口数量', [])
+                print("出口数量:", out_num)
                 num_c = 1
                 d0 = []
                 for i in out_num:

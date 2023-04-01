@@ -42,7 +42,7 @@ def reload_config(media: list = None):
 class BaseCollector:
     def __init__(self):
         self._headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ' +
                           'Chrome/102.0.5005.63 Safari/537.36'}
 
     async def status(self, url, proxy=None):
@@ -55,7 +55,7 @@ class BaseCollector:
         with async_timeout.timeout(10):
             async with aiohttp.ClientSession(headers=self._headers) as session:
                 async with session.get(url, proxy=proxy) as response:
-                    return await response.text()
+                    return await response.content.read()
 
 
 class IPCollector:

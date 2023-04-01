@@ -3,8 +3,6 @@ import asyncio
 import ctypes
 import subprocess
 import time
-from concurrent.futures import ThreadPoolExecutor
-import threading
 import yaml
 from time import sleep
 
@@ -153,19 +151,11 @@ def start_client(path: str, workpath: str = "./clash", _config: str = './clash/p
 
 
 def new_batch_start(portlist: list):
-    # __lib = ctypes.cdll.LoadLibrary(r"./libs/fulltclash.dll")
-    # _myclash = getattr(__lib, 'myclash')
-    # _myclash.argtypes = [ctypes.c_char_p]
-    # _myclash.restype = None
     from libs.proxys import lib, Clash
     _myclash = getattr(lib, 'myclash')
     _myclash.argtypes = [ctypes.c_char_p, ctypes.c_longlong]
     # create a task for myclash
     addr = ["127.0.0.1:" + str(p) for p in portlist]
-    _loop = asyncio.new_event_loop()
-    # with ThreadPoolExecutor(len(portlist)) as pool:
-    #     for _i in range(len(addr)):
-    #         _loop.run_in_executor(pool, _myclash, addr[_i].encode(), _i)
     for _i in range(len(addr)):
         clash = Clash(portlist[_i], _i)
         clash.start()
