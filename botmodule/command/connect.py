@@ -87,5 +87,5 @@ async def response(app: Client, message: Message):
     logger.info(f"{ID} 的公钥文件已被保存在 {file_path}")
     config.add_slave(ID, file_path, bot_username, comment)
     config.reload()
-    await message.reply_document(fr'./key/fulltclash-public.pem', quote=True, caption='/ok')
+    await message.reply_document(r'./key/fulltclash-public.pem', quote=True, caption='/ok')
     await old_msg.reply("连接建立成功")

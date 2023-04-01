@@ -207,9 +207,7 @@ python3 main.py
   - [pyrogram](https://github.com/pyrogram/pyrogram)
   
   - [async-timeout](https://github.com/aio-libs/async-timeout)
-  
-  - [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/)
-  
+
   - [Pillow](https://github.com/python-pillow/Pillow)
   
   - [pilmoji](https://github.com/jay3332/pilmoji)
@@ -218,14 +216,14 @@ python3 main.py
   
   - [requests](https://github.com/psf/requests)
 ## 如何给本项目做贡献：
-1. 在本项目的主GitHub仓库进行fork，你可以只fork dev的分支。
-2. 在你的计算机上使用git clone来下载你fork后的仓库
-3. 在下载好的进行修改
-4. 执行git add .（请不要忘记句号！！！）
-5. 执行git commit，并输入你做出的更改
-6. 回到你的仓库，发起pr请求，等待下一步（通过/驳回/修改）
+* 在本项目的主GitHub仓库进行fork，你可以只fork dev的分支。 
+* 在你的计算机上使用git clone来下载你fork后的仓库 
+* 在下载后的本地仓库进行修改
+* 执行git add .（请不要忘记句号！！！） 
+* 执行git commit，并输入你做出的更改 
+* 回到你的仓库，发起pr请求，等待下一步（通过/驳回/修改）
 
 如果不这样做可能会：
-1. 仓库维护者看到的是一片绿色加号，根本不知道你改了什么
-2. 你的操作会很麻烦，可能还会改错文件
-3. 维护者很难看懂你都干了些什么
+* 仓库维护者看到的是一片绿色加号，根本不知道你改了什么 
+* 你的操作会很麻烦，可能还会改错文件 
+* 维护者很难看懂你都干了些什么

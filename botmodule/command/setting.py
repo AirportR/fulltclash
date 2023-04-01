@@ -227,8 +227,8 @@ async def select_page(client: Client, call: CallbackQuery, **kwargs):
     pre_page = InlineKeyboardButton('⬅️上一页', callback_data=f'page{page - 1}')
     next_page = InlineKeyboardButton('➡️下一页', callback_data=f'page{page + 1}')
     blank1 = InlineKeyboardButton("已完成本页提交", callback_data="blank")
-    blank_button = InlineKeyboardButton('        ', callback_data=f'blank')
-    blank = InlineKeyboardButton(f'{page}/{max_page}', callback_data=f'blank')
+    blank_button = InlineKeyboardButton('        ', callback_data='blank')
+    blank = InlineKeyboardButton(f'{page}/{max_page}', callback_data='blank')
     if page == 1:
         if page_is_locked.get(str(chat_id) + ':' + str(mess_id) + ':' + str(page), False):
             if max_page == 1:

@@ -1,4 +1,3 @@
-import asyncio
 
 from loguru import logger
 from pyrogram.errors import RPCError

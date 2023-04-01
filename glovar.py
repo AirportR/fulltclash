@@ -1,6 +1,3 @@
-import datetime
-from datetime import date
-
 import tzlocal
 from pyrogram import Client
 from loguru import logger
@@ -71,7 +68,7 @@ scheduler.add_job(cem, 'interval', seconds=5, id='edit1', name="Edit the telegra
 # ---------------------------- [ Print the bot ] ---------------------------- #
 def bot_info(_app):
     bot_me = _app.get_me()
-    logger.info(f'>> Bot Started')
+    logger.info('>> Bot Started')
     logger.info(f'>> Bot ID: {bot_me.id} Username: @{bot_me.username}')
     print("""# ---------------------------- [ Start the bot ] ---------------------------- #   """)
     # r = requests.get(
