@@ -21,10 +21,9 @@ async def topo(file_path: str):
     co = collector.IPCollector()
     session = aiohttp.ClientSession()
     node_addrs = cl.nodehost()
-    node_addr_count = cl.count_elem(node_addrs)
-    nodename, inboundinfo, cl = sorter.sort_nodename_topo(cl)
-    ipstack_list = cleaner.batch_ipstack(node_addr_count)
-    info['栈'] = ipstack_list
+    nodename, inboundinfo, cl, ipstack_list = sorter.sort_nodename_topo(cl)
+    ipstack_lists = list(ipstack_list.values())
+    info['栈'] = ipstack_lists
     if nodename and inboundinfo and cl:
         # 拿地址，已经转换了域名为ip,hosts变量去除了N/A
         hosts = list(inboundinfo.keys())
@@ -73,6 +72,10 @@ async def batch_topo(message, nodename: list, pool: dict, proxygroup='auto'):
     resdata = []
     ipstackes = []
     analyzetext = config.config.get('bot', {}).get('analyzetext', "⏳节点拓扑分析测试进行中...")
+    progress_bars = config.config.get('bot', {}).get('bar', "=")
+    bracketsleft = config.config.get('bot', {}).get('bleft', "[")
+    bracketsright = config.config.get('bot', {}).get('bright', "]")
+    bracketsspace = config.config.get('bot', {}).get('bspace', "  ")
     progress = 0
     sending_time = 0
     host = pool.get('host', [])
@@ -83,8 +86,9 @@ async def batch_topo(message, nodename: list, pool: dict, proxygroup='auto'):
     if psize <= 0:
         logger.error("无可用的代理程序接口")
         return [], []
-    bar = '  ' *  16
-    bar_with_frame = '[{}]'.format(bar)
+    bar_length = 20
+    bar = f"{bracketsspace}" * bar_length
+    bar_with_frame = f"{bracketsleft}" + f"{bar}" + f"{bracketsright}"
     await check.progress(message, 0, nodenum, 0, analyzetext + '\n' + '\n' + bar_with_frame)
     if nodenum < psize:
         for i in range(nodenum):
@@ -112,18 +116,14 @@ async def batch_topo(message, nodename: list, pool: dict, proxygroup='auto'):
             # 反馈进度
 
             progress += psize
-            cal = progress / nodenum
-            bar_length = 50
-            num_eq = int(cal * bar_length)
-            num_space = bar_length - num_eq
+            cal = progress / nodenum * 100
             # 判断进度条，每隔10%发送一次反馈，有效防止洪水等待(FloodWait)
-            if cal * 100 >= sending_time:
-                eq_ratio = int(cal * 100 / 2)
-                eq = '=' * (1 + num_eq * eq_ratio // 100)
-                space = ' ' * num_space
-                bar = eq + space
-                bar_with_frame = '[{}]'.format(bar)
-                await check.progress(message, progress, nodenum, cal*100, analyzetext + '\n' + '\n' + bar_with_frame)
+            if cal >= sending_time:
+                equal_signs = int(cal / 5)
+                space_count = 20 - equal_signs
+                progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + \
+                                   f"{bracketsspace}" * space_count + f"{bracketsright}"
+                await check.progress(message, progress, nodenum, cal, analyzetext + '\n' + '\n' + progress_bar)
                 sending_time += 20
 
         if nodenum % psize != 0:
@@ -138,13 +138,10 @@ async def batch_topo(message, nodename: list, pool: dict, proxygroup='auto'):
             ipstat = await ipstack.get_ips(proxyhost=host[:nodenum % psize], proxyport=port[:nodenum % psize])
             ipstackes.append({'ips': ipstat})
         # 最终进度条
-        cal = progress / nodenum
-        bar_length = 27
-        num_eq = int(cal * bar_length)
-        num_space = bar_length - num_eq
+        bar_length = 20
         if nodenum % psize != 0:
-            bar = '=' * num_eq
-            bar_with_frame = '[{}]'.format(bar)
+            bar = f"{progress_bars}" * bar_length
+            bar_with_frame = f"{bracketsleft}" + f"{bar}" + f"{bracketsright}"
             await check.progress(message, nodenum, nodenum, 100, analyzetext + '\n' + '\n' + bar_with_frame)
         return resdata, ipstackes
 
