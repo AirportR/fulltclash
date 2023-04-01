@@ -702,7 +702,6 @@ class TopoCore(Basecore):
         info1 = {}  # 存放测试结果
         info2 = {}  # 存放测试结果
         test_type = kwargs.get('test_type', 'all')
-        print(test_type)
         # 先把节点信息写入文件
         self.join_proxy(proxyinfo)
         # 获取可供测试的测试端口
@@ -748,7 +747,6 @@ class TopoCore(Basecore):
                     if 'ips' in dictionary:
                         ipstackes.extend(dictionary['ips'])
                 out_num = info1.get('出口数量', [])
-                print("出口数量:", out_num)
                 num_c = 1
                 d0 = []
                 for i in out_num:

@@ -6,7 +6,7 @@ import subprocess
 
 from loguru import logger
 
-from clash import new_batch_start, check_port
+from libs.clash import new_batch_start, check_port
 from libs.cleaner import ConfigManager
 from libs.safe import gen_key
 

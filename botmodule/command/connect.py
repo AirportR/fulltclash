@@ -1,5 +1,3 @@
-import asyncio
-
 from loguru import logger
 from pyrogram.types import Message
 from pyrogram import Client
@@ -9,8 +7,7 @@ from botmodule import restart_or_killme
 from botmodule.utils import message_delete_queue
 from libs.cleaner import ArgCleaner
 from libs.check import get_telegram_id_from_message as getid
-from libs.proxys import stopclash
-from clash import new_batch_start, check_port
+from libs.clash import new_batch_start, check_port
 
 connect_list = {}
 
