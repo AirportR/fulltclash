@@ -1,16 +1,6 @@
-# 注意，yaml配置文件对缩进敏感，请不要强迫症删掉#号之间的空格
+# 注意，yaml配置文件对缩进敏感，请不要强迫症删掉#号之间的空格。
 admin:
 - 12345678 #管理员，此处写你的账户id或用户名，必须配置该项，否则程序会自动退出
-item: # 流媒体测试项，决定你想要测哪个项,目前仅支持以下类型(所有项的值要放在引号里面,第一个字母大写小写都可以，但不能全部大写):此配置已被覆盖暂时无法生效
-- 'Netflix' # 奈飞测试，最为严格的流媒体平台，具有很大参考价值，默认开启。
-- 'Youtube' # Youtube premium测试，如果测试结果显示失败大概率该节点是送中节点，默认开启。
-- 'Disney' # Disney Plus 区域限制不明显，观看体验尚佳，默认开启。
-#- 'Bilibili' # bilibili解锁， 仅在港澳台或者仅限台湾的番剧，这项测试一般很难看，默认不开启，想开启该项将该行最前面的#号删除即可。
-#- 'Dazn' # Dazn 一般测试得很难看，默认不开启，想开启该项将该行最前面的#号删除即可。
-#- 'Hbomax'
-#- 'Bahamut'
-#netflixurl: "https://www.netflix.com/title/80113701"  #自定义奈飞非自制剧检测网页，注意在更换此链接时请确保是非自制的链接。
-#proxyport: 7890 # 此为旧版代理设置，用于TGbot通讯，现已不推荐使用。
 #bot:
 # proxy: "host:端口:用户名:密码" #socks5代理，用户名和密码为可选配置，已和下面的proxy单独分离，请勿混用
 # strictmode: false # 严格模式，代表测试的时侯，bot内联按钮只有发起测试的主人才能按，否则所有用户用户权限都可以按。默认false，目前未适配，敬请期待。
@@ -24,30 +14,30 @@ item: # 流媒体测试项，决定你想要测哪个项,目前仅支持以下�
 # bleft: "[" #左括号自定义文本
 # bright: "]" #右括号自定义文本
 # bspace: "  " #空格自定义文本，默认为2个
+#clash:
+# path: './resources/clash-linux-amd64' # clash动态库的路径，默认为 ./libs/ 下。不会弄不要动这里，用默认的即可。（此配置暂不生效）
+# allow-caching: false  #是否缓存测试过程产生的订阅，若否，则测试完成后会自动删除测试订阅，以免造成空间浪费。（此配置暂不生效）
+# core: 4 # 核心数，数量越多测试速度越快，但代价是内存会大量占用(每个核心大概10M)，自己的机子多少内存自己平衡。默认值为1.
+# auto-start: false # bot启动时顺带启动,若为false则需要在 bot上输入/clash start 手动启动，默认false
+# startup: 1124 起始端口。表示从此端口开始往下数占用数量，比如核心数为4，就会占用[1124,1126,1128,1130]共4个端口，遇到端口占用时可配置此项。推荐10000以上作为初始端口
 #proxy: "host:端口" # http配置代理(非socks5)，括号内可选用于下载获取订阅链接，订阅链接国内打不开可尝试开启（可选配置）,本机提供的代理可以这样填: '127.0.0.1:7890'
 #如果要http代理要验证，配置格式为: proxy: "用户名:密码@host:端口" 比如: user1:112233@127.0.0.1:7890
-#geoip-api: "ip-api.com" # GEOIP 测试api ，取二级域名,目前支持 ip-api.com ip.sb ipleak.net ipdata.co 四种，其中 ipdata 需要配置下面的geoip-key
+#geoip-api: "ip-api.com" # GEOIP 测试api，取二级域名,目前支持 ip-api.com ip.sb ipleak.net ipdata.co 四种，其中 ipdata 需要配置下面的geoip-key
 #geoip-key: xxxxxxx #ipdata 的 apikey，如果使用其他api则无需填写
-#subconvertor: #订阅转换
+#subconvertor: #订阅转换(此配置主要开发者已无心维护，能用但不稳定)
 # enable: true #是否启用
 # host: '127.0.0.1:25500' #域名或者ip加端口
 # remoteconfig: "https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online.ini" #远程配置
 #pingurl: http://www.gstatic.com/generate_204  #自定义延迟测试URL
+#netflixurl: "https://www.netflix.com/title/80113701"  #自定义奈飞非自制剧检测网页，注意在更换此链接时请确保是非自制的链接。
 #speedfile: "https://dl.google.com/dl/android/studio/install/3.4.1.0/android-studio-ide-183.5522156-windows.exe" #自定义测速文件
 #speednodes: 300 # 测速节点数量限制，超过将不会进行测速
 #speedthread: 4 #测速线程
 #nospeed: true #禁用测速，开启后将无法测速。
-#user: 12345678 #用户列表，/grant 命令授权的目标会保存在这（可选配置）
+#user: 12345678 #用户列表，/grant 命令授权的目标会保存在这。推荐使用bot进行授权，而非手动配置。（可选配置）
 #emoji: #emoji可选配置
 # enable: true #是否启用,默认启用。若否，则在输出图片时emoji将无法正常显示。关闭该项可解决部分图片生成失败的问题。（可选配置）
-# emoji-source: 'TwemojiLocalSource' #emoji表情源。默认为值为TwitterPediaSource。分为web源与本地源。可配置的值参考 ./libs/emoji_custom/__all__ 里面的成员变量。目前本地源仅支持: TwemojiLocalSource
-#clash:
-# path: './resources/clash-linux-amd64' # clash核心的位置,此样例为linux-amd64配置样例，windows可以不配置该项（可选配置）
-# workpath: './clash' # clash的工作目录，工作目录这里指的是clash读取配置文件的目录，请勿与操作系统上的概念混淆（可选配置）
-# allow-caching: false  #是否缓存测试过程产生的订阅，若否，则测试完成后会自动删除测试订阅，以免造成空间浪费。
-# core: 4 # 核心数，数量越多测试速度越快，但代价是内存会大量占用(每个核心大概10M)，自己的机子多少内存自己平衡
-# auto-start: false # bot启动时顺带启动,若为false则需要在 bot上输入/clash start 手动启动，默认false
-# startup: 1124 起始端口。表示从此端口开始往下数占用数量，比如核心数为4，就会占用[1124,1125,1126,1127,1128,1129,1130,1131]共8个端口，遇到端口占用时可配置此项。推荐10000以上作为初始端口
+# emoji-source: 'TwemojiLocalSource' #emoji表情源。默认值为TwitterPediaSource。分为web源与本地源。可配置的值参考 ./libs/emoji_custom/__all__ 里面的成员变量。目前本地源仅支持: TwemojiLocalSource
 #font: './resources/苹方黑体-准-简.ttf' #自定义字体，这里填字体的路径
 
 #----------------------------   以下为绘图相关配置   --------------------------------#
