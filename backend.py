@@ -294,6 +294,7 @@ class SpeedCore(Basecore):
         progress_bars = GCONFIG.config.get('bot', {}).get('bar', "=")
         bracketsleft = GCONFIG.config.get('bot', {}).get('bleft', "[")
         bracketsright = GCONFIG.config.get('bot', {}).get('bright', "]")
+        bracketsspace = GCONFIG.config.get('bot', {}).get('bspace', "  ")
         nodenum = len(nodelist)
         test_items = ["HTTP延迟", "平均速度", "最大速度", "速度变化", "UDP类型"]
         for item in test_items:
@@ -328,7 +329,7 @@ class SpeedCore(Basecore):
                 sending_time += 10
                 equal_signs = int(cal / 5)
                 space_count = 20 - equal_signs
-                progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + "  " * space_count + \
+                progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + f"{bracketsspace}" * space_count + \
                                f"{bracketsright}"
                 edit_text = f"{speedtext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + p_text + \
                             "%     [" + str(progress) + "/" + str(nodenum) + "]"
@@ -432,6 +433,7 @@ class ScriptCore(Basecore):
         progress_bars = GCONFIG.config.get('bot', {}).get('bar', "=")
         bracketsleft = GCONFIG.config.get('bot', {}).get('bleft', "[")
         bracketsright = GCONFIG.config.get('bot', {}).get('bright', "]")
+        bracketsspace = GCONFIG.config.get('bot', {}).get('bspace', "  ")
         # corestartup = GCONFIG.config.get('clash', {}).get('startup', 1122)
         host = pool.get('host', [])
         port = pool.get('port', [])
@@ -480,7 +482,7 @@ class ScriptCore(Basecore):
                     equal_signs = int(cal / 5)
                     space_count = 20 - equal_signs
                     progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + \
-                                   "  " * space_count + f"{bracketsright}"
+                                   f"{bracketsspace}" * space_count + f"{bracketsright}"
                     edit_text = f"{scripttext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + \
                                 p_text + "%     [" + str(progress) + "/" + str(nodenum) + "]"
                     print(edit_text)
@@ -629,6 +631,7 @@ class TopoCore(Basecore):
         progress_bars = GCONFIG.config.get('bot', {}).get('bar', "=")
         bracketsleft = GCONFIG.config.get('bot', {}).get('bleft', "[")
         bracketsright = GCONFIG.config.get('bot', {}).get('bright', "]")
+        bracketsspace = GCONFIG.config.get('bot', {}).get('bspace', "  ")
         host = pool.get('host', [])
         port = pool.get('port', [])
         psize = len(port)
@@ -668,7 +671,7 @@ class TopoCore(Basecore):
                     equal_signs = int(cal / 5)
                     space_count = 20 - equal_signs
                     progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + \
-                                   "  " * space_count + f"{bracketsright}"
+                                   f"{bracketsspace}" * space_count + f"{bracketsright}"
                     edit_text = "⏳节点拓扑测试进行中...\n\n" + progress_bar + "\n\n" + "当前进度:\n" + \
                                 p_text + "%     [" + str(progress) + "/" + str(nodenum) + "]"
                     print(edit_text)
