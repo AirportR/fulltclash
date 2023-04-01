@@ -22,7 +22,7 @@ async def bot_task_queue(client: Client, message, task_type: str, qu: asyncio.Qu
     :return: no return
     """
     if task_type:
-        await botmodule.process(client, message, **kwargs)
+        await botmodule.process(client, message, put_type=task_type, **kwargs)
     else:
         try:
             m1 = await message.reply("⚠️未识别的测试类型，任务取消~")

@@ -134,7 +134,7 @@ async def process(_, message: Message, **kwargs):
     tgtext = str(message.text)
     tgargs = cleaner.ArgCleaner().getall(tgtext)
     suburl = cleaner.geturl(tgtext) if kwargs.get('url', None) is None else kwargs.get('url', None)
-    put_type = kwargs.get('put_type', '') if kwargs.get('put_type', '') \
+    put_type = kwargs.pop('put_type', '') if kwargs.get('put_type', '') \
         else message.command[0] if message.command is not None else tgargs[0][1:]
     print("测试指令", put_type)
     if not put_type:
