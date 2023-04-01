@@ -13,6 +13,7 @@ admin:
 # bar: "=" #进度条自定义文本
 # bleft: "[" #左括号自定义文本
 # bright: "]" #右括号自定义文本
+# bspace: "  " #空格自定义文本，默认为2个
 #clash:
 # path: './resources/clash-linux-amd64' # clash动态库的路径，默认为 ./libs/ 下。不会弄不要动这里，用默认的即可。（此配置暂不生效）
 # allow-caching: false  #是否缓存测试过程产生的订阅，若否，则测试完成后会自动删除测试订阅，以免造成空间浪费。（此配置暂不生效）
