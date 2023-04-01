@@ -486,7 +486,8 @@ class ClashCleaner:
         except Exception as e:
             logger.error(str(e))
             return None
-
+            
+            
     @logger.catch
     def proxyGroupName(self):
         """
@@ -1333,14 +1334,14 @@ def batch_ipstack(host: list):
     for h in host:
         if type(h).__name__ == 'dict':
             try:
-                ipss = count(h['server'])
+                ipss = count(h['ipstart'])
                 if ipss:
-                    h['server'] = ipss
+                    h['ipstart'] = ipss
                 else:
-                    h['server'] = "N/A"
+                    h['ipstart'] = "N/A"
                 ipstack.append(h)
             except KeyError:
-                h['server'] = "N/A"
+                h['ipstart'] = "N/A"
                 ipstack.append(h)
         else:
             ipss = count(h)
