@@ -164,6 +164,10 @@ async def start(
 async def batch_speed(message: Message, nodename: list, proxygroup='auto'):
     info = {}
     speedtext = config.config.get('bot', {}).get('speedtext', "⏳速度测试进行中...")
+    progress_bars = config.config.get('bot', {}).get('bar', "=")
+    bracketsleft = config.config.get('bot', {}).get('bleft', "[")
+    bracketsright = config.config.get('bot', {}).get('bright', "]")
+    bracketsspace = config.config.get('bot', {}).get('bspace', "  ")
     progress = 0
     sending_time = 0
     nodenum = len(nodename)
@@ -192,27 +196,23 @@ async def batch_speed(message: Message, nodename: list, proxygroup='auto'):
             await message.delete(revoke=False)
             break
         progress += 1
-        cal = progress / nodenum
-        bar_length = 50
-        num_eq = int(cal * bar_length)
-        num_space = bar_length - num_eq
-        p_text = "%.2f" % (cal * 100)
+        cal = progress / nodenum * 100
+        p_text = "%.2f" % cal
         IKM = InlineKeyboardMarkup(
             [
                 [InlineKeyboardButton("👋中止测速", callback_data='stop')],
             ]
         )
         # 判断进度条，每隔10%发送一次反馈，有效防止洪水等待(FloodWait)
-        if cal * 100 >= sending_time:
-            eq_ratio = int(cal * 100 / 2)
-            eq = '=' * (1 + num_eq * eq_ratio // 100)
-            space = ' ' * num_space
-            bar = eq + space
-            bar_with_frame = '[{}]'.format(bar)
+        if cal >= sending_time:
             sending_time += 10
+            equal_signs = int(cal / 5)
+            space_count = 20 - equal_signs
+            progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + \
+                                   f"{bracketsspace}" * space_count + f"{bracketsright}"
             try:
                 # 实时反馈进度
-                await message.edit_text(speedtext + '\n' + '\n' + bar_with_frame + "\n\n"
+                await message.edit_text(speedtext + '\n' + '\n' + progress_bar + "\n\n"
                                         "当前进度:\n" + p_text +
                                         "%     [" + str(progress) + "/" + str(nodenum) + "]", reply_markup=IKM)
             except RPCError as r:
@@ -223,6 +223,10 @@ async def batch_speed(message: Message, nodename: list, proxygroup='auto'):
 async def batch_udp(message, nodename: list, proxygroup='auto'):
     info = {}
     udptext = config.config.get('bot', {}).get('udptext', "⏳UDP类型测试进行中...")
+    progress_bars = config.config.get('bot', {}).get('bar', "=")
+    bracketsleft = config.config.get('bot', {}).get('bleft', "[")
+    bracketsright = config.config.get('bot', {}).get('bright', "]")
+    bracketsspace = config.config.get('bot', {}).get('bspace', "  ")
     progress = 0
     sending_time = 0
     nodenum = len(nodename)
@@ -238,18 +242,17 @@ async def batch_udp(message, nodename: list, proxygroup='auto'):
             info[test_items[i]].append(res2[i])
 
         progress += 1
-        cal = progress / nodenum
-        bar_length = 27
-        num_eq = int(cal * bar_length)
-        num_space = bar_length - num_eq
-        p_text = "%.2f" % (cal * 100)
+        cal = progress / nodenum * 100
+        p_text = "%.2f" % cal
         # 判断进度条，每隔10%发送一次反馈，有效防止洪水等待(FloodWait)
-        if cal * 100 >= sending_time:
+        if cal >= sending_time:
             sending_time += 10
-            bar = '=' * num_eq
-            bar_with_frame = '[{}]'.format(bar)
+            equal_signs = int(cal / 5)
+            space_count = 20 - equal_signs
+            progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + \
+                                   f"{bracketsspace}" * space_count + f"{bracketsright}"
             try:
-                await message.edit_text(udptext+"\n\n" + bar_with_frame + "\n\n" +
+                await message.edit_text(udptext+"\n\n" + progress_bar + "\n\n" +
                                         "当前进度:\n" + p_text +
                                         "%     [" + str(progress) + "/" + str(nodenum) + "]")  # 实时反馈进度
             except RPCError as r:
