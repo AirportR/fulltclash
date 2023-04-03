@@ -275,6 +275,20 @@ async def core(message, back_message, start_time, suburl: str = None, test_type=
             all_data = zip(d0, country_code, asn, org, ipaddr, nodename, b6)
             sorted_data = sorted(all_data, key=itemgetter(4), reverse=True)
             d0, d1, d2, d3, d4, d5, d6 = zip(*sorted_data)
+            for i in range(len(d6)):
+                   if d6[i] == "N/A" and d4[i]:
+                        if ":" in d4[i]:
+                            d6 = d6[:i] + ("6",) + d6[i+1:]
+                        elif "." in d4[i]:
+                            d6 = d6[:i] + ("4",) + d6[i+1:]
+                        else:
+                            pass
+                   elif d6[i] == "4" and ":" in d4[i]:
+                        d6 = d6[:i] + ("46",) + d6[i+1:]
+                   elif d6[i] == "6" and "." in d4[i]:
+                        d6 = d6[:i] + ("46",) + d6[i+1:]
+                   else:
+                        pass
             d4_count = Counter(d4)
             results4 = [v for k, v in d4_count.items()]
             info2.update({'入口': d0, '地区': d1, 'AS编号': d2, '组织': d3, '栈': d6, '簇': results4})
