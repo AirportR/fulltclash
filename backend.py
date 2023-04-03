@@ -620,7 +620,6 @@ class TopoCore(Basecore):
                         new_hosts.append(host)
                 info.update({'入口ip段': new_hosts})
                 info.update({'出口数量': numcount})
-            print(info)
             return info, hosts, cl
 
     async def batch_topo(self, nodename: list, pool: dict):
@@ -786,7 +785,6 @@ class TopoCore(Basecore):
             logger.error(str(e))
         # 保存结果
         self.saveresult({'inbound': info1, 'outbound': info2})
-        print(info2)
         return {'inbound': info1, 'outbound': info2}
 
 
