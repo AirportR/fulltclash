@@ -22,7 +22,7 @@ def reloadUser():
     return USER_TARGET
 
 
-def select_core(put_type: str, message: Message, **kwargs):
+async def select_core(put_type: str, message: Message, **kwargs):
     """
     1 为速度核心， 2为拓扑核心， 3为解锁脚本测试核心
     """
@@ -149,7 +149,7 @@ async def process(_, message: Message, **kwargs):
         await message.reply('❌不支持的测试任务类型')
         message_delete_queue.put_nowait((back_message.chat.id, back_message.id, 10))
         return
-    core = select_core(put_type, back_message, **kwargs)
+    core = await select_core(put_type, back_message, **kwargs)
     if core is None:
         return
     include_text = tgargs[2] if len(tgargs) > 2 else ''
