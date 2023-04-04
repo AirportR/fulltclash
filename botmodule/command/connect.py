@@ -91,7 +91,7 @@ async def response(app: Client, message: Message):
     await old_msg.reply("连接建立成功")
 
 
-def relay(app: Client, message: Message):
+async def relay(app: Client, message: Message):
     bridge = config.config.get('bridge', None)
     if bridge is None:
         backmsg = await message.reply("❌未配置中继连接桥")
