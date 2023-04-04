@@ -10,6 +10,7 @@ from botmodule.command.test import reloadUser as r2
 from botmodule.utils import message_delete_queue
 from libs.proxys import stopclash
 
+
 async def grant(client: Client, message: pyrogram.types.Message):
     try:
         if int(message.from_user.id) not in admin and str(
@@ -28,7 +29,7 @@ async def grant(client: Client, message: pyrogram.types.Message):
                 await message.reply("请先用该指令回复一个目标")
             else:
                 for i in _args[1:]:
-                    config.add_user(i)
+                    config.add_user(int(i))
                 logger.info("授权id:" + str(_args[1:]))
                 config.reload()
                 r2()

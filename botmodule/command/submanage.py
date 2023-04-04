@@ -111,23 +111,12 @@ async def sub(_, message):
             else:
                 subinfo = config.get_sub()
                 item = list(subinfo.keys())
-#                h=1
-#                i=0
-#                sublen = len(item)
-                allsub=[]
+                allsub = []
                 for subname in item:
                     subsubinfo = subinfo.get(subname, {})
-                    subowner  = subsubinfo.get('owner', '')
+                    subowner = subsubinfo.get('owner', '')
                     if subowner and subowner == ID:
                         allsub.append(subname)
-#                while h <= sublen:
-#                    subname = item[i]
-#                    i=i+1
-#                    h=h+1
-#                    subinfo = config.get_sub(subname)
-#                    subowner  = subinfo.get('owner', '')
-#                    if subowner and subowner == ID:
-#                        allsub.append(subname)
                 if allsub:
                     await message.reply(str(allsub))
                 else:

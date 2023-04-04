@@ -28,6 +28,10 @@ def select_core(put_type: str, message: Message, **kwargs):
     """
     index = kwargs.get('coreindex', None)
     if put_type.startswith("speed"):
+        if config.nospeed:
+            backmsg = await message.reply("❌已禁止测速服务")
+            message_delete_queue.put_nowait((backmsg.chat.id, backmsg.id, 10))
+            return None
         IKM = InlineKeyboardMarkup(
             [
                 [InlineKeyboardButton("👋中止测速", callback_data='stop')],
@@ -42,6 +46,10 @@ def select_core(put_type: str, message: Message, **kwargs):
     elif isinstance(index, int):
         if index in (1, 2, 3):
             if index == 1:
+                if config.nospeed:
+                    backmsg = await message.reply("❌已禁止测速服务")
+                    message_delete_queue.put_nowait((backmsg.chat.id, backmsg.id, 10))
+                    return None
                 IKM = InlineKeyboardMarkup(
                     [
                         [InlineKeyboardButton("👋中止测速", callback_data='stop')],
@@ -142,6 +150,8 @@ async def process(_, message: Message, **kwargs):
         message_delete_queue.put_nowait((back_message.chat.id, back_message.id, 10))
         return
     core = select_core(put_type, back_message, **kwargs)
+    if core is None:
+        return
     include_text = tgargs[2] if len(tgargs) > 2 else ''
     exclude_text = tgargs[3] if len(tgargs) > 3 else ''
     include_text = kwargs.get('include_text', '') if kwargs.get('include_text', '') else include_text

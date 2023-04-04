@@ -89,3 +89,14 @@ async def response(app: Client, message: Message):
     config.reload()
     await message.reply_document(r'./key/fulltclash-public.pem', quote=True, caption='/ok')
     await old_msg.reply("连接建立成功")
+
+
+def relay(app: Client, message: Message):
+    bridge = config.config.get('bridge', None)
+    if bridge is None:
+        backmsg = await message.reply("❌未配置中继连接桥")
+        message_delete_queue.put_nowait((backmsg.chat.id, backmsg.id, 10))
+        return
+    if not isinstance(bridge, int):
+        pass
+    # app.get_chat()
