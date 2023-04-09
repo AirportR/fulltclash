@@ -3,9 +3,9 @@ import hashlib
 import pyrogram.types
 from pyrogram.errors import RPCError
 from loguru import logger
-from libs import cleaner, check
+from utils import check, cleaner
 from botmodule.init_bot import config, admin
-from libs.check import check_user, get_telegram_id_from_message
+from utils.check import check_user, get_telegram_id_from_message
 
 
 async def sub_invite(_, message: pyrogram.types.Message):
@@ -111,23 +111,12 @@ async def sub(_, message):
             else:
                 subinfo = config.get_sub()
                 item = list(subinfo.keys())
-#                h=1
-#                i=0
-#                sublen = len(item)
-                allsub=[]
+                allsub = []
                 for subname in item:
                     subsubinfo = subinfo.get(subname, {})
-                    subowner  = subsubinfo.get('owner', '')
+                    subowner = subsubinfo.get('owner', '')
                     if subowner and subowner == ID:
                         allsub.append(subname)
-#                while h <= sublen:
-#                    subname = item[i]
-#                    i=i+1
-#                    h=h+1
-#                    subinfo = config.get_sub(subname)
-#                    subowner  = subinfo.get('owner', '')
-#                    if subowner and subowner == ID:
-#                        allsub.append(subname)
                 if allsub:
                     await message.reply(str(allsub))
                 else:

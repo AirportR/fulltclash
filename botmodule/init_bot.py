@@ -3,17 +3,20 @@ import os
 import sys
 import time
 import subprocess
+
 from loguru import logger
-from libs.cleaner import ConfigManager
-from libs.safe import gen_key
+
+from utils.clash import new_batch_start, check_port
+from utils.cleaner import ConfigManager
+from utils.safe import gen_key
 
 config = ConfigManager()
 
 
 def check_init():
     emoji_source = config.config.get('emoji', {}).get('emoji-source', '')
-    if config.config.get('emoji', {}).get('enable', True) and emoji_source=='TwemojiLocalSource':
-        from libs.emoji_custom import TwemojiLocalSource
+    if config.config.get('emoji', {}).get('enable', True) and emoji_source == 'TwemojiLocalSource':
+        from utils.emoji_custom import TwemojiLocalSource
         if not os.path.isdir('./resources/emoji/twemoji'):
             twemoji = TwemojiLocalSource()
             logger.info("正在初始化本地emoji...")
@@ -70,7 +73,7 @@ api_hash = botconfig.get('api_hash', None)
 bot_token = botconfig.get('bot_token', None)
 clash_path = config.get_clash_path()  # 为clash核心运行路径, Windows系统需要加后缀名.exe
 clash_work_path = config.get_clash_work_path()  # clash工作路径
-corenum = config.config.get('clash', {}).get('core', 1)
+corenum = min(config.config.get('clash', {}).get('core', 1), 64)
 admin = config.getAdmin()  # 管理员
 config.add_user(admin)
 config.reload()
@@ -131,10 +134,22 @@ if admin is None:
 
 logger.info("配置已加载, Telegram bot程序开始运行...")
 
-# 启动器
-pystr = "python" if sys.platform == "win32" else "python3"
-command = fr"{pystr} clash.py"
-subp = subprocess.Popen(command.split(), encoding="utf-8")
+
+def start_clash():
+    # 端口检查
+    loop = asyncio.get_event_loop()
+    start_port = config.config.get('clash', {}).get('startup', 1122)
+    port_list = [start_port + i * 2 for i in range(corenum)]
+    res2 = loop.run_until_complete(check_port(start_port, start_port + 1 + corenum * 2))
+    if res2:
+        logger.error("端口检查中发现已有其他进程占用了端口，请更换端口,否则测试可能会出现不可预知的错误。")
+        return
+    if config.config.get('clash', {}).get('auto-start', False):
+        print("开始启动clash core")
+        new_batch_start(port_list)
+
+
+start_clash()
 
 
 def reloadUser():

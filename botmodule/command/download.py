@@ -3,7 +3,7 @@ from pyrogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineK
 from pyrogram import Client
 from pyrogram.errors import RPCError
 from loguru import logger
-from libs.cleaner import addon, ArgCleaner
+from utils.cleaner import addon, ArgCleaner
 from botmodule.command.setting import reload_button
 
 
@@ -74,7 +74,7 @@ async def uninstall_script(_: Client, message: Message):
         if success_list:
             m2 = await message.reply_text(f"成功卸载以下脚本: \n{str(success_list)}")
         else:
-            m2 = await message.reply_text(f"没有找到脚本可供卸载😅")
+            m2 = await message.reply_text("没有找到脚本可供卸载😅")
         await asyncio.sleep(10)
         await m2.delete(revoke=False)
     else:

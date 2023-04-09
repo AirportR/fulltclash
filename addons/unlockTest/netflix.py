@@ -7,7 +7,7 @@ from loguru import logger
 from pyrogram.types import InlineKeyboardButton
 
 sys.path.append(os.path.abspath(os.path.join(os.getcwd(), os.pardir, os.pardir)))
-from libs.collector import config
+from utils.collector import config
 
 # collector section
 netflix_url1 = config.config.get('netflixurl', "https://www.netflix.com/title/80113701")  # 非自制
@@ -122,7 +122,7 @@ if __name__ == "__main__":
     import os
 
     sys.path.append(os.path.abspath(os.path.join(os.getcwd(), os.pardir, os.pardir)))
-    from libs.collector import Collector as CL, media_items
+    from utils.collector import Collector as CL, media_items
 
     media_items.clear()
     media_items.append("Netflix")

@@ -5,7 +5,7 @@ from pyrogram import types, Client
 from pyrogram.errors import RPCError
 from pyrogram.types import BotCommand, CallbackQuery, Message
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from libs.cleaner import addon, config
+from utils.cleaner import addon, config
 from glovar import __version__
 from botmodule.init_bot import latest_version_hash as v_hash
 from addons.unlockTest.spotify import button as b15
@@ -227,8 +227,8 @@ async def select_page(client: Client, call: CallbackQuery, **kwargs):
     pre_page = InlineKeyboardButton('⬅️上一页', callback_data=f'page{page - 1}')
     next_page = InlineKeyboardButton('➡️下一页', callback_data=f'page{page + 1}')
     blank1 = InlineKeyboardButton("已完成本页提交", callback_data="blank")
-    blank_button = InlineKeyboardButton('        ', callback_data=f'blank')
-    blank = InlineKeyboardButton(f'{page}/{max_page}', callback_data=f'blank')
+    blank_button = InlineKeyboardButton('        ', callback_data='blank')
+    blank = InlineKeyboardButton(f'{page}/{max_page}', callback_data='blank')
     if page == 1:
         if page_is_locked.get(str(chat_id) + ':' + str(mess_id) + ':' + str(page), False):
             if max_page == 1:

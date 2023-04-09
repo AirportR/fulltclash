@@ -1,8 +1,8 @@
 from pyrogram import filters
 from pyrogram.types import Message
 
-from botmodule.utils import message_delete_queue
-from libs import check
+from utils.cron.utils import message_delete_queue
+from utils import check
 from botmodule.init_bot import reloadUser, admin
 
 

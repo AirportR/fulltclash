@@ -1,8 +1,7 @@
-import asyncio
 
 from loguru import logger
 from pyrogram.errors import RPCError
-from libs.check import check_user
+from utils.check import check_user
 from botmodule import init_bot, message_delete_queue
 from glovar import __version__
 
@@ -74,7 +73,8 @@ admin_text = f"""
 /uninstall <脚本文件名>卸载脚本
 /restart [管理]重启整个程序
 /reload [管理]重载部分配置(一般情况下用不到)
-
+/clash [管理]启动或关闭clash开放的端口服务
+killme [管理]杀死bot的自身进程(慎用！)
 如有使用问题加入频道 @FullTClash 交流
     """
 

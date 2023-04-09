@@ -2,12 +2,12 @@ import asyncio
 import hashlib
 from loguru import logger
 from pyrogram.errors import RPCError
-from libs.cleaner import geturl
-from libs.collector import SubCollector
-from libs.check import get_telegram_id_from_message as get_id
-from libs.check import check_user
+from utils.cleaner import geturl
+from utils.collector import SubCollector
+from utils.check import get_telegram_id_from_message as get_id
+from utils.check import check_user
 from botmodule.init_bot import config, admin
-from libs import cleaner
+from utils import cleaner
 
 
 async def getSubInfo(_, message):

@@ -11,7 +11,7 @@ SUPPORT_REGION = ['AL', 'DZ', 'AD', 'AO', 'AG', 'AR', 'AM', 'AU', 'AT', 'AZ', 'B
                   'SV',
                   'EE', 'FJ', 'FI', 'FR', 'GA', 'GM', 'GE', 'DE', 'GH', 'GR', 'GD', 'GT', 'GN', 'GW', 'GY', 'HT', 'HN',
                   'HU',
-                  'IS', 'IN', 'ID', 'IQ', 'IE', 'IL', 'IT', 'JM', 'JP', 'JO', 'KZ', 'KE', 'KI', 'KW', 'KG', 'LV', 'LB',
+                  'IS', 'IN', 'ID', 'IQ', 'IE', 'IL', 'JM', 'JP', 'JO', 'KZ', 'KE', 'KI', 'KW', 'KG', 'LV', 'LB',
                   'LS',
                   'LR', 'LI', 'LT', 'LU', 'MG', 'MW', 'MY', 'MV', 'ML', 'MT', 'MH', 'MR', 'MU', 'MX', 'MC', 'MN', 'ME',
                   'MA',
@@ -113,7 +113,7 @@ if __name__ == "__main__":
     import os
 
     sys.path.append(os.path.abspath(os.path.join(os.getcwd(), os.pardir, os.pardir)))
-    from libs.collector import Collector as CL, media_items
+    from utils.collector import Collector as CL, media_items
 
     media_items.clear()
     media_items.append("OpenAI")
