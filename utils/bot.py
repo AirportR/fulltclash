@@ -1,19 +1,20 @@
 import asyncio
 
 from pyrogram import Client, filters
-from pyrogram.types import CallbackQuery
+from pyrogram.types import CallbackQuery, Message
 from loguru import logger
 import botmodule
 from botmodule import init_bot
 from botmodule.cfilter import dynamic_data_filter, allfilter, reloaduser
 from botmodule.command.authority import get_url_from_invite
-from botmodule.utils import message_delete_queue
-from libs.myqueue import q, bot_task_queue
-from libs.check import check_callback_master
-from libs.collector import reload_config as r1
-from libs.cleaner import reload_config as r2
-from backend import break_speed
+from utils.cron.utils import message_delete_queue
+from utils.myqueue import q, bot_task_queue
+from utils.check import check_callback_master
+from utils.collector import reload_config as r1
+from utils.cleaner import reload_config as r2
+from utils.backend import break_speed
 
+config = init_bot.config
 admin = init_bot.admin  # 管理员
 task_num = 0  # 任务数
 
@@ -23,7 +24,32 @@ def loader(app: Client):
     callback_loader(app)
 
 
-config = init_bot.config
+def user_loder(app: Client):
+    bridge = config.getBridge()
+
+    @app.on_message(filters.chat(bridge))
+    async def relay(client: Client, message: Message):
+        # chat = await client.get_chat(bridge)
+        # print(chat)
+        if str(message.text).startswith('/'):
+            await botmodule.relay(client, message)
+            message.stop_propagation()
+
+    @app.on_message(filters.chat(bridge), 1)
+    async def relay3(client: Client, message: Message):
+        print("接收到连接,要发给slave")
+        if str(message.caption).startswith("/resp_master") and message.document:
+            bot_username = str(message.caption).split(' ')[-1]
+            await client.send_document(message.chat.id, message.document.file_id,
+                                       caption=f'/resp_master@{bot_username}' + ' ' + str(message.from_user.id))
+            message.stop_propagation()
+
+    @app.on_message(filters.chat(bridge), 2)
+    async def relay2(client: Client, message: Message):
+        print("接收到连接")
+        if str(message.caption) == "/resp" and message.document:
+            await botmodule.response(client, message)
+            message.stop_propagation()
 
 
 def command_loader(app: Client):
@@ -94,7 +120,6 @@ def command_loader(app: Client):
 
     @app.on_message(filters.command(["reload"]) & allfilter(2), group=2)
     async def reload_testmember(_, message):
-        botmodule.reloadUser()
         r1()
         r2()
         await message.reply("已重载配置")

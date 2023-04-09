@@ -3,8 +3,8 @@ import time
 
 from pyrogram.errors import RPCError, FloodWait
 from loguru import logger
-from libs import cleaner, collector, proxys, check
-from libs.cleaner import config
+from utils import check, cleaner, collector, proxys
+from utils.cleaner import config
 
 """
 这个模块是流媒体测试的具体实现
@@ -261,7 +261,7 @@ async def batch_test_pro(message, nodename: list, delays: list, test_items: list
                 space = ' ' * num_space
                 bar = eq + space
                 bar_with_frame = '[{}]'.format(bar)
-                await check.progress(message, progress, nodenum, cal*100, scripttext + '\n' + '\n' + bar_with_frame)
+                await check.progress(message, progress, nodenum, cal * 100, scripttext + '\n' + '\n' + bar_with_frame)
                 sending_time += 20
             # 简单处理一下数据
             res = []

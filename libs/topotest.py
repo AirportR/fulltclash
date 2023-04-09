@@ -6,8 +6,8 @@ import aiohttp
 from loguru import logger
 from pyrogram.errors import RPCError, FloodWait
 
-from libs import cleaner, collector, sorter, check, proxys, ipstack
-from libs.cleaner import config
+from utils import check, cleaner, collector, ipstack, proxys, sorter
+from utils.cleaner import config
 
 """
 这个模块是拓扑测试（出入口落地分析）的具体实现
@@ -123,7 +123,7 @@ async def batch_topo(message, nodename: list, pool: dict, proxygroup='auto'):
                 space = ' ' * num_space
                 bar = eq + space
                 bar_with_frame = '[{}]'.format(bar)
-                await check.progress(message, progress, nodenum, cal*100, analyzetext + '\n' + '\n' + bar_with_frame)
+                await check.progress(message, progress, nodenum, cal * 100, analyzetext + '\n' + '\n' + bar_with_frame)
                 sending_time += 20
 
         if nodenum % psize != 0:

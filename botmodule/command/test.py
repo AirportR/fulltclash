@@ -6,20 +6,11 @@ from pyrogram import enums
 from pyrogram.errors import RPCError
 from loguru import logger
 import botmodule.init_bot
-from libs import cleaner, export, check, collector
 from botmodule.init_bot import config
-from backend import SpeedCore, ScriptCore, TopoCore
-from cron import message_delete_queue
+from utils.backend import SpeedCore, ScriptCore, TopoCore
+from utils import message_delete_queue, check, cleaner, collector, export
 
-USER_TARGET = botmodule.init_bot.USER_TARGET
-coresum = botmodule.init_bot.corenum
 admin = botmodule.init_bot.admin
-
-
-def reloadUser():
-    global USER_TARGET
-    USER_TARGET = config.getuser()
-    return USER_TARGET
 
 
 async def select_core(put_type: str, message: Message, **kwargs):
@@ -169,7 +160,9 @@ async def process(_, message: Message, **kwargs):
             await back_message.edit_text("❌获取订阅失败！")
             message_delete_queue.put_nowait((back_message.chat.id, back_message.id, 10))
             return
-        proxyinfo = cleaner.ClashCleaner(':memory:', subconfig).getProxies()
+        pre_cl = cleaner.ClashCleaner(':memory:', subconfig)
+        proxynum = pre_cl.nodesCount()
+        proxyinfo = pre_cl.getProxies()
         info = await core.core(proxyinfo, **kwargs)
         await select_export(message, back_message, put_type, info, **kwargs)
     else:
@@ -186,10 +179,11 @@ async def process(_, message: Message, **kwargs):
             await back_message.edit_text("❌获取订阅失败！")
             message_delete_queue.put_nowait((back_message.chat.id, back_message.id, 10))
             return
-        proxyinfo = cleaner.ClashCleaner(':memory:', subconfig).getProxies()
+        pre_cl = cleaner.ClashCleaner(':memory:', subconfig)
+        proxynum = pre_cl.nodesCount()
+        proxyinfo = pre_cl.getProxies()
         info = await core.core(proxyinfo, **kwargs)
         await select_export(message, back_message, put_type, info, **kwargs)
-
 
 # @logger.catch()
 # async def testurl(_, message: Message, **kwargs):

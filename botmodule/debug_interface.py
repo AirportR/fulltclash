@@ -1,6 +1,6 @@
 from loguru import logger
 from pyrogram.errors import RPCError
-from libs.cleaner import ConfigManager
+from utils.cleaner import ConfigManager
 
 
 @logger.catch()

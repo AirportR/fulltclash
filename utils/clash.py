@@ -151,7 +151,7 @@ def start_client(path: str, workpath: str = "./clash", _config: str = './clash/p
 
 
 def new_batch_start(portlist: list):
-    from libs.proxys import lib, Clash
+    from utils.proxys import lib, Clash
     _myclash = getattr(lib, 'myclash')
     _myclash.argtypes = [ctypes.c_char_p, ctypes.c_longlong]
     # create a task for myclash

@@ -3,8 +3,8 @@ from pyrogram import Client
 from loguru import logger
 from botmodule import init_bot
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from cron import cron_delete_message as cdm
-from cron import cron_edit_message as cem
+from utils import cron_delete_message as cdm
+from utils import cron_edit_message as cem
 
 bot_token = init_bot.bot_token
 # 项目版本号
@@ -18,7 +18,13 @@ app = Client("my_bot",
              app_version=__version__,
              ipv6=False
              )
-
+app2 = Client("my_user",
+              api_id=init_bot.api_id,
+              api_hash=init_bot.api_hash,
+              proxy=init_bot.proxies,
+              app_version=__version__,
+              ipv6=False
+              )
 scheduler = AsyncIOScheduler(timezone=str(tzlocal.get_localzone()))
 scheduler.start()
 print("""# --------------------------- [ Start bot AsyncIOScheduler Successful ] ---------------------------- # """)

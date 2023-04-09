@@ -3,7 +3,7 @@ from pyrogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineK
 from pyrogram import Client
 from pyrogram.errors import RPCError
 from loguru import logger
-from libs.cleaner import addon, ArgCleaner
+from utils.cleaner import addon, ArgCleaner
 from botmodule.command.setting import reload_button
 
 

@@ -3,18 +3,19 @@ import hashlib
 import re
 
 import pyrogram.types
+from pyrogram.types import Message
 from pyrogram.errors import RPCError
 from loguru import logger
 from pyrogram.filters import private_filter
 from botmodule.init_bot import config
-from botmodule.utils import message_delete_queue
+from utils.cron.utils import message_delete_queue
 
 """
 这个模块主要是一些检查函数，用来验证某个值是否合法。一般是返回布尔值
 """
 
 
-def get_telegram_id_from_message(message: pyrogram.types.Message):
+def get_telegram_id_from_message(message: Message):
     """
     获得唯一确定身份标识的id
     为什么我会写这个方法？因为该死的telegram里有频道匿名身份和普通用户身份，它们的id不是同一个属性。
@@ -102,6 +103,14 @@ async def check_callback_master(callback_query, USER_TARGET=None, strict: bool =
     except Exception as e:
         logger.error(str(e))
         return True
+
+
+async def check_speednode(msg: Message, backmsg: Message, core) -> bool:
+    """
+    检查节点数量是否超出限制
+    """
+    if core.__name__ == 'Speedcore':
+        pass
 
 
 async def check_subowner(message, back_message, subinfo: dict, admin: list, password: str):

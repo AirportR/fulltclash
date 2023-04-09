@@ -6,9 +6,8 @@ from loguru import logger
 from pyrogram import Client
 from pyrogram.errors import RPCError
 from botmodule.init_bot import admin, config, reloadUser
-from botmodule.command.test import reloadUser as r2
-from botmodule.utils import message_delete_queue
-from libs.proxys import stopclash
+from utils.cron.utils import message_delete_queue
+from utils.proxys import stopclash
 
 
 async def grant(client: Client, message: pyrogram.types.Message):
@@ -32,7 +31,6 @@ async def grant(client: Client, message: pyrogram.types.Message):
                     config.add_user(int(i))
                 logger.info("授权id:" + str(_args[1:]))
                 config.reload()
-                r2()
                 reloadUser()
                 back_msg = await message.reply(f"已授权{len(_args) - 1}个目标: \n{str(_args[1:])}")
                 message_delete_queue.put_nowait((back_msg.chat.id, back_msg.id, 10))
@@ -48,7 +46,6 @@ async def grant(client: Client, message: pyrogram.types.Message):
             logger.info("授权id:" + str(grant_id))
             config.add_user(grant_id)
             config.reload()
-            r2()
             reloadUser()
 
     except RPCError as r:
@@ -76,7 +73,6 @@ async def ungrant(_, message: pyrogram.types.Message):
                 for i in _args[1:]:
                     config.del_user(i)
                 config.reload()
-                r2()
                 reloadUser()
                 logger.info(f"{len(_args) - 1}个目标已取消授权: \n{str(_args[1:])}")
                 back_msg = await message.reply(f"{len(_args) - 1}个目标已取消授权: \n{str(_args[1:])}")
@@ -88,7 +84,6 @@ async def ungrant(_, message: pyrogram.types.Message):
                 ungrant_id = int(message.reply_to_message.sender_chat.id)
             config.del_user(ungrant_id)
             config.reload()
-            r2()
             reloadUser()
             back_msg = await message.reply(ungrant_text)
             message_delete_queue.put_nowait((back_msg.chat.id, back_msg.id, 10))

@@ -6,7 +6,7 @@ from pyrogram import Client
 import pyrogram.errors.exceptions.forbidden_403
 import pyrogram.errors.exceptions.bad_request_400
 
-from botmodule.utils import message_delete_queue, message_edit_queue
+from utils.cron.utils import message_delete_queue, message_edit_queue
 
 
 async def cron_edit_message(app: Client):

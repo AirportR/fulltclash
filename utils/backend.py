@@ -11,9 +11,9 @@ import aiohttp
 import socks
 from aiohttp_socks import ProxyConnector
 from loguru import logger
-from libs.collector import proxies
-from libs import cleaner, collector, proxys, pynat, sorter, ipstack
-from cron import message_edit_queue, message_delete_queue
+from utils.collector import proxies
+from libs import pynat
+from utils import message_edit_queue, message_delete_queue, cleaner, collector, ipstack, proxys, sorter
 
 # 重写整个测试核心，技术栈分离。
 
@@ -183,8 +183,7 @@ class SpeedCore(Basecore):
         self.IKM = IKM
         self.edit = (chat_id, message_id)
 
-    @staticmethod
-    def check_speed_nodes(nodenum, args: tuple, speed_max_num=GCONFIG.speednodes()):
+    def check_speed_nodes(self, nodenum, args: tuple, speed_max_num=GCONFIG.speednodes()):
         """
         检查获得的关键信息是否为空，以及节点数量是否大于一定数值
         :param speed_max_num: 最大节点数量
@@ -194,15 +193,21 @@ class SpeedCore(Basecore):
         """
         if not nodenum:
             logger.warning("❌发生错误，请检查订阅文件")
+            message_edit_queue.put((self.edit[0], self.edit[1], "❌发生错误，请检查订阅文件", 1))
+            message_delete_queue.put_nowait((self.edit[0], self.edit[1], 10))
             return True
         for a in args:
             if a is None:
                 logger.warning("❌发生错误，请检查订阅文件")
+                message_edit_queue.put((self.edit[0], self.edit[1], "❌发生错误，请检查订阅文件", 1))
+                message_delete_queue.put_nowait((self.edit[0], self.edit[1], 10))
                 return True
             else:
                 pass
         if nodenum > speed_max_num:
             logger.warning(f"❌节点数量超过了{speed_max_num}个的限制！已取消本次测试")
+            message_edit_queue.put((self.edit[0], self.edit[1], "❌节点数量超出了限制，已取消测试", 1))
+            message_delete_queue.put_nowait((self.edit[0], self.edit[1], 10))
             return True
         else:
             return False
@@ -347,10 +352,10 @@ class SpeedCore(Basecore):
         # 订阅加载
         nodename, nodetype, nodenum, nodelist = self.getnodeinfo()
         # 进行节点数量检查
-        if self.check_speed_nodes(nodenum, (nodename, nodetype,)):
-            message_edit_queue.put((self.edit[0], self.edit[1], "❌节点数量超出了限制，已取消测试", 1))
-            message_delete_queue.put_nowait((self.edit[0], self.edit[1], 10))
-            return info
+        # if self.check_speed_nodes(nodenum, (nodename, nodetype,)):
+        #     message_edit_queue.put((self.edit[0], self.edit[1], "❌节点数量超出了限制，已取消测试", 1))
+        #     message_delete_queue.put_nowait((self.edit[0], self.edit[1], 10))
+        #     return info
         # 开始测试
         s1 = time.time()
         # rtt = await self.http_latency(nodenum)  # HTTP延迟测试
@@ -537,11 +542,6 @@ class ScriptCore(Basecore):
                 'port': [startup + t * 2 for t in range(thread)]}
         # 订阅加载
         nodename, nodetype, nodenum, nodelist = self.getnodeinfo()
-        # 进行节点数量检查
-        if SpeedCore.check_speed_nodes(nodenum, (nodename, nodetype,), 500):
-            message_edit_queue.put((self.edit[0], self.edit[1], "❌节点数量超出了限制，已取消测试", 1))
-            message_delete_queue.put_nowait((self.edit[0], self.edit[1], 10))
-            return info
         # 开始测试
         s1 = time.time()
         info['节点名称'] = nodename
@@ -715,10 +715,10 @@ class TopoCore(Basecore):
         # 订阅加载
         nodename, nodetype, nodenum, nodelist = self.getnodeinfo()
         # 进行节点数量检查
-        if SpeedCore.check_speed_nodes(nodenum, (nodename, nodetype,), 1000):
-            message_edit_queue.put((self.edit[0], self.edit[1], "❌节点数量超出了限制，已取消测试", 1))
-            message_delete_queue.put_nowait((self.edit[0], self.edit[1], 10))
-            return {'inbound': info1, 'outbound': info2}
+        # if SpeedCore.check_speed_nodes(nodenum, (nodename, nodetype,), 1000):
+        #     message_edit_queue.put((self.edit[0], self.edit[1], "❌节点数量超出了限制，已取消测试", 1))
+        #     message_delete_queue.put_nowait((self.edit[0], self.edit[1], 10))
+        #     return {'inbound': info1, 'outbound': info2}
         # 开始测试
         s1 = time.time()
         info1, hosts, cl = await self.topo()
@@ -760,18 +760,18 @@ class TopoCore(Basecore):
                 sorted_data = sorted(all_data, key=itemgetter(4), reverse=True)
                 d0, d1, d2, d3, d4, d5, d6 = zip(*sorted_data)
                 for i in range(len(d6)):
-                   if d6[i] == "N/A" and d4[i]:
+                    if d6[i] == "N/A" and d4[i]:
                         if ":" in d4[i]:
-                            d6 = d6[:i] + ("6",) + d6[i+1:]
+                            d6 = d6[:i] + ("6",) + d6[i + 1:]
                         elif "." in d4[i]:
-                            d6 = d6[:i] + ("4",) + d6[i+1:]
+                            d6 = d6[:i] + ("4",) + d6[i + 1:]
                         else:
                             pass
-                   elif d6[i] == "4" and ":" in d4[i]:
-                        d6 = d6[:i] + ("46",) + d6[i+1:]
-                   elif d6[i] == "6" and "." in d4[i]:
-                        d6 = d6[:i] + ("46",) + d6[i+1:]
-                   else:
+                    elif d6[i] == "4" and ":" in d4[i]:
+                        d6 = d6[:i] + ("46",) + d6[i + 1:]
+                    elif d6[i] == "6" and "." in d4[i]:
+                        d6 = d6[:i] + ("46",) + d6[i + 1:]
+                    else:
                         pass
                 d4_count = Counter(d4)
                 results4 = [v for k, v in d4_count.items()]
@@ -794,14 +794,14 @@ def check_init():
     if "clash" in dirs and "logs" in dirs and "results" in dirs:
         return
     logger.info("检测到初次使用，正在初始化...")
-    if not os.path.isdir('clash'):
-        os.mkdir("clash")
+    if not os.path.isdir('../clash'):
+        os.mkdir("../clash")
         logger.info("创建文件夹: clash 用于保存订阅")
-    if not os.path.isdir('logs'):
-        os.mkdir("logs")
+    if not os.path.isdir('../logs'):
+        os.mkdir("../logs")
         logger.info("创建文件夹: logs 用于保存日志")
-    if not os.path.isdir('results'):
-        os.mkdir("results")
+    if not os.path.isdir('../results'):
+        os.mkdir("../results")
         logger.info("创建文件夹: results 用于保存测试结果")
 
 

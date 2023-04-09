@@ -486,8 +486,7 @@ class ClashCleaner:
         except Exception as e:
             logger.error(str(e))
             return None
-            
-            
+
     @logger.catch
     def proxyGroupName(self):
         """
@@ -607,7 +606,9 @@ class ConfigManager:
 
     def __init__(self, configpath="./resources/config.yaml", data: dict = None):
         """
-
+        configpath有一个特殊值：:memory: 将使用默认内置的模板
+        还有成员变量中的 self.config 是约定为只读的
+        如果要写入新值，用self.yaml代替。
         """
         self.yaml = {}
         self.config = None
@@ -647,6 +648,12 @@ class ConfigManager:
     def nospeed(self) -> bool:
         return bool(self.config.get('nospeed', False))
 
+    def speedconfig(self):
+        try:
+            return self.config['speedconfig']
+        except KeyError:
+            return {}
+
     # TODO(@AirportR): 三项speed配置可以合在一个母项中
     def speednodes(self):
         try:
@@ -679,6 +686,12 @@ class ConfigManager:
             return self.config['admin']
         except KeyError:
             return []
+
+    def getBridge(self):
+        """
+        获取连接中继桥，它是一个telegram的群组id，最好是私密群组
+        """
+        return self.config.get('bridge', None)
 
     def getGstatic(self):
         """

@@ -12,7 +12,7 @@ import aiohttp
 import requests
 from aiohttp import ClientConnectorError
 from loguru import logger
-from libs.cleaner import ClashCleaner, config
+from utils.cleaner import ClashCleaner, config
 
 """
 这个模块主要是一些对clash restful api的python实现
