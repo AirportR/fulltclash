@@ -162,6 +162,8 @@ async def process(_, message: Message, **kwargs):
             return
         pre_cl = cleaner.ClashCleaner(':memory:', subconfig)
         proxynum = pre_cl.nodesCount()
+        if await check.check_speednode(back_message, core, proxynum):
+            return
         proxyinfo = pre_cl.getProxies()
         info = await core.core(proxyinfo, **kwargs)
         await select_export(message, back_message, put_type, info, **kwargs)
@@ -181,6 +183,8 @@ async def process(_, message: Message, **kwargs):
             return
         pre_cl = cleaner.ClashCleaner(':memory:', subconfig)
         proxynum = pre_cl.nodesCount()
+        if await check.check_speednode(back_message, core, proxynum):
+            return
         proxyinfo = pre_cl.getProxies()
         info = await core.core(proxyinfo, **kwargs)
         await select_export(message, back_message, put_type, info, **kwargs)

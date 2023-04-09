@@ -15,7 +15,7 @@ admin:
 # bright: "]" #右括号自定义文本
 # bspace: "  " #空格自定义文本，默认为2个
 #clash:
-# path: './resources/clash-linux-amd64' # clash动态库的路径，默认为 ./libs/ 下。不会弄不要动这里，用默认的即可。（此配置暂不生效）
+# path: './libs/fulltclash.so' # clash动态库的路径，默认为 ./libs/ 下。不会弄不要动这里，用默认的即可。本仓库默认仅提供win-amd64与linux-amd64两种(意味着如果为这两种架构，这里不用改。)，其他架构需要自行编译。
 # allow-caching: false  #是否缓存测试过程产生的订阅，若否，则测试完成后会自动删除测试订阅，以免造成空间浪费。（此配置暂不生效）
 # core: 4 # 核心数，数量越多测试速度越快，但代价是内存会大量占用(每个核心大概10M)，自己的机子多少内存自己平衡。默认值为1.
 # auto-start: false # bot启动时顺带启动,若为false则需要在 bot上输入/clash start 手动启动，默认false

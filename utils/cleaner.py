@@ -1,6 +1,7 @@
 import importlib
 import os
 import re
+import sys
 import socket
 import yaml
 from loguru import logger
@@ -776,14 +777,20 @@ class ConfigManager:
         try:
             return self.config['clash']['path']
         except KeyError:
-            logger.warning("获取运行路径失败，将采用默认运行路径 ./resources/clash-windows-amd64.exe")
+            logger.warning("获取运行路径失败，将采用默认运行路径 ./libs/fulltclash.so(.dll)\n自动识别windows与linux。架构默认为amd64")
+            if sys.platform.startswith("linux"):
+                path = './libs/fulltclash.so'
+            elif sys.platform.startswith("win32"):
+                path = r'.\libs\fulltclash.dll'
+            else:
+                path = './libs/fulltclash.so'
+            d = {'path': path}
             try:
-                d = {'path': './resources/clash-windows-amd64.exe'}
                 self.yaml['clash'].update(d)
             except KeyError:
-                di = {'clash': {'path': './resources/clash-windows-amd64.exe'}}
+                di = {'clash': d}
                 self.yaml.update(di)
-            return './resources/clash-windows-amd64.exe'
+            return path
 
     def get_sub(self, subname: str = None):
         """

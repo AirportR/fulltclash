@@ -301,6 +301,11 @@ class SpeedCore(Basecore):
         bracketsright = GCONFIG.config.get('bot', {}).get('bright', "]")
         bracketsspace = GCONFIG.config.get('bot', {}).get('bspace', "  ")
         nodenum = len(nodelist)
+        progress_bar = str(bracketsleft) + f"{bracketsspace}" * 20 + str(bracketsright)
+        edit_text = f"{speedtext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + "0" + \
+                    "%     [" + str(progress) + "/" + str(nodenum) + "]"
+        print(edit_text)
+        message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1, self.IKM))
         test_items = ["HTTP延迟", "平均速度", "最大速度", "速度变化", "UDP类型"]
         for item in test_items:
             info[item] = []
@@ -334,8 +339,8 @@ class SpeedCore(Basecore):
                 sending_time += 10
                 equal_signs = int(cal / 5)
                 space_count = 20 - equal_signs
-                progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + f"{bracketsspace}" * space_count + \
-                               f"{bracketsright}"
+                progress_bar = str(bracketsleft) + str(progress_bars) * equal_signs + f"{bracketsspace}" * space_count \
+                               + str(bracketsright)
                 edit_text = f"{speedtext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + p_text + \
                             "%     [" + str(progress) + "/" + str(nodenum) + "]"
                 print(edit_text)
@@ -434,16 +439,22 @@ class ScriptCore(Basecore):
         info = {}
         progress = 0
         sending_time = 0
+        nodenum = len(nodename)
         scripttext = GCONFIG.config.get('bot', {}).get('scripttext', "⏳联通性测试进行中...")
         progress_bars = GCONFIG.config.get('bot', {}).get('bar', "=")
         bracketsleft = GCONFIG.config.get('bot', {}).get('bleft', "[")
         bracketsright = GCONFIG.config.get('bot', {}).get('bright', "]")
         bracketsspace = GCONFIG.config.get('bot', {}).get('bspace', "  ")
         # corestartup = GCONFIG.config.get('clash', {}).get('startup', 1122)
+        progress_bar = str(bracketsleft) + f"{bracketsspace}" * 20 + str(bracketsright)
+        edit_text = f"{scripttext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + "0" + \
+                    "%     [" + str(progress) + "/" + str(nodenum) + "]"
+        print(edit_text)
+        message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
         host = pool.get('host', [])
         port = pool.get('port', [])
         psize = len(port)
-        nodenum = len(nodename)
+
         tasks = []
         for item in test_items:
             info[item] = []
@@ -491,7 +502,7 @@ class ScriptCore(Basecore):
                     edit_text = f"{scripttext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + \
                                 p_text + "%     [" + str(progress) + "/" + str(nodenum) + "]"
                     print(edit_text)
-                    message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 2))
+                    message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
                 # 简单处理一下数据
                 res = []
                 for j in range(len(test_items)):
@@ -636,6 +647,11 @@ class TopoCore(Basecore):
         port = pool.get('port', [])
         psize = len(port)
         nodenum = len(nodename)
+        progress_bar = str(bracketsleft) + f"{bracketsspace}" * 20 + str(bracketsright)
+        edit_text = f"{analyzetext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + "0" + \
+                    "%     [" + str(progress) + "/" + str(nodenum) + "]"
+        print(edit_text)
+        message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
         logger.info("接受任务数量: {} 线程数: {}".format(nodenum, psize))
         if psize <= 0:
             logger.error("无可用的代理程序接口")
@@ -702,7 +718,7 @@ class TopoCore(Basecore):
             return resdata, ipstackes
 
     async def core(self, proxyinfo: list, **kwargs):
-        info1 = {}  # 存放测试结果
+        # info1 = {}  # 存放测试结果
         info2 = {}  # 存放测试结果
         test_type = kwargs.get('test_type', 'all')
         # 先把节点信息写入文件
@@ -713,7 +729,7 @@ class TopoCore(Basecore):
         pool = {'host': ['127.0.0.1' for _ in range(thread)],
                 'port': [startup + t * 2 for t in range(thread)]}
         # 订阅加载
-        nodename, nodetype, nodenum, nodelist = self.getnodeinfo()
+        # nodename, nodetype, nodenum, nodelist = self.getnodeinfo()
         # 进行节点数量检查
         # if SpeedCore.check_speed_nodes(nodenum, (nodename, nodetype,), 1000):
         #     message_edit_queue.put((self.edit[0], self.edit[1], "❌节点数量超出了限制，已取消测试", 1))
