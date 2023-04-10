@@ -103,7 +103,7 @@ SCRIPT = {
 }
 button = InlineKeyboardButton("✅Spotify", callback_data='✅Spotify')
 if __name__ == "__main__":
-    "this is a test demo"
+    # "this is a test demo"
     import sys
     import os
 

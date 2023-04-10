@@ -65,7 +65,7 @@ def get_wikipedia_info(ReCleaner):
 button = InlineKeyboardButton("✅维基百科", callback_data='✅维基百科')
 
 if __name__ == "__main__":
-    "this is a test demo"
+    # "this is a test demo"
     import sys
     import os
 

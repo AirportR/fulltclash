@@ -115,7 +115,7 @@ def get_netflix_info_new(ReCleaner):
 button = InlineKeyboardButton("✅Netflix", callback_data='✅Netflix')
 
 if __name__ == "__main__":
-    "this is a demo"
+    # "this is a demo"
     import sys
     import os
 

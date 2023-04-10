@@ -83,7 +83,7 @@ def get_iprisk_info(ReCleaner):
 button = InlineKeyboardButton("✅落地IP风险", callback_data='✅落地IP风险')
 
 if __name__ == "__main__":
-    "this is a test demo"
+    # "this is a test demo"
     import sys
     import os
 

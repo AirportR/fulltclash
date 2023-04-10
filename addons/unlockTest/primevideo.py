@@ -65,7 +65,7 @@ def get_primevideo_info(ReCleaner):
 button = InlineKeyboardButton("✅Primevideo", callback_data='✅Primevideo')
 
 if __name__ == "__main__":
-    "this is a test demo"
+    # "this is a test demo"
     import sys
     import os
 
