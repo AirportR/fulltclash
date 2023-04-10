@@ -2,7 +2,6 @@ import asyncio
 import aiohttp
 from aiohttp import ClientConnectorError
 from loguru import logger
-from pyrogram.types import InlineKeyboardButton
 
 # collector section
 SUPPORT_REGION = ['AL', 'DZ', 'AD', 'AO', 'AG', 'AR', 'AM', 'AU', 'AT', 'AZ', 'BS', 'BD', 'BB', 'BE', 'BZ', 'BJ', 'BT',
@@ -54,7 +53,7 @@ async def fetch_openai(Collector, session: aiohttp.ClientSession, proxy=None, re
                 text2 = await res2.text()
                 index2 = text2.find("loc=")
                 if index2 > 0:
-                    region = text2[index2+4:index2+6]
+                    region = text2[index2 + 4:index2 + 6]
                     if region in SUPPORT_REGION:
                         Collector.info['OpenAI'] = f"解锁({region})"
                     else:
@@ -103,22 +102,8 @@ def get_openai_info(ReCleaner):
         return "N/A"
 
 
-# bot_setting_board
-
-button = InlineKeyboardButton("✅OpenAI", callback_data='✅OpenAI')
-
-if __name__ == "__main__":
-    # "this is a test demo"
-    import sys
-    import os
-
-    sys.path.append(os.path.abspath(os.path.join(os.getcwd(), os.pardir, os.pardir)))
-    from utils.collector import Collector as CL, media_items
-
-    media_items.clear()
-    media_items.append("OpenAI")
-    cl = CL()
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(cl.start("127.0.0.1", 1122))
-    print(cl.info)
+SCRIPT = {
+    "MYNAME": "OpenAI",
+    "TASK": task,
+    "GET": get_openai_info
+}

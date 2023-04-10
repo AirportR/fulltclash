@@ -2,7 +2,6 @@ import asyncio
 import aiohttp
 from aiohttp import ClientConnectorError
 from loguru import logger
-from pyrogram.types import InlineKeyboardButton
 from utils.collector import config
 
 # collector section
@@ -110,22 +109,8 @@ def get_netflix_info_new(ReCleaner):
         return "N/A"
 
 
-# bot_setting_board
-
-button = InlineKeyboardButton("✅Netflix", callback_data='✅Netflix')
-
-if __name__ == "__main__":
-    # "this is a demo"
-    import sys
-    import os
-
-    sys.path.append(os.path.abspath(os.path.join(os.getcwd(), os.pardir, os.pardir)))
-    from utils.collector import Collector as CL, media_items
-
-    media_items.clear()
-    media_items.append("Netflix")
-    cl = CL()
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(cl.start("127.0.0.1", 1122))
-    print(cl.info)
+SCRIPT = {
+    "MYNAME": "Netflix",
+    "TASK": task,
+    "GET": get_netflix_info_new
+}

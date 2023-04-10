@@ -3,7 +3,6 @@ import asyncio
 import aiohttp
 from aiohttp import ClientConnectorError
 from loguru import logger
-from pyrogram.types import InlineKeyboardButton
 
 # collector section
 primevideourl = "https://www.primevideo.com"
@@ -23,7 +22,7 @@ async def fetch_primevideo(Collector, session: aiohttp.ClientSession, proxy=None
             if res.status == 200:
                 resdata = await res.text()
                 index = resdata.find('"currentTerritory":')
-                region = resdata[index+20:index+22]
+                region = resdata[index + 20:index + 22]
                 Collector.info['primevideo'] = f"解锁({region})" if index > 0 else "失败"
             else:
                 Collector.info['primevideo'] = "N/A"
@@ -60,22 +59,8 @@ def get_primevideo_info(ReCleaner):
         return "N/A"
 
 
-# bot_setting_board
-
-button = InlineKeyboardButton("✅Primevideo", callback_data='✅Primevideo')
-
-if __name__ == "__main__":
-    # "this is a test demo"
-    import sys
-    import os
-
-    sys.path.append(os.path.abspath(os.path.join(os.getcwd(), os.pardir, os.pardir)))
-    from utils.collector import Collector as CL, media_items
-
-    media_items.clear()
-    media_items.append("primevideo")
-    cl = CL()
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(cl.start("127.0.0.1", 1122))
-    print(cl.info)
+SCRIPT = {
+    "MYNAME": "Primevideo",
+    "TASK": task,
+    "GET": get_primevideo_info
+}
