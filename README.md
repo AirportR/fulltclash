@@ -163,7 +163,7 @@ bot:
 
 在 ./libs/ 下有一源码文件为 fulltclash.go ，您需要将该文件自行用Golang编译器编译成 fulltclash.so动态链接库。
 大致流程为:  
-- 在您的平台安装GO编译器(版本越高越好)
+- 在您的平台安装GO编译器(版本越高越好)  
 ```shell
 go mod init
 ```
@@ -187,22 +187,15 @@ GOOS=linux GOARCH=arm64 GOARM=7 CGO_ENABLED=1 CC=aarch64-linux-gnu-gcc CXX=aarch
 ## 致谢
 
 - [流媒体解锁思路](https://github.com/lmc999/RegionRestrictionCheck)  
-
 - [Clash](https://github.com/Dreamacro/clash)  
-
 - [aiohttp](https://github.com/aio-libs/aiohttp)  
-
 - [pyrogram](https://github.com/pyrogram/pyrogram)  
-
 - [async-timeout](https://github.com/aio-libs/async-timeout)  
-
 - [Pillow](https://github.com/python-pillow/Pillow)  
-
 - [pilmoji](https://github.com/jay3332/pilmoji)  
-
 - [pyyaml](https://github.com/yaml/pyyaml)  
-
 - [requests](https://github.com/psf/requests)  
+
 ## 如何给本项目做贡献：
 1、在本项目的主GitHub仓库进行fork，你可以只fork dev的分支。 \
 2、在你的计算机上使用git clone来下载你fork后的仓库。 \
