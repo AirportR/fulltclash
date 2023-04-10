@@ -86,7 +86,7 @@ async def check_callback_master(callback_query, USER_TARGET=None, strict: bool =
     try:
         master.append(callback_query.message.reply_to_message.from_user.id)  # 发起测试任务的用户id
         if int(callback_query.from_user.id) not in master:
-            await callback_query.answer(f"不要乱动别人的操作哟👻", show_alert=True)
+            await callback_query.answer("不要乱动别人的操作哟👻", show_alert=True)
             return True
         else:
             return False

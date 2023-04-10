@@ -61,14 +61,14 @@ class ConfigManager:
         flag = 0
         try:
             with open(configpath, "r", encoding="UTF-8") as fp:
-                self.config = yaml.load(fp, Loader=yaml.FullLoader)
+                self.config = yaml.safe_load(fp)
                 self.yaml.update(self.config)
         except FileNotFoundError:
             if flag == 0 and configpath == "./resources/config.yaml":
                 flag += 1
                 print("无法在 ./resources/ 下找到 config.yaml 配置文件，正在尝试寻找旧目录 ./config.yaml")
                 with open('./config.yaml', "r", encoding="UTF-8") as fp1:
-                    self.config = yaml.load(fp1, Loader=yaml.FullLoader)
+                    self.config = yaml.safe_load(fp1)
                     self.yaml.update(self.config)
             elif flag > 1:
                 print("无法找到配置文件，正在初始化...")
@@ -125,7 +125,7 @@ async def is_port_in_use(host='127.0.0.1', port=80):
     :return:
     """
     try:
-        reader, writer = await asyncio.open_connection(host, port)
+        _, writer = await asyncio.open_connection(host, port)
         writer.close()
         await writer.wait_closed()
         # print(fr"{port} 端口已被占用，请更换。")

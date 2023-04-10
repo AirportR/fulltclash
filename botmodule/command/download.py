@@ -54,7 +54,7 @@ async def download_script(_: Client, message: Message):
 
 async def reload_addon_from_telegram(_: Client, call: CallbackQuery):
     bot_mess = call.message
-    bm = await bot_mess.edit_text(f"⚠️操作确认,正在重载...⚠️")
+    bm = await bot_mess.edit_text("⚠️操作确认,正在重载...⚠️")
     addon.reload_script()
     reload_button()
     await asyncio.sleep(5)

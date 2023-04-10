@@ -1,4 +1,4 @@
-package main
+package fulltclash
 
 // #include <stdlib.h>
 import "C"
