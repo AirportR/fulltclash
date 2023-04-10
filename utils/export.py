@@ -12,15 +12,14 @@ from glovar import __version__
 from utils.cleaner import ConfigManager
 import utils.emoji_custom as emoji_source
 
-"""
-这是将测试的结果输出为图片的模块。
-设计思路:
-1、本项目设计了一个ExportResult类，我们需要两组关键的数据进行初始化：基础数据、各种信息info。
-    其中基础数据一般是节点名，info是一个字典，每个字典的键是一个字符串，将是之后的各种测试项标题，如 类型、延迟RTT、Netflix、Youtube等等，
-    每个字典键所对应的值即为一个列表。
-2、何为基础数据？
-    基础数据决定了生成图片的高度（Height），它是列表，列表里面的数据一般是一组节点名，即有多少个节点就对应了info键值中的长度。
-"""
+
+# 这是将测试的结果输出为图片的模块。
+# 设计思路:
+# 1、本项目设计了一个ExportResult类，我们需要两组关键的数据进行初始化：基础数据、各种信息info。
+#     其中基础数据一般是节点名，info是部字典，每部字典的键是一个字符串，将是之后的各种测试项标题，如 类型、延迟RTT、Netflix、Youtube等等，
+#     每个字典键所对应的值即为一个列表。
+# 2、何为基础数据？
+#     基础数据决定了生成图片的高度（Height），它是列表，列表里面的数据一般是一组节点名，有多少个节点就对应了info键值中的长度。
 
 
 def color_block(size: tuple, color_value):
@@ -276,9 +275,7 @@ class ExportResult:
         else:
             idraw.text((10, image_height - 112), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
         idraw.text((10, image_height - 55), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
-        '''
-        :绘制标签
-        '''
+        # 绘制标签
         idraw.text((20, 65), '序号', font=fnt, fill=(0, 0, 0))  # 序号
         idraw.text((self.get_mid(100, nodename_width + 100, '节点名称'), 65), '节点名称', font=fnt, fill=(0, 0, 0))  # 节点名称
         start_x = 100 + nodename_width
@@ -289,9 +286,7 @@ class ExportResult:
             idraw.text((self.get_mid(x, end, key_list[m]), 65), key_list[m], font=fnt, fill=(0, 0, 0))
             start_x = end
             m = m + 1
-        '''
-        :内容填充
-        '''
+        # 内容填充
         if self.delay_color:
             colorvalue = self.colorvalue
             interval = self.interval
@@ -958,14 +953,12 @@ class ExportSpeed(ExportResult):
             interval_list.append(c.get('label', 0))
         a = list(set(interval_list))  # 去重加排序
         a.sort()
-        '''
-        while len(a) < 7:
-            a.append(99999)
-        if len(a) > 7:
-            return a[:7]
-        else:
-            return a
-        '''
+        # while len(a) < 7:
+        #     a.append(99999)
+        # if len(a) > 7:
+        #     return a[:7]
+        # else:
+        #     return a
         return a
 
     @property
@@ -973,14 +966,12 @@ class ExportSpeed(ExportResult):
         color_list = []
         for c in self.color:
             color_list.append(c.get('value', '#f5f3f2'))
-        '''
-        while len(color_list) < 7:
-            color_list.append('#f5f3f2')
-        if len(color_list) > 7:
-            return color_list[:7]
-        else:
-            return color_list
-        '''
+        # while len(color_list) < 7:
+        #     color_list.append('#f5f3f2')
+        # if len(color_list) > 7:
+        #     return color_list[:7]
+        # else:
+        #     return color_list
         return color_list
 
     @logger.catch
@@ -1090,7 +1081,7 @@ class ExportSpeed(ExportResult):
             width = 100 + nodename_width
             i = 0
             for t2 in key_list:
-                if type(self.info[t2][t]) == str:
+                if isinstance(self.info[t2][t], str):
                     idraw.text((self.get_mid(width, width + info_list_length[i], self.info[t2][t]), (t + 2) * 60 + 5),
                                self.info[t2][t],
                                font=fnt, fill=(0, 0, 0))

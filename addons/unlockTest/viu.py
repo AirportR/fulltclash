@@ -86,5 +86,5 @@ if __name__ == "__main__":
     cl = CL()
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    loop.run_until_complete(cl.start(proxy="http://127.0.0.1:1111"))
+    loop.run_until_complete(cl.start("127.0.0.1", 1122))
     print(cl.info)

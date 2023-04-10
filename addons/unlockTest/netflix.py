@@ -1,12 +1,8 @@
 import asyncio
-import sys
-import os
 import aiohttp
 from aiohttp import ClientConnectorError
 from loguru import logger
 from pyrogram.types import InlineKeyboardButton
-
-sys.path.append(os.path.abspath(os.path.join(os.getcwd(), os.pardir, os.pardir)))
 from utils.collector import config
 
 # collector section
@@ -25,7 +21,8 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
     :return:
     """
     headers = {
-        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8," +
+                  "application/signed-exchange;v=b3;q=0.9",
         "accept-language": "zh-CN,zh;q=0.9",
         "sec-ch-ua": r"\"Not_A Brand\";v=\"99\", \"Google Chrome\";v=\"109\", \"Chromium\";v=\"109\"",
         "sec-ch-ua-mobile": "?0",
@@ -35,7 +32,8 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
         "sec-fetch-site": "none",
         "sec-fetch-user": "?1",
         "upgrade-insecure-requests": "1",
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '+'Chrome/102.0.5005.63 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ' +
+                      'Chrome/102.0.5005.63 Safari/537.36'
     }
     try:
         if flag == 1:
@@ -129,5 +127,5 @@ if __name__ == "__main__":
     cl = CL()
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    loop.run_until_complete(cl.start(proxy="http://127.0.0.1:1111"))
+    loop.run_until_complete(cl.start("127.0.0.1", 1122))
     print(cl.info)
