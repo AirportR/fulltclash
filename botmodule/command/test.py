@@ -17,8 +17,8 @@ async def select_core(put_type: str, message: Message, **kwargs):
     """
     1 为速度核心， 2为拓扑核心， 3为解锁脚本测试核心
     """
-    index = kwargs.get('coreindex', None)
-    if put_type.startswith("speed"):
+    index = kwargs.get('coreindex', 0)
+    if put_type.startswith("speed") or index == 1:
         if config.nospeed:
             backmsg = await message.reply("❌已禁止测速服务")
             message_delete_queue.put_nowait((backmsg.chat.id, backmsg.id, 10))
@@ -30,29 +30,10 @@ async def select_core(put_type: str, message: Message, **kwargs):
         )
         return SpeedCore(message.chat.id, message.id, IKM)
     elif put_type.startswith("analyze") or put_type.startswith("topo") or put_type.startswith("inbound") or \
-            put_type.startswith("outbound"):
+            put_type.startswith("outbound") or index == 2:
         return TopoCore(message.chat.id, message.id)
-    elif put_type.startswith("test"):
+    elif put_type.startswith("test") or index == 3:
         return ScriptCore(message.chat.id, message.id)
-    elif isinstance(index, int):
-        if index in (1, 2, 3):
-            if index == 1:
-                if config.nospeed:
-                    backmsg = await message.reply("❌已禁止测速服务")
-                    message_delete_queue.put_nowait((backmsg.chat.id, backmsg.id, 10))
-                    return None
-                IKM = InlineKeyboardMarkup(
-                    [
-                        [InlineKeyboardButton("👋中止测速", callback_data='stop')],
-                    ]
-                )
-                return SpeedCore(message.chat.id, message.id, IKM)
-            elif index == 2:
-                return TopoCore(message.chat.id, message.id)
-            elif index == 3:
-                return ScriptCore(message.chat.id, message.id)
-        else:
-            raise TypeError("Unknown test type, please input again.\n未知的测试类型，请重新输入!")
     else:
         raise TypeError("Unknown test type, please input again.\n未知的测试类型，请重新输入!")
 
@@ -92,8 +73,8 @@ async def select_export(msg: Message, backmsg: Message, put_type: str, info: dic
                     wtime = info2.get('wtime', "未知")
                     clone_info2 = {}
                     clone_info2.update(info2)
-                    img_outbound, yug, image_width2 = export.ExportTopo().exportTopoOutbound(nodename=None,
-                                                                                             info=clone_info2)
+                    _, __, image_width2 = export.ExportTopo().exportTopoOutbound(nodename=None,
+                                                                                 info=clone_info2)
                     if put_type.startswith("outbound"):
                         # stime = export.ExportTopo(name=None, info=info2).exportTopoOutbound()
                         ex = export.ExportTopo(name=None, info=info2)

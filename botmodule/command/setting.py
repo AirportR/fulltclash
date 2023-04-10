@@ -8,13 +8,13 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from utils.cleaner import addon, config
 from glovar import __version__
 from botmodule.init_bot import latest_version_hash as v_hash
-from addons.unlockTest.spotify import button as b15
-from addons.unlockTest.viu import button as b18
-from addons.unlockTest.ip_risk import button as b19
-from addons.unlockTest.steam import button as b20
-from addons.unlockTest.wikipedia import button as b21
-from addons.unlockTest.openai import button as b25
 
+b15 = InlineKeyboardButton("✅Spotify", callback_data="✅Spotify")
+b18 = InlineKeyboardButton("✅Viu", callback_data="✅Viu")
+b19 = InlineKeyboardButton("✅落地IP风险", callback_data="落地IP风险")
+b20 = InlineKeyboardButton("✅steam货币", callback_data="✅steam货币")
+b21 = InlineKeyboardButton("✅维基百科", callback_data="✅维基百科")
+b25 = InlineKeyboardButton("✅OpenAI", callback_data="✅OpenAI")
 b1 = InlineKeyboardButton("✅Netflix", callback_data='✅Netflix')
 b2 = InlineKeyboardButton("✅Youtube", callback_data='✅Youtube')
 b3 = InlineKeyboardButton("✅Disney+", callback_data='✅Disney+')

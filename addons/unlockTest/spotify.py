@@ -3,7 +3,6 @@ import asyncio
 import aiohttp
 from aiohttp import ClientConnectorError
 from loguru import logger
-from pyrogram.types import InlineKeyboardButton
 
 # collector section
 _data = {
