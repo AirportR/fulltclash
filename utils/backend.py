@@ -697,7 +697,7 @@ class TopoCore(Basecore):
             return resdata, ipstackes
 
     async def core(self, proxyinfo: list, **kwargs):
-        info1 = {}  # 存放测试结果
+        # info1 = {}  # 存放测试结果
         info2 = {}  # 存放测试结果
         test_type = kwargs.get('test_type', 'all')
         # 先把节点信息写入文件
