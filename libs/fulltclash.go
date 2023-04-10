@@ -1,7 +1,8 @@
 package main
 
+// #include <stdlib.h>
+import "C"
 import (
-	"C"
 	"context"
 	"fmt"
 	"github.com/Dreamacro/clash/adapter"
@@ -14,17 +15,18 @@ import (
 	"os/signal"
 	"strconv"
 	"syscall"
+	"unsafe"
 )
 
 func main() {
-	myclash(C.CString("127.0.0.1:1114"), 0)
+
 }
 
 type RawConfig struct {
 	Proxy map[string]any `yaml:"proxies"`
 }
 
-var rawcfgs = make([]*RawConfig, 64)
+var rawcfgs = make([]*RawConfig, 128)
 var stoped = false
 
 func startclash(addr *C.char, index int) {
@@ -102,8 +104,8 @@ func setProxy(oldstr *C.char, index int) *C.char {
 		return C.CString(errtext)
 	}
 	if len(rawcfgs) < 64 {
-		fmt.Println("初始化")
-		for i := 0; i < 64; i++ {
+		fmt.Println("init rawconfigs")
+		for i := 0; i < 128; i++ {
 			rawcfgs = append(rawcfgs, &RawConfig{Proxy: map[string]any{}})
 		}
 	}
@@ -125,4 +127,9 @@ func stop(flag int) {
 	} else {
 		stoped = false
 	}
+}
+
+//export freeMe
+func freeMe(data *C.char) {
+	C.free(unsafe.Pointer(data))
 }
