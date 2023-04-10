@@ -21,7 +21,10 @@ clash_path = config.get_clash_path()
 lib = ctypes.cdll.LoadLibrary(clash_path)
 _setProxy = getattr(lib, 'setProxy')
 _setProxy.argtypes = [ctypes.c_char_p, ctypes.c_int64]
-_setProxy.restype = ctypes.c_char_p
+# _setProxy.restype = ctypes.c_char_p
+_setProxy.restype = ctypes.POINTER(ctypes.c_char)
+_free_me = getattr(lib, 'freeMe')
+_free_me.argtypes = [ctypes.POINTER(ctypes.c_char)]
 
 
 class Clash(threading.Thread):  # 继承父类threading.Thread
@@ -72,11 +75,13 @@ def switchProxy(_nodeinfo: dict, _index: int) -> bool:
     try:
         _payload = yaml.dump({'proxies': _nodeinfo})
         _status = _setProxy(_payload.encode(), _index)
-        if not _status:
+        if not _status.contents:
             logger.info(f"切换节点: {_nodeinfo.get('name', 'not found')} 成功")
+            _free_me(_status)
             return True
         else:
             logger.error(str(_status))
+            _free_me(_status)
             return False
     except Exception as e:
         logger.error(str(e))
