@@ -337,10 +337,10 @@ class ClashCleaner:
                 return
         if type(_config).__name__ == 'str':
             with open(_config, 'r', encoding="UTF-8") as fp:
-                self.yaml = yaml.load(fp, Loader=yaml.FullLoader)
+                self.yaml = yaml.safe_load(fp)
             self.path = _config
         else:
-            self.yaml = yaml.load(_config, Loader=yaml.FullLoader)
+            self.yaml = yaml.safe_load(_config)
 
     def setProxies(self, proxyinfo: list):
         """
@@ -620,7 +620,7 @@ class ConfigManager:
             return
         try:
             with open(configpath, "r", encoding="UTF-8") as fp:
-                self.config = yaml.load(fp, Loader=yaml.FullLoader)
+                self.config = yaml.safe_load(fp)
                 self.yaml.update(self.config)
         except FileNotFoundError:
             if flag == 0 and configpath == "./resources/config.yaml":
@@ -669,11 +669,11 @@ class ConfigManager:
         if not botconfig:
             return botconfig
         if 'api_id' in botconfig:
-            logger.info(f"从配置中获取到了api_id")
+            logger.info("从配置中获取到了api_id")
         if 'api_hash' in botconfig:
-            logger.info(f"从配置中获取到了api_hash")
+            logger.info("从配置中获取到了api_hash")
         if 'bot_token' in botconfig:
-            logger.info(f"从配置中获取到了bot_token")
+            logger.info("从配置中获取到了bot_token")
         return botconfig
 
     def getFont(self):
@@ -921,7 +921,7 @@ class ConfigManager:
             if self.save(savePath=configpath):
                 try:
                     with open(configpath, "r", encoding="UTF-8") as fp:
-                        self.config = yaml.load(fp, Loader=yaml.FullLoader)
+                        self.config = yaml.safe_load(fp)
                         self.yaml = self.config
                         return True
                 except Exception as e:
@@ -930,7 +930,7 @@ class ConfigManager:
         else:
             try:
                 with open(configpath, "r", encoding="UTF-8") as fp:
-                    self.config = yaml.load(fp, Loader=yaml.FullLoader)
+                    self.config = yaml.safe_load(fp)
                     self.yaml = self.config
                     return True
             except Exception as e:

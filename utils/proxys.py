@@ -1,20 +1,18 @@
 import asyncio
 import json
 import os
-import subprocess
 import threading
 
 import yaml
-from time import sleep
 import ctypes
 import aiohttp
 import requests
 from aiohttp import ClientConnectorError
 from loguru import logger
-from utils.cleaner import ClashCleaner, config
+from utils.cleaner import config
 
 """
-这个模块主要是一些对clash restful api的python实现
+这个模块主要是一些对clash 动态库 api的python调用
 """
 os.getcwd()
 clash_path = config.get_clash_path()
@@ -140,35 +138,35 @@ async def reloadConfig_batch(nodenum: int, pool: dict):
         return False
 
 
-def start_client(path: str, workpath: str = "./clash", _config: str = './clash/proxy.yaml', ):
-    # 启动了一个clash常驻进程
-    command = fr"{path} -f {_config} -d {workpath}"
-    subprocess.Popen(command.split(), encoding="utf-8")
-    sleep(2)
+# def start_client(path: str, workpath: str = "./clash", _config: str = './clash/proxy.yaml', ):
+#     # 启动了一个clash常驻进程
+#     command = fr"{path} -f {_config} -d {workpath}"
+#     subprocess.Popen(command.split(), encoding="utf-8")
+#     sleep(2)
 
 
-def batch_start(portlist: list, proxy_file_path="./clash/proxy.yaml"):
-    """
-    批量启动多个clash进程
-    :param proxy_file_path: 代理配置文件路径
-    :param portlist: 端口列表，请至少间隔一个数字，如[1124,1126,1128,...]
-    :return:
-    """
-
-    ecport = [i + 1 for i in portlist]
-    if len(list(set(portlist).intersection(set(ecport)))):
-        logger.error("代理端口组请至少间隔一个数字，如[1124,1126,1128,...]")
-        raise ValueError("代理端口组请至少间隔一个数字，如[1124,1126,1128,...]")
-    for i in range(len(portlist)):
-        clashconf = ClashCleaner(proxy_file_path)
-        clashconf.changeClashPort(port=portlist[i])
-        clashconf.changeClashEC(ec="127.0.0.1:" + str(ecport[i]))
-        clashconf.save(proxy_file_path)
-        start_client(path=config.get_clash_path(), workpath=config.get_clash_work_path(), _config=proxy_file_path)
-    clashconf = ClashCleaner(proxy_file_path)
-    clashconf.changeClashPort(port=1122)
-    clashconf.changeClashEC(ec="127.0.0.1:1123")
-    clashconf.save(proxy_file_path)
+# def batch_start(portlist: list, proxy_file_path="./clash/proxy.yaml"):
+#     """
+#     批量启动多个clash进程
+#     :param proxy_file_path: 代理配置文件路径
+#     :param portlist: 端口列表，请至少间隔一个数字，如[1124,1126,1128,...]
+#     :return:
+#     """
+#
+#     ecport = [i + 1 for i in portlist]
+#     if len(list(set(portlist).intersection(set(ecport)))):
+#         logger.error("代理端口组请至少间隔一个数字，如[1124,1126,1128,...]")
+#         raise ValueError("代理端口组请至少间隔一个数字，如[1124,1126,1128,...]")
+#     for i in range(len(portlist)):
+#         clashconf = ClashCleaner(proxy_file_path)
+#         clashconf.changeClashPort(port=portlist[i])
+#         clashconf.changeClashEC(ec="127.0.0.1:" + str(ecport[i]))
+#         clashconf.save(proxy_file_path)
+#         start_client(path=config.get_clash_path(), workpath=config.get_clash_work_path(), _config=proxy_file_path)
+#     clashconf = ClashCleaner(proxy_file_path)
+#     clashconf.changeClashPort(port=1122)
+#     clashconf.changeClashEC(ec="127.0.0.1:1123")
+#     clashconf.save(proxy_file_path)
 
 
 if __name__ == "__main__":

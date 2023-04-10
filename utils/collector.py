@@ -336,13 +336,13 @@ class Miaospeed:
         'TaskTimeout': 5,
         'Scripts': []}
     VendorType = 'Clash'
-    token = ''
+    start_token = ''
     SlaveRequest = {'Basics': SlaveRequestBasics,
                     'Options': SlaveRequestOptions,
                     'Configs': SlaveRequestConfigs,
                     'Vendor': VendorType,
                     'RandomSequence': 'str1',
-                    'Challenge': token}
+                    'Challenge': start_token}
 
     def __init__(self, proxyconfig: list, host: str = '127.0.0.1', port: int = 1112, ):
         """
@@ -702,10 +702,10 @@ async def batch_delay(proxyname: list, session: aiohttp.ClientSession = None,
 
 async def delay_https(session: aiohttp.ClientSession, proxy=None, testurl=config.getGstatic(),
                       timeout=10):
-    _headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
-                      'Chrome/102.0.5005.63 Safari/537.36'
-    }
+    # _headers = {
+    #     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
+    #                   'Chrome/102.0.5005.63 Safari/537.36'
+    # }
     _headers2 = {'User-Agent': 'clash'}
     try:
         s1 = time.time()
@@ -721,6 +721,7 @@ async def delay_https(session: aiohttp.ClientSession, proxy=None, testurl=config
             else:
                 return 0
     except Exception as e:
+        logger.error(str(e))
         return 0
 
 
