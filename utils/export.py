@@ -1017,9 +1017,7 @@ class ExportSpeed(ExportResult):
             idraw.text((self.get_mid(x, end, key_list[m]), 65), key_list[m], font=fnt, fill=(0, 0, 0))
             start_x = end
             m = m + 1
-        '''
-        :内容填充
-        '''
+        # 内容填充
         if self.color:
             colorvalue = self.colorvalue
             interval = self.interval
