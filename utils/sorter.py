@@ -48,8 +48,8 @@ def sort_nodename_topo(_cleaner: cleaner.ClashCleaner):
         ipstack = [p['server'] for p in proxylist]
         for i, p in enumerate(proxylist):
             p['ipstart'] = ipstack[i]
-        # ipstack_list = cleaner.batch_ipstack(proxylist)
-        ipaddrs = cleaner.batch_domain2ip(proxylist)
+        ipstack_list = cleaner.batch_ipstack(proxylist)
+        ipaddrs = cleaner.batch_domain2ip(ipstack_list)
         addrs2 = sorted(ipaddrs, key=lambda i1: i1['server'])
         list1 = []
         dict1 = {}
