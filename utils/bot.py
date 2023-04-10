@@ -163,10 +163,6 @@ def command_loader(app: Client):
     async def subinfo(client, message):
         await botmodule.subinfo.getSubInfo(client, message)
 
-    @app.on_message(filters.command(["map"]) & allfilter(2), group=2)
-    async def debug(client, message):
-        await botmodule.di.debug_interface(client, message)
-
     @app.on_message(filters.command(["start"]), group=0)
     async def start(client, message):
         await botmodule.invite_pass(client, message)

@@ -358,8 +358,8 @@ class Miaospeed:
     async def start(self):
         start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
         info = []
+        resdata = {start_time: {}}
         from async_timeout import timeout
-        from loguru import logger
         try:
             async with timeout(len(self.nodes) * 10 + 1):
                 async with websockets.connect(f'ws://{self.host}:{self.port}') as websocket:
@@ -372,12 +372,13 @@ class Miaospeed:
                         logger.info(f"已接收第{num}次结果")
                         res1 = json.loads(response_str)
                         info.append(res1)
+
         except asyncio.TimeoutError:
             logger.info("本次测试已完成")
         except KeyboardInterrupt:
             pass
         finally:
-            resdata = {start_time: info}
+            resdata.update({start_time: info})
             return resdata, start_time
 
 
