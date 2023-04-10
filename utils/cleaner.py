@@ -532,7 +532,7 @@ class ClashCleaner:
         self.yaml['mode'] = mode
         logger.info("Clash 模式已被修改为:" + self.yaml['mode'])
 
-    def node_filter(self, include: str = '', exclude: str = '', issave=True):
+    def node_filter(self, include: str = '', exclude: str = '', issave=False):
         """
         节点过滤
         :param issave: 是否保存过滤结果到文件
@@ -1253,7 +1253,7 @@ class ResultCleaner:
         lists = sorted(lists, key=lambda x: x[0], reverse=reverse)
         lists = zip(*lists)
         new_list = [list(l_) for l_ in lists]
-        http_l = new_list[0]
+        http_l = new_list[0] if len(new_list) > 0 else []
         if not reverse:
             for i in range(len(http_l)):
                 if http_l[i] == 999999:

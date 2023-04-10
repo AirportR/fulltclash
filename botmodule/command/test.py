@@ -135,7 +135,7 @@ async def process(_, message: Message, **kwargs):
     suburl = cleaner.geturl(tgtext) if kwargs.get('url', None) is None else kwargs.get('url', None)
     put_type = kwargs.pop('put_type', '') if kwargs.get('put_type', '') \
         else message.command[0] if message.command is not None else tgargs[0][1:]
-    print("测试指令", put_type)
+    logger.info("测试指令:" + str(put_type))
     if not put_type:
         await message.reply('❌不支持的测试任务类型')
         message_delete_queue.put_nowait((back_message.chat.id, back_message.id, 10))
@@ -161,11 +161,13 @@ async def process(_, message: Message, **kwargs):
             message_delete_queue.put_nowait((back_message.chat.id, back_message.id, 10))
             return
         pre_cl = cleaner.ClashCleaner(':memory:', subconfig)
+        pre_cl.node_filter(include_text, exclude_text)
         proxynum = pre_cl.nodesCount()
         if await check.check_speednode(back_message, core, proxynum):
             return
         proxyinfo = pre_cl.getProxies()
         info = await core.core(proxyinfo, **kwargs)
+        print(info)
         await select_export(message, back_message, put_type, info, **kwargs)
     else:
         subinfo = config.get_sub(subname=tgargs[1])
@@ -182,6 +184,7 @@ async def process(_, message: Message, **kwargs):
             message_delete_queue.put_nowait((back_message.chat.id, back_message.id, 10))
             return
         pre_cl = cleaner.ClashCleaner(':memory:', subconfig)
+        pre_cl.node_filter(include_text, exclude_text)
         proxynum = pre_cl.nodesCount()
         if await check.check_speednode(back_message, core, proxynum):
             return

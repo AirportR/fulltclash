@@ -928,7 +928,7 @@ class ExportSpeed(ExportResult):
         width_list = []
         for i in key_list:
             key_width = self.text_width(i)  # 键的长度
-            max_width = 0
+            # max_width = 0
             if self.info[i]:
                 if i == '速度变化':
                     key_width += 40
@@ -946,7 +946,8 @@ class ExportSpeed(ExportResult):
                     value_width = self.text_maxwidth(self.info[i])  # 键所对应值的长度
                     max_width = max(key_width, value_width)
                     max_width += 40
-
+            else:
+                max_width = key_width + 40
             width_list.append(max_width)
         return width_list  # 测试项列的大小
 

@@ -721,7 +721,6 @@ async def delay_https(session: aiohttp.ClientSession, proxy=None, testurl=config
             else:
                 return 0
     except Exception as e:
-        logger.error(str(e))
         return 0
 
 

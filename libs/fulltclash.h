@@ -19,7 +19,7 @@ typedef struct { const char *p; ptrdiff_t n; } _GoString_;
 /* Start of preamble from import "C" comments.  */
 
 
-#line 3 "main.go"
+#line 3 "fulltclash.go"
  #include <stdlib.h>
 
 #line 1 "cgo-generated-wrapper"
@@ -78,10 +78,10 @@ typedef struct { void *data; GoInt len; GoInt cap; } GoSlice;
 extern "C" {
 #endif
 
-extern __declspec(dllexport) void myclash(char* addr, GoInt index);
-extern __declspec(dllexport) char* setProxy(char* oldstr, GoInt index);
-extern __declspec(dllexport) void stop(GoInt flag);
-extern __declspec(dllexport) void freeMe(char* data);
+extern void myclash(char* addr, GoInt index);
+extern char* setProxy(char* oldstr, GoInt index);
+extern void stop(GoInt flag);
+extern void freeMe(char* data);
 
 #ifdef __cplusplus
 }
