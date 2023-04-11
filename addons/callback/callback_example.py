@@ -11,14 +11,15 @@ async def callback(_: Client, message: Message) -> bool:
     """
     这个例子是拒绝TG用户名为'telegram'的目标使用此bot。
     """
-    try:
-        username = message.from_user.username
-        if username:
-            if message.from_user.username == "telegram":
-                backmsg = await message.reply("❌你已被拉黑!")
-                message_delete_queue.put_nowait((backmsg.chat.id, backmsg.id, 10))
-                return False
-        return True
-    except Exception as e:
-        print(e)
-        return False
+    return True
+    # try:
+    #     username = message.from_user.username
+    #     if username:
+    #         if message.from_user.username == "telegram":
+    #             backmsg = await message.reply("❌你已被拉黑!")
+    #             message_delete_queue.put_nowait((backmsg.chat.id, backmsg.id, 10))
+    #             return False
+    #     return True
+    # except Exception as e:
+    #     print(e)
+    #     return False
