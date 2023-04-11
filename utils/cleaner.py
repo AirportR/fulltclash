@@ -599,7 +599,6 @@ class ClashCleaner:
             yaml.dump(self.yaml, fp)
 
 
-@logger.catch()
 class ConfigManager:
     """
     配置清洗，以及预处理配置在这里进行。
