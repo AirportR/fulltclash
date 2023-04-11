@@ -114,9 +114,10 @@ async def process(_, message: Message, **kwargs):
     tgtext = str(message.text)
     tgargs = cleaner.ArgCleaner().getall(tgtext)
     suburl = cleaner.geturl(tgtext) if kwargs.get('url', None) is None else kwargs.get('url', None)
-    put_type = kwargs.pop('put_type', '') if kwargs.get('put_type', '') \
-        else message.command[0] if message.command is not None else tgargs[0][1:]
-    logger.info("测试指令:" + str(put_type))
+    print(tgargs[0])
+    print(tgargs[0].split("@")[0])
+    put_type = kwargs.pop('put_type', '') if kwargs.get('put_type', '') else tgargs[0].split("@")[0]
+    logger.info("测试指令: " + str(put_type))
     if not put_type:
         await message.reply('❌不支持的测试任务类型')
         message_delete_queue.put_nowait((back_message.chat.id, back_message.id, 10))

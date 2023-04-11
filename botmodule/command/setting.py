@@ -86,7 +86,7 @@ async def test_setting(client: Client, callback_query: CallbackQuery, row=3, **k
     origin_message = callback_query.message.reply_to_message
     inline_keyboard = callback_query.message.reply_markup.inline_keyboard
     try:
-        test_type = str(origin_message.text).split(" ")[0]
+        test_type = str(origin_message.text).split(" ")[0].split("@")[0]
     except Exception as e:
         test_type = "unknown"
         logger.info("test_type:" + test_type)
