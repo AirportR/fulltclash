@@ -635,7 +635,7 @@ class TopoCore(Basecore):
             return resdata, ipstackes
         print(edit_text)
         message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
-        logger.info("╰(*°▽°*)╯节点链路拓扑测试进行中...")
+        logger.info("⏳节点链路拓扑测试进行中...")
         if nodenum < psize:
             for i in range(nodenum):
                 proxys.switchProxy(nodename[i], i)
@@ -667,7 +667,7 @@ class TopoCore(Basecore):
                     space_count = 20 - equal_signs
                     progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + \
                                    f"{bracketsspace}" * space_count + f"{bracketsright}"
-                    edit_text = "⏳节点拓扑测试进行中...\n\n" + progress_bar + "\n\n" + "当前进度:\n" + \
+                    edit_text = f"{analyzetext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + \
                                 p_text + "%     [" + str(progress) + "/" + str(nodenum) + "]"
                     print(edit_text)
                     message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))

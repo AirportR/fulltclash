@@ -1,3 +1,4 @@
+import asyncio
 import importlib
 import os
 import re
@@ -230,6 +231,45 @@ class AddonCleaner:
             else:
                 logger.warning("测试脚本导入格式错误")
         logger.info(f"外接测试脚本成功导入数量: {num}")
+
+    @staticmethod
+    def init_callback() -> list:
+        path = os.path.join(os.getcwd(), "addons", "callback")
+        try:
+            di = os.listdir(path)
+        except FileNotFoundError:
+            di = None
+        module_name = []
+        callbackfunc_list = []
+        if di is None:
+            logger.warning(f"找不到 {path} 所在的路径")
+        else:
+            for d in di:
+                if len(d) > 3:
+                    if d.endswith('.py') and d != "__init__.py":
+                        module_name.append(d[:-3])
+                    else:
+                        pass
+        for mname in module_name:
+            callbackfunc = None
+            try:
+                mo1 = importlib.import_module(f".{mname}", package="addons.callback")
+                callbackfunc = getattr(mo1, 'callback')
+                if callbackfunc is not None:
+                    if asyncio.iscoroutinefunction(callbackfunc):
+                        callbackfunc_list.append(callbackfunc)
+            except ModuleNotFoundError as m:
+                logger.warning(str(m))
+            except AttributeError:
+                pass
+            except NameError as n:
+                logger.warning(str(n))
+            except Exception as e:
+                logger.error(str(e))
+            if callbackfunc is None:
+                continue
+        logger.info(f"权限回调脚本导入数量: {len(callbackfunc_list)}")
+        return callbackfunc_list
 
     def init_button(self, isreload=False):
         """

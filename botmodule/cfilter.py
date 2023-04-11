@@ -1,9 +1,12 @@
 from pyrogram import filters
 from pyrogram.types import Message
-
+from loguru import logger
+from utils.cleaner import addon
 from utils.cron.utils import message_delete_queue
 from utils import check
 from botmodule.init_bot import reloadUser, admin
+
+callbackfunc = addon.init_callback()
 
 
 # custom filter
@@ -56,6 +59,12 @@ def AccessCallback():
 
     def wrapper(func):
         async def inner(client, message):
+            for call in callbackfunc:
+                callres = await call(client, message)
+                if not isinstance(callres, bool):
+                    logger.warning("未返回布尔值，可能会出现意料之外的结果！")
+                if not callres:
+                    return
             user = reloadUser()
             result = await check.check_user(message, user)
             if result:
