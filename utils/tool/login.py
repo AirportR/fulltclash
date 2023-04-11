@@ -2,10 +2,6 @@ from pyrogram import Client
 from pyrogram.errors import RPCError,BadRequest
 import asyncio
 
-"""
-一个TGbot初始化小脚本
-"""
-
 
 async def main():
     print(

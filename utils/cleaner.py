@@ -337,10 +337,10 @@ class ClashCleaner:
                 return
         if type(_config).__name__ == 'str':
             with open(_config, 'r', encoding="UTF-8") as fp:
-                self.yaml = yaml.load(fp, Loader=yaml.FullLoader)
+                self.yaml = yaml.safe_load(fp)
             self.path = _config
         else:
-            self.yaml = yaml.load(_config, Loader=yaml.FullLoader)
+            self.yaml = yaml.safe_load(_config)
 
     def setProxies(self, proxyinfo: list):
         """
@@ -532,7 +532,7 @@ class ClashCleaner:
         self.yaml['mode'] = mode
         logger.info("Clash 模式已被修改为:" + self.yaml['mode'])
 
-    def node_filter(self, include: str = '', exclude: str = '', issave=True):
+    def node_filter(self, include: str = '', exclude: str = '', issave=False):
         """
         节点过滤
         :param issave: 是否保存过滤结果到文件
@@ -599,7 +599,6 @@ class ClashCleaner:
             yaml.dump(self.yaml, fp)
 
 
-@logger.catch()
 class ConfigManager:
     """
     配置清洗，以及预处理配置在这里进行。
@@ -620,7 +619,7 @@ class ConfigManager:
             return
         try:
             with open(configpath, "r", encoding="UTF-8") as fp:
-                self.config = yaml.load(fp, Loader=yaml.FullLoader)
+                self.config = yaml.safe_load(fp)
                 self.yaml.update(self.config)
         except FileNotFoundError:
             if flag == 0 and configpath == "./resources/config.yaml":
@@ -669,11 +668,11 @@ class ConfigManager:
         if not botconfig:
             return botconfig
         if 'api_id' in botconfig:
-            logger.info(f"从配置中获取到了api_id")
+            logger.info("从配置中获取到了api_id")
         if 'api_hash' in botconfig:
-            logger.info(f"从配置中获取到了api_hash")
+            logger.info("从配置中获取到了api_hash")
         if 'bot_token' in botconfig:
-            logger.info(f"从配置中获取到了bot_token")
+            logger.info("从配置中获取到了bot_token")
         return botconfig
 
     def getFont(self):
@@ -921,7 +920,7 @@ class ConfigManager:
             if self.save(savePath=configpath):
                 try:
                     with open(configpath, "r", encoding="UTF-8") as fp:
-                        self.config = yaml.load(fp, Loader=yaml.FullLoader)
+                        self.config = yaml.safe_load(fp)
                         self.yaml = self.config
                         return True
                 except Exception as e:
@@ -930,7 +929,7 @@ class ConfigManager:
         else:
             try:
                 with open(configpath, "r", encoding="UTF-8") as fp:
-                    self.config = yaml.load(fp, Loader=yaml.FullLoader)
+                    self.config = yaml.safe_load(fp)
                     self.yaml = self.config
                     return True
             except Exception as e:
@@ -1253,7 +1252,7 @@ class ResultCleaner:
         lists = sorted(lists, key=lambda x: x[0], reverse=reverse)
         lists = zip(*lists)
         new_list = [list(l_) for l_ in lists]
-        http_l = new_list[0]
+        http_l = new_list[0] if len(new_list) > 0 else []
         if not reverse:
             for i in range(len(http_l)):
                 if http_l[i] == 999999:

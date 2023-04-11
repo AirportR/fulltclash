@@ -1,6 +1,7 @@
 import asyncio
-import random
+# import random
 import string
+import secrets
 import pyrogram
 from async_timeout import timeout
 from loguru import logger
@@ -33,8 +34,11 @@ temp_queue = asyncio.Queue(maxsize=1)
 
 def generate_random_string(length: int):
     # 生成随机字符串
+    # letters_and_digits = string.ascii_letters + string.digits
+    # result_str = ''.join((random.choice(letters_and_digits) for _ in range(length)))
+    # return result_str
     letters_and_digits = string.ascii_letters + string.digits
-    result_str = ''.join((random.choice(letters_and_digits) for _ in range(length)))
+    result_str = ''.join(secrets.choice(letters_and_digits) for _ in range(length))
     return result_str
 
 

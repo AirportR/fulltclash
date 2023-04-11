@@ -1,5 +1,5 @@
 from utils import bot
-from glovar import app as app1, bot_info, app2
+from glovar import app as app1, bot_info
 from pyrogram import idle
 from botmodule import init_bot
 from utils.proxys import stopclash

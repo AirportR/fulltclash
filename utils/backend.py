@@ -13,7 +13,7 @@ from aiohttp_socks import ProxyConnector
 from loguru import logger
 from utils.collector import proxies
 from libs import pynat
-from utils import message_edit_queue, message_delete_queue, cleaner, collector, ipstack, proxys, sorter
+from utils import message_edit_queue, cleaner, collector, ipstack, proxys, sorter
 
 # 重写整个测试核心，技术栈分离。
 
@@ -31,6 +31,7 @@ class Basecore:
         self._info = {}
         self._pre_include_text = GCONFIG.config.get('subconvertor', {}).get('include', '')  # 从配置文件里预定义过滤规则
         self._pre_exclude_text = GCONFIG.config.get('subconvertor', {}).get('exclude', '')
+        self._node_issave = GCONFIG.config.get('clash', {}).get('allow-caching', False)
         self._include_text = ''
         self._exclude_text = ''
         self._start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
@@ -58,13 +59,21 @@ class Basecore:
     def join_proxy(self, proxyinfo: list):
         self._config.setProxies(proxyinfo)
         self._config.node_filter(self._pre_include_text, self._pre_exclude_text, issave=False)  # 从配置文件过滤文件
-        if self._include_text or self._exclude_text:
-            self._config.node_filter(self._include_text, self._exclude_text, issave=False)
-        # cl.save(savePath=f'./clash/sub{self.start_time}.yaml')
+        # if self._include_text or self._exclude_text:
+        #     self._config.node_filter(self._include_text, self._exclude_text, issave=False)
+        if self._node_issave:
+            self._config.save(savePath=f'./clash/sub{self.start_time}.yaml')
+            logger.info(f"已将测试节点缓存到 ./clash/sub{self.start_time}.yaml")
 
     def setfilter(self, include_text: str = '', exclude_text: str = ''):
         self._include_text = include_text
         self._exclude_text = exclude_text
+
+    def check_node(self) -> bool:
+        """
+        有节点则返回真。否则为假
+        """
+        return bool(self._config.getProxies())
 
     def getnodeinfo(self) -> tuple:
         nodename = self._config.nodesName()
@@ -109,6 +118,8 @@ class Speedtest:
         self._statistics_time = 0
         self._time_used = 0
         self._count = 0
+        interval = GCONFIG.speedconfig().get('interval', 10)
+        self._download_interval = interval if 0 < interval < 60 else 10
 
     @property
     def thread(self):
@@ -150,7 +161,7 @@ class Speedtest:
             self._statistics_time = cur_time
             with contextlib.suppress(StopIteration):
                 self._show_progress(delta_time)
-        if self._time_used > 10:
+        if self._time_used > self._download_interval:
             self._stopped = True
 
     def _show_progress(self, delta_time: Union[int, float]):
@@ -183,35 +194,6 @@ class SpeedCore(Basecore):
         self.IKM = IKM
         self.edit = (chat_id, message_id)
 
-    def check_speed_nodes(self, nodenum, args: tuple, speed_max_num=GCONFIG.speednodes()):
-        """
-        检查获得的关键信息是否为空，以及节点数量是否大于一定数值
-        :param speed_max_num: 最大节点数量
-        :param nodenum: 节点数量
-        :param args: 若干信息
-        :return: bool
-        """
-        if not nodenum:
-            logger.warning("❌发生错误，请检查订阅文件")
-            message_edit_queue.put((self.edit[0], self.edit[1], "❌发生错误，请检查订阅文件", 1))
-            message_delete_queue.put_nowait((self.edit[0], self.edit[1], 10))
-            return True
-        for a in args:
-            if a is None:
-                logger.warning("❌发生错误，请检查订阅文件")
-                message_edit_queue.put((self.edit[0], self.edit[1], "❌发生错误，请检查订阅文件", 1))
-                message_delete_queue.put_nowait((self.edit[0], self.edit[1], 10))
-                return True
-            else:
-                pass
-        if nodenum > speed_max_num:
-            logger.warning(f"❌节点数量超过了{speed_max_num}个的限制！已取消本次测试")
-            message_edit_queue.put((self.edit[0], self.edit[1], "❌节点数量超出了限制，已取消测试", 1))
-            message_delete_queue.put_nowait((self.edit[0], self.edit[1], 10))
-            return True
-        else:
-            return False
-
     @staticmethod
     def nat_type_test(proxyaddr=None, proxyport=None):
         mysocket = socks.socksocket(type=socket.SOCK_DGRAM)
@@ -242,10 +224,9 @@ class SpeedCore(Basecore):
             async with aiohttp.ClientSession(
                     headers={"User-Agent": "FullTclash"},
                     connector=ProxyConnector(host=host, port=port),
-                    timeout=aiohttp.ClientTimeout(connect=10),
             ) as session:
                 # logger.debug("Session created.")
-                async with session.get(url) as response:
+                async with session.get(url, timeout=self._download_interval+10) as response:
                     # logger.debug("Awaiting response.")
                     while not self._stopped:
                         if not break_speed:
@@ -304,12 +285,14 @@ class SpeedCore(Basecore):
         progress_bar = str(bracketsleft) + f"{bracketsspace}" * 20 + str(bracketsright)
         edit_text = f"{speedtext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + "0" + \
                     "%     [" + str(progress) + "/" + str(nodenum) + "]"
-        print(edit_text)
-        message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1, self.IKM))
         test_items = ["HTTP延迟", "平均速度", "最大速度", "速度变化", "UDP类型"]
         for item in test_items:
             info[item] = []
         info["消耗流量"] = 0  # 单位:MB
+        if not self.check_node():
+            return info
+        print(edit_text)
+        message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1, self.IKM))
         for name in nodelist:
             proxys.switchProxy(name, 0)
             conn = ProxyConnector(host="127.0.0.1", port=port, limit=0)
@@ -339,8 +322,8 @@ class SpeedCore(Basecore):
                 sending_time += 10
                 equal_signs = int(cal / 5)
                 space_count = 20 - equal_signs
-                progress_bar = str(bracketsleft) + str(progress_bars) * equal_signs + f"{bracketsspace}" * space_count \
-                               + str(bracketsright)
+                progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + f"{bracketsspace}" * space_count\
+                               + bracketsright
                 edit_text = f"{speedtext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + p_text + \
                             "%     [" + str(progress) + "/" + str(nodenum) + "]"
                 print(edit_text)
@@ -353,18 +336,11 @@ class SpeedCore(Basecore):
         self.join_proxy(proxyinfo)
         start_port = GCONFIG.config.get('clash', {}).get('startup', 1122)
         # 获取可供测试的测试端口
-        "测速仅需要一个端口，因此这里不处理"
+        # 测速仅需要一个端口，因此这里不处理
         # 订阅加载
         nodename, nodetype, nodenum, nodelist = self.getnodeinfo()
-        # 进行节点数量检查
-        # if self.check_speed_nodes(nodenum, (nodename, nodetype,)):
-        #     message_edit_queue.put((self.edit[0], self.edit[1], "❌节点数量超出了限制，已取消测试", 1))
-        #     message_delete_queue.put_nowait((self.edit[0], self.edit[1], 10))
-        #     return info
         # 开始测试
         s1 = time.time()
-        # rtt = await self.http_latency(nodenum)  # HTTP延迟测试
-        # print("HTTP延迟: ", rtt)
         try:
             break_speed.clear()
             speedinfo = await self.batch_speed(nodelist, port=start_port)
@@ -384,9 +360,6 @@ class SpeedCore(Basecore):
             logger.error(e)
         # 保存结果
         self.saveresult(info)
-        # 恢复proxy-provider处于默认状态，否则会造成clash core的加载负担。
-        # ma.delsub2provider(subname=self.start_time)
-        # ma.save(savePath='./clash/proxy.yaml')
         # 将结果返回
         return info
 
@@ -449,8 +422,6 @@ class ScriptCore(Basecore):
         progress_bar = str(bracketsleft) + f"{bracketsspace}" * 20 + str(bracketsright)
         edit_text = f"{scripttext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + "0" + \
                     "%     [" + str(progress) + "/" + str(nodenum) + "]"
-        print(edit_text)
-        message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
         host = pool.get('host', [])
         port = pool.get('port', [])
         psize = len(port)
@@ -459,10 +430,13 @@ class ScriptCore(Basecore):
         for item in test_items:
             info[item] = []
         logger.info("接受任务数量: {} 线程数: {}".format(nodenum, psize))
+        if not self.check_node():
+            return info
         if psize <= 0:
             logger.error("无可用的代理程序接口")
             return {}
-        logger.info("╰(*°▽°*)╯联通性测试进行中...")
+        print(edit_text)
+        message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
         if nodenum < psize:
             for i in range(len(port[:nodenum])):
                 proxys.switchProxy(nodename[i], i)
@@ -585,6 +559,8 @@ class TopoCore(Basecore):
     async def topo(self):
         info = {'地区': [], 'AS编号': [], '组织': [], '栈': [], '入口ip段': []}
         cl = copy.deepcopy(self._config)
+        if not self.check_node():
+            return info, [], cl
         co = collector.IPCollector()
         session = aiohttp.ClientSession()
         # node_addrs = cl.nodehost()
@@ -650,12 +626,15 @@ class TopoCore(Basecore):
         progress_bar = str(bracketsleft) + f"{bracketsspace}" * 20 + str(bracketsright)
         edit_text = f"{analyzetext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + "0" + \
                     "%     [" + str(progress) + "/" + str(nodenum) + "]"
-        print(edit_text)
-        message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
+
         logger.info("接受任务数量: {} 线程数: {}".format(nodenum, psize))
         if psize <= 0:
             logger.error("无可用的代理程序接口")
             return []
+        if not self.check_node():
+            return resdata, ipstackes
+        print(edit_text)
+        message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
         logger.info("╰(*°▽°*)╯节点链路拓扑测试进行中...")
         if nodenum < psize:
             for i in range(nodenum):
@@ -728,13 +707,6 @@ class TopoCore(Basecore):
         startup = GCONFIG.config.get('clash', {}).get('startup', 1124)
         pool = {'host': ['127.0.0.1' for _ in range(thread)],
                 'port': [startup + t * 2 for t in range(thread)]}
-        # 订阅加载
-        # nodename, nodetype, nodenum, nodelist = self.getnodeinfo()
-        # 进行节点数量检查
-        # if SpeedCore.check_speed_nodes(nodenum, (nodename, nodetype,), 1000):
-        #     message_edit_queue.put((self.edit[0], self.edit[1], "❌节点数量超出了限制，已取消测试", 1))
-        #     message_delete_queue.put_nowait((self.edit[0], self.edit[1], 10))
-        #     return {'inbound': info1, 'outbound': info2}
         # 开始测试
         s1 = time.time()
         info1, hosts, cl = await self.topo()
@@ -747,7 +719,7 @@ class TopoCore(Basecore):
             return {'inbound': info1, 'outbound': info2}
         # 启动链路拓扑测试
         try:
-            info2 = {}
+            info2.update({'入口': [], '地区': [], 'AS编号': [], '组织': [], '栈': [], '簇': [], '节点名称': []})
             res, ras = await self.batch_topo(nodelist, pool)
             if res:
                 country_code = []
@@ -793,10 +765,10 @@ class TopoCore(Basecore):
                 results4 = [v for k, v in d4_count.items()]
                 info2.update({'入口': d0, '地区': d1, 'AS编号': d2, '组织': d3, '栈': d6, '簇': results4})
                 info2.update({'节点名称': d5})
-                # 计算测试消耗时间
-                wtime = "%.1f" % float(time.time() - s1)
-                info2.update({'wtime': wtime})
-                # info2['filter'] = {'include': self._include_text, 'exclude': self._exclude_text} #这里注释了，不然绘图会出错
+            # 计算测试消耗时间
+            wtime = "%.1f" % float(time.time() - s1)
+            info2.update({'wtime': wtime})
+            # info2['filter'] = {'include': self._include_text, 'exclude': self._exclude_text} #这里注释了，不然绘图会出错
         except Exception as e:
             logger.error(str(e))
         # 保存结果

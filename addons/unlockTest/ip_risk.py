@@ -4,7 +4,6 @@ import json
 import aiohttp
 from aiohttp import ClientConnectorError
 from loguru import logger
-from pyrogram.types import InlineKeyboardButton
 
 # collector section
 baseurl = "https://scamalytics.com/ip/"
@@ -66,9 +65,9 @@ def get_iprisk_info(ReCleaner):
             if info_str == "N/A":
                 return "N/A"
             index = info_str.find('IP Fraud Risk API')
-            info_pre = info_str[index+88:index+160] if index > 0 else "{}"
+            info_pre = info_str[index + 88:index + 160] if index > 0 else "{}"
             index2 = info_pre.find("}")
-            info_str2 = info_pre[:index2+1] if index2 > 0 else "{}"
+            info_str2 = info_pre[:index2 + 1] if index2 > 0 else "{}"
             info = json.loads(info_str2)
             score = info.get('score', '无')
             risk = info.get('risk', '无').capitalize()
@@ -78,22 +77,8 @@ def get_iprisk_info(ReCleaner):
         return "N/A"
 
 
-# bot_setting_board
-
-button = InlineKeyboardButton("✅落地IP风险", callback_data='✅落地IP风险')
-
-if __name__ == "__main__":
-    "this is a test demo"
-    import sys
-    import os
-
-    sys.path.append(os.path.abspath(os.path.join(os.getcwd(), os.pardir)))
-    from utils.collector import Collector as CL, media_items
-
-    media_items.clear()
-    media_items.append("iprisk")
-    cl = CL()
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(cl.start(proxy="http://127.0.0.1:1111"))
-    print(cl.info)
+SCRIPT = {
+    "MYNAME": "IP风险",
+    "TASK": task,
+    "GET": get_iprisk_info
+}

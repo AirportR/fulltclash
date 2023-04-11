@@ -3,7 +3,6 @@ import asyncio
 import aiohttp
 from aiohttp import ClientConnectorError
 from loguru import logger
-from pyrogram.types import InlineKeyboardButton
 
 # collector section
 _data = {
@@ -101,20 +100,3 @@ SCRIPT = {
     "TASK": task,
     "GET": get_spotify_info
 }
-button = InlineKeyboardButton("✅Spotify", callback_data='✅Spotify')
-if __name__ == "__main__":
-    "this is a test demo"
-    import sys
-    import os
-
-    os.chdir(os.path.abspath(os.path.join(os.getcwd(), os.pardir)))
-    sys.path.append(os.path.abspath(os.path.join(os.getcwd(), os.pardir)))
-    from utils.collector import Collector as CL, media_items
-
-    media_items.clear()
-    media_items.append("Spotify")
-    cl = CL()
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(cl.start(proxy="http://127.0.0.1:1111"))
-    print(cl.info)

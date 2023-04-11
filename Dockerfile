@@ -1,15 +1,12 @@
-FROM python:3.9-slim-buster
-
-WORKDIR /app
-
 RUN apt-get update && \
-    apt-get install -y git && \
-    git clone https://github.com/AirportR/FullTclash.git -b dev /app && \
+    apt-get install -y --no-install-recommends git=2.25.1 && \
+    git clone https://github.com/AirportR/FullTclash.git /app && \
     pip install -r requirements.txt && \
-    chmod +x /app/resources/clash-linux-amd64
+    rm -rf /var/lib/apt/lists/*
 
-COPY config.yaml /app/resources/
+WORKDIR /app/
+COPY config.yaml ./resources/
 
-CMD ["sh", "-c", "python3 main.py"]
+ENTRYPOINT ["sh", "-c", "python3 main.py"]
 
 

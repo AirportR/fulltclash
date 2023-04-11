@@ -8,7 +8,6 @@ from botmodule.command.download import *
 from botmodule.command.connect import conn, response, startclash, relay
 from botmodule import register
 from botmodule import subinfo
-from botmodule import debug_interface as di
 
 __all__ = ['grant', 'ungrant', 'user', 'restart_or_killme',
            'sub_invite', 'sub', 'new', 'remove',

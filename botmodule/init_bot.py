@@ -2,7 +2,9 @@ import asyncio
 import os
 import sys
 import time
-import subprocess
+# subprocess 模块用于启动子进程，并与其通信
+# 注意：使用 subprocess 时要小心不要执行不可信的输入
+from subprocess import check_output
 
 from loguru import logger
 
@@ -55,7 +57,7 @@ check_init()
 # 获取远程仓库的最新提交哈希
 latest_version_hash = ""
 try:
-    output = subprocess.check_output(['git', 'log']).decode().strip()
+    output = check_output(['git', 'log'], shell=False, encoding="utf-8").strip()
     # 解析输出，提取最新提交的哈希值
     for line in output.split("\n"):
         if "commit" in line:
