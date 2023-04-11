@@ -137,7 +137,6 @@ async def check_subowner(message, back_message, subinfo: dict, admin: list, pass
         ID = message.sender_chat.id
     if not subinfo:
         await back_message.edit_text("❌找不到该任务名称，请检查参数是否正确 (TEST DELETE MESSAGE)")
-        message_delete_queue.put_nowait([message.chat.id, message.id, 10])
         message_delete_queue.put_nowait([back_message.chat.id, back_message.id, 10])
         # await back_message.delete()
         return False
