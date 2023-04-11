@@ -114,8 +114,6 @@ async def process(_, message: Message, **kwargs):
     tgtext = str(message.text)
     tgargs = cleaner.ArgCleaner().getall(tgtext)
     suburl = cleaner.geturl(tgtext) if kwargs.get('url', None) is None else kwargs.get('url', None)
-    print(tgargs[0])
-    print(tgargs[0].split("@")[0])
     put_type = kwargs.pop('put_type', '') if kwargs.get('put_type', '') else tgargs[0].split("@")[0]
     logger.info("测试指令: " + str(put_type))
     if not put_type:
@@ -149,7 +147,6 @@ async def process(_, message: Message, **kwargs):
             return
         proxyinfo = pre_cl.getProxies()
         info = await core.core(proxyinfo, **kwargs)
-        print(info)
         await select_export(message, back_message, put_type, info, **kwargs)
     else:
         subinfo = config.get_sub(subname=tgargs[1])

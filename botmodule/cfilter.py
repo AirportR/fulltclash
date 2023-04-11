@@ -48,8 +48,9 @@ def admin_filter():
     return filters.create(func)
 
 
-def reloaduser():
+def AccessCallback():
     """
+    权限回调函数
     检查用户是否在配置文件所加载的的列表中，这是一个装饰器.
     """
 
