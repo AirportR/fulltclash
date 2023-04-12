@@ -168,6 +168,7 @@ def command_loader(app: Client):
         await botmodule.invite_pass(client, message)
 
     @app.on_message(filters.private, group=3)
+    @AccessCallback(1)
     async def temp(client, message):
         await get_url_from_invite(client, message)
 
