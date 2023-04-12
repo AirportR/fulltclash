@@ -1,6 +1,8 @@
+import asyncio
 import importlib
 import os
 import re
+import sys
 import socket
 import yaml
 from loguru import logger
@@ -230,6 +232,45 @@ class AddonCleaner:
                 logger.warning("测试脚本导入格式错误")
         logger.info(f"外接测试脚本成功导入数量: {num}")
 
+    @staticmethod
+    def init_callback() -> list:
+        path = os.path.join(os.getcwd(), "addons", "callback")
+        try:
+            di = os.listdir(path)
+        except FileNotFoundError:
+            di = None
+        module_name = []
+        callbackfunc_list = []
+        if di is None:
+            logger.warning(f"找不到 {path} 所在的路径")
+        else:
+            for d in di:
+                if len(d) > 3:
+                    if d.endswith('.py') and d != "__init__.py":
+                        module_name.append(d[:-3])
+                    else:
+                        pass
+        for mname in module_name:
+            callbackfunc = None
+            try:
+                mo1 = importlib.import_module(f".{mname}", package="addons.callback")
+                callbackfunc = getattr(mo1, 'callback')
+                if callbackfunc is not None:
+                    if asyncio.iscoroutinefunction(callbackfunc):
+                        callbackfunc_list.append(callbackfunc)
+            except ModuleNotFoundError as m:
+                logger.warning(str(m))
+            except AttributeError:
+                pass
+            except NameError as n:
+                logger.warning(str(n))
+            except Exception as e:
+                logger.error(str(e))
+            if callbackfunc is None:
+                continue
+        logger.info(f"权限回调脚本导入数量: {len(callbackfunc_list)}")
+        return callbackfunc_list
+
     def init_button(self, isreload=False):
         """
         初始化bot内联按钮
@@ -320,21 +361,26 @@ class ClashCleaner:
     yaml配置清洗
     """
 
-    def __init__(self, _config):
+    def __init__(self, _config, _config2: str = None):
         """
         :param _config: 传入一个文件对象，或者一个字符串,文件对象需指向 yaml/yml 后缀文件
         """
         self.path = ''
         self.yaml = {}
         if _config == ':memory:':
-            self.yaml = yaml.safe_load(preTemplate())
-            return
+            try:
+                self.yaml = yaml.safe_load(preTemplate()) if _config2 is None else yaml.safe_load(_config2)
+                return
+            except Exception as e:
+                logger.error(str(e))
+                self.yaml = {}
+                return
         if type(_config).__name__ == 'str':
             with open(_config, 'r', encoding="UTF-8") as fp:
-                self.yaml = yaml.load(fp, Loader=yaml.FullLoader)
+                self.yaml = yaml.safe_load(fp)
             self.path = _config
         else:
-            self.yaml = yaml.load(_config, Loader=yaml.FullLoader)
+            self.yaml = yaml.safe_load(_config)
 
     def setProxies(self, proxyinfo: list):
         """
@@ -352,10 +398,10 @@ class ClashCleaner:
             return self.yaml['proxies']
         except KeyError:
             logger.warning("读取节点信息失败！")
-            return None
+            return []
         except TypeError:
             logger.warning("读取节点信息失败！")
-            return None
+            return []
 
     def nodesCount(self):
         """
@@ -526,7 +572,7 @@ class ClashCleaner:
         self.yaml['mode'] = mode
         logger.info("Clash 模式已被修改为:" + self.yaml['mode'])
 
-    def node_filter(self, include: str = '', exclude: str = '', issave=True):
+    def node_filter(self, include: str = '', exclude: str = '', issave=False):
         """
         节点过滤
         :param issave: 是否保存过滤结果到文件
@@ -593,7 +639,6 @@ class ClashCleaner:
             yaml.dump(self.yaml, fp)
 
 
-@logger.catch()
 class ConfigManager:
     """
     配置清洗，以及预处理配置在这里进行。
@@ -601,7 +646,9 @@ class ConfigManager:
 
     def __init__(self, configpath="./resources/config.yaml", data: dict = None):
         """
-
+        configpath有一个特殊值：:memory: 将使用默认内置的模板
+        还有成员变量中的 self.config 是约定为只读的
+        如果要写入新值，用self.yaml代替。
         """
         self.yaml = {}
         self.config = None
@@ -612,7 +659,7 @@ class ConfigManager:
             return
         try:
             with open(configpath, "r", encoding="UTF-8") as fp:
-                self.config = yaml.load(fp, Loader=yaml.FullLoader)
+                self.config = yaml.safe_load(fp)
                 self.yaml.update(self.config)
         except FileNotFoundError:
             if flag == 0 and configpath == "./resources/config.yaml":
@@ -641,6 +688,12 @@ class ConfigManager:
     def nospeed(self) -> bool:
         return bool(self.config.get('nospeed', False))
 
+    def speedconfig(self):
+        try:
+            return self.config['speedconfig']
+        except KeyError:
+            return {}
+
     # TODO(@AirportR): 三项speed配置可以合在一个母项中
     def speednodes(self):
         try:
@@ -655,11 +708,11 @@ class ConfigManager:
         if not botconfig:
             return botconfig
         if 'api_id' in botconfig:
-            logger.info(f"从配置中获取到了api_id")
+            logger.info("从配置中获取到了api_id")
         if 'api_hash' in botconfig:
-            logger.info(f"从配置中获取到了api_hash")
+            logger.info("从配置中获取到了api_hash")
         if 'bot_token' in botconfig:
-            logger.info(f"从配置中获取到了bot_token")
+            logger.info("从配置中获取到了bot_token")
         return botconfig
 
     def getFont(self):
@@ -673,6 +726,12 @@ class ConfigManager:
             return self.config['admin']
         except KeyError:
             return []
+
+    def getBridge(self):
+        """
+        获取连接中继桥，它是一个telegram的群组id，最好是私密群组
+        """
+        return self.config.get('bridge', None)
 
     def getGstatic(self):
         """
@@ -757,14 +816,20 @@ class ConfigManager:
         try:
             return self.config['clash']['path']
         except KeyError:
-            logger.warning("获取运行路径失败，将采用默认运行路径 ./resources/clash-windows-amd64.exe")
+            logger.warning("获取运行路径失败，将采用默认运行路径 ./libs/fulltclash.so(.dll)\n自动识别windows与linux。架构默认为amd64")
+            if sys.platform.startswith("linux"):
+                path = './libs/fulltclash.so'
+            elif sys.platform.startswith("win32"):
+                path = r'.\libs\fulltclash.dll'
+            else:
+                path = './libs/fulltclash.so'
+            d = {'path': path}
             try:
-                d = {'path': './resources/clash-windows-amd64.exe'}
                 self.yaml['clash'].update(d)
             except KeyError:
-                di = {'clash': {'path': './resources/clash-windows-amd64.exe'}}
+                di = {'clash': d}
                 self.yaml.update(di)
-            return './resources/clash-windows-amd64.exe'
+            return path
 
     def get_sub(self, subname: str = None):
         """
@@ -895,7 +960,7 @@ class ConfigManager:
             if self.save(savePath=configpath):
                 try:
                     with open(configpath, "r", encoding="UTF-8") as fp:
-                        self.config = yaml.load(fp, Loader=yaml.FullLoader)
+                        self.config = yaml.safe_load(fp)
                         self.yaml = self.config
                         return True
                 except Exception as e:
@@ -904,7 +969,7 @@ class ConfigManager:
         else:
             try:
                 with open(configpath, "r", encoding="UTF-8") as fp:
-                    self.config = yaml.load(fp, Loader=yaml.FullLoader)
+                    self.config = yaml.safe_load(fp)
                     self.yaml = self.config
                     return True
             except Exception as e:
@@ -1227,7 +1292,7 @@ class ResultCleaner:
         lists = sorted(lists, key=lambda x: x[0], reverse=reverse)
         lists = zip(*lists)
         new_list = [list(l_) for l_ in lists]
-        http_l = new_list[0]
+        http_l = new_list[0] if len(new_list) > 0 else []
         if not reverse:
             for i in range(len(http_l)):
                 if http_l[i] == 999999:
@@ -1273,7 +1338,6 @@ def geturl(string: str):
         url = pattern.findall(text)[0]  # 列表中第一个项为订阅地址
         return url
     except IndexError:
-        print("未找到URL")
         return None
 
 

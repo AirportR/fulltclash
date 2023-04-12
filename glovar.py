@@ -3,11 +3,11 @@ from pyrogram import Client
 from loguru import logger
 from botmodule import init_bot
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from cron import cron_delete_message as cdm
+from utils.cron import cron_delete_message as cdm
 
 bot_token = init_bot.bot_token
 # 项目版本号
-__version__ = '3.5.4-dev'
+__version__ = '3.5.3'
 # 客户端
 app = Client("my_bot",
              api_id=init_bot.api_id,

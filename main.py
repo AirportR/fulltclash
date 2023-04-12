@@ -1,4 +1,4 @@
-from libs import bot
+from utils import bot
 from glovar import app as myapp, bot_info
 from pyrogram import idle
 from botmodule import init_bot

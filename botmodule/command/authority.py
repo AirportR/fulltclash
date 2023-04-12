@@ -6,8 +6,8 @@ from async_timeout import timeout
 from loguru import logger
 from pyrogram.errors import RPCError
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
-from libs.check import get_telegram_id_from_message as get_id
-from libs.cleaner import geturl, addon
+from utils.check import get_telegram_id_from_message as get_id
+from utils.cleaner import geturl, addon
 
 b1 = InlineKeyboardMarkup(
     [
@@ -162,7 +162,7 @@ async def invite_pass(client: pyrogram.Client, message: Message):
                 logger.info(f"验证过期: {key2}:{ID}")
                 await bot_mes.edit_text(f"❌任务已取消\n\n原因: 接收订阅链接超时")
             if suburl:
-                from libs.bot import bot_put
+                from utils.bot import bot_put
                 await message.reply("✨提交成功，请返回群组查看测试结果。")
                 await asyncio.sleep(3)
                 await bot_mes.delete()

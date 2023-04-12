@@ -6,7 +6,7 @@ from pyrogram import enums
 from pyrogram.errors import RPCError, FloodWait
 from loguru import logger
 import botmodule.init_bot
-from libs import cleaner, topotest, streamingtest, speedtest, export, check
+from utils import cleaner, topotest, streamingtest, speedtest, export, check
 from botmodule.init_bot import config
 
 USER_TARGET = botmodule.init_bot.USER_TARGET

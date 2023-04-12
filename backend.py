@@ -12,8 +12,8 @@ import aiohttp
 import socks
 from aiohttp_socks import ProxyConnector
 from loguru import logger
-from libs.collector import proxies
-from libs import cleaner, collector, proxys, pynat, sorter
+from utils.collector import proxies
+from utils import cleaner, collector, proxys, pynat, sorter
 
 # 重写整个测试核心，技术栈分离。
 

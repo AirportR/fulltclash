@@ -113,7 +113,7 @@ if __name__ == "__main__":
     import os
 
     sys.path.append(os.path.abspath(os.path.join(os.getcwd(), os.pardir, os.pardir)))
-    from libs.collector import Collector as CL, media_items
+    from utils.collector import Collector as CL, media_items
 
     media_items.clear()
     media_items.append("OpenAI")

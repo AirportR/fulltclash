@@ -9,8 +9,8 @@ from pilmoji.source import Twemoji
 import time
 
 from glovar import __version__
-from libs.cleaner import ConfigManager
-import libs.emoji_custom as emoji_source
+from utils.cleaner import ConfigManager
+import utils.emoji_custom as emoji_source
 
 """
 这是将测试的结果输出为图片的模块。

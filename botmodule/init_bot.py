@@ -4,8 +4,8 @@ import sys
 import time
 import subprocess
 from loguru import logger
-from libs.cleaner import ConfigManager
-from libs.safe import gen_key
+from utils.cleaner import ConfigManager
+from utils.safe import gen_key
 
 config = ConfigManager()
 
@@ -13,7 +13,7 @@ config = ConfigManager()
 def check_init():
     emoji_source = config.config.get('emoji', {}).get('emoji-source', '')
     if config.config.get('emoji', {}).get('enable', True) and emoji_source=='TwemojiLocalSource':
-        from libs.emoji_custom import TwemojiLocalSource
+        from utils.emoji_custom import TwemojiLocalSource
         if not os.path.isdir('./resources/emoji/twemoji'):
             twemoji = TwemojiLocalSource()
             logger.info("正在初始化本地emoji...")

@@ -3,8 +3,8 @@ import time
 
 from pyrogram.errors import RPCError, FloodWait
 from loguru import logger
-from libs import cleaner, collector, proxys, check
-from libs.cleaner import config
+from utils import cleaner, collector, proxys, check
+from utils.cleaner import config
 
 """
 这个模块是流媒体测试的具体实现

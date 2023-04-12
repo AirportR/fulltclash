@@ -1,9 +1,12 @@
 from pyrogram import filters
 from pyrogram.types import Message
-
-from botmodule.utils import message_delete_queue
-from libs import check
+from loguru import logger
+from utils.cleaner import addon
+from utils.cron.utils import message_delete_queue
+from utils import check
 from botmodule.init_bot import reloadUser, admin
+
+callbackfunc = addon.init_callback()
 
 
 # custom filter
@@ -48,13 +51,20 @@ def admin_filter():
     return filters.create(func)
 
 
-def reloaduser():
+def AccessCallback():
     """
+    权限回调函数
     检查用户是否在配置文件所加载的的列表中，这是一个装饰器.
     """
 
     def wrapper(func):
         async def inner(client, message):
+            for call in callbackfunc:
+                callres = await call(client, message)
+                if not isinstance(callres, bool):
+                    logger.warning("未返回布尔值，可能会出现意料之外的结果！")
+                if not callres:
+                    return
             user = reloadUser()
             result = await check.check_user(message, user)
             if result:

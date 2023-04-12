@@ -12,8 +12,8 @@ from loguru import logger
 from pyrogram.errors import RPCError
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
 
-from libs import cleaner, check, collector, proxys, pynat
-from libs.cleaner import config
+from utils import cleaner, check, collector, proxys, pynat
+from utils.cleaner import config
 
 # ----------------------------------------------------------------------------------------------------------------------
 """

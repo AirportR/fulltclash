@@ -3,8 +3,8 @@ import urllib.parse
 import aiohttp
 from loguru import logger
 from aiohttp.client_exceptions import ClientConnectorError
-from libs.cleaner import geturl
-from libs.collector import proxies
+from utils.cleaner import geturl
+from utils.collector import proxies
 import botmodule.init_bot
 
 USER_TARGET = botmodule.init_bot.USER_TARGET

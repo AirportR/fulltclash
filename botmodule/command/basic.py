@@ -2,7 +2,7 @@ import asyncio
 
 from loguru import logger
 from pyrogram.errors import RPCError
-from libs.check import check_user
+from utils.check import check_user
 from botmodule import init_bot, message_delete_queue
 from glovar import __version__
 

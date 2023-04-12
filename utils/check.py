@@ -7,7 +7,7 @@ from pyrogram.errors import RPCError
 from loguru import logger
 from pyrogram.filters import private_filter
 from botmodule.init_bot import config
-from botmodule.utils import message_delete_queue
+from utils.cron.utils import message_delete_queue
 
 """
 这个模块主要是一些检查函数，用来验证某个值是否合法。一般是返回布尔值

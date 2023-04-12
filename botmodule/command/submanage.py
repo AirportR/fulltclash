@@ -3,9 +3,9 @@ import hashlib
 import pyrogram.types
 from pyrogram.errors import RPCError
 from loguru import logger
-from libs import cleaner, check
+from utils import cleaner, check
 from botmodule.init_bot import config, admin
-from libs.check import check_user, get_telegram_id_from_message
+from utils.check import check_user, get_telegram_id_from_message
 
 
 async def sub_invite(_, message: pyrogram.types.Message):

@@ -6,7 +6,7 @@ from pyrogram import Client
 from pyrogram.errors import RPCError
 from botmodule.init_bot import admin, config, reloadUser
 from botmodule.command.test import reloadUser as r2
-from botmodule.utils import message_delete_queue
+from utils.cron.utils import message_delete_queue
 
 
 async def grant(client: Client, message: pyrogram.types.Message):

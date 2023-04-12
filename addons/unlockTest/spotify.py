@@ -109,7 +109,7 @@ if __name__ == "__main__":
 
     os.chdir(os.path.abspath(os.path.join(os.getcwd(), os.pardir)))
     sys.path.append(os.path.abspath(os.path.join(os.getcwd(), os.pardir)))
-    from libs.collector import Collector as CL, media_items
+    from utils.collector import Collector as CL, media_items
 
     media_items.clear()
     media_items.append("Spotify")
