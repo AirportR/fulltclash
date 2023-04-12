@@ -51,12 +51,19 @@ def admin_filter():
     return filters.create(func)
 
 
-def AccessCallback():
+async def defaultCallback(message: Message):
+    """
+    默认的权限回调等级
+    """
+    return await check.check_user(message, reloadUser())
+
+
+def AccessCallback(default=0):
     """
     权限回调函数
     检查用户是否在配置文件所加载的的列表中，这是一个装饰器.
+    default: 默认的回调函数值，如果不为0，则不会调用默认的回调函数
     """
-
     def wrapper(func):
         async def inner(client, message):
             for call in callbackfunc:
@@ -65,14 +72,15 @@ def AccessCallback():
                     logger.warning("未返回布尔值，可能会出现意料之外的结果！")
                 if not callres:
                     return
-            user = reloadUser()
-            result = await check.check_user(message, user)
-            if result:
-                await func(client, message)
+            if default == 0:
+                result = await defaultCallback(message)
+                if result:
+                    await func(client, message)
+                else:
+                    print("未通过")
+                    return
             else:
-                print("未通过")
-                return
-
+                await func(client, message)
         return inner
 
     return wrapper
