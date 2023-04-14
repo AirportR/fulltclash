@@ -39,6 +39,8 @@ class Speedtest:
         self._statistics_time = 0
         self._time_used = 0
         self._count = 0
+        interval = self.config.get('speedconfig', {}).get('interval', 10)
+        self._download_interval = interval if 0 < interval < 60 else 10
 
     @property
     def thread(self):
@@ -80,7 +82,7 @@ class Speedtest:
             self._statistics_time = cur_time
             with contextlib.suppress(StopIteration):
                 self._show_progress(delta_time)
-        if self._time_used > 10:
+        if self._time_used > self._download_interval:
             self._stopped = True
 
     def _show_progress(self, delta_time: Union[int, float]):
@@ -89,7 +91,7 @@ class Speedtest:
         self._delta_red = self._total_red
         self._count += 1
         print("\r[" + "=" * self._count + f"> [{speed_mb:.2f} MB/s]", end="")
-        if len(self.result) < 10:
+        if len(self.result) < self._download_interval:
             self.result.append(speed)
 
     def show_progress_full(self):
