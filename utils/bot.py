@@ -1,5 +1,6 @@
 import asyncio
 from pyrogram import Client, filters
+from pyrogram.types import Message
 from loguru import logger
 import botmodule
 from botmodule import init_bot
@@ -150,6 +151,11 @@ def command_loader(app: Client):
     @AccessCallback(1)
     async def temp(client, message):
         await get_url_from_invite(client, message)
+
+    @app.on_message(filters.command(config.config.get('bot', {}).get('command', [])), group=4)
+    @AccessCallback(1)
+    async def common_command(client: Client, message: Message):
+        await botmodule.common_command(client, message)
 
     @app.on_message(filters.command(["share"]), group=1)
     @AccessCallback()
