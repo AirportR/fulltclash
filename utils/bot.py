@@ -61,11 +61,6 @@ def command_loader(app: Client):
     @app.on_message(filters.command(["test"]) & allfilter(1), group=1)
     @AccessCallback()
     async def test(_, message):
-        if not config.get_sub(subname=message.command[1]):
-            back_message = await message.reply("❌找不到该任务名称，请检查参数是否正确 (TEST DELETE MESSAGE)")
-            message_delete_queue.put_nowait([message.chat.id, message.id, 10])
-            message_delete_queue.put_nowait([back_message.chat.id, back_message.id, 10])
-            return
         await message.reply("请选择排序方式:", reply_markup=botmodule.IKM2, quote=True)
 
     @app.on_message(filters.command(["invite"]), group=1)
