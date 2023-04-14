@@ -187,7 +187,7 @@ class SubCollector(BaseCollector):
         """
         super().__init__()
         self.text = None
-        self._headers = {'User-Agent': 'clash'}  # 这个请求头是获取流量信息的关键
+        self._headers = {'User-Agent': 'clash-verge'}  # 这个请求头是获取流量信息的关键
         self.subconvertor = config.config.get('subconvertor', {})
         self.cvt_enable = self.subconvertor.get('enable', False)
         self.url = suburl
