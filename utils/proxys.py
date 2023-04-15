@@ -23,6 +23,9 @@ _setProxy.argtypes = [ctypes.c_char_p, ctypes.c_int64]
 _setProxy.restype = ctypes.POINTER(ctypes.c_char)
 _free_me = getattr(lib, 'freeMe')
 _free_me.argtypes = [ctypes.POINTER(ctypes.c_char)]
+_myURLTest = getattr(lib, 'myURLTest')
+_myURLTest.argtypes = [ctypes.c_char_p, ctypes.c_int64]
+_myURLTest.restype = ctypes.c_ushort
 
 
 class Clash(threading.Thread):  # 继承父类threading.Thread
@@ -38,6 +41,11 @@ class Clash(threading.Thread):  # 继承父类threading.Thread
         # create a task for myclash
         _addr = "127.0.0.1:" + str(self._port)
         _myclash(_addr.encode(), self._index)
+
+
+def http_delay(url: str = config.getGstatic(), index: int = 0) -> int:
+    mean_delay = _myURLTest(url.encode(), index)
+    return mean_delay
 
 
 # 切换节点

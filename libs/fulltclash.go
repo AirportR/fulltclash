@@ -1,4 +1,4 @@
-package fulltclash
+package main
 
 // #include <stdlib.h>
 import "C"
@@ -29,6 +29,20 @@ type RawConfig struct {
 var rawcfgs = make([]*RawConfig, 128)
 var stoped = false
 
+//export myURLTest
+func myURLTest(URL *C.char, index int) uint16 {
+	proxy, err := adapter.ParseProxy(rawcfgs[index].Proxy)
+	if err != nil {
+		fmt.Printf("error: %s \n", err.Error())
+		return 0
+	}
+	_, meanDelay, err := proxy.URLTest(context.Background(), C.GoString(URL))
+	if err != nil {
+		fmt.Printf("error: %s \n", err.Error())
+		return meanDelay
+	}
+	return meanDelay
+}
 func startclash(addr *C.char, index int) {
 	in := make(chan constant.ConnContext, 100)
 	defer close(in)
@@ -59,7 +73,6 @@ func startclash(addr *C.char, index int) {
 		metadata := conn.Metadata()
 
 		proxy, err := adapter.ParseProxy(rawcfgs[index].Proxy)
-
 		if err != nil {
 			fmt.Printf("error: %s \n", err.Error())
 		}

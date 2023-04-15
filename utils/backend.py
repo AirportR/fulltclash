@@ -295,10 +295,11 @@ class SpeedCore(Basecore):
         message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1, self.IKM))
         for name in nodelist:
             proxys.switchProxy(name, 0)
-            conn = ProxyConnector(host="127.0.0.1", port=port, limit=0)
-            session = aiohttp.ClientSession(connector=conn)
-            delay = await collector.delay_https_task(session, times=3)
-            await session.close()
+            delay = proxys.http_delay(index=0)
+            # conn = ProxyConnector(host="127.0.0.1", port=port, limit=0)
+            # session = aiohttp.ClientSession(connector=conn)
+            # delay = await collector.delay_https_task(session, times=3)
+            # await session.close()
             udptype, _, _, _, _ = self.nat_type_test('127.0.0.1', proxyport=port)
             if udptype is None:
                 udptype = "Unknown"
@@ -370,19 +371,21 @@ class ScriptCore(Basecore):
         self.edit = (chat_id, message_id)
 
     @staticmethod
-    async def unit(test_items: list, host="127.0.0.1", port=1122):
+    async def unit(test_items: list, host="127.0.0.1", port=1122, index=0):
         """
         以一个节点的所有测试项为一个基本单元unit,返回单个节点的测试结果
         :param port: 代理端口
         :param host: 代理主机名
         :param test_items: [Netflix,disney+,etc...]
+        :param index:
         :return: list 返回test_items对应顺序的信息
         """
         info = []
-        conn = ProxyConnector(host=host, port=port, limit=0)
-        session = aiohttp.ClientSession(connector=conn)
-        delay = await collector.delay_https_task(session, times=3)
-        await session.close()
+        # conn = ProxyConnector(host=host, port=port, limit=0)
+        # session = aiohttp.ClientSession(connector=conn)
+        # delay = await collector.delay_https_task(session, times=3)
+        # await session.close()
+        delay = proxys.http_delay(index=index)
         if delay == 0:
             logger.warning("超时节点，跳过测试")
             for t in test_items:
@@ -440,7 +443,7 @@ class ScriptCore(Basecore):
         if nodenum < psize:
             for i in range(len(port[:nodenum])):
                 proxys.switchProxy(nodename[i], i)
-                task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i]))
+                task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i], index=i))
                 tasks.append(task)
             done = await asyncio.gather(*tasks)
             # 简单处理一下数据
@@ -459,7 +462,7 @@ class ScriptCore(Basecore):
                 tasks.clear()
                 for i in range(psize):
                     proxys.switchProxy(nodename[s * psize + i], i)
-                    task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i]))
+                    task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i], index=i))
                     tasks.append(task)
                 done = await asyncio.gather(*tasks)
                 # 反馈进度
@@ -490,8 +493,7 @@ class ScriptCore(Basecore):
                 logger.info("最后批次: " + str(subbatch + 1))
                 for i in range(nodenum % psize):
                     proxys.switchProxy(nodename[subbatch * psize + i], i)
-                    task = asyncio.create_task(
-                        self.unit(test_items, host=host[i], port=port[i]))
+                    task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i], index=i))
                     tasks.append(task)
                 done = await asyncio.gather(*tasks)
                 res = []
