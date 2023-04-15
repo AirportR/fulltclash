@@ -73,6 +73,7 @@ func startclash(addr *C.char, index int) {
 		metadata := conn.Metadata()
 
 		proxy, err := adapter.ParseProxy(rawcfgs[index].Proxy)
+
 		if err != nil {
 			fmt.Printf("error: %s \n", err.Error())
 		}
