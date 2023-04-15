@@ -13,6 +13,7 @@ import (
 	"github.com/Dreamacro/clash/adapter"
 	"github.com/Dreamacro/clash/constant"
 	"github.com/Dreamacro/clash/listener/socks"
+	"gopkg.in/yaml.v3"
 	"io"
 	"net"
 	"net/http"
