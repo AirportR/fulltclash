@@ -6,6 +6,7 @@ from botmodule.command.basic import *
 from botmodule.command.setting import *
 from botmodule.command.download import *
 from botmodule.command.connect import conn, response, startclash, relay
+from botmodule.command import common_command
 from botmodule import register
 from botmodule import subinfo
 
@@ -14,5 +15,6 @@ __all__ = ['grant', 'ungrant', 'user', 'restart_or_killme',
            'process', 'invite', 'invite_pass',
            'version', 'helps',
            'test_setting', 'select_page', 'get_sort_str', 'select_sort', 'setting_page',
-           'download_script', 'reload_addon_from_telegram', 'uninstall_script'
+           'download_script', 'reload_addon_from_telegram', 'uninstall_script',
+           'common_command'
            ]

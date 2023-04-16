@@ -285,7 +285,7 @@ class SpeedCore(Basecore):
         progress_bar = str(bracketsleft) + f"{bracketsspace}" * 20 + str(bracketsright)
         edit_text = f"{speedtext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + "0" + \
                     "%     [" + str(progress) + "/" + str(nodenum) + "]"
-        test_items = ["HTTP延迟", "平均速度", "最大速度", "速度变化", "UDP类型"]
+        test_items = ["HTTP(S)延迟", "平均速度", "最大速度", "速度变化", "UDP类型"]
         for item in test_items:
             info[item] = []
         info["消耗流量"] = 0  # 单位:MB
@@ -295,10 +295,7 @@ class SpeedCore(Basecore):
         message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1, self.IKM))
         for name in nodelist:
             proxys.switchProxy(name, 0)
-            conn = ProxyConnector(host="127.0.0.1", port=port, limit=0)
-            session = aiohttp.ClientSession(connector=conn)
-            delay = await collector.delay_https_task(session, times=3)
-            await session.close()
+            delay = await proxys.http_delay_tls(index=0)
             udptype, _, _, _, _ = self.nat_type_test('127.0.0.1', proxyport=port)
             if udptype is None:
                 udptype = "Unknown"
@@ -346,7 +343,7 @@ class SpeedCore(Basecore):
             speedinfo = await self.batch_speed(nodelist, port=start_port)
             info['节点名称'] = nodename
             info['类型'] = nodetype
-            # info['HTTP延迟'] = rtt
+            # info['HTTP(S)延迟'] = rtt
             info.update(speedinfo)
             info = cleaner.ResultCleaner(info).start()
             # 计算测试消耗时间
@@ -370,23 +367,22 @@ class ScriptCore(Basecore):
         self.edit = (chat_id, message_id)
 
     @staticmethod
-    async def unit(test_items: list, host="127.0.0.1", port=1122):
+    async def unit(test_items: list, host="127.0.0.1", port=1122, index=0):
         """
         以一个节点的所有测试项为一个基本单元unit,返回单个节点的测试结果
         :param port: 代理端口
         :param host: 代理主机名
         :param test_items: [Netflix,disney+,etc...]
+        :param index:
         :return: list 返回test_items对应顺序的信息
         """
         info = []
-        conn = ProxyConnector(host=host, port=port, limit=0)
-        session = aiohttp.ClientSession(connector=conn)
-        delay = await collector.delay_https_task(session, times=3)
-        await session.close()
+        # delay = await proxys.http_delay(index=index)
+        delay = await proxys.http_delay_tls(index=index, timeout=5)
         if delay == 0:
             logger.warning("超时节点，跳过测试")
             for t in test_items:
-                if t == "HTTP延迟":
+                if t == "HTTP(S)延迟":
                     info.append(0)
                 else:
                     info.append("N/A")
@@ -399,7 +395,7 @@ class ScriptCore(Basecore):
             old_info = cnr.get_all()
             for item in test_items:
                 i = item
-                if i == 'HTTP延迟':
+                if i == 'HTTP(S)延迟':
                     continue
                 try:
                     info.append(old_info[i])
@@ -440,7 +436,7 @@ class ScriptCore(Basecore):
         if nodenum < psize:
             for i in range(len(port[:nodenum])):
                 proxys.switchProxy(nodename[i], i)
-                task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i]))
+                task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i], index=i))
                 tasks.append(task)
             done = await asyncio.gather(*tasks)
             # 简单处理一下数据
@@ -459,7 +455,7 @@ class ScriptCore(Basecore):
                 tasks.clear()
                 for i in range(psize):
                     proxys.switchProxy(nodename[s * psize + i], i)
-                    task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i]))
+                    task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i], index=i))
                     tasks.append(task)
                 done = await asyncio.gather(*tasks)
                 # 反馈进度
@@ -490,8 +486,7 @@ class ScriptCore(Basecore):
                 logger.info("最后批次: " + str(subbatch + 1))
                 for i in range(nodenum % psize):
                     proxys.switchProxy(nodename[subbatch * psize + i], i)
-                    task = asyncio.create_task(
-                        self.unit(test_items, host=host[i], port=port[i]))
+                    task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i], index=i))
                     tasks.append(task)
                 done = await asyncio.gather(*tasks)
                 res = []
@@ -532,7 +527,7 @@ class ScriptCore(Basecore):
         info['节点名称'] = nodename
         info['类型'] = nodetype
         test_info = await self.batch_test_pro(nodelist, test_items, pool)
-        info['HTTP延迟'] = test_info.pop('HTTP延迟')
+        info['HTTP(S)延迟'] = test_info.pop('HTTP(S)延迟')
         info.update(test_info)
         sort = kwargs.get('sort', "订阅原序")
         logger.info("排序：" + sort)
@@ -635,7 +630,7 @@ class TopoCore(Basecore):
             return resdata, ipstackes
         print(edit_text)
         message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
-        logger.info("╰(*°▽°*)╯节点链路拓扑测试进行中...")
+        logger.info("⏳节点链路拓扑测试进行中...")
         if nodenum < psize:
             for i in range(nodenum):
                 proxys.switchProxy(nodename[i], i)
@@ -667,7 +662,7 @@ class TopoCore(Basecore):
                     space_count = 20 - equal_signs
                     progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + \
                                    f"{bracketsspace}" * space_count + f"{bracketsright}"
-                    edit_text = "⏳节点拓扑测试进行中...\n\n" + progress_bar + "\n\n" + "当前进度:\n" + \
+                    edit_text = f"{analyzetext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + \
                                 p_text + "%     [" + str(progress) + "/" + str(nodenum) + "]"
                     print(edit_text)
                     message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))

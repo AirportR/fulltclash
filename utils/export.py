@@ -328,7 +328,7 @@ class ExportResult:
             width = 100 + nodename_width
             i = 0
             for t1 in key_list:
-                if "延迟RTT" == t1 or "HTTP延迟" == t1:
+                if "延迟RTT" == t1 or "HTTP(S)延迟" == t1:
                     rtt = float(self.info[t1][t][:-2])
                     if interval[0] < rtt < interval[1]:
                         block = color_block((info_list_length[i], 60), color_value=colorvalue[0])
@@ -855,6 +855,7 @@ class ExportTopo(ExportResult):
                 elif t1 == "入口":
                     text = str(self.info[t1][t])
                     pre_text = str(self.info[t1][t - 1]) if t > 0 else str(self.info[t1][0])
+                    next_text = str(self.info[t1][t + 1]) if t < self.nodenum-1 else str(self.info[t1][t])
                     if t == 0:
                         idraw.text(
                             (self.get_mid(width, width + info_list_length[i], str(self.info[t1][t])), (t + 2) * 60),
@@ -865,8 +866,13 @@ class ExportTopo(ExportResult):
                             (self.get_mid(width, width + info_list_length[i], text), (t + 2) * 60),
                             text,
                             font=fnt, fill=(0, 0, 0))
+                    elif text != next_text:
+                        idraw.text((163, (t + 2) * 60-20), "|___", font=fnt, fill=(0, 0, 0))
                     else:
-                        pass
+                        idraw.text(
+                            (163, (t + 2) * 60),
+                            "|---",
+                            font=fnt, fill=(0, 0, 0))
                 else:
                     idraw.text((self.get_mid(width, width + info_list_length[i], str(self.info[t1][t])), (t + 2) * 60),
                                str(self.info[t1][t]),

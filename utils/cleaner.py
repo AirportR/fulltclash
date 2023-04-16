@@ -1,3 +1,4 @@
+import asyncio
 import importlib
 import os
 import re
@@ -230,6 +231,45 @@ class AddonCleaner:
             else:
                 logger.warning("测试脚本导入格式错误")
         logger.info(f"外接测试脚本成功导入数量: {num}")
+
+    @staticmethod
+    def init_callback() -> list:
+        path = os.path.join(os.getcwd(), "addons", "callback")
+        try:
+            di = os.listdir(path)
+        except FileNotFoundError:
+            di = None
+        module_name = []
+        callbackfunc_list = []
+        if di is None:
+            logger.warning(f"找不到 {path} 所在的路径")
+        else:
+            for d in di:
+                if len(d) > 3:
+                    if d.endswith('.py') and d != "__init__.py":
+                        module_name.append(d[:-3])
+                    else:
+                        pass
+        for mname in module_name:
+            callbackfunc = None
+            try:
+                mo1 = importlib.import_module(f".{mname}", package="addons.callback")
+                callbackfunc = getattr(mo1, 'callback')
+                if callbackfunc is not None:
+                    if asyncio.iscoroutinefunction(callbackfunc):
+                        callbackfunc_list.append(callbackfunc)
+            except ModuleNotFoundError as m:
+                logger.warning(str(m))
+            except AttributeError:
+                pass
+            except NameError as n:
+                logger.warning(str(n))
+            except Exception as e:
+                logger.error(str(e))
+            if callbackfunc is None:
+                continue
+        logger.info(f"权限回调脚本导入数量: {len(callbackfunc_list)}")
+        return callbackfunc_list
 
     def init_button(self, isreload=False):
         """
@@ -695,7 +735,7 @@ class ConfigManager:
 
     def getGstatic(self):
         """
-        获取HTTP延迟测试的URL
+        获取HTTP(S)延迟测试的URL
         :return:
         """
         try:
@@ -1077,11 +1117,11 @@ class ReCleaner:
         :return: int
         """
         try:
-            if 'HTTP延迟' not in self.data and 'HTTPS延迟' not in self.data:
-                logger.warning("采集器内无数据: HTTP延迟")
+            if 'HTTP(S)延迟' not in self.data and 'HTTPS延迟' not in self.data:
+                logger.warning("采集器内无数据: HTTP(S)延迟")
                 return 0
             else:
-                return self.data.get('HTTP延迟', 0)
+                return self.data.get('HTTP(S)延迟', 0)
         except Exception as e:
             logger.error(str(e))
             return 0
@@ -1227,25 +1267,25 @@ class ResultCleaner:
                 for r in rtt:
                     new_rtt.append(str(r) + 'ms')
                 self.data['HTTP延迟(内核)'] = new_rtt
-            if 'HTTP延迟' in self.data:
-                rtt = self.data['HTTP延迟']
+            if 'HTTP(S)延迟' in self.data:
+                rtt = self.data['HTTP(S)延迟']
                 new_rtt = []
                 for r in rtt:
                     new_rtt.append(str(r) + 'ms')
-                self.data['HTTP延迟'] = new_rtt
+                self.data['HTTP(S)延迟'] = new_rtt
             return self.data
         except TypeError:
             return {}
 
     def sort_by_ping(self, reverse=False):
-        http_l = self.data.get('HTTP延迟')
+        http_l = self.data.get('HTTP(S)延迟')
         if not reverse:
             for i in range(len(http_l)):
                 if http_l[i] == 0:
                     http_l[i] = 999999
         new_list = [http_l, self.data.get('节点名称'), self.data.get('类型')]
         for k, v in self.data.items():
-            if k == "HTTP延迟" or k == "节点名称" or k == "类型":
+            if k == "HTTP(S)延迟" or k == "节点名称" or k == "类型":
                 continue
             new_list.append(v)
         lists = zip(*new_list)
@@ -1258,13 +1298,13 @@ class ResultCleaner:
                 if http_l[i] == 999999:
                     http_l[i] = 0
         if len(new_list) > 2:
-            self.data['HTTP延迟'] = http_l
+            self.data['HTTP(S)延迟'] = http_l
             self.data['节点名称'] = new_list[1]
             self.data['类型'] = new_list[2]
             num = -1
             for k in self.data.keys():
                 num += 1
-                if k == "HTTP延迟" or k == "节点名称" or k == "类型":
+                if k == "HTTP(S)延迟" or k == "节点名称" or k == "类型":
                     continue
                 self.data[k] = new_list[num]
 

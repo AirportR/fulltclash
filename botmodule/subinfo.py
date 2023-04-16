@@ -1,5 +1,6 @@
 import asyncio
 import hashlib
+import time
 from loguru import logger
 from pyrogram.errors import RPCError
 from utils.cleaner import geturl
@@ -13,6 +14,7 @@ from utils import cleaner
 async def getSubInfo(_, message):
     ID = get_id(message)
     arg = cleaner.ArgCleaner().getall(str(message.text))
+    call_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())
     try:
         back_message = await message.reply("正在查询流量信息...")  # 发送提示
         text = str(message.text)
@@ -63,6 +65,7 @@ async def getSubInfo(_, message):
 ⏳剩余流量：{round(rs, 3)} GB
 💧总流量：{round(subinfo[3], 3)} GB
 ⏱️过期时间：{subinfo[4]}
+🔍查询时间：{call_time}
                     """
                 await back_message.edit_text(subinfo_text)
             else:
@@ -78,6 +81,7 @@ async def getSubInfo(_, message):
 ⏳剩余流量：{round(rs, 3)} GB
 💧总流量：{round(subinfo[3], 3)} GB
 ⏱️过期时间：{subinfo[4]}
+🔍查询时间：{call_time}
                     """
                 await back_message.edit_text(subinfo_text)
             else:

@@ -268,7 +268,7 @@ class SubCollector(BaseCollector):
         :param inmemory: 直接返回数据到内存，不保存到本地
         :return: 获得一个文件: sub.yaml, bool : True or False
         """
-        _headers = {'User-Agent': 'clash'}
+        _headers = {'User-Agent': 'clash-verge'}
         # suburl = self.url
         suburl = self.cvt_url if self.cvt_enable else self.url
         cvt_text = r"subconvertor状态: {}".format("已启用" if self.cvt_enable else "未启用")
@@ -737,7 +737,7 @@ async def delay_https_task(session: aiohttp.ClientSession = None, collector=None
             # print("http平均延迟:", http_delay)
             http_delay = int(http_delay[:-2])
             if collector is not None:
-                collector.info['HTTP延迟'] = http_delay
+                collector.info['HTTP(S)延迟'] = http_delay
             return http_delay
     else:
         tasks = [asyncio.create_task(delay_https(session=session, proxy=proxy)) for _ in range(times)]
@@ -748,7 +748,7 @@ async def delay_https_task(session: aiohttp.ClientSession = None, collector=None
         http_delay = int(http_delay[:-2])
         # print("http平均延迟:", http_delay)
         if collector is not None:
-            collector.info['HTTP延迟'] = http_delay
+            collector.info['HTTP(S)延迟'] = http_delay
         return http_delay
 
 
