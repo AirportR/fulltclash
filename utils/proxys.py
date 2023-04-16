@@ -26,6 +26,9 @@ _free_me.argtypes = [ctypes.POINTER(ctypes.c_char)]
 _myURLTest = getattr(lib, 'myURLTest')
 _myURLTest.argtypes = [ctypes.c_char_p, ctypes.c_int64]
 _myURLTest.restype = ctypes.c_ushort
+_urlTest = getattr(lib, 'urltestJson')
+_urlTest.argtypes = [ctypes.c_char_p, ctypes.c_int64, ctypes.c_int64]
+_urlTest.restype = ctypes.c_char_p
 
 
 class Clash(threading.Thread):  # 继承父类threading.Thread
@@ -43,8 +46,19 @@ class Clash(threading.Thread):  # 继承父类threading.Thread
         _myclash(_addr.encode(), self._index)
 
 
-def http_delay(url: str = config.getGstatic(), index: int = 0) -> int:
-    mean_delay = _myURLTest(url.encode(), index)
+async def http_delay(url: str = config.getGstatic(), index: int = 0) -> int:
+    mean_delay = await asyncio.to_thread(_myURLTest, url.encode(), index)
+    return mean_delay
+
+
+async def http_delay_tls(url: str = config.getGstatic(), index: int = 0, timeout=10):
+    mean_delay = await asyncio.to_thread(_urlTest, url.encode(), index, timeout)
+    print(mean_delay)
+    try:
+        mean_delay = json.loads(mean_delay).get('delay', 0)
+    except Exception as e:
+        logger.error(repr(e))
+        mean_delay = 0
     return mean_delay
 
 

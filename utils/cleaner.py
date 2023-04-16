@@ -735,7 +735,7 @@ class ConfigManager:
 
     def getGstatic(self):
         """
-        获取HTTP延迟测试的URL
+        获取HTTP(S)延迟测试的URL
         :return:
         """
         try:
@@ -1117,11 +1117,11 @@ class ReCleaner:
         :return: int
         """
         try:
-            if 'HTTP延迟' not in self.data and 'HTTPS延迟' not in self.data:
-                logger.warning("采集器内无数据: HTTP延迟")
+            if 'HTTP(S)延迟' not in self.data and 'HTTPS延迟' not in self.data:
+                logger.warning("采集器内无数据: HTTP(S)延迟")
                 return 0
             else:
-                return self.data.get('HTTP延迟', 0)
+                return self.data.get('HTTP(S)延迟', 0)
         except Exception as e:
             logger.error(str(e))
             return 0
@@ -1267,25 +1267,25 @@ class ResultCleaner:
                 for r in rtt:
                     new_rtt.append(str(r) + 'ms')
                 self.data['HTTP延迟(内核)'] = new_rtt
-            if 'HTTP延迟' in self.data:
-                rtt = self.data['HTTP延迟']
+            if 'HTTP(S)延迟' in self.data:
+                rtt = self.data['HTTP(S)延迟']
                 new_rtt = []
                 for r in rtt:
                     new_rtt.append(str(r) + 'ms')
-                self.data['HTTP延迟'] = new_rtt
+                self.data['HTTP(S)延迟'] = new_rtt
             return self.data
         except TypeError:
             return {}
 
     def sort_by_ping(self, reverse=False):
-        http_l = self.data.get('HTTP延迟')
+        http_l = self.data.get('HTTP(S)延迟')
         if not reverse:
             for i in range(len(http_l)):
                 if http_l[i] == 0:
                     http_l[i] = 999999
         new_list = [http_l, self.data.get('节点名称'), self.data.get('类型')]
         for k, v in self.data.items():
-            if k == "HTTP延迟" or k == "节点名称" or k == "类型":
+            if k == "HTTP(S)延迟" or k == "节点名称" or k == "类型":
                 continue
             new_list.append(v)
         lists = zip(*new_list)
@@ -1298,13 +1298,13 @@ class ResultCleaner:
                 if http_l[i] == 999999:
                     http_l[i] = 0
         if len(new_list) > 2:
-            self.data['HTTP延迟'] = http_l
+            self.data['HTTP(S)延迟'] = http_l
             self.data['节点名称'] = new_list[1]
             self.data['类型'] = new_list[2]
             num = -1
             for k in self.data.keys():
                 num += 1
-                if k == "HTTP延迟" or k == "节点名称" or k == "类型":
+                if k == "HTTP(S)延迟" or k == "节点名称" or k == "类型":
                     continue
                 self.data[k] = new_list[num]
 

@@ -252,7 +252,7 @@ def callback_loader(app: Client):
             await bot_put(client, origin_message, test_type, test_items, sort=sort_str, coreindex=3)
 
 
-async def bot_put(client, message, put_type: str, test_items: list = None, **kwargs):
+async def bot_put(client: Client, message: Message, put_type: str, test_items: list = None, **kwargs):
     """
     推送任务，bot推送反馈
     :param test_items:
@@ -271,9 +271,7 @@ async def bot_put(client, message, put_type: str, test_items: list = None, **kwa
         await q.put(message)
         r1(test_items)
         r2(test_items)
-        await mes.edit_text("任务已提交")
-        message_delete_queue.put_nowait((mes.chat.id, mes.id, 5))
-        await asyncio.sleep(3)
+        await mes.delete()
         await bot_task_queue(client, message, put_type, q, **kwargs)
         task_num -= 1
 
