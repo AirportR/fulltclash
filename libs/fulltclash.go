@@ -1,7 +1,6 @@
 package main
 
-// #include <stdlib.h>
-
+//#include <stdlib.h>
 import "C"
 import (
 	"context"
@@ -162,25 +161,30 @@ func freeMe(data *C.char) {
 }
 
 //export urlTest
-func urlTest(index int, url *C.char, timeout int) (uint16, uint16, C.char) {
+func urlTest(rawurl *C.char, index int, timeout int) (uint16, uint16, error) {
 	ctx := context.Background()
-
+	newurl := C.GoString(rawurl)
 	proxy, err := adapter.ParseProxy(rawcfgs[index].Proxy)
 
 	if err != nil {
-		return 0, 0, C.CString(err.Error())
+		return 0, 0, err
 	}
 
-	addr, err := urlToMetadata(C.GoString(url))
+	addr, err := urlToMetadata(newurl)
 	if err != nil {
-		return 0, 0, C.CString(err.Error())
+		return 0, 0, err
 	}
 
 	instance, err := proxy.DialContext(ctx, &addr)
 	if err != nil {
-		return 0, 0, C.CString(err.Error())
+		return 0, 0, err
 	}
-	defer instance.Close()
+	defer func(instance constant.Conn) {
+		err := instance.Close()
+		if err != nil {
+
+		}
+	}(instance)
 
 	transport := &http.Transport{
 		Dial: func(network, addr string) (net.Conn, error) { return instance, nil },
@@ -198,7 +202,7 @@ func urlTest(index int, url *C.char, timeout int) (uint16, uint16, C.char) {
 		},
 	}
 
-	req, err := http.NewRequest("GET", C.GoString(url), nil)
+	req, err := http.NewRequest("GET", newurl, nil)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -230,12 +234,12 @@ func urlTest(index int, url *C.char, timeout int) (uint16, uint16, C.char) {
 	if resp, err := transport.RoundTrip(req); err != nil {
 		return 0, 0, err
 	} else {
-		if !strings.HasPrefix(url, "https:") {
+		if !strings.HasPrefix(newurl, "https:") {
 			return uint16(writeStart - connStart), uint16(writeEnd - connStart), nil
 		}
 		if resp.TLS != nil && resp.TLS.HandshakeComplete {
 			connEnd := time.Now().UnixMilli()
-			fmt.Printf("Urltest end. Name:%s, TimeStack:%d,%d,%d,%d", proxy.Name(), connEnd-writeEnd, writeEnd-tlsEnd, tlsEnd-tlsStart, tlsStart-connStart)
+			fmt.Printf("Urltest end. Name:%s, TimeStack:%d,%d,%d,%d\n", proxy.Name(), connEnd-writeEnd, writeEnd-tlsEnd, tlsEnd-tlsStart, tlsStart-connStart)
 			// use payload rtt
 			return uint16(writeEnd - tlsEnd), uint16(writeEnd - connStart), nil
 			// return uint16(tlsEnd - tlsStart), uint16(writeEnd - connStart), nil
@@ -244,10 +248,10 @@ func urlTest(index int, url *C.char, timeout int) (uint16, uint16, C.char) {
 	}
 }
 
-//export urlTest_Json
-func urlTest_Json(index int, url *C.char, timeout int) *C.char {
+//export urltestJson
+func urltestJson(url *C.char, index int, timeout int) *C.char {
 	retMap := make(map[string]interface{})
-	rtt, delay, err := urlTest(index, url, timeout)
+	rtt, delay, err := urlTest(url, index, timeout)
 	retMap["rtt"] = rtt
 	retMap["delay"] = delay
 	retMap["err"] = err
@@ -279,7 +283,7 @@ func urlToMetadata(rawURL string) (addr constant.Metadata, err error) {
 		}
 	}
 
-	addr = C.Metadata{
+	addr = constant.Metadata{
 		Host:    u.Hostname(),
 		DstIP:   nil,
 		DstPort: port,
