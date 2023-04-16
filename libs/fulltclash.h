@@ -20,7 +20,7 @@ typedef struct { const char *p; ptrdiff_t n; } _GoString_;
 
 
 #line 3 "fulltclash.go"
- #include <stdlib.h>
+#include <stdlib.h>
 
 #line 1 "cgo-generated-wrapper"
 
@@ -83,6 +83,15 @@ extern void myclash(char* addr, GoInt index);
 extern char* setProxy(char* oldstr, GoInt index);
 extern void stop(GoInt flag);
 extern void freeMe(char* data);
+
+/* Return type for urlTest */
+struct urlTest_return {
+	GoUint16 r0;
+	GoUint16 r1;
+	GoInterface r2;
+};
+extern struct urlTest_return urlTest(char* rawurl, GoInt index, GoInt timeout);
+extern char* urltestJson(char* url, GoInt index, GoInt timeout);
 
 #ifdef __cplusplus
 }
