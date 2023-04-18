@@ -8,7 +8,7 @@ from utils import cron_edit_message as cem
 
 bot_token = init_bot.bot_token
 # 项目版本号
-__version__ = '3.5.6'
+__version__ = '3.5.7'
 # 客户端
 app = Client("my_bot",
              api_id=init_bot.api_id,

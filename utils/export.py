@@ -867,11 +867,11 @@ class ExportTopo(ExportResult):
                             text,
                             font=fnt, fill=(0, 0, 0))
                     elif text != next_text:
-                        idraw.text((163, (t + 2) * 60-20), "|___", font=fnt, fill=(0, 0, 0))
+                        idraw.text((163, (t + 2) * 60), "*", font=fnt, fill=(0, 0, 0))
                     else:
                         idraw.text(
                             (163, (t + 2) * 60),
-                            "|---",
+                            "|--",
                             font=fnt, fill=(0, 0, 0))
                 else:
                     idraw.text((self.get_mid(width, width + info_list_length[i], str(self.info[t1][t])), (t + 2) * 60),
