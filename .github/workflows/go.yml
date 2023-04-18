@@ -20,7 +20,10 @@ jobs:
       uses: actions/setup-go@v3
       with:
         go-version: 1.19
-
+    - name: go mod
+      run: go mod init myclash
+    - name: gomod2
+      run: go mod tidy
     - name: Build
       run: go build -buildmode=c-shared -v -o ./libs/fulltclash-amd64.so ./libs/fulltclash.go
     - name: Archive production artifacts
