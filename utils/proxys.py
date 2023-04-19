@@ -3,6 +3,7 @@ import json
 import os
 import threading
 
+import async_timeout
 import yaml
 import ctypes
 import aiohttp
@@ -52,13 +53,22 @@ async def http_delay(url: str = config.getGstatic(), index: int = 0) -> int:
 
 
 async def http_delay_tls(url: str = config.getGstatic(), index: int = 0, timeout=10):
-    mean_delay = await asyncio.to_thread(_urlTest, url.encode(), index, timeout)
-    print(mean_delay)
+    mean_delay1 = None
     try:
-        mean_delay = json.loads(mean_delay).get('delay', 0)
+        async with async_timeout.timeout(20):
+            mean_delay1 = await asyncio.to_thread(_urlTest, url.encode(), index, timeout)
+            print(mean_delay1.decode())
+            mean_delay = json.loads(mean_delay1.decode()).get('delay', 0)
+    except asyncio.TimeoutError:
+        logger.error("HTTP(S)延迟测试已超时")
+        mean_delay = 0
     except Exception as e:
         logger.error(repr(e))
         mean_delay = 0
+    finally:
+        if mean_delay1 is not None:
+            pass
+            # _free_me(ctypes.pointer(mean_delay1))
     return mean_delay
 
 
