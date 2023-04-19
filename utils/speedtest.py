@@ -112,10 +112,9 @@ async def fetch(self, url: str, host: str, port: int, buffer: int):
         async with aiohttp.ClientSession(
                 headers={"User-Agent": "FullTclash"},
                 connector=ProxyConnector(host=host, port=port),
-                timeout=aiohttp.ClientTimeout(connect=10),
         ) as session:
             # logger.debug("Session created.")
-            async with session.get(url) as response:
+            async with session.get(url, timeout=3) as response:
                 # logger.debug("Awaiting response.")
                 while not self._stopped:
                     if not break_speed:
