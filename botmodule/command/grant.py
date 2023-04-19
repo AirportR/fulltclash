@@ -27,7 +27,7 @@ async def grant(client: Client, message: pyrogram.types.Message):
                 await message.reply("请先用该指令回复一个目标")
             else:
                 for i in _args[1:]:
-                    config.add_user(i)
+                    config.add_user(int(i))
                 logger.info("授权id:" + str(_args[1:]))
                 config.reload()
                 r2()
@@ -72,7 +72,7 @@ async def ungrant(_, message: pyrogram.types.Message):
                 message_delete_queue.put_nowait((back_msg.chat.id, back_msg.id, 10))
             else:
                 for i in _args[1:]:
-                    config.del_user(i)
+                    config.del_user(int(i))
                 config.reload()
                 r2()
                 reloadUser()
