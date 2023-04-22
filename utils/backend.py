@@ -226,7 +226,7 @@ class SpeedCore(Basecore):
                     connector=ProxyConnector(host=host, port=port),
             ) as session:
                 # logger.debug("Session created.")
-                async with session.get(url, timeout=self._download_interval+10) as response:
+                async with session.get(url, timeout=self._download_interval + 10) as response:
                     # logger.debug("Awaiting response.")
                     while not self._stopped:
                         if not break_speed:
@@ -319,7 +319,7 @@ class SpeedCore(Basecore):
                 sending_time += 10
                 equal_signs = int(cal / 5)
                 space_count = 20 - equal_signs
-                progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + f"{bracketsspace}" * space_count\
+                progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + f"{bracketsspace}" * space_count \
                                + bracketsright
                 edit_text = f"{speedtext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + p_text + \
                             "%     [" + str(progress) + "/" + str(nodenum) + "]"
@@ -554,9 +554,11 @@ class TopoCore(Basecore):
 
     async def topo(self):
         if self.ip_choose == "ip":
-          info = {'地区': [], 'AS编号': [], '组织': [], '栈': [], '入口ip段': []}
+            info = {'地区': [], 'AS编号': [], '组织': [], '栈': [], '入口ip段': []}
         elif self.ip_choose == "cluster":
-          info = {'地区': [], 'AS编号': [], '组织': [], '栈': [], '簇': []}
+            info = {'地区': [], 'AS编号': [], '组织': [], '栈': [], '簇': []}
+        else:
+            info = {'地区': [], 'AS编号': [], '组织': [], '栈': []}
         cl = copy.deepcopy(self._config)
         if not self.check_node():
             return info, [], cl
@@ -587,29 +589,29 @@ class TopoCore(Basecore):
                 numcount = []
                 for v in inboundinfo.values():
                     numcount.append(int(v))
-                info.update({'出口数量': numcount}) 
+                info.update({'出口数量': numcount})
                 new_hosts = []
                 if self.ip_choose == "ip":
-                  for host in hosts:
-                      if len(host) < 16:  # v4地址最大长度为15
-                          try:
-                              old_ip = host.split('.')[:2]
-                              new_ip = old_ip[0] + "." + old_ip[1] + ".*.*"
-                          except IndexError:
-                              new_ip = host
-                          new_hosts.append(new_ip)
-                      elif len(host) > 15:
-                          try:
-                              old_ip = host.split(':')[2:4]
-                              new_ip = "*:*:" + old_ip[0] + ":" + old_ip[1] + ":*:*"
-                          except IndexError:
-                              new_ip = host
-                          new_hosts.append(new_ip)
-                      else:
-                          new_hosts.append(host)
-                  info.update({'入口ip段': new_hosts})
+                    for host in hosts:
+                        if len(host) < 16:  # v4地址最大长度为15
+                            try:
+                                old_ip = host.split('.')[:2]
+                                new_ip = old_ip[0] + "." + old_ip[1] + ".*.*"
+                            except IndexError:
+                                new_ip = host
+                            new_hosts.append(new_ip)
+                        elif len(host) > 15:
+                            try:
+                                old_ip = host.split(':')[2:4]
+                                new_ip = "*:*:" + old_ip[0] + ":" + old_ip[1] + ":*:*"
+                            except IndexError:
+                                new_ip = host
+                            new_hosts.append(new_ip)
+                        else:
+                            new_hosts.append(host)
+                    info.update({'入口ip段': new_hosts})
                 elif self.ip_choose == "cluster":
-                  info.update({'簇': ipclus})               
+                    info.update({'簇': ipclus})
             return info, hosts, cl
 
     async def batch_topo(self, nodename: list, pool: dict):
