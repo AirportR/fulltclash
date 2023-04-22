@@ -83,6 +83,9 @@ class IPCollector:
         elif self.style == "ipdata.co":
             self.get_payload = f"?api-key={self.key}"
             return "https://api.ipdata.co/"
+        elif self.style == "ipapi.co":
+            self.get_payload = "/json/"
+            return "https://ipapi.co/"
 
     def create_tasks(self, session: aiohttp.ClientSession, hosts: list = None, proxy=None):
         """
