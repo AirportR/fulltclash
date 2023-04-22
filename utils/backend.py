@@ -550,17 +550,22 @@ class TopoCore(Basecore):
     def __init__(self, chat_id=None, message_id=None):
         super().__init__()
         self.edit = (chat_id, message_id)
+        self.ip_choose = GCONFIG.config.get('entrance', {}).get('switch', 'ip')
 
     async def topo(self):
-        info = {'地区': [], 'AS编号': [], '组织': [], '栈': [], '入口ip段': []}
+        if self.ip_choose == "ip":
+          info = {'地区': [], 'AS编号': [], '组织': [], '栈': [], '入口ip段': []}
+        elif self.ip_choose == "cluster":
+          info = {'地区': [], 'AS编号': [], '组织': [], '栈': [], '簇': []}
         cl = copy.deepcopy(self._config)
         if not self.check_node():
             return info, [], cl
         co = collector.IPCollector()
         session = aiohttp.ClientSession()
         # node_addrs = cl.nodehost()
-        nodename, inboundinfo, cl, ipstack_list = sorter.sort_nodename_topo(cl)
+        nodename, inboundinfo, cl, ipstack_list, ipclu = sorter.sort_nodename_topo(cl)
         ipstack_lists = list(ipstack_list.values())
+        ipclus = list(ipclu.values())
         info['栈'] = ipstack_lists
         if nodename and inboundinfo and cl:
             # 拿地址，已经转换了域名为ip,hosts变量去除了N/A
@@ -582,26 +587,29 @@ class TopoCore(Basecore):
                 numcount = []
                 for v in inboundinfo.values():
                     numcount.append(int(v))
+                info.update({'出口数量': numcount}) 
                 new_hosts = []
-                for host in hosts:
-                    if len(host) < 16:  # v4地址最大长度为15
-                        try:
-                            old_ip = host.split('.')[:2]
-                            new_ip = old_ip[0] + "." + old_ip[1] + ".*.*"
-                        except IndexError:
-                            new_ip = host
-                        new_hosts.append(new_ip)
-                    elif len(host) > 15:
-                        try:
-                            old_ip = host.split(':')[2:4]
-                            new_ip = "*:*:" + old_ip[0] + ":" + old_ip[1] + ":*:*"
-                        except IndexError:
-                            new_ip = host
-                        new_hosts.append(new_ip)
-                    else:
-                        new_hosts.append(host)
-                info.update({'入口ip段': new_hosts})
-                info.update({'出口数量': numcount})
+                if self.ip_choose == "ip":
+                  for host in hosts:
+                      if len(host) < 16:  # v4地址最大长度为15
+                          try:
+                              old_ip = host.split('.')[:2]
+                              new_ip = old_ip[0] + "." + old_ip[1] + ".*.*"
+                          except IndexError:
+                              new_ip = host
+                          new_hosts.append(new_ip)
+                      elif len(host) > 15:
+                          try:
+                              old_ip = host.split(':')[2:4]
+                              new_ip = "*:*:" + old_ip[0] + ":" + old_ip[1] + ":*:*"
+                          except IndexError:
+                              new_ip = host
+                          new_hosts.append(new_ip)
+                      else:
+                          new_hosts.append(host)
+                  info.update({'入口ip段': new_hosts})
+                elif self.ip_choose == "cluster":
+                  info.update({'簇': ipclus})               
             return info, hosts, cl
 
     async def batch_topo(self, nodename: list, pool: dict):
