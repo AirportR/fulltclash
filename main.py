@@ -2,7 +2,6 @@ from utils import bot
 from glovar import app as app1, bot_info
 from pyrogram import idle
 from botmodule import init_bot
-from utils.proxys import stopclash
 
 bot_token = init_bot.bot_token
 
@@ -20,7 +19,5 @@ def start():
 
 
 if __name__ == "__main__":
-    try:
-        start()
-    except KeyboardInterrupt:
-        stopclash()
+    start()
+

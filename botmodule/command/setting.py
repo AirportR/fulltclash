@@ -11,7 +11,7 @@ from botmodule.init_bot import latest_version_hash as v_hash
 
 b15 = InlineKeyboardButton("✅Spotify", callback_data="✅Spotify")
 b18 = InlineKeyboardButton("✅Viu", callback_data="✅Viu")
-b19 = InlineKeyboardButton("✅落地IP风险", callback_data="落地IP风险")
+b19 = InlineKeyboardButton("✅落地IP风险", callback_data="✅落地IP风险")
 b20 = InlineKeyboardButton("✅steam货币", callback_data="✅steam货币")
 b21 = InlineKeyboardButton("✅维基百科", callback_data="✅维基百科")
 b25 = InlineKeyboardButton("✅OpenAI", callback_data="✅OpenAI")
