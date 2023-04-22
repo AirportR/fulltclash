@@ -867,7 +867,7 @@ class ExportTopo(ExportResult):
                             text,
                             font=fnt, fill=(0, 0, 0))
                     elif text != next_text:
-                        idraw.text((163, (t + 2) * 60-20), "*", font=fnt, fill=(0, 0, 0))
+                        idraw.text((163, (t + 2) * 60), "*", font=fnt, fill=(0, 0, 0))
                     else:
                         idraw.text(
                             (163, (t + 2) * 60),
