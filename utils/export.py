@@ -905,6 +905,7 @@ class ExportSpeed(ExportResult):
         """
         super().__init__({}, [])
         self.color = self.config.getColor().get('speed', [])
+        self.delay_color = self.config.getColor().get('delay', [])
         if info is None:
             info = {}
         self.wtime = info.pop('wtime', "-1")
@@ -955,20 +956,39 @@ class ExportSpeed(ExportResult):
     @property
     def interval(self):
         interval_list = []
-        for c in self.color:
+        for c in self.delay_color:
             interval_list.append(c.get('label', 0))
         a = list(set(interval_list))  # 去重加排序
         a.sort()
-        # while len(a) < 7:
-        #     a.append(99999)
-        # if len(a) > 7:
-        #     return a[:7]
-        # else:
-        #     return a
+        while len(a) < 8:
+            a.append(99999)
+        if len(a) > 8:
+            return a[:8]
+        else:
+            return a
+     
+    @property
+    def intervals(self):
+        intervals_list = []
+        for c in self.color:
+            intervals_list.append(c.get('label', 0))
+        a = list(set(intervals_list))  # 去重加排序
+        a.sort()
         return a
-
     @property
     def colorvalue(self):
+        color_list = []
+        for c in self.delay_color:
+            color_list.append(c.get('value', '#f5f3f2'))
+        while len(color_list) < 8:
+            color_list.append('#f5f3f2')
+        if len(color_list) > 8:
+            return color_list[:8]
+        else:
+           return color_list
+        
+    @property
+    def colorvalues(self):
         color_list = []
         for c in self.color:
             color_list.append(c.get('value', '#f5f3f2'))
@@ -1025,17 +1045,17 @@ class ExportSpeed(ExportResult):
             m = m + 1
         # 内容填充
         if self.color:
-            colorvalue = self.colorvalue
-            interval = self.interval
+            colorvalues = self.colorvalues
+            intervals = self.intervals
         else:
             # 默认值
-            colorvalue = ["#f5f3f2", "#beb1aa", "#f6bec8", "#dc6b82", "#c35c5d", "#8ba3c7", "#c8161d"]
-            interval = [0, 1, 5, 10, 20, 60, 100]
+            colorvalues = ["#f5f3f2", "#beb1aa", "#f6bec8", "#dc6b82", "#c35c5d", "#8ba3c7", "#c8161d"]
+            intervals = [0, 1, 5, 10, 20, 60, 100]
 
         def get_color(_speedvalue, default_color='#C0C0C0'):
-            for _i in reversed(range(len(colorvalue))):
-                if _speedvalue >= interval[_i]:
-                    return colorvalue[_i]
+            for _i in reversed(range(len(colorvalues))):
+                if _speedvalue >= intervals[_i]:
+                    return colorvalues[_i]
             return default_color
 
         for t in range(self.nodenum):
@@ -1058,8 +1078,41 @@ class ExportSpeed(ExportResult):
             width = 100 + nodename_width + 2
             i = 0
             speedblock_height = 60
+            if self.delay_color:
+              colorvalue = self.colorvalue
+              interval = self.interval
+            else:
+            # 默认值
+              colorvalue = ["#f5f3f2", "#beb1aa", "#f6bec8", "#dc6b82", "#c35c5d", "#8ba3c7", "#c8161d", '#8d8b8e']
+              interval = [0, 100, 200, 300, 500, 1000, 2000, 99999]
             # 填充颜色块
             for t1 in key_list:
+                if "延迟RTT" == t1 or "HTTP(S)延迟" == t1:
+                    rtt = float(self.info[t1][t][:-2])
+                    if interval[0] < rtt < interval[1]:
+                        block = color_block((info_list_length[i], 60), color_value=colorvalue[0])
+                        img.paste(block, (width, 60 * (t + 2)))
+                    elif interval[1] <= rtt < interval[2]:
+                        block = color_block((info_list_length[i], 60), color_value=colorvalue[1])
+                        img.paste(block, (width, 60 * (t + 2)))
+                    elif interval[2] <= rtt < interval[3]:
+                        block = color_block((info_list_length[i], 60), color_value=colorvalue[2])
+                        img.paste(block, (width, 60 * (t + 2)))
+                    elif interval[3] <= rtt < interval[4]:
+                        block = color_block((info_list_length[i], 60), color_value=colorvalue[3])
+                        img.paste(block, (width, 60 * (t + 2)))
+                    elif interval[4] <= rtt < interval[5]:
+                        block = color_block((info_list_length[i], 60), color_value=colorvalue[4])
+                        img.paste(block, (width, 60 * (t + 2)))
+                    elif interval[5] <= rtt < interval[6]:
+                        block = color_block((info_list_length[i], 60), color_value=colorvalue[5])
+                        img.paste(block, (width, 60 * (t + 2)))
+                    elif interval[6] <= rtt:
+                        block = color_block((info_list_length[i], 60), color_value=colorvalue[6])
+                        img.paste(block, (width, 60 * (t + 2)))
+                    elif rtt == 0:
+                        block = color_block((info_list_length[i], 60), color_value=colorvalue[7])
+                        img.paste(block, (width, 60 * (t + 2)))
                 if t1 == "平均速度" or t1 == "最大速度":
                     speedvalue = float(self.info[t1][t][:-2])
                     block = color_block((info_list_length[i], speedblock_height), color_value=get_color(speedvalue))

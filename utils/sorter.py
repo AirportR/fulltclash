@@ -17,24 +17,31 @@ def sort_nodename_topo(_cleaner: cleaner.ClashCleaner):
         cl = _cleaner
         proxylist = cl.getProxies()
         ipstack = [p['server'] for p in proxylist]
+        ipcu = [p['server'] for p in proxylist]
         for i, p in enumerate(proxylist):
             p['ipstart'] = ipstack[i]
+        for i, p in enumerate(proxylist):
+            p['ipcu'] = ipcu[i]
         ipstack_list = cleaner.batch_ipstack(proxylist)
-        ipaddrs = cleaner.batch_domain2ip(ipstack_list)
+        ipcu_list = cleaner.batch_ipcu(ipstack_list)
+        ipaddrs = cleaner.batch_domain2ip(ipcu_list)
         addrs2 = sorted(ipaddrs, key=lambda i1: i1['server'])
         list1 = []
         dict1 = {}
+        dict2 = {}
         for n in addrs2:
             list1.append(n['server'])
             dict1.setdefault(n['server'], n['ipstart'])
+            dict2.setdefault(n['server'],n['ipcu'])
         cl.yaml['proxies'] = addrs2
         nodename = cl.nodesName()
         info = cleaner.ClashCleaner.count_elem(list1)
         ipsdata = dict1
-        return nodename, info, cl, ipsdata
+        iptcu = dict2
+        return nodename, info, cl, ipsdata, iptcu
     except Exception as e:
         logger.error(str(e))
-        return None, None, None, None
+        return None, None, None, None, None
 
 # def ping(_ping: list, proxyname: list):
 #     """
