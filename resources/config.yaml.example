@@ -37,6 +37,8 @@ admin:
 #nospeed: true #禁用测速，开启后将无法测速。
 #speedconfig: #测速相关配置
 # interval: 10 #每个节点的测速时长
+#entrance:  #入口显示配置
+  switch: "ip" #设置为ip将显示入口ip段，设置为cluster将显示簇，默认设置为ip，PS:这里的簇为入口域名绑定的ip地址数量
 #user: 12345678 #用户列表，/grant 命令授权的目标会保存在这。推荐使用bot进行授权，而非手动配置。（可选配置）
 #emoji: #emoji可选配置
 # enable: true #是否启用,默认启用。若否，则在输出图片时emoji将无法正常显示。关闭该项可解决部分图片生成失败的问题。（可选配置）
