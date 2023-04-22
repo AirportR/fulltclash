@@ -106,7 +106,7 @@ class Speedtest:
         logger.info(f"Fetched {mb_red:.2f} MB in {self._time_used:.2f}s.")
 
 
-async def fetch(self, url: str, host: str, port: int, buffer: int):
+async def fetch(self: Speedtest, url: str, host: str, port: int, buffer: int):
     try:
         # logger.info(f"Fetching {url} via {host}:{port}.")
         async with aiohttp.ClientSession(
@@ -114,7 +114,7 @@ async def fetch(self, url: str, host: str, port: int, buffer: int):
                 connector=ProxyConnector(host=host, port=port),
         ) as session:
             # logger.debug("Session created.")
-            async with session.get(url, timeout=3) as response:
+            async with session.get(url, timeout=self._download_interval+3) as response:
                 # logger.debug("Awaiting response.")
                 while not self._stopped:
                     if not break_speed:
@@ -210,11 +210,11 @@ async def batch_speed(message: Message, nodename: list, proxygroup='auto'):
             equal_signs = int(cal / 5)
             space_count = 20 - equal_signs
             progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + \
-                                   f"{bracketsspace}" * space_count + f"{bracketsright}"
+                           f"{bracketsspace}" * space_count + f"{bracketsright}"
             try:
                 # 实时反馈进度
                 await message.edit_text(speedtext + '\n' + '\n' + progress_bar + "\n\n"
-                                        "当前进度:\n" + p_text +
+                                                                                 "当前进度:\n" + p_text +
                                         "%     [" + str(progress) + "/" + str(nodenum) + "]", reply_markup=IKM)
             except RPCError as r:
                 logger.error(r)
@@ -251,9 +251,9 @@ async def batch_udp(message, nodename: list, proxygroup='auto'):
             equal_signs = int(cal / 5)
             space_count = 20 - equal_signs
             progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + \
-                                   f"{bracketsspace}" * space_count + f"{bracketsright}"
+                           f"{bracketsspace}" * space_count + f"{bracketsright}"
             try:
-                await message.edit_text(udptext+"\n\n" + progress_bar + "\n\n" +
+                await message.edit_text(udptext + "\n\n" + progress_bar + "\n\n" +
                                         "当前进度:\n" + p_text +
                                         "%     [" + str(progress) + "/" + str(nodenum) + "]")  # 实时反馈进度
             except RPCError as r:
