@@ -328,7 +328,7 @@ class ExportResult:
             width = 100 + nodename_width
             i = 0
             for t1 in key_list:
-                if "延迟RTT" == t1 or "HTTP延迟" == t1:
+                if "延迟RTT" == t1 or "HTTP(S)延迟" == t1:
                     rtt = float(self.info[t1][t][:-2])
                     if interval[0] < rtt < interval[1]:
                         block = color_block((info_list_length[i], 60), color_value=colorvalue[0])
