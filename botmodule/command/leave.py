@@ -1,3 +1,5 @@
+import asyncio
+
 from loguru import logger
 from pyrogram import Client
 from pyrogram.types import Message
@@ -12,8 +14,10 @@ async def leavechat(client: Client, message: Message):
         if config.config.get('anti-group', False):
             for user in message.new_chat_members:
                 if str(user.is_self) == "True":
-                    if int(message.from_user.id) not in admin:
+                    ID = get_id(message)
+                    if ID not in admin:
                         await message.reply("❌ 机器人已启动防拉群模式，请联系管理员拉群")
+                        await asyncio.sleep(1)
                         await client.leave_chat(message.chat.id)
         return
     except RPCError as r:

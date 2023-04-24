@@ -23,7 +23,6 @@ task_num = 0  # 任务数
 def loader(app: Client):
     command_loader(app)
     callback_loader(app)
-    anti_join_chat(app)
 
 
 def user_loder(app: Client):
@@ -223,7 +222,6 @@ def command_loader(app: Client):
     async def setantigroup(client, message):
         await set_anti_group(client, message)
 
-def anti_join_chat(app: Client):
     @app.on_message(filters.new_chat_members)
     async def auto_leave(client, message):
         await leavechat(client, message)
@@ -261,6 +259,7 @@ def callback_loader(app: Client):
             await asyncio.sleep(3)
             await message.delete()
             await bot_put(client, origin_message, test_type, test_items, sort=sort_str, coreindex=3)
+
 
 async def bot_put(client: Client, message: Message, put_type: str, test_items: list = None, **kwargs):
     """
