@@ -14,6 +14,7 @@ admin:
 # bleft: "[" #左括号自定义文本
 # bright: "]" #右括号自定义文本
 # bspace: "  " #空格自定义文本，默认为2个
+# command: ['mycommand1', 'mycommand2'] #自定义指令，用于适配权限回调。高级用法，不会无需配置。
 #clash:
 # path: './libs/fulltclash.so' # clash动态库的路径，默认为 ./libs/ 下。不会弄不要动这里，用默认的即可。本仓库默认仅提供win-amd64与linux-amd64两种(意味着如果为这两种架构，这里不用改。)，其他架构需要自行编译。
 # allow-caching: false  #是否缓存测试过程产生的订阅，若否，则测试完成后会自动删除测试订阅，以免造成空间浪费。（此配置暂不生效）
@@ -22,7 +23,7 @@ admin:
 # startup: 1124 起始端口。表示从此端口开始往下数占用数量，比如核心数为4，就会占用[1124,1126,1128,1130]共4个端口，遇到端口占用时可配置此项。推荐10000以上作为初始端口
 #proxy: "host:端口" # http配置代理(非socks5)，括号内可选用于下载获取订阅链接，订阅链接国内打不开可尝试开启（可选配置）,本机提供的代理可以这样填: '127.0.0.1:7890'
 #如果要http代理要验证，配置格式为: proxy: "用户名:密码@host:端口" 比如: user1:112233@127.0.0.1:7890
-#geoip-api: "ip-api.com" # GEOIP 测试api，取二级域名,目前支持 ip-api.com ip.sb ipleak.net ipdata.co 四种，其中 ipdata 需要配置下面的geoip-key
+#geoip-api: "ip-api.com" # GEOIP 测试api，取二级域名,目前支持 ip-api.com ip.sb ipleak.net ipdata.co ipapi.co 五种，其中 ipdata 需要配置下面的geoip-key
 #geoip-key: xxxxxxx #ipdata 的 apikey，如果使用其他api则无需填写
 #subconvertor: #订阅转换(此配置主要开发者已无心维护，能用但不稳定)
 # enable: true #是否启用
@@ -36,6 +37,8 @@ admin:
 #nospeed: true #禁用测速，开启后将无法测速。
 #speedconfig: #测速相关配置
 # interval: 10 #每个节点的测速时长
+#entrance:  #入口显示配置
+  switch: "ip" #设置为ip将显示入口ip段，设置为cluster将显示簇，默认设置为ip，PS:这里的簇为入口域名绑定的ip地址数量
 #user: 12345678 #用户列表，/grant 命令授权的目标会保存在这。推荐使用bot进行授权，而非手动配置。（可选配置）
 #emoji: #emoji可选配置
 # enable: true #是否启用,默认启用。若否，则在输出图片时emoji将无法正常显示。关闭该项可解决部分图片生成失败的问题。（可选配置）

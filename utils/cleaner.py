@@ -38,6 +38,8 @@ class IPCleaner:
             org = self.get('isp_name')
         elif self.style == "ipdata.co":
             org = self.get('asn', {}).get('name')
+        elif self.style == "ipapi.co":
+            org = self.get('org')
         else:
             org = ""
         if org:
@@ -54,6 +56,8 @@ class IPCleaner:
         elif self.style == "ipleak.net":
             ip = self.get('query_text')
         elif self.style == "ipdata.co":
+            ip = self.get('ip')
+        elif self.style == "ipapi.co":
             ip = self.get('ip')
         else:
             pass
@@ -72,6 +76,8 @@ class IPCleaner:
             region_code = self.get('country_code')
         elif self.style == "ipdata.co":
             region_code = self.get('country_code')
+        elif self.style == "ipapi.co":
+            region_code = self.get('country_code')
         else:
             pass
         if region_code:
@@ -88,6 +94,8 @@ class IPCleaner:
         elif self.style == "ipleak.net":
             city = self.get('city_name')
         elif self.style == "ipdata.co":
+            city = self.get('city')
+        elif self.style == "ipapi.co":
             city = self.get('city')
         else:
             pass
@@ -115,6 +123,9 @@ class IPCleaner:
             return asd
         elif self.style == "ipdata.co":
             asn = self.get('asn', {}).get('asn', '0')
+            return asn
+        elif self.style == "ipapi.co":
+            asn = self.get('asn', '0')
             return asn
         else:
             return ''
@@ -735,7 +746,7 @@ class ConfigManager:
 
     def getGstatic(self):
         """
-        获取HTTP延迟测试的URL
+        获取HTTP(S)延迟测试的URL
         :return:
         """
         try:
@@ -1117,11 +1128,11 @@ class ReCleaner:
         :return: int
         """
         try:
-            if 'HTTP延迟' not in self.data and 'HTTPS延迟' not in self.data:
-                logger.warning("采集器内无数据: HTTP延迟")
+            if 'HTTP(S)延迟' not in self.data and 'HTTPS延迟' not in self.data:
+                logger.warning("采集器内无数据: HTTP(S)延迟")
                 return 0
             else:
-                return self.data.get('HTTP延迟', 0)
+                return self.data.get('HTTP(S)延迟', 0)
         except Exception as e:
             logger.error(str(e))
             return 0
@@ -1267,25 +1278,25 @@ class ResultCleaner:
                 for r in rtt:
                     new_rtt.append(str(r) + 'ms')
                 self.data['HTTP延迟(内核)'] = new_rtt
-            if 'HTTP延迟' in self.data:
-                rtt = self.data['HTTP延迟']
+            if 'HTTP(S)延迟' in self.data:
+                rtt = self.data['HTTP(S)延迟']
                 new_rtt = []
                 for r in rtt:
                     new_rtt.append(str(r) + 'ms')
-                self.data['HTTP延迟'] = new_rtt
+                self.data['HTTP(S)延迟'] = new_rtt
             return self.data
         except TypeError:
             return {}
 
     def sort_by_ping(self, reverse=False):
-        http_l = self.data.get('HTTP延迟')
+        http_l = self.data.get('HTTP(S)延迟')
         if not reverse:
             for i in range(len(http_l)):
                 if http_l[i] == 0:
                     http_l[i] = 999999
         new_list = [http_l, self.data.get('节点名称'), self.data.get('类型')]
         for k, v in self.data.items():
-            if k == "HTTP延迟" or k == "节点名称" or k == "类型":
+            if k == "HTTP(S)延迟" or k == "节点名称" or k == "类型":
                 continue
             new_list.append(v)
         lists = zip(*new_list)
@@ -1298,13 +1309,13 @@ class ResultCleaner:
                 if http_l[i] == 999999:
                     http_l[i] = 0
         if len(new_list) > 2:
-            self.data['HTTP延迟'] = http_l
+            self.data['HTTP(S)延迟'] = http_l
             self.data['节点名称'] = new_list[1]
             self.data['类型'] = new_list[2]
             num = -1
             for k in self.data.keys():
                 num += 1
-                if k == "HTTP延迟" or k == "节点名称" or k == "类型":
+                if k == "HTTP(S)延迟" or k == "节点名称" or k == "类型":
                     continue
                 self.data[k] = new_list[num]
 
@@ -1358,6 +1369,13 @@ def domain_to_ip(host: str):
     except socket.gaierror:
         return None
 
+def cluster(host):
+    cluip = domain_to_ip(host)
+    if cluip is None:
+        return None
+    else:
+        clus = len(cluip)
+        return clus
 
 def count(host):
     ips = domain_to_ip(host)
@@ -1437,3 +1455,30 @@ def batch_domain2ip(host: list):
             else:
                 ipaddrs.append("N/A")
     return ipaddrs
+
+def batch_ipcu(host: list):
+    """
+    批量将域名转成簇列表
+    :param host: 一个列表
+    :return:
+    """
+    ipcu = []
+    for h in host:
+        if type(h).__name__ == 'dict':
+            try:
+                ipss = cluster(h['ipcu'])
+                if ipss:
+                    h['ipcu'] = ipss
+                else:
+                    h['ipcu'] = "N/A"
+                ipcu.append(h)
+            except KeyError:
+                h['ipcu'] = "N/A"
+                ipcu.append(h)
+        else:
+            ipss = cluster(h)
+            if ipss:
+                ipcu.append(ipss)
+            else:
+                ipcu.append("N/A")
+    return ipcu

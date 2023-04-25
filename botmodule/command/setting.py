@@ -11,7 +11,7 @@ from botmodule.init_bot import latest_version_hash as v_hash
 
 b15 = InlineKeyboardButton("✅Spotify", callback_data="✅Spotify")
 b18 = InlineKeyboardButton("✅Viu", callback_data="✅Viu")
-b19 = InlineKeyboardButton("✅落地IP风险", callback_data="落地IP风险")
+b19 = InlineKeyboardButton("✅落地IP风险", callback_data="✅落地IP风险")
 b20 = InlineKeyboardButton("✅steam货币", callback_data="✅steam货币")
 b21 = InlineKeyboardButton("✅维基百科", callback_data="✅维基百科")
 b25 = InlineKeyboardButton("✅OpenAI", callback_data="✅OpenAI")
@@ -147,14 +147,14 @@ async def test_setting(client: Client, callback_query: CallbackQuery, row=3, **k
             return test_items, origin_message, message, test_type
         elif "御三家(N-Y-D)" in callback_data:
             test_items.clear()
-            test_items.extend(['HTTP延迟', 'Netflix', 'Youtube', 'Disney+'])
+            test_items.extend(['HTTP(S)延迟', 'Netflix', 'Youtube', 'Disney+'])
             message = await client.edit_message_text(chat_id=chat_id,
                                                      message_id=mess_id,
                                                      text="⌛正在提交任务~")
             return test_items, origin_message, message, test_type
         elif "节点存活率" in callback_data:
             test_items.clear()
-            test_items.append('HTTP延迟')
+            test_items.append('HTTP(S)延迟')
             message = await client.edit_message_text(chat_id=chat_id, message_id=mess_id, text="⌛正在提交任务~")
             return test_items, origin_message, message, test_type
         elif "👋点错了，给我取消" in callback_data:
@@ -166,12 +166,12 @@ async def test_setting(client: Client, callback_query: CallbackQuery, row=3, **k
             message = None
             return test_items, origin_message, message, test_type
         elif "全测" == callback_data:
-            test_items = ['HTTP延迟']
+            test_items = ['HTTP(S)延迟']
             test_items += addon.global_test_item()
             message = await client.edit_message_text(chat_id, mess_id, text="⌛正在提交任务~")
             return test_items, origin_message, message, test_type
         elif 'ok_p' == callback_data:
-            test_items = select_item_cache.get(str(chat_id) + ':' + str(mess_id), ['HTTP延迟'])
+            test_items = select_item_cache.get(str(chat_id) + ':' + str(mess_id), ['HTTP(S)延迟'])
             for b_1 in inline_keyboard:
                 for b in b_1:
                     if "✅" in b.text:
@@ -197,7 +197,7 @@ async def test_setting(client: Client, callback_query: CallbackQuery, row=3, **k
             await client.edit_message_text(chat_id, mess_id, "请选择想要启用的测试项: ", reply_markup=new_ikm)
             return test_items, origin_message, message, test_type
         elif "👌完成设置" in callback_data:
-            test_items = select_item_cache.pop(str(chat_id) + ':' + str(mess_id), ['HTTP延迟'])
+            test_items = select_item_cache.pop(str(chat_id) + ':' + str(mess_id), ['HTTP(S)延迟'])
             message = await client.edit_message_text(chat_id, mess_id, "⌛正在提交任务~")
             issuc = []
             for i in range(max_page):

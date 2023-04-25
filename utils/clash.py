@@ -324,7 +324,6 @@ if __name__ == "__main__":
     try:
         # subp.wait()
         import signal
-
         signal.signal(signal.SIGINT, signal.SIG_DFL)
     except KeyboardInterrupt:
         exit()

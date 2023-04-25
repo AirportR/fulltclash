@@ -135,13 +135,13 @@ async def invite_pass(client: pyrogram.Client, message: Message):
             await message.reply("ID验证失败，请不要乱用别人的测试哦！")
             return
         task_type_select = k[1] if len(k) > 1 else ''
-        test_type_select = ['HTTP延迟']
+        test_type_select = ['HTTP(S)延迟']
         if len(k) > 2:
             if k[2] == 'default':
                 test_type_select += addon.global_test_item()
             else:
                 for i in k[2:]:
-                    if i == 'HTTP延迟':
+                    if i == 'HTTP(S)延迟':
                         continue
                     test_type_select.append(i)
 

@@ -7,6 +7,7 @@ import botmodule
 from botmodule import init_bot
 from botmodule.cfilter import dynamic_data_filter, allfilter, AccessCallback
 from botmodule.command.authority import get_url_from_invite
+from botmodule.command.leave import leavechat, set_anti_group
 from utils.cron.utils import message_delete_queue
 from utils.myqueue import q, bot_task_queue
 from utils.check import check_callback_master
@@ -61,11 +62,6 @@ def command_loader(app: Client):
     @app.on_message(filters.command(["test"]) & allfilter(1), group=1)
     @AccessCallback()
     async def test(_, message):
-        if not config.get_sub(subname=message.command[1]):
-            back_message = await message.reply("❌找不到该任务名称，请检查参数是否正确 (TEST DELETE MESSAGE)")
-            message_delete_queue.put_nowait([message.chat.id, message.id, 10])
-            message_delete_queue.put_nowait([back_message.chat.id, back_message.id, 10])
-            return
         await message.reply("请选择排序方式:", reply_markup=botmodule.IKM2, quote=True)
 
     @app.on_message(filters.command(["invite"]), group=1)
@@ -172,6 +168,11 @@ def command_loader(app: Client):
     async def temp(client, message):
         await get_url_from_invite(client, message)
 
+    @app.on_message(filters.command(config.config.get('bot', {}).get('command', [])), group=3)
+    @AccessCallback(1)
+    async def common_command(client: Client, message: Message):
+        await botmodule.common_command(client, message)
+
     @app.on_message(filters.command(["share"]), group=1)
     @AccessCallback()
     async def share(client, message):
@@ -217,6 +218,14 @@ def command_loader(app: Client):
         await botmodule.response(client, message)
         message.stop_propagation()
 
+    @app.on_message(filters.command(["setantigroup"]) & allfilter(2), group=2)
+    async def setantigroup(client, message):
+        await set_anti_group(client, message)
+
+    @app.on_message(filters.new_chat_members)
+    async def auto_leave(client, message):
+        await leavechat(client, message)
+
 
 def callback_loader(app: Client):
     @app.on_callback_query(filters=dynamic_data_filter('stop') & filters.user(botmodule.init_bot.reloadUser()), group=1)
@@ -252,7 +261,7 @@ def callback_loader(app: Client):
             await bot_put(client, origin_message, test_type, test_items, sort=sort_str, coreindex=3)
 
 
-async def bot_put(client, message, put_type: str, test_items: list = None, **kwargs):
+async def bot_put(client: Client, message: Message, put_type: str, test_items: list = None, **kwargs):
     """
     推送任务，bot推送反馈
     :param test_items:
@@ -271,9 +280,7 @@ async def bot_put(client, message, put_type: str, test_items: list = None, **kwa
         await q.put(message)
         r1(test_items)
         r2(test_items)
-        await mes.edit_text("任务已提交")
-        message_delete_queue.put_nowait((mes.chat.id, mes.id, 5))
-        await asyncio.sleep(3)
+        await mes.delete()
         await bot_task_queue(client, message, put_type, q, **kwargs)
         task_num -= 1
 
