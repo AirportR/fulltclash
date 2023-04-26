@@ -223,6 +223,7 @@ def command_loader(app: Client):
         await set_anti_group(client, message)
 
     @app.on_message(filters.new_chat_members)
+    @AccessCallback(1)
     async def auto_leave(client, message):
         await leavechat(client, message)
 
