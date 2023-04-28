@@ -79,7 +79,7 @@ class IPCollector:
         elif self.style == "ip.sb":
             return "https://api.ip.sb/geoip/"
         elif self.style == "ipleak.net":
-            return "https://ipleak.net/json/"
+            return "https://ipv4.ipleak.net/json/"
         elif self.style == "ipdata.co":
             self.get_payload = f"?api-key={self.key}"
             return "https://api.ipdata.co/"

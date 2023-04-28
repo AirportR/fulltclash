@@ -99,17 +99,17 @@ class Basecore:
 
 # 部分内容已被修改  Some codes has been modified
 class Speedtest:
-    """
-    保留原作者信息
-    author: https://github.com/Oreomeow
-    """
-
     def __init__(self):
         self._config = cleaner.ConfigManager()
         self._stopped = False
-        self.speedurl = self.config.get('speedfile',
-                                        "https://dl.google.com/dl/android/studio/install/3.4.1.0/" +
-                                        "android-studio-ide-183.5522156-windows.exe")
+        self.speedurls = self.config.get('speedfile',
+                                         "https://dl.google.com/dl/android/studio/install/3.4.1.0/" +
+                                         "android-studio-ide-183.5522156-windows.exe")
+        if isinstance(self.speedurls, str):
+            self.speedurl = []
+            self.speedurl.append(self.speedurls)
+        else:
+            self.speedurl = self.speedurls
         self._thread = self.config.get('speedthread', 4)
         self.result = []
         self._total_red = 0
@@ -118,8 +118,9 @@ class Speedtest:
         self._statistics_time = 0
         self._time_used = 0
         self._count = 0
-        interval = GCONFIG.speedconfig().get('interval', 10)
-        self._download_interval = interval if 0 < interval < 60 else 10
+        interval = self.config.get('speedconfig', {}).get('interval', 10)
+        self._download_intervals = interval if 0 < interval < 60 else 10
+        self._download_interval = self._download_intervals + 1
 
     @property
     def thread(self):
@@ -218,26 +219,34 @@ class SpeedCore(Basecore):
             mysocket.close()
 
     @staticmethod
-    async def fetch(self, url: str, host: str, port: int, buffer: int):
+    async def fetch(self: Speedtest, urls: list, host: str, port: int, buffer: int):
         try:
-            # logger.info(f"Fetching {url} via {host}:{port}.")
             async with aiohttp.ClientSession(
                     headers={"User-Agent": "FullTclash"},
                     connector=ProxyConnector(host=host, port=port),
             ) as session:
-                # logger.debug("Session created.")
-                async with session.get(url, timeout=self._download_interval + 10) as response:
-                    # logger.debug("Awaiting response.")
-                    while not self._stopped:
-                        if not break_speed:
-                            chunk = await response.content.read(buffer)
-                            if not chunk:
-                                logger.info("No chunk, task stopped.")
-                                break
-                            await self.record(len(chunk))
-                        else:
+                flag = 0
+                while True:
+                    for url in urls:
+                        if self._stopped:
                             break
-
+                        async with session.get(url, timeout=self._download_interval + 3) as response:
+                            while not self._stopped:
+                                if not break_speed:
+                                    chunk = await response.content.read(buffer)
+                                    if not chunk:
+                                        logger.info("polling start")
+                                        break
+                                    await self.record(len(chunk))
+                                else:
+                                    flag = 1
+                                    break
+                        if flag == 1:
+                            break
+                    if self._stopped:
+                        break
+                    elif break_speed:
+                        break
         except Exception as e:
             logger.error(f"Download link error: {str(e)}")
 
@@ -251,12 +260,12 @@ class SpeedCore(Basecore):
         download_semaphore = asyncio.Semaphore(workers if workers else Speedtest().thread)
         async with download_semaphore:
             st = Speedtest()
-            url = st.speedurl
+            urls = st.speedurl
             # logger.debug(f"Url: {url}")
             thread = workers if workers else st.thread
             logger.info(f"Running st_async, workers: {thread}.")
             tasks = [
-                asyncio.create_task(SpeedCore.fetch(st, url, proxy_host, proxy_port, buffer))
+                asyncio.create_task(SpeedCore.fetch(st, urls, proxy_host, proxy_port, buffer))
                 for _ in range(thread)
             ]
             await asyncio.wait(tasks)
@@ -285,7 +294,7 @@ class SpeedCore(Basecore):
         progress_bar = str(bracketsleft) + f"{bracketsspace}" * 20 + str(bracketsright)
         edit_text = f"{speedtext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + "0" + \
                     "%     [" + str(progress) + "/" + str(nodenum) + "]"
-        test_items = ["HTTP(S)延迟", "平均速度", "最大速度", "速度变化", "UDP类型"]
+        test_items = ["HTTP(S)延迟", "平均速度", "最大速度", "每秒速度", "UDP类型"]
         for item in test_items:
             info[item] = []
         info["消耗流量"] = 0  # 单位:MB
@@ -300,8 +309,16 @@ class SpeedCore(Basecore):
             if udptype is None:
                 udptype = "Unknown"
             res = await self.speed_start("127.0.0.1", port, 4096)
-            avgspeed = "%.2f" % (res[0] / 1024 / 1024) + "MB"
-            maxspeed = "%.2f" % (res[1] / 1024 / 1024) + "MB"
+            avgspeed_mb = res[0] / 1024 / 1024
+            if avgspeed_mb < 1:
+                avgspeed = "%.2f" % (res[0] / 1024) + "KB"
+            else:
+                avgspeed = "%.2f" % avgspeed_mb + "MB"
+            maxspeed_mb = res[1] / 1024 / 1024
+            if maxspeed_mb < 1:
+                maxspeed = "%.2f" % (res[1] / 1024) + "KB"
+            else:
+                maxspeed = "%.2f" % maxspeed_mb + "MB"
             speedresult = [v / 1024 / 1024 for v in res[2]]
             traffic_used = float("%.2f" % (res[3] / 1024 / 1024))
             info["消耗流量"] += traffic_used
