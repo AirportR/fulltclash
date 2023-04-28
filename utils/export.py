@@ -122,7 +122,7 @@ class ExportResult:
     def alphas(self):
         alphas_list = []
         for c in self.delay_color:
-            alphas_list.append(c.get('alpha', 0))
+            alphas_list.append(c.get('alpha', 255))
         while len(alphas_list) < 8:
             alphas_list.append(255)
         if len(alphas_list) > 8:
@@ -1041,7 +1041,7 @@ class ExportSpeed(ExportResult):
     def alphas(self):
         alphas_list = []
         for c in self.delay_color:
-            alphas_list.append(c.get('alpha', 0))
+            alphas_list.append(c.get('alpha', 255))
         while len(alphas_list) < 8:
             alphas_list.append(255)
         if len(alphas_list) > 8:
