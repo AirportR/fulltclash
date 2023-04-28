@@ -326,10 +326,10 @@ dns:
   - 119.29.29.29
   - 223.5.5.5
   - 114.114.114.114
-external-controller: 127.0.0.1:1123
+external-controller: 127.0.0.1:11230
 ipv6: true
 log-level: info
-mixed-port: 1122
+mixed-port: 11220
 mode: rule
 proxies: null
 proxy-groups:
@@ -555,7 +555,7 @@ class ClashCleaner:
             logger.warning("读取节点信息失败！")
             return None
 
-    def changeClashPort(self, port: str or int = 1122):
+    def changeClashPort(self, port: str or int = 11220):
         """
         改变配置文件端口
         """
@@ -566,7 +566,7 @@ class ClashCleaner:
             self.yaml['port'] = int(port)
             logger.info("配置端口已被改变为：" + str(port))
 
-    def changeClashEC(self, ec: str = '127.0.0.1:1123'):
+    def changeClashEC(self, ec: str = '127.0.0.1:11230'):
         """
         改变external-controller地址与端口
         """

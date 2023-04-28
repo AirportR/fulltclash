@@ -21,7 +21,7 @@ class ClashCleaner:
         else:
             self.yaml = yaml.safe_load(_config)
 
-    def changeClashPort(self, port: str or int = 1122):
+    def changeClashPort(self, port: str or int = 11220):
         """
         改变配置文件端口
         """
@@ -32,7 +32,7 @@ class ClashCleaner:
             self.yaml['port'] = int(port)
             print("配置端口已被改变为：" + str(port))
 
-    def changeClashEC(self, ec: str = '127.0.0.1:1123'):
+    def changeClashEC(self, ec: str = '127.0.0.1:11230'):
         """
         改变external-controller地址与端口
         """
@@ -179,8 +179,8 @@ def new_batch_start(portlist: list):
 #         clashconf.save(proxy_file_path)
 #         start_client(path=config.get_clash_path(), workpath=config.get_clash_work_path(), _config=proxy_file_path)
 #     clashconf = ClashCleaner(proxy_file_path)
-#     clashconf.changeClashPort(port=1122)
-#     clashconf.changeClashEC(ec="127.0.0.1:1123")
+#     clashconf.changeClashPort(port=11220)
+#     clashconf.changeClashEC(ec="127.0.0.1:11230")
 #     clashconf.save(proxy_file_path)
 
 
@@ -212,10 +212,10 @@ dns:
   - 119.29.29.29
   - 223.5.5.5
   - 114.114.114.114
-external-controller: 127.0.0.1:1123
+external-controller: 127.0.0.1:11230
 ipv6: true
 log-level: info
-mixed-port: 1122
+mixed-port: 11220
 mode: rule
 proxies: null
 proxy-groups:
@@ -275,10 +275,10 @@ dns:
   - https://doh.pub/dns-query
   - https://dns.alidns.com/dns-query
   use-hosts: true
-external-controller: 127.0.0.1:1123
+external-controller: 127.0.0.1:11230
 ipv6: false
 log-level: info
-mixed-port: 1122
+mixed-port: 11220
 mode: rule
 proxies: null
 proxy-groups:
@@ -307,8 +307,8 @@ if __name__ == "__main__":
     clash_path = config.get_clash_path()  # 为clash核心运行路径, Windows系统需要加后缀名.exe
     clash_work_path = config.get_clash_work_path()  # clash工作路径
     corenum = config.config.get('clash', {}).get('core', 1)
-    start_port = config.config.get('clash', {}).get('startup', 1122)
-    res1 = asyncio.run(check_port(1122, 1123))
+    start_port = config.config.get('clash', {}).get('startup', 11220)
+    res1 = asyncio.run(check_port(11220, 11230))
     res2 = asyncio.run(check_port(start_port, start_port + 1 + corenum * 2))
     if res1 or res2:
         print("端口检查中发现已有其他进程占用了端口，如果您已单独运行clash启动器，请忽略这条提示")

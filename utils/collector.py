@@ -639,7 +639,7 @@ async def delay(session: aiohttp.ClientSession, proxyname, testurl, hostname, po
             return -1
 
 
-async def delay_providers(providername, hostname='127.0.0.1', port=1123, session: aiohttp.ClientSession = None):
+async def delay_providers(providername, hostname='127.0.0.1', port=11230, session: aiohttp.ClientSession = None):
     healthcheckurl = 'http://{}:{}/providers/proxies/{}/healthcheck'.format(hostname, port, providername)
     url = 'http://{}:{}/providers/proxies/{}/'.format(hostname, port, providername)
     if session is None:
@@ -670,7 +670,7 @@ async def delay_providers(providername, hostname='127.0.0.1', port=1123, session
 
 async def batch_delay(proxyname: list, session: aiohttp.ClientSession = None,
                       testurl=config.getGstatic(),
-                      hostname='127.0.0.1', port=1123, timeout='5000'):
+                      hostname='127.0.0.1', port=11230, timeout='5000'):
     """
     批量测试延迟，仅适用于不含providers的订阅
     :param timeout:

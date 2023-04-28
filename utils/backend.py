@@ -272,7 +272,7 @@ class SpeedCore(Basecore):
             return 0, 0, [], 0
 
     # 以下为 另一部分
-    async def batch_speed(self, nodelist: list, port: int = 1122):
+    async def batch_speed(self, nodelist: list, port: int = 11220):
         info = {}
         progress = 0
         sending_time = 0
@@ -331,7 +331,7 @@ class SpeedCore(Basecore):
     async def core(self, proxyinfo: list, **kwargs):
         info = {}  # 存放测速结果
         self.join_proxy(proxyinfo)
-        start_port = GCONFIG.config.get('clash', {}).get('startup', 1122)
+        start_port = GCONFIG.config.get('clash', {}).get('startup', 11220)
         # 获取可供测试的测试端口
         # 测速仅需要一个端口，因此这里不处理
         # 订阅加载
@@ -367,7 +367,7 @@ class ScriptCore(Basecore):
         self.edit = (chat_id, message_id)
 
     @staticmethod
-    async def unit(test_items: list, host="127.0.0.1", port=1122, index=0):
+    async def unit(test_items: list, host="127.0.0.1", port=11220, index=0):
         """
         以一个节点的所有测试项为一个基本单元unit,返回单个节点的测试结果
         :param port: 代理端口
@@ -414,7 +414,7 @@ class ScriptCore(Basecore):
         bracketsleft = GCONFIG.config.get('bot', {}).get('bleft', "[")
         bracketsright = GCONFIG.config.get('bot', {}).get('bright', "]")
         bracketsspace = GCONFIG.config.get('bot', {}).get('bspace', "  ")
-        # corestartup = GCONFIG.config.get('clash', {}).get('startup', 1122)
+        # corestartup = GCONFIG.config.get('clash', {}).get('startup', 11220)
         progress_bar = str(bracketsleft) + f"{bracketsspace}" * 20 + str(bracketsright)
         edit_text = f"{scripttext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + "0" + \
                     "%     [" + str(progress) + "/" + str(nodenum) + "]"
@@ -517,7 +517,7 @@ class ScriptCore(Basecore):
         self.join_proxy(proxyinfo)
         # 获取可供测试的测试端口
         thread = GCONFIG.config.get('clash', {}).get('core', 1)
-        startup = GCONFIG.config.get('clash', {}).get('startup', 1124)
+        startup = GCONFIG.config.get('clash', {}).get('startup', 11220)
         pool = {'host': ['127.0.0.1' for _ in range(thread)],
                 'port': [startup + t * 2 for t in range(thread)]}
         # 订阅加载
@@ -709,7 +709,7 @@ class TopoCore(Basecore):
         self.join_proxy(proxyinfo)
         # 获取可供测试的测试端口
         thread = GCONFIG.config.get('clash', {}).get('core', 1)
-        startup = GCONFIG.config.get('clash', {}).get('startup', 1124)
+        startup = GCONFIG.config.get('clash', {}).get('startup', 11220)
         pool = {'host': ['127.0.0.1' for _ in range(thread)],
                 'port': [startup + t * 2 for t in range(thread)]}
         # 开始测试

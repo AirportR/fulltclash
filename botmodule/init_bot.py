@@ -140,7 +140,7 @@ logger.info("配置已加载, Telegram bot程序开始运行...")
 def start_clash():
     # 端口检查
     loop = asyncio.get_event_loop()
-    start_port = config.config.get('clash', {}).get('startup', 1122)
+    start_port = config.config.get('clash', {}).get('startup', 11220)
     port_list = [start_port + i * 2 for i in range(corenum)]
     res2 = loop.run_until_complete(check_port(start_port, start_port + 1 + corenum * 2))
     if res2:

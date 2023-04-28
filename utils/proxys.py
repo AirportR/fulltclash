@@ -73,7 +73,7 @@ async def http_delay_tls(url: str = config.getGstatic(), index: int = 0, timeout
 
 
 # 切换节点
-def switchProxy_old(proxyName, proxyGroup, clashHost: str = "127.0.0.1", clashPort: int = 1123):
+def switchProxy_old(proxyName, proxyGroup, clashHost: str = "127.0.0.1", clashPort: int = 11230):
     """
     切换clash核心中的代理节点，此版本为requests库实现
     :param proxyName: 想要切换代理节点的名称
@@ -124,7 +124,7 @@ def stopclash():
     stop(1)
 
 
-async def reloadConfig(filePath: str, clashHost: str = "127.0.0.1", clashPort: int = 1123):
+async def reloadConfig(filePath: str, clashHost: str = "127.0.0.1", clashPort: int = 11230):
     """
     若重载成功返回True，否则为False
     :param filePath: 文件路径,最好是绝对路径，如果是相对路径，则会尝试处理成绝对路径
@@ -152,7 +152,7 @@ async def reloadConfig(filePath: str, clashHost: str = "127.0.0.1", clashPort: i
 
 
 async def reloadConfig_batch(nodenum: int, pool: dict):
-    if not await reloadConfig(filePath='./clash/proxy.yaml', clashPort=1123):
+    if not await reloadConfig(filePath='./clash/proxy.yaml', clashPort=11230):
         return False
     try:
         if nodenum < len(pool.get('port', [])):
@@ -196,8 +196,8 @@ async def reloadConfig_batch(nodenum: int, pool: dict):
 #         clashconf.save(proxy_file_path)
 #         start_client(path=config.get_clash_path(), workpath=config.get_clash_work_path(), _config=proxy_file_path)
 #     clashconf = ClashCleaner(proxy_file_path)
-#     clashconf.changeClashPort(port=1122)
-#     clashconf.changeClashEC(ec="127.0.0.1:1123")
+#     clashconf.changeClashPort(port=11220)
+#     clashconf.changeClashEC(ec="127.0.0.1:11230")
 #     clashconf.save(proxy_file_path)
 
 
