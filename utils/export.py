@@ -1189,6 +1189,7 @@ class ExportSpeed(ExportResult):
                        block = color_block((info_list_length[i], speedblock_height), color_value=get_color(speedvalue), alpha=get_alphas(speedvalue))
                        img.alpha_composite(block, (width, speedblock_height * (t + 2)))
                     elif "KB" in self.info[t1][t] and float(self.info[t1][t][:-2]) > 0:
+                       speedvalue = float(self.info[t1][t][:-2])
                        block = color_block((info_list_length[i], speedblock_height), color_value=get_color(1), alpha=get_alphas(speedvalue))
                        img.alpha_composite(block, (width, speedblock_height * (t + 2)))
                     else:
