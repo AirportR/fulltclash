@@ -29,10 +29,10 @@ app2 = Client("my_user",
 scheduler = AsyncIOScheduler(timezone=str(tzlocal.get_localzone()))
 scheduler.start()
 print("""# --------------------------- [ Start bot AsyncIOScheduler Successful ] ---------------------------- # """)
-# scheduler.add_job(cdm, 'interval', seconds=10, id='delete1', name="Delete the telegram message", args=(app,))
-# scheduler.add_job(cem, 'interval', seconds=5, id='edit1', name="Edit the telegram message", args=(app,))
-scheduler.add_job(cdm, IntervalTrigger(seconds=10), id='delete1', name="Delete the telegram message", args=(app,))
-scheduler.add_job(cem, IntervalTrigger(seconds=5), id='edit1', name="Edit the telegram message", args=(app,))
+scheduler.add_job(cdm, IntervalTrigger(seconds=10, timezone=str(tzlocal.get_localzone())),
+                  id='delete1', name="Delete the telegram message", args=(app,))
+scheduler.add_job(cem, IntervalTrigger(seconds=5, timezone=str(tzlocal.get_localzone())),
+                  id='edit1', name="Edit the telegram message", args=(app,))
 
 
 # ---------------------------- [ Set bot Commands] ---------------------------- #
