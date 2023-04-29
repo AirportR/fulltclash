@@ -1,4 +1,4 @@
-aiohttp==3.8.1
+aiohttp>=3.8.1
 async_timeout==4.0.2
 Pillow==9.5.0
 pilmoji>=2.0.1
@@ -12,4 +12,4 @@ loguru>=0.6.0
 aiohttp_socks==0.7.1
 websockets==10.3
 tzlocal==4.1
-cryptography==36.0.2
+cryptography==40.0.2
