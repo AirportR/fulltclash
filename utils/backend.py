@@ -304,7 +304,8 @@ class SpeedCore(Basecore):
         message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1, self.IKM))
         for name in nodelist:
             proxys.switchProxy(name, 0)
-            delay = await proxys.http_delay_tls(index=0)
+            delay = await proxys.http_delay(index=0)
+            # delay = await proxys.http_delay_tls(index=0)
             udptype, _, _, _, _ = self.nat_type_test('127.0.0.1', proxyport=port)
             if udptype is None:
                 udptype = "Unknown"
@@ -394,8 +395,8 @@ class ScriptCore(Basecore):
         :return: list 返回test_items对应顺序的信息
         """
         info = []
-        # delay = await proxys.http_delay(index=index)
-        delay = await proxys.http_delay_tls(index=index, timeout=5)
+        delay = await proxys.http_delay(index=index)
+        # delay = await proxys.http_delay_tls(index=index, timeout=5)
         if delay == 0:
             logger.warning("超时节点，跳过测试")
             for t in test_items:
