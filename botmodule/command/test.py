@@ -92,14 +92,15 @@ async def select_export(msg: Message, backmsg: Message, put_type: str, info: dic
             if info:
                 wtime = info.get('wtime', "-1")
                 # 生成图片
-                ex = export.ExportResult(nodename=None, info=info)
-                with ThreadPoolExecutor() as pool:
-                    loop = asyncio.get_running_loop()
-                    stime = await loop.run_in_executor(
-                        pool, ex.exportUnlock)
+                file_name = export.ExportCommon(info.pop('节点名称', []), info).draw()
+                # ex = export.ExportResult(nodename=None, info=info)
+                # with ThreadPoolExecutor() as pool:
+                #     loop = asyncio.get_running_loop()
+                #     stime = await loop.run_in_executor(
+                #         pool, ex.exportUnlock)
                 # 发送回TG
                 await msg.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
-                await check.check_photo(msg, backmsg, stime, wtime)
+                await check.check_photo(msg, backmsg, file_name, wtime)
         else:
             raise TypeError("Unknown export type, please input again.\n未知的绘图类型，请重新输入!")
     except RPCError as r:

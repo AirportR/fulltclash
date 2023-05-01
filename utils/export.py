@@ -1,16 +1,16 @@
 import math
-from typing import Union
+from typing import Union, Tuple
 
 import PIL
 from loguru import logger
-from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageColor
+from PIL import Image, ImageDraw, ImageFont, ImageColor
 from pilmoji import Pilmoji
 from pilmoji.source import Twemoji
 import time
-
-from glovar import __version__
 from utils.cleaner import ConfigManager
 import utils.emoji_custom as emoji_source
+
+__version__ = '3.5.7'
 
 
 # 这是将测试的结果输出为图片的模块。
@@ -22,7 +22,17 @@ import utils.emoji_custom as emoji_source
 #     基础数据决定了生成图片的高度（Height），它是列表，列表里面的数据一般是一组节点名，有多少个节点就对应了info键值中的长度。
 
 
-def color_block(size: tuple, color_value: str, alpha: int):
+def getrgb(hexcolor: str):
+    """
+    转换16进制格式的颜色值到RGB格式
+    """
+    if hexcolor.startswith('#'):
+        return tuple(int(hexcolor.lstrip('#')[i:i + 2], 16) for i in (0, 2, 4))
+    else:
+        raise ValueError("颜色值必须为十六进制")
+
+
+def color_block(size: Tuple[int, int], color_value: str, alpha: int):
     """
     颜色块，颜色数值推荐用十六进制表示如: #ffffff 为白色
     :param size: tuple: (length,width)
@@ -30,9 +40,8 @@ def color_block(size: tuple, color_value: str, alpha: int):
     :param alpha: int: 透明度, 默认为 255 (不透明)
     :return: Image
     """
-    rgba = tuple(int(color_value.lstrip('#')[i:i + 2], 16) for i in (0, 2, 4)) + (alpha,)
-    img_block = Image.new('RGBA', size, rgba)
-    return img_block
+    rgba = getrgb(color_value) + (alpha,)
+    return Image.new('RGBA', size, rgba)
 
 
 class BaseExport:
@@ -56,7 +65,458 @@ class BaseExport:
         return new_info
 
 
-# TODO@AiprortR 绘图类需要重写，现如今的框架不够好
+class ExportCommon(BaseExport):
+    def __init__(self, primarykey: Union[list, tuple], allinfo: dict):
+        super().__init__(primarykey, allinfo)
+        self.nodenum = len(self.basedata) if self.basedata else 0
+        self.filter = self.allinfo.pop('filter', {})
+        self.config = ConfigManager()
+        self.front_size = 38
+        self.__font = ImageFont.truetype(self.config.getFont(), self.front_size)
+        self.image_config = self.config.config.get('image', {})
+        self.color = self.config.getColor()
+
+        self.emoji = self.config.config.get('emoji', {}).get('enable', True)
+        emoji_source_name = self.config.config.get('emoji', {}).get('emoji-source', "TwitterPediaSource")
+        self.emoji_source = getattr(emoji_source, emoji_source_name) if emoji_source_name in emoji_source.__all__ \
+            else emoji_source.TwitterPediaSource
+
+        self.image = {
+            'wtime': self.allinfo.pop('wtime', "未知"),
+            'filter_include': self.filter.pop('include', ''),
+            'filter_exclude': self.filter.pop('exclude', ''),
+            'sort': self.allinfo.pop('sort', '订阅原序'),
+            'front_size': 38,  # 字体大小
+            'title': self.image_config.get('title', 'FullTclash'),
+            'background': self.image_config.get('background', {}),
+            'delay_color': self.color.get('delay', []),
+            'watermark': self.watermark_config(),
+            'height': self.get_height(),
+            'widths': self.get_width(),  # 注意，这个键的值是个长度为3的元组，并非单个值。
+        }
+        self.init_color_config()
+
+    def watermark_config(self) -> dict:
+        watermark_default_config = {
+            'enable': False,
+            'text': '只是一个水印',
+            'font_size': 64,
+            'color': '#000000',
+            'alpha': 16,
+            'angle': -16.0,
+            'start_y': 0,
+            'row_spacing': 0
+        }
+        new_watermark = self.image_config.get('watermark', {})
+        for key in watermark_default_config:
+            if key in new_watermark:
+                watermark_default_config[key] = new_watermark[key]
+        return watermark_default_config
+
+    def init_color_config(self):
+        """
+        对配置中获取的颜色进行预处理，使之变得合理。
+        """
+        interval_list = []
+        alphas_list = []
+        color_list = []
+        if not self.image['delay_color']:
+            colorvalue = ["#f5f3f2", "#beb1aa", "#f6bec8", "#dc6b82", "#c35c5d", "#8ba3c7", "#c8161d", '#8d8b8e']
+            interval = [0, 100, 200, 300, 500, 1000, 2000, 99999]
+            alphas = [255, 255, 255, 255, 255, 255, 255, 255]
+            self.image['interval'] = interval
+            self.image['alphas'] = alphas
+            self.image['colorvalue'] = colorvalue
+            return
+        for c in self.image['delay_color']:
+            interval_list.append(c.get('label', 0))
+            alphas_list.append(c.get('alpha', 255))
+            color_list.append(c.get('value', '#f5f3f2'))
+        interval_list = list(set(interval_list))
+        interval_list.sort()  # 去重加排序
+        while len(interval_list) < 7:
+            interval_list.append(99999)
+        while len(alphas_list) < 8:
+            alphas_list.append(255)
+        while len(color_list) < 8:
+            color_list.append('#f5f3f2')
+        interval_list = interval_list[:8] if len(interval_list) > 8 else interval_list
+        alphas_list = alphas_list[:8] if len(alphas_list) > 8 else alphas_list
+        color_list = color_list[:8] if len(color_list) > 8 else color_list
+
+        self.image['interval'] = interval_list
+        self.image['alphas'] = alphas_list
+        self.image['colorvalue'] = color_list
+
+    @property
+    def c_block(self):
+        c_block = {'成功': self.color.get('yes', '#BEE587'),
+                   '失败': self.color.get('no', '#ef6b73'),
+                   'N/A': self.color.get('na', '#8d8b8e'),
+                   '待解锁': self.color.get('wait', '#dcc7e1'),
+                   'low': self.color.get('iprisk', {}).get('low', '#ffffff'),
+                   'medium': self.color.get('iprisk', {}).get('medium', '#ffffff'),
+                   'high': self.color.get('iprisk', {}).get('high', '#ffffff'),
+                   'veryhigh': self.color.get('iprisk', {}).get('veryhigh', '#ffffff'),
+                   '警告': self.color.get('warn', '#fcc43c'),
+                   '未知': self.color.get('weizhi', '#5ccfe6'),
+                   '自制': self.color.get('zhizhi', '#ffffff'),
+                   '海外': self.color.get('haiwai', '#FFE66B'),
+                   }
+        return c_block
+
+    @property
+    def c_alpha(self):
+        c_alpha = {'成功': self.color.get('yesalpha', 255),
+                   '失败': self.color.get('noalpha', 255),
+                   'N/A': self.color.get('naalpha', 255),
+                   '待解锁': self.color.get('waitalpha', 255),
+                   'low': self.color.get('iprisk', {}).get('lowalpha', 255),
+                   'medium': self.color.get('iprisk', {}).get('mediumalpha', 255),
+                   'high': self.color.get('iprisk', {}).get('highalpha', 255),
+                   'veryhigh': self.color.get('iprisk', {}).get('veryhighalpha', 255),
+                   '警告': self.color.get('warnalpha', 255),
+                   '未知': self.color.get('weizhialpha', 255),
+                   '自制': self.color.get('zhizhialpha', 255),
+                   '海外': self.color.get('haiwaialpha', 255),
+                   }
+        return c_alpha
+
+    @property
+    def interval(self) -> list:
+        return self.image.get('interval', [])
+
+    @property
+    def alphas(self) -> list:
+        return self.image.get('alphas', [])
+
+    @property
+    def colorvalue(self) -> list:
+        return self.image.get('colorvalue', [])
+
+    def text_width(self, text: str) -> int:
+        """
+        得到字符串在图片中的绘图长度
+        :param text: 文本内容
+        :return: int
+        """
+        draw = ImageDraw.Draw(Image.new("RGBA", (1, 1), (255, 255, 255, 255)))
+        return int(draw.textlength(text, font=self.__font))
+
+    def text_maxwidth(self, strlist: list) -> int:
+        """
+        得到列表中最长字符串的绘图长度
+        :param strlist:
+        :return: int
+        """
+        max_width = 0
+        for i in strlist:
+            max_width = max(max_width, self.text_width(str(i)))
+        return max_width
+
+    def key_width_list(self) -> list:
+        """
+        得到所有测试项列的大小
+        :return: list
+        """
+        key_list = self.get_key_list()  # 得到每个测试项便签绘图的大小[100,80]
+        width_list = []
+        for i in key_list:
+            key_width = self.text_width(i)  # 键的长度
+            value_width = self.text_maxwidth(self.info[i])  # 键所对应值的长度
+            max_width = max(key_width, value_width)
+            max_width = max_width + 60  # 60为缓冲值，为了不让字距离边界那么近
+            width_list.append(max_width)
+        return width_list  # 测试项列的大小
+
+    def get_key_list(self) -> list:
+        """
+        得到测试项名称，即字典里所有键的名称
+        :return: list
+        """
+        return list(self.info.keys())
+
+    def get_height(self) -> int:
+        """
+        获取图片高度
+        :return: int
+        """
+        return (self.nodenum + 4) * 60
+
+    def get_width(self, compare: int = None):
+        """
+        获得整个图片的宽度,compare参数在这里无用，是继承给子类用的
+        :return:
+        """
+        if compare:
+            print(compare)
+        img_width = 100  # 序号
+        nodename_width = self.text_maxwidth(self.basedata)
+        nodename_width = max(nodename_width, 420)
+        nodename_width = nodename_width + 150
+
+        infolist_width = self.key_width_list()
+        info_width = sum(infolist_width)
+
+        img_width = img_width + nodename_width + info_width
+        return img_width, nodename_width, infolist_width
+
+    def get_mid(self, start_x: Union[int, float], end_x: Union[int, float], str_name: str) -> Union[int, float]:
+        """
+        居中对齐的起始位置
+        :param start_x:
+        :param end_x:
+        :param str_name:
+        :return:
+        """
+        mid_xpath = (end_x + start_x) / 2
+        strname_width = self.text_width(str_name)
+        xpath = mid_xpath - strname_width / 2
+        return xpath
+
+    def draw_watermark(self, original_image: Image.Image) -> Image.Image:
+        """
+        绘制水印
+        """
+        if not self.image['watermark']['enable']:
+            return original_image
+        watermark = self.image.get('watermark', {})
+        watermark_text = watermark['text']
+        font = ImageFont.truetype(self.config.getFont(), int(watermark['font_size']))
+        text_image = Image.new('RGBA', font.getsize(watermark_text), (255, 255, 255, 0))
+        text_draw = ImageDraw.Draw(text_image)
+
+        rgb = ImageColor.getrgb(watermark['color'])
+        rgba = (rgb[0], rgb[1], rgb[2], (int(watermark['alpha'])))
+        text_draw.text((0, 0), watermark_text, rgba, font=font)
+
+        angle = float(watermark['angle'])
+        rotated_text_image = text_image.rotate(angle, expand=True, fillcolor=(0, 0, 0, 0),
+                                               resample=Image.BILINEAR)
+        watermarks_image = Image.new('RGBA', original_image.size, (255, 255, 255, 0))
+        x = original_image.size[0] // 2 - rotated_text_image.size[0] // 2
+        row_spacing = int(watermark['row_spacing'])
+        if row_spacing < 0:
+            row_spacing = 0
+        y = int(watermark['start_y'])
+        while True:
+            watermarks_image.paste(rotated_text_image, (x, y))
+            y += rotated_text_image.size[1] + row_spacing
+            if y >= original_image.size[1]:
+                break
+
+        return Image.alpha_composite(original_image, watermarks_image)
+
+    def draw_background(self) -> Image.Image:
+        bkgcfg = self.image.get('background', {})
+        B1_color = bkgcfg.get('backgrounds', '#ffffff')
+        alphas = bkgcfg.get('alpha', 255)
+        B1_rgba = getrgb(B1_color) + (alphas,)
+        img = Image.new("RGBA", (self.image['widths'][0], self.image['height']), B1_rgba)
+        titlet = bkgcfg.get('testtitle', '#EAEAEA')
+        titlet_alpha = getrgb(titlet) + (alphas,)
+        bkg = Image.new('RGBA', (self.image['widths'][0], 120), titlet_alpha)  # 首尾部填充
+        img.paste(bkg, (0, 0))
+        img.paste(bkg, (0, self.image['height'] - 120))
+        return img
+
+    def draw_info(self, idraw) -> str:
+        """
+        绘制标题栏和结尾栏信息
+        """
+        _width = self.image['widths'][0]
+        _height = self.image['height']
+        _title = f"{self.image['title']} - 连通性测试"
+        _wtime = self.image['wtime']
+        _sort = self.image['sort']
+        _filter_include = self.image['filter_include']
+        _filter_exclude = self.image['filter_exclude']
+        _export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())
+        footer = f"后端: {self.allinfo.pop('backend', 'Local')}  总共耗时: {_wtime}s  排序: {_sort}   " + \
+                 f"过滤器: {_filter_include} <-> {_filter_exclude}"
+        footer2 = f"版本:{__version__}  测试时间: {_export_time}  测试结果仅供参考,以实际情况为准"
+
+        idraw.text((self.get_mid(0, _width, _title), 3), _title, fill=(0, 0, 0))  # 标题
+        idraw.text((10, _height - 112), footer, fill=(0, 0, 0))  # 版本信息
+        idraw.text((10, _height - 55), footer2, fill=(0, 0, 0))  # 测试时间
+        return _export_time.replace(':', '-')
+
+    def draw_label(self, idraw):
+        """
+        绘制标签
+        """
+        _nodename_width = self.image['widths'][1]
+        _info_list_width = list(self.image['widths'][2])
+        _key_list = self.get_key_list()
+        text_list = [('序号', 20), ('节点名称', self.get_mid(100, _nodename_width + 100, '节点名称'))]
+        start_x = 100 + _nodename_width
+        for i in range(len(_info_list_width)):
+            x = start_x
+            end = start_x + _info_list_width[i]
+            text_list.append((_key_list[i], self.get_mid(x, end, _key_list[i])))
+            start_x = end
+
+        for text, x in text_list:
+            idraw.text((x, 65), text, fill=(0, 0, 0))
+
+    def draw_line(self, idraw):
+        # 绘制横线
+        _image_width = self.image['widths'][0]
+        _nodename_width = self.image['widths'][1]
+        _info_list_width = list(self.image['widths'][2])
+        for t in range(self.nodenum + 3):
+            idraw.line([(0, 60 * (t + 1)), (_image_width, 60 * (t + 1))], fill="#e1e1e1", width=2)
+        # 绘制竖线
+        idraw.line([(100, 60), (100, 120)], fill="#EAEAEA", width=2)
+        start_x = 100 + _nodename_width
+        for i in _info_list_width:
+            x = start_x
+            end = start_x + i
+            idraw.line([(x, 60), (x, self.image['height'] - 120)], fill="#EAEAEA", width=2)
+            start_x = end
+
+    def draw_content(self, draw: Union[Pilmoji, ImageDraw.ImageDraw], xy: tuple, ct: str, fill=(0, 0, 0)):
+        """
+        绘制具体内容
+        ct: content内容
+        """
+        try:
+            if isinstance(draw, Pilmoji):
+                # 自定义emoji源可能出错，所以捕捉了异常
+                draw.text(xy, ct, fill, font=self.__font, emoji_position_offset=(0, 6))
+            else:
+                draw.text(xy, ct, fill, font=self.__font)
+        except Exception as e:
+            logger.warning("绘图错误:" + str(e))
+            draw.text(xy, ct, fill, font=self.__font)
+
+    def draw_block(self, img: Image.Image, index: int, _nodename_width, _key_list, _info_list_width):
+        """
+        绘制颜色块
+        """
+        t = index
+        colorvalue = self.image['colorvalue']
+        interval = self.image['interval']
+        alphas = self.image['alphas']
+        c_block = self.c_block
+        c_alpha = self.c_alpha
+        width = 100 + _nodename_width
+        for i, t1 in enumerate(_key_list):
+            if "RTT延迟" == t1 or "HTTP(S)延迟" == t1:
+                rtt = float(self.info[t1][t][:-2])
+                if interval[0] < rtt < interval[1]:
+                    block = color_block((_info_list_width[i], 60), color_value=colorvalue[0], alpha=alphas[0])
+                    img.alpha_composite(block, (width, 60 * (t + 2)))
+                elif interval[1] <= rtt < interval[2]:
+                    block = color_block((_info_list_width[i], 60), color_value=colorvalue[1], alpha=alphas[1])
+                    img.alpha_composite(block, (width, 60 * (t + 2)))
+                elif interval[2] <= rtt < interval[3]:
+                    block = color_block((_info_list_width[i], 60), color_value=colorvalue[2], alpha=alphas[2])
+                    img.alpha_composite(block, (width, 60 * (t + 2)))
+                elif interval[3] <= rtt < interval[4]:
+                    block = color_block((_info_list_width[i], 60), color_value=colorvalue[3], alpha=alphas[3])
+                    img.alpha_composite(block, (width, 60 * (t + 2)))
+                elif interval[4] <= rtt < interval[5]:
+                    block = color_block((_info_list_width[i], 60), color_value=colorvalue[4], alpha=alphas[4])
+                    img.alpha_composite(block, (width, 60 * (t + 2)))
+                elif interval[5] <= rtt < interval[6]:
+                    block = color_block((_info_list_width[i], 60), color_value=colorvalue[5], alpha=alphas[5])
+                    img.alpha_composite(block, (width, 60 * (t + 2)))
+                elif interval[6] <= rtt:
+                    block = color_block((_info_list_width[i], 60), color_value=colorvalue[6], alpha=alphas[6])
+                    img.alpha_composite(block, (width, 60 * (t + 2)))
+                elif rtt == 0:
+                    block = color_block((_info_list_width[i], 60), color_value=colorvalue[7], alpha=alphas[7])
+                    img.alpha_composite(block, (width, 60 * (t + 2)))
+            elif '海外' in self.info[t1][t]:
+                block = color_block((_info_list_width[i], 60), color_value=c_block['海外'], alpha=c_alpha['海外'])
+                img.alpha_composite(block, (width, 60 * (t + 2)))
+            elif '国创' in self.info[t1][t]:
+                block = color_block((_info_list_width[i], 60), color_value=c_block['海外'], alpha=c_alpha['海外'])
+                img.alpha_composite(block, (width, 60 * (t + 2)))
+            elif ('解锁' in self.info[t1][t] or '允许' in self.info[t1][t]) and '待' not in self.info[t1][t]:
+                block = color_block((_info_list_width[i], 60), color_value=c_block['成功'], alpha=c_alpha['成功'])
+                img.alpha_composite(block, (width, 60 * (t + 2)))
+            elif '失败' in self.info[t1][t] or '禁止' in self.info[t1][t]:
+                block = color_block((_info_list_width[i], 60), color_value=c_block['失败'], alpha=c_alpha['失败'])
+                img.alpha_composite(block, (width, 60 * (t + 2)))
+            elif '待解' in self.info[t1][t]:
+                block = color_block((_info_list_width[i], 60), color_value=c_block['待解锁'], alpha=c_alpha['待解锁'])
+                img.alpha_composite(block, (width, 60 * (t + 2)))
+            elif 'N/A' in self.info[t1][t]:
+                block = color_block((_info_list_width[i], 60), color_value=c_block['N/A'], alpha=c_alpha['N/A'])
+                img.alpha_composite(block, (width, 60 * (t + 2)))
+            elif 'Low' in self.info[t1][t]:
+                block = color_block((_info_list_width[i], 60), color_value=c_block['low'], alpha=c_alpha['low'])
+                img.alpha_composite(block, (width, 60 * (t + 2)))
+            elif 'Medium' in self.info[t1][t]:
+                block = color_block((_info_list_width[i], 60), color_value=c_block['medium'],
+                                    alpha=c_alpha['medium'])
+                img.alpha_composite(block, (width, 60 * (t + 2)))
+            elif 'High' in self.info[t1][t] and 'Very' not in self.info[t1][t]:
+                block = color_block((_info_list_width[i], 60), color_value=c_block['high'], alpha=c_alpha['high'])
+                img.alpha_composite(block, (width, 60 * (t + 2)))
+            elif 'Very' in self.info[t1][t]:
+                block = color_block((_info_list_width[i], 60), color_value=c_block['veryhigh'],
+                                    alpha=c_alpha['veryhigh'])
+                img.alpha_composite(block, (width, 60 * (t + 2)))
+            elif '超时' in self.info[t1][t] or '连接错误' in self.info[t1][t]:
+                block = color_block((_info_list_width[i], 60), color_value=c_block['警告'], alpha=c_alpha['警告'])
+                img.alpha_composite(block, (width, 60 * (t + 2)))
+            elif '未知' in self.info[t1][t]:
+                block = color_block((_info_list_width[i], 60), color_value=c_block['未知'], alpha=c_alpha['未知'])
+                img.alpha_composite(block, (width, 60 * (t + 2)))
+            elif '自制' in self.info[t1][t]:
+                block = color_block((_info_list_width[i], 60), color_value=c_block['自制'], alpha=c_alpha['自制'])
+                img.alpha_composite(block, (width, 60 * (t + 2)))
+            elif '货币' in self.info[t1][t]:
+                block = color_block((_info_list_width[i], 60), color_value=c_block['成功'], alpha=c_alpha['成功'])
+                img.alpha_composite(block, (width, 60 * (t + 2)))
+            else:
+                pass
+            width += _info_list_width[i]
+
+    @logger.catch()
+    def draw(self):
+        """
+        绘制图像主要函数
+        """
+        img = self.draw_background()  # 首先绘制背景图
+        idraw = ImageDraw.Draw(img)
+        idraw.font = self.__font  # 设置字体，之后就不用一直在参数里传入字体实例啦
+        pilmoji = Pilmoji(img, source=self.emoji_source)  # emoji表情修复，emoji必须在参数手动指定字体。
+
+        _width = self.image['widths'][0]
+        _height = self.image['height']
+
+        _nodename_width = self.image['widths'][1]
+        _info_list_width = list(self.image['widths'][2])
+        _key_list = self.get_key_list()
+
+        _export_time = self.draw_info(idraw)  # 绘制标题栏与结尾栏，返回输出图片的时间,文件动态命名。
+        self.draw_label(idraw)  # 绘制标签
+
+        for t in range(self.nodenum):
+            # 序号
+            self.draw_content(idraw, (self.get_mid(0, 100, str(t + 1)), 60 * (t + 2) + 6), str(t + 1))
+            # 节点名称
+            self.draw_content(pilmoji, (110, 60 * (t + 2) + 5), self.basedata[t])
+            # 绘制颜色块
+            self.draw_block(img, t, _nodename_width, _key_list, _info_list_width)
+            # 其他文本内容
+            width = 100 + _nodename_width
+            for i, t2 in enumerate(_key_list):
+                x = self.get_mid(width, width + _info_list_width[i], self.info[t2][t])
+                self.draw_content(idraw, (x, (t + 2) * 60 + 5), self.info[t2][t])
+                width += _info_list_width[i]
+        self.draw_line(idraw)  # 绘制线条
+        img = self.draw_watermark(img)  # 绘制水印
+        # img.show("coffee")
+        img.save(r"./results/{}.png".format(_export_time))
+        print(_export_time)
+        return _export_time
+
+
 class ExportResult:
     """
     生成图片类
@@ -117,7 +577,7 @@ class ExportResult:
             return a[:8]
         else:
             return a
-            
+
     @property
     def alphas(self):
         alphas_list = []
@@ -241,7 +701,7 @@ class ExportResult:
 
         angle = float(self.watermark['angle'])
         rotated_text_image = text_image.rotate(angle, expand=True, fillcolor=(0, 0, 0, 0),
-                                               resample=Image.Resampling.BILINEAR)
+                                               resample=Image.BILINEAR)
         watermarks_image = Image.new('RGBA', original_image.size, (255, 255, 255, 0))
 
         x = original_image.size[0] // 2 - rotated_text_image.size[0] // 2
@@ -257,207 +717,209 @@ class ExportResult:
 
         return Image.alpha_composite(original_image, watermarks_image)
 
-    @logger.catch
-    def exportUnlock(self):
-        wtime = self.info.pop('wtime', "0")
-        fnt = self.__font
-        image_width, nodename_width, info_list_length = self.get_width()
-        image_height = self.get_height()
-        key_list = self.get_key_list()
-        B_color = self.background.get('backgrounds', '#ffffff')
-        alphas = self.background.get('alpha', 255)
-        B_color_alpha = tuple(int(B_color.lstrip('#')[i:i + 2], 16) for i in (0, 2, 4)) + (alphas,)
-        img = Image.new("RGBA", (image_width, image_height), B_color_alpha)
-        pilmoji = Pilmoji(img, source=self.emoji_source)  # emoji表情修复
-        # 绘制色块
-        titlet = self.background.get('testtitle', '#EAEAEA')
-        titlet_alpha = tuple(int(titlet.lstrip('#')[i:i + 2], 16) for i in (0, 2, 4)) + (alphas,)
-        bkg = Image.new('RGBA', (image_width, 120), titlet_alpha)  # 首尾部填充
-        img.paste(bkg, (0, 0))
-        img.paste(bkg, (0, image_height - 120))
-        idraw = ImageDraw.Draw(img)
-        # 绘制标题栏与结尾栏
-        export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
-        list1 = [f"{self.title} - 联通性测试",
-                 f"版本:{__version__}   总共耗时: {wtime}s  排序: {self.sort}   " +
-                 f"过滤器: {self.filter_include} <-> {self.filter_exclude}",
-                 "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time)]
-        export_time = export_time.replace(':', '-')
-        title = list1[0]
-        idraw.text((self.get_mid(0, image_width, title), 3), title, font=fnt, fill=(0, 0, 0))  # 标题
-        if self.emoji:
-            pilmoji.text((10, image_height - 112), text=list1[1], font=fnt, fill=(0, 0, 0),
-                         emoji_position_offset=(0, 3))
-        else:
-            idraw.text((10, image_height - 112), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
-        idraw.text((10, image_height - 55), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
-        # 绘制标签
-        idraw.text((20, 65), '序号', font=fnt, fill=(0, 0, 0))  # 序号
-        idraw.text((self.get_mid(100, nodename_width + 100, '节点名称'), 65), '节点名称', font=fnt, fill=(0, 0, 0))  # 节点名称
-        start_x = 100 + nodename_width
-        m = 0  # 记录测试项数目
-        for i in info_list_length:
-            x = start_x
-            end = start_x + i
-            idraw.text((self.get_mid(x, end, key_list[m]), 65), key_list[m], font=fnt, fill=(0, 0, 0))
-            start_x = end
-            m = m + 1
-        # 内容填充
-        if self.delay_color:
-            colorvalue = self.colorvalue
-            interval = self.interval
-            alphas = self.alphas
-        else:
-            # 默认值
-            colorvalue = ["#f5f3f2", "#beb1aa", "#f6bec8", "#dc6b82", "#c35c5d", "#8ba3c7", "#c8161d", '#8d8b8e']
-            interval = [0, 100, 200, 300, 500, 1000, 2000, 99999]
-            alphas = [255, 255, 255, 255, 255, 255, 255, 255]
-        # 填充颜色块
-        c_block = {'成功': self.color.get('yes', '#BEE587'),
-                   '失败': self.color.get('no', '#ef6b73'),
-                   'N/A': self.color.get('na', '#8d8b8e'),
-                   '待解锁': self.color.get('wait', '#dcc7e1'),
-                   'low': self.color.get('iprisk', {}).get('low', '#ffffff'),
-                   'medium': self.color.get('iprisk', {}).get('medium', '#ffffff'),
-                   'high': self.color.get('iprisk', {}).get('high', '#ffffff'),
-                   'veryhigh': self.color.get('iprisk', {}).get('veryhigh', '#ffffff'),
-                   '警告': self.color.get('warn', '#fcc43c'),
-                   '未知': self.color.get('weizhi', '#5ccfe6'),
-                   '自制': self.color.get('zhizhi', '#ffffff'),
-                   '海外': self.color.get('haiwai', '#FFE66B'),
-                   }
-        
-        c_alpha = {'成功': self.color.get('yesalpha', 255),
-                   '失败': self.color.get('noalpha', 255),
-                   'N/A': self.color.get('naalpha', 255),
-                   '待解锁': self.color.get('waitalpha', 255),
-                   'low': self.color.get('iprisk', {}).get('lowalpha', 255),
-                   'medium': self.color.get('iprisk', {}).get('mediumalpha', 255),
-                   'high': self.color.get('iprisk', {}).get('highalpha', 255),
-                   'veryhigh': self.color.get('iprisk', {}).get('veryhighalpha', 255),
-                   '警告': self.color.get('warnalpha', 255),
-                   '未知': self.color.get('weizhialpha', 255),
-                   '自制': self.color.get('zhizhialpha', 255),
-                   '海外': self.color.get('haiwaialpha', 255),
-                   }
-        for t in range(self.nodenum):
-            # 序号
-            idraw.text((self.get_mid(0, 100, str(t + 1)), 60 * (t + 2) + 6), text=str(t + 1), font=fnt, fill=(0, 0, 0))
-            # 节点名称
-            if self.emoji:
-                try:
-                    # 自定义emoji源可能出错，所以捕捉了异常
-                    pilmoji.text((110, 60 * (t + 2) + 5), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
-                                 emoji_position_offset=(0, 6))
-                except PIL.UnidentifiedImageError:
-                    logger.warning("无效符号:" + self.basedata[t])
-                    pilmoji2 = Pilmoji(img, source=Twemoji)
-                    pilmoji2.text((110, 60 * (t + 2) + 5), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
-                                  emoji_position_offset=(0, 6))
-            else:
-                idraw.text((110, 60 * (t + 2) + 5), text=self.basedata[t], font=fnt, fill=(0, 0, 0))
-
-            width = 100 + nodename_width
-            i = 0
-            for t1 in key_list:
-                if "RTT延迟" == t1 or "HTTP(S)延迟" == t1:
-                    rtt = float(self.info[t1][t][:-2])
-                    if interval[0] < rtt < interval[1]:
-                        block = color_block((info_list_length[i], 60), color_value=colorvalue[0], alpha=alphas[0])
-                        img.alpha_composite(block, (width, 60 * (t + 2)))
-                    elif interval[1] <= rtt < interval[2]:
-                        block = color_block((info_list_length[i], 60), color_value=colorvalue[1], alpha=alphas[1])
-                        img.alpha_composite(block, (width, 60 * (t + 2)))
-                    elif interval[2] <= rtt < interval[3]:
-                        block = color_block((info_list_length[i], 60), color_value=colorvalue[2], alpha=alphas[2])
-                        img.alpha_composite(block, (width, 60 * (t + 2)))
-                    elif interval[3] <= rtt < interval[4]:
-                        block = color_block((info_list_length[i], 60), color_value=colorvalue[3], alpha=alphas[3])
-                        img.alpha_composite(block, (width, 60 * (t + 2)))
-                    elif interval[4] <= rtt < interval[5]:
-                        block = color_block((info_list_length[i], 60), color_value=colorvalue[4], alpha=alphas[4])
-                        img.alpha_composite(block, (width, 60 * (t + 2)))
-                    elif interval[5] <= rtt < interval[6]:
-                        block = color_block((info_list_length[i], 60), color_value=colorvalue[5], alpha=alphas[5])
-                        img.alpha_composite(block, (width, 60 * (t + 2)))
-                    elif interval[6] <= rtt:
-                        block = color_block((info_list_length[i], 60), color_value=colorvalue[6], alpha=alphas[6])
-                        img.alpha_composite(block, (width, 60 * (t + 2)))
-                    elif rtt == 0:
-                        block = color_block((info_list_length[i], 60), color_value=colorvalue[7], alpha=alphas[7])
-                        img.alpha_composite(block, (width, 60 * (t + 2)))
-                elif '海外' in self.info[t1][t]:
-                    block = color_block((info_list_length[i], 60), color_value=c_block['海外'], alpha=c_alpha['海外'])
-                    img.alpha_composite(block, (width, 60 * (t + 2)))
-                elif '国创' in self.info[t1][t]:
-                    block = color_block((info_list_length[i], 60), color_value=c_block['海外'], alpha=c_alpha['海外'])
-                    img.alpha_composite(block, (width, 60 * (t + 2)))
-                elif ('解锁' in self.info[t1][t] or '允许' in self.info[t1][t]) and '待' not in self.info[t1][t]:
-                    block = color_block((info_list_length[i], 60), color_value=c_block['成功'], alpha=c_alpha['成功'])
-                    img.alpha_composite(block, (width, 60 * (t + 2)))
-                elif '失败' in self.info[t1][t] or '禁止' in self.info[t1][t]:
-                    block = color_block((info_list_length[i], 60), color_value=c_block['失败'], alpha=c_alpha['失败'])
-                    img.alpha_composite(block, (width, 60 * (t + 2)))
-                elif '待解' in self.info[t1][t]:
-                    block = color_block((info_list_length[i], 60), color_value=c_block['待解锁'], alpha=c_alpha['待解锁'])
-                    img.alpha_composite(block, (width, 60 * (t + 2)))
-                elif 'N/A' in self.info[t1][t]:
-                    block = color_block((info_list_length[i], 60), color_value=c_block['N/A'], alpha=c_alpha['N/A'])
-                    img.alpha_composite(block, (width, 60 * (t + 2)))
-                elif 'Low' in self.info[t1][t]:
-                    block = color_block((info_list_length[i], 60), color_value=c_block['low'], alpha=c_alpha['low'])
-                    img.alpha_composite(block, (width, 60 * (t + 2)))
-                elif 'Medium' in self.info[t1][t]:
-                    block = color_block((info_list_length[i], 60), color_value=c_block['medium'], alpha=c_alpha['medium'])
-                    img.alpha_composite(block, (width, 60 * (t + 2)))
-                elif 'High' in self.info[t1][t] and 'Very' not in self.info[t1][t]:
-                    block = color_block((info_list_length[i], 60), color_value=c_block['high'], alpha=c_alpha['high'])
-                    img.alpha_composite(block, (width, 60 * (t + 2)))
-                elif 'Very' in self.info[t1][t]:
-                    block = color_block((info_list_length[i], 60), color_value=c_block['veryhigh'], alpha=c_alpha['veryhigh'])
-                    img.alpha_composite(block, (width, 60 * (t + 2)))
-                elif '超时' in self.info[t1][t] or '连接错误' in self.info[t1][t]:
-                    block = color_block((info_list_length[i], 60), color_value=c_block['警告'], alpha=c_alpha['警告'])
-                    img.alpha_composite(block, (width, 60 * (t + 2)))
-                elif '未知' in self.info[t1][t]:
-                    block = color_block((info_list_length[i], 60), color_value=c_block['未知'], alpha=c_alpha['未知'])
-                    img.alpha_composite(block, (width, 60 * (t + 2)))
-                elif '自制' in self.info[t1][t]:
-                    block = color_block((info_list_length[i], 60), color_value=c_block['自制'], alpha=c_alpha['自制'])
-                    img.alpha_composite(block, (width, 60 * (t + 2)))
-                elif '货币' in self.info[t1][t]:
-                    block = color_block((info_list_length[i], 60), color_value=c_block['成功'], alpha=c_alpha['成功'])
-                    img.alpha_composite(block, (width, 60 * (t + 2)))
-                else:
-                    pass
-                width += info_list_length[i]
-                i += 1
-            width = 100 + nodename_width
-            i = 0
-            for t2 in key_list:
-                idraw.text((self.get_mid(width, width + info_list_length[i], self.info[t2][t]), (t + 2) * 60 + 5),
-                           self.info[t2][t],
-                           font=fnt, fill=(0, 0, 0))
-                width += info_list_length[i]
-                i += 1
-        # 绘制横线
-        for t in range(self.nodenum + 3):
-            idraw.line([(0, 60 * (t + 1)), (image_width, 60 * (t + 1))], fill="#e1e1e1", width=2)
-        # 绘制竖线
-        idraw.line([(100, 60), (100, 120)], fill="#EAEAEA", width=2)
-        start_x = 100 + nodename_width
-        for i in info_list_length:
-            x = start_x
-            end = start_x + i
-            idraw.line([(x, 60), (x, image_height - 120)], fill="#EAEAEA", width=2)
-            start_x = end
-        # 绘制水印
-        if self.watermark['enable']:
-            img = self.draw_watermark(img.convert("RGBA"))
-        # 保存结果
-        img.save(r"./results/{}.png".format(export_time.replace(':', '-')))
-        print(export_time)
-        return export_time
+    # @logger.catch
+    # def exportUnlock(self):
+    #     wtime = self.info.pop('wtime', "0")
+    #     fnt = self.__font
+    #     image_width, nodename_width, info_list_length = self.get_width()
+    #     image_height = self.get_height()
+    #     key_list = self.get_key_list()
+    #     B_color = self.background.get('backgrounds', '#ffffff')
+    #     alphas = self.background.get('alpha', 255)
+    #     B_color_alpha = tuple(int(B_color.lstrip('#')[i:i + 2], 16) for i in (0, 2, 4)) + (alphas,)
+    #     img = Image.new("RGBA", (image_width, image_height), B_color_alpha)
+    #     pilmoji = Pilmoji(img, source=self.emoji_source)  # emoji表情修复
+    #     # 绘制色块
+    #     titlet = self.background.get('testtitle', '#EAEAEA')
+    #     titlet_alpha = tuple(int(titlet.lstrip('#')[i:i + 2], 16) for i in (0, 2, 4)) + (alphas,)
+    #     bkg = Image.new('RGBA', (image_width, 120), titlet_alpha)  # 首尾部填充
+    #     img.paste(bkg, (0, 0))
+    #     img.paste(bkg, (0, image_height - 120))
+    #     idraw = ImageDraw.Draw(img)
+    #     # 绘制标题栏与结尾栏
+    #     export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
+    #     list1 = [f"{self.title} - 联通性测试",
+    #              f"版本:{__version__}   总共耗时: {wtime}s  排序: {self.sort}   " +
+    #              f"过滤器: {self.filter_include} <-> {self.filter_exclude}",
+    #              "测试时间: {}  测试结果仅供参考,以实际情况为准".format(export_time)]
+    #     export_time = export_time.replace(':', '-')
+    #     title = list1[0]
+    #     idraw.text((self.get_mid(0, image_width, title), 3), title, font=fnt, fill=(0, 0, 0))  # 标题
+    #     if self.emoji:
+    #         pilmoji.text((10, image_height - 112), text=list1[1], font=fnt, fill=(0, 0, 0),
+    #                      emoji_position_offset=(0, 3))
+    #     else:
+    #         idraw.text((10, image_height - 112), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
+    #     idraw.text((10, image_height - 55), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
+    #     # 绘制标签
+    #     idraw.text((20, 65), '序号', font=fnt, fill=(0, 0, 0))  # 序号
+    #     idraw.text((self.get_mid(100, nodename_width + 100, '节点名称'), 65), '节点名称', font=fnt, fill=(0, 0, 0))  # 节点名称
+    #     start_x = 100 + nodename_width
+    #     m = 0  # 记录测试项数目
+    #     for i in info_list_length:
+    #         x = start_x
+    #         end = start_x + i
+    #         idraw.text((self.get_mid(x, end, key_list[m]), 65), key_list[m], font=fnt, fill=(0, 0, 0))
+    #         start_x = end
+    #         m = m + 1
+    #     # 内容填充
+    #     if self.delay_color:
+    #         colorvalue = self.colorvalue
+    #         interval = self.interval
+    #         alphas = self.alphas
+    #     else:
+    #         # 默认值
+    #         colorvalue = ["#f5f3f2", "#beb1aa", "#f6bec8", "#dc6b82", "#c35c5d", "#8ba3c7", "#c8161d", '#8d8b8e']
+    #         interval = [0, 100, 200, 300, 500, 1000, 2000, 99999]
+    #         alphas = [255, 255, 255, 255, 255, 255, 255, 255]
+    #     # 填充颜色块
+    #     c_block = {'成功': self.color.get('yes', '#BEE587'),
+    #                '失败': self.color.get('no', '#ef6b73'),
+    #                'N/A': self.color.get('na', '#8d8b8e'),
+    #                '待解锁': self.color.get('wait', '#dcc7e1'),
+    #                'low': self.color.get('iprisk', {}).get('low', '#ffffff'),
+    #                'medium': self.color.get('iprisk', {}).get('medium', '#ffffff'),
+    #                'high': self.color.get('iprisk', {}).get('high', '#ffffff'),
+    #                'veryhigh': self.color.get('iprisk', {}).get('veryhigh', '#ffffff'),
+    #                '警告': self.color.get('warn', '#fcc43c'),
+    #                '未知': self.color.get('weizhi', '#5ccfe6'),
+    #                '自制': self.color.get('zhizhi', '#ffffff'),
+    #                '海外': self.color.get('haiwai', '#FFE66B'),
+    #                }
+    #
+    #     c_alpha = {'成功': self.color.get('yesalpha', 255),
+    #                '失败': self.color.get('noalpha', 255),
+    #                'N/A': self.color.get('naalpha', 255),
+    #                '待解锁': self.color.get('waitalpha', 255),
+    #                'low': self.color.get('iprisk', {}).get('lowalpha', 255),
+    #                'medium': self.color.get('iprisk', {}).get('mediumalpha', 255),
+    #                'high': self.color.get('iprisk', {}).get('highalpha', 255),
+    #                'veryhigh': self.color.get('iprisk', {}).get('veryhighalpha', 255),
+    #                '警告': self.color.get('warnalpha', 255),
+    #                '未知': self.color.get('weizhialpha', 255),
+    #                '自制': self.color.get('zhizhialpha', 255),
+    #                '海外': self.color.get('haiwaialpha', 255),
+    #                }
+    #     for t in range(self.nodenum):
+    #         # 序号
+    #         idraw.text((self.get_mid(0, 100, str(t + 1)), 60 * (t + 2) + 6), text=str(t + 1), font=fnt, fill=(0, 0, 0))
+    #         # 节点名称
+    #         if self.emoji:
+    #             try:
+    #                 # 自定义emoji源可能出错，所以捕捉了异常
+    #                 pilmoji.text((110, 60 * (t + 2) + 5), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
+    #                              emoji_position_offset=(0, 6))
+    #             except PIL.UnidentifiedImageError:
+    #                 logger.warning("无效符号:" + self.basedata[t])
+    #                 pilmoji2 = Pilmoji(img, source=Twemoji)
+    #                 pilmoji2.text((110, 60 * (t + 2) + 5), text=self.basedata[t], font=fnt, fill=(0, 0, 0),
+    #                               emoji_position_offset=(0, 6))
+    #         else:
+    #             idraw.text((110, 60 * (t + 2) + 5), text=self.basedata[t], font=fnt, fill=(0, 0, 0))
+    #
+    #         width = 100 + nodename_width
+    #         i = 0
+    #         for t1 in key_list:
+    #             if "RTT延迟" == t1 or "HTTP(S)延迟" == t1:
+    #                 rtt = float(self.info[t1][t][:-2])
+    #                 if interval[0] < rtt < interval[1]:
+    #                     block = color_block((info_list_length[i], 60), color_value=colorvalue[0], alpha=alphas[0])
+    #                     img.alpha_composite(block, (width, 60 * (t + 2)))
+    #                 elif interval[1] <= rtt < interval[2]:
+    #                     block = color_block((info_list_length[i], 60), color_value=colorvalue[1], alpha=alphas[1])
+    #                     img.alpha_composite(block, (width, 60 * (t + 2)))
+    #                 elif interval[2] <= rtt < interval[3]:
+    #                     block = color_block((info_list_length[i], 60), color_value=colorvalue[2], alpha=alphas[2])
+    #                     img.alpha_composite(block, (width, 60 * (t + 2)))
+    #                 elif interval[3] <= rtt < interval[4]:
+    #                     block = color_block((info_list_length[i], 60), color_value=colorvalue[3], alpha=alphas[3])
+    #                     img.alpha_composite(block, (width, 60 * (t + 2)))
+    #                 elif interval[4] <= rtt < interval[5]:
+    #                     block = color_block((info_list_length[i], 60), color_value=colorvalue[4], alpha=alphas[4])
+    #                     img.alpha_composite(block, (width, 60 * (t + 2)))
+    #                 elif interval[5] <= rtt < interval[6]:
+    #                     block = color_block((info_list_length[i], 60), color_value=colorvalue[5], alpha=alphas[5])
+    #                     img.alpha_composite(block, (width, 60 * (t + 2)))
+    #                 elif interval[6] <= rtt:
+    #                     block = color_block((info_list_length[i], 60), color_value=colorvalue[6], alpha=alphas[6])
+    #                     img.alpha_composite(block, (width, 60 * (t + 2)))
+    #                 elif rtt == 0:
+    #                     block = color_block((info_list_length[i], 60), color_value=colorvalue[7], alpha=alphas[7])
+    #                     img.alpha_composite(block, (width, 60 * (t + 2)))
+    #             elif '海外' in self.info[t1][t]:
+    #                 block = color_block((info_list_length[i], 60), color_value=c_block['海外'], alpha=c_alpha['海外'])
+    #                 img.alpha_composite(block, (width, 60 * (t + 2)))
+    #             elif '国创' in self.info[t1][t]:
+    #                 block = color_block((info_list_length[i], 60), color_value=c_block['海外'], alpha=c_alpha['海外'])
+    #                 img.alpha_composite(block, (width, 60 * (t + 2)))
+    #             elif ('解锁' in self.info[t1][t] or '允许' in self.info[t1][t]) and '待' not in self.info[t1][t]:
+    #                 block = color_block((info_list_length[i], 60), color_value=c_block['成功'], alpha=c_alpha['成功'])
+    #                 img.alpha_composite(block, (width, 60 * (t + 2)))
+    #             elif '失败' in self.info[t1][t] or '禁止' in self.info[t1][t]:
+    #                 block = color_block((info_list_length[i], 60), color_value=c_block['失败'], alpha=c_alpha['失败'])
+    #                 img.alpha_composite(block, (width, 60 * (t + 2)))
+    #             elif '待解' in self.info[t1][t]:
+    #                 block = color_block((info_list_length[i], 60), color_value=c_block['待解锁'], alpha=c_alpha['待解锁'])
+    #                 img.alpha_composite(block, (width, 60 * (t + 2)))
+    #             elif 'N/A' in self.info[t1][t]:
+    #                 block = color_block((info_list_length[i], 60), color_value=c_block['N/A'], alpha=c_alpha['N/A'])
+    #                 img.alpha_composite(block, (width, 60 * (t + 2)))
+    #             elif 'Low' in self.info[t1][t]:
+    #                 block = color_block((info_list_length[i], 60), color_value=c_block['low'], alpha=c_alpha['low'])
+    #                 img.alpha_composite(block, (width, 60 * (t + 2)))
+    #             elif 'Medium' in self.info[t1][t]:
+    #                 block = color_block((info_list_length[i], 60), color_value=c_block['medium'],
+    #                                     alpha=c_alpha['medium'])
+    #                 img.alpha_composite(block, (width, 60 * (t + 2)))
+    #             elif 'High' in self.info[t1][t] and 'Very' not in self.info[t1][t]:
+    #                 block = color_block((info_list_length[i], 60), color_value=c_block['high'], alpha=c_alpha['high'])
+    #                 img.alpha_composite(block, (width, 60 * (t + 2)))
+    #             elif 'Very' in self.info[t1][t]:
+    #                 block = color_block((info_list_length[i], 60), color_value=c_block['veryhigh'],
+    #                                     alpha=c_alpha['veryhigh'])
+    #                 img.alpha_composite(block, (width, 60 * (t + 2)))
+    #             elif '超时' in self.info[t1][t] or '连接错误' in self.info[t1][t]:
+    #                 block = color_block((info_list_length[i], 60), color_value=c_block['警告'], alpha=c_alpha['警告'])
+    #                 img.alpha_composite(block, (width, 60 * (t + 2)))
+    #             elif '未知' in self.info[t1][t]:
+    #                 block = color_block((info_list_length[i], 60), color_value=c_block['未知'], alpha=c_alpha['未知'])
+    #                 img.alpha_composite(block, (width, 60 * (t + 2)))
+    #             elif '自制' in self.info[t1][t]:
+    #                 block = color_block((info_list_length[i], 60), color_value=c_block['自制'], alpha=c_alpha['自制'])
+    #                 img.alpha_composite(block, (width, 60 * (t + 2)))
+    #             elif '货币' in self.info[t1][t]:
+    #                 block = color_block((info_list_length[i], 60), color_value=c_block['成功'], alpha=c_alpha['成功'])
+    #                 img.alpha_composite(block, (width, 60 * (t + 2)))
+    #             else:
+    #                 pass
+    #             width += info_list_length[i]
+    #             i += 1
+    #         width = 100 + nodename_width
+    #         i = 0
+    #         for t2 in key_list:
+    #             idraw.text((self.get_mid(width, width + info_list_length[i], self.info[t2][t]), (t + 2) * 60 + 5),
+    #                        self.info[t2][t],
+    #                        font=fnt, fill=(0, 0, 0))
+    #             width += info_list_length[i]
+    #             i += 1
+    #     # 绘制横线
+    #     for t in range(self.nodenum + 3):
+    #         idraw.line([(0, 60 * (t + 1)), (image_width, 60 * (t + 1))], fill="#e1e1e1", width=2)
+    #     # 绘制竖线
+    #     idraw.line([(100, 60), (100, 120)], fill="#EAEAEA", width=2)
+    #     start_x = 100 + nodename_width
+    #     for i in info_list_length:
+    #         x = start_x
+    #         end = start_x + i
+    #         idraw.line([(x, 60), (x, image_height - 120)], fill="#EAEAEA", width=2)
+    #         start_x = end
+    #     # 绘制水印
+    #     if self.watermark['enable']:
+    #         img = self.draw_watermark(img.convert("RGBA"))
+    #     # 保存结果
+    #     img.save(r"./results/{}.png".format(export_time.replace(':', '-')))
+    #     print(export_time)
+    #     return export_time
 
 
 class ExportTopo(ExportResult):
@@ -891,7 +1353,7 @@ class ExportTopo(ExportResult):
                 elif t1 == "入口":
                     text = str(self.info[t1][t])
                     pre_text = str(self.info[t1][t - 1]) if t > 0 else str(self.info[t1][0])
-                    next_text = str(self.info[t1][t + 1]) if t < self.nodenum-1 else str(self.info[t1][t])
+                    next_text = str(self.info[t1][t + 1]) if t < self.nodenum - 1 else str(self.info[t1][t])
                     if t == 0:
                         idraw.text(
                             (self.get_mid(width, width + info_list_length[i], str(self.info[t1][t])), (t + 2) * 60),
@@ -903,7 +1365,7 @@ class ExportTopo(ExportResult):
                             text,
                             font=fnt, fill=(0, 0, 0))
                     elif text != next_text:
-                        idraw.text((163, (t + 2) * 60-20), "*", font=fnt, fill=(0, 0, 0))
+                        idraw.text((163, (t + 2) * 60 - 20), "*", font=fnt, fill=(0, 0, 0))
                     else:
                         idraw.text(
                             (163, (t + 2) * 60),
@@ -1002,7 +1464,7 @@ class ExportSpeed(ExportResult):
             return a[:8]
         else:
             return a
-     
+
     @property
     def intervals(self):
         intervals_list = []
@@ -1011,6 +1473,7 @@ class ExportSpeed(ExportResult):
         a = list(set(intervals_list))  # 去重加排序
         a.sort()
         return a
+
     @property
     def colorvalue(self):
         color_list = []
@@ -1021,8 +1484,8 @@ class ExportSpeed(ExportResult):
         if len(color_list) > 8:
             return color_list[:8]
         else:
-           return color_list
-        
+            return color_list
+
     @property
     def colorvalues(self):
         color_list = []
@@ -1035,8 +1498,7 @@ class ExportSpeed(ExportResult):
         # else:
         #     return color_list
         return color_list
-        
-        
+
     @property
     def alphas(self):
         alphas_list = []
@@ -1048,13 +1510,13 @@ class ExportSpeed(ExportResult):
             return alphas_list[:8]
         else:
             return alphas_list
-            
+
     @property
     def alphaes(self):
         alphaes_list = []
         for c in self.color:
             alphaes_list.append(c.get('alpha', 255))
-        
+
         return alphaes_list
 
     @logger.catch
@@ -1119,7 +1581,7 @@ class ExportSpeed(ExportResult):
                 if _speedvalue >= intervals[_i]:
                     return colorvalues[_i]
             return default_color
-            
+
         def get_alphas(_speedvalue, default_alphas=255):
             for _i in reversed(range(len(alphaes))):
                 if _speedvalue >= intervals[_i]:
@@ -1147,14 +1609,14 @@ class ExportSpeed(ExportResult):
             i = 0
             speedblock_height = 60
             if self.delay_color:
-              colorvalue = self.colorvalue
-              interval = self.interval
-              alphas = self.alphas
+                colorvalue = self.colorvalue
+                interval = self.interval
+                alphas = self.alphas
             else:
-            # 默认值
-              colorvalue = ["#f5f3f2", "#beb1aa", "#f6bec8", "#dc6b82", "#c35c5d", "#8ba3c7", "#c8161d", '#8d8b8e']
-              interval = [0, 100, 200, 300, 500, 1000, 2000, 99999]
-              alphas = [255, 255, 255, 255, 255, 255, 255, 255]
+                # 默认值
+                colorvalue = ["#f5f3f2", "#beb1aa", "#f6bec8", "#dc6b82", "#c35c5d", "#8ba3c7", "#c8161d", '#8d8b8e']
+                interval = [0, 100, 200, 300, 500, 1000, 2000, 99999]
+                alphas = [255, 255, 255, 255, 255, 255, 255, 255]
             # 填充颜色块
             for t1 in key_list:
                 if "延迟RTT" == t1 or "HTTP(S)延迟" == t1:
@@ -1185,40 +1647,45 @@ class ExportSpeed(ExportResult):
                         img.alpha_composite(block, (width, 60 * (t + 2)))
                 if t1 == "平均速度" or t1 == "最大速度":
                     if "MB" in self.info[t1][t]:
-                       speedvalue = float(self.info[t1][t][:-2])
-                       block = color_block((info_list_length[i], speedblock_height), color_value=get_color(speedvalue), alpha=get_alphas(speedvalue))
-                       img.alpha_composite(block, (width, speedblock_height * (t + 2)))
+                        speedvalue = float(self.info[t1][t][:-2])
+                        block = color_block((info_list_length[i], speedblock_height), color_value=get_color(speedvalue),
+                                            alpha=get_alphas(speedvalue))
+                        img.alpha_composite(block, (width, speedblock_height * (t + 2)))
                     elif "KB" in self.info[t1][t] and float(self.info[t1][t][:-2]) > 0:
-                       speedvalue = float(self.info[t1][t][:-2])
-                       block = color_block((info_list_length[i], speedblock_height), color_value=get_color(1), alpha=get_alphas(speedvalue))
-                       img.alpha_composite(block, (width, speedblock_height * (t + 2)))
+                        speedvalue = float(self.info[t1][t][:-2])
+                        block = color_block((info_list_length[i], speedblock_height), color_value=get_color(1),
+                                            alpha=get_alphas(speedvalue))
+                        img.alpha_composite(block, (width, speedblock_height * (t + 2)))
                     else:
-                       speedvalue = float(self.info[t1][t][:-2])
-                       block = color_block((info_list_length[i], speedblock_height), color_value=get_color(speedvalue), alpha=get_alphas(speedvalue))
-                       img.alpha_composite(block, (width, speedblock_height * (t + 2)))
+                        speedvalue = float(self.info[t1][t][:-2])
+                        block = color_block((info_list_length[i], speedblock_height), color_value=get_color(speedvalue),
+                                            alpha=get_alphas(speedvalue))
+                        img.alpha_composite(block, (width, speedblock_height * (t + 2)))
                 elif t1 == "每秒速度":
                     speedblock_x = width
                     for speedvalue in self.info[t1][t]:
                         max_speed = float(self.info["最大速度"][t][:-2])
                         if max_speed > 0.0:
-                          if max_speed < 50:
-                            speedblock_ratio_height = int(speedblock_height * speedvalue / 50)
-                            if speedblock_ratio_height > speedblock_height:
-                                speedblock_ratio_height = speedblock_height
-                            speedblock_y = speedblock_height * (t + 2) + (speedblock_height - speedblock_ratio_height)
+                            if max_speed < 50:
+                                speedblock_ratio_height = int(speedblock_height * speedvalue / 50)
+                                if speedblock_ratio_height > speedblock_height:
+                                    speedblock_ratio_height = speedblock_height
+                                speedblock_y = speedblock_height * (t + 2) + (
+                                        speedblock_height - speedblock_ratio_height)
 
-                            block = color_block((self.speedblock_width, speedblock_ratio_height),
-                                                color_value=get_color(speedvalue), alpha=get_alphas(speedvalue))
-                            img.alpha_composite(block, (speedblock_x, speedblock_y))
-                          else:
-                            speedblock_ratio_height = int(speedblock_height * speedvalue / max_speed)
-                            if speedblock_ratio_height > speedblock_height:
-                                speedblock_ratio_height = speedblock_height
-                            speedblock_y = speedblock_height * (t + 2) + (speedblock_height - speedblock_ratio_height)
+                                block = color_block((self.speedblock_width, speedblock_ratio_height),
+                                                    color_value=get_color(speedvalue), alpha=get_alphas(speedvalue))
+                                img.alpha_composite(block, (speedblock_x, speedblock_y))
+                            else:
+                                speedblock_ratio_height = int(speedblock_height * speedvalue / max_speed)
+                                if speedblock_ratio_height > speedblock_height:
+                                    speedblock_ratio_height = speedblock_height
+                                speedblock_y = speedblock_height * (t + 2) + (
+                                        speedblock_height - speedblock_ratio_height)
 
-                            block = color_block((self.speedblock_width, speedblock_ratio_height),
-                                                color_value=get_color(speedvalue), alpha=get_alphas(speedvalue))
-                            img.alpha_composite(block, (speedblock_x, speedblock_y))
+                                block = color_block((self.speedblock_width, speedblock_ratio_height),
+                                                    color_value=get_color(speedvalue), alpha=get_alphas(speedvalue))
+                                img.alpha_composite(block, (speedblock_x, speedblock_y))
                         speedblock_x += self.speedblock_width
                 width += info_list_length[i]
                 i += 1
