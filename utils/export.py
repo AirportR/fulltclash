@@ -350,12 +350,10 @@ class ExportCommon(BaseExport):
         _key_list = self.get_key_list()
         text_list = [('序号', 20), ('节点名称', self.get_mid(100, _nodename_width + 100, '节点名称'))]
         start_x = 100 + _nodename_width
-        for i in range(len(_info_list_width)):
-            x = start_x
-            end = start_x + _info_list_width[i]
-            text_list.append((_key_list[i], self.get_mid(x, end, _key_list[i])))
-            start_x = end
-
+        for i, info_width in enumerate(_info_list_width):
+            end_x = start_x + info_width
+            text_list.append((_key_list[i], self.get_mid(start_x, end_x, _key_list[i])))
+            start_x = end_x
         for text, x in text_list:
             idraw.text((x, 65), text, fill=(0, 0, 0))
 
@@ -486,14 +484,11 @@ class ExportCommon(BaseExport):
         idraw.font = self.__font  # 设置字体，之后就不用一直在参数里传入字体实例啦
         pilmoji = Pilmoji(img, source=self.emoji_source)  # emoji表情修复，emoji必须在参数手动指定字体。
 
-        _width = self.image['widths'][0]
-        _height = self.image['height']
-
         _nodename_width = self.image['widths'][1]
         _info_list_width = list(self.image['widths'][2])
         _key_list = self.get_key_list()
-
         _export_time = self.draw_info(idraw)  # 绘制标题栏与结尾栏，返回输出图片的时间,文件动态命名。
+
         self.draw_label(idraw)  # 绘制标签
 
         for t in range(self.nodenum):
@@ -509,6 +504,7 @@ class ExportCommon(BaseExport):
                 x = self.get_mid(width, width + _info_list_width[i], self.info[t2][t])
                 self.draw_content(idraw, (x, (t + 2) * 60 + 5), self.info[t2][t])
                 width += _info_list_width[i]
+
         self.draw_line(idraw)  # 绘制线条
         img = self.draw_watermark(img)  # 绘制水印
         # img.show("coffee")
