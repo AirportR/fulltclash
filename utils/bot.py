@@ -38,7 +38,7 @@ def user_loder(app: Client):
             await botmodule.relay(client, message)
             message.stop_propagation()
 
-    @app.on_message(filters.user(whitelist), 2)
+    @app.on_message(filters.user(whitelist) & filters.document & filters.caption, 2)
     async def relay2(client: Client, message: Message):
         logger.info("收到relay2，来自：" + str(message.chat.id))
         await botmodule.relay2(client, message)

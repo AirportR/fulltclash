@@ -14,7 +14,7 @@ from utils.clash import new_batch_start, check_port
 
 connect_list = {}  # 作为主端
 connect_list2 = {}  # 作为后端
-connect_queue = asyncio.Queue()
+connect_queue = asyncio.Queue(1)
 
 
 async def startclash(app: Client, message: Message):
@@ -132,7 +132,6 @@ async def conn(app: Client, message: Message):
 async def response(_: Client, message: Message):
     if message.document is None:
         return
-    print("即将推入消息")
     await connect_queue.put(message)
 
 
@@ -175,7 +174,7 @@ async def conn_resp2(_: Client, message: Message):
     if message.caption is None:
         return
     master_id = str(message.caption).split(' ')[-1]
-    chat_id = connect_list.pop(master_id, None)
+    chat_id = connect_list2.pop(master_id, None)
     if chat_id is None:
         return
     file = message.document
