@@ -12,4 +12,4 @@ loguru>=0.6.0
 aiohttp_socks==0.7.1
 websockets==10.3
 tzlocal==4.1
-cryptography==40.0.2
+geoip2

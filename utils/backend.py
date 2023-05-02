@@ -13,7 +13,7 @@ from aiohttp_socks import ProxyConnector
 from loguru import logger
 from utils.collector import proxies
 from libs import pynat
-from utils import message_edit_queue, cleaner, collector, ipstack, proxys, sorter
+from utils import message_edit_queue, cleaner, collector, ipstack, proxys, sorter, geoip
 
 # 重写整个测试核心，技术栈分离。
 
@@ -304,8 +304,8 @@ class SpeedCore(Basecore):
         message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1, self.IKM))
         for name in nodelist:
             proxys.switchProxy(name, 0)
+            #delay = await proxys.http_delay_tls(index=0)
             delay = await proxys.http_delay(index=0)
-            # delay = await proxys.http_delay_tls(index=0)
             udptype, _, _, _, _ = self.nat_type_test('127.0.0.1', proxyport=port)
             if udptype is None:
                 udptype = "Unknown"
@@ -396,7 +396,7 @@ class ScriptCore(Basecore):
         """
         info = []
         delay = await proxys.http_delay(index=index)
-        # delay = await proxys.http_delay_tls(index=index, timeout=5)
+        #delay = await proxys.http_delay_tls(index=index, timeout=5)
         if delay == 0:
             logger.warning("超时节点，跳过测试")
             for t in test_items:
@@ -578,6 +578,7 @@ class TopoCore(Basecore):
         else:
             info = {'地区': [], 'AS编号': [], '组织': [], '栈': []}
         cl = copy.deepcopy(self._config)
+        data = GCONFIG.config.get("localip", False)
         if not self.check_node():
             return info, [], cl
         co = collector.IPCollector()
@@ -590,26 +591,22 @@ class TopoCore(Basecore):
         if nodename and inboundinfo and cl:
             # 拿地址，已经转换了域名为ip,hosts变量去除了N/A
             hosts = list(inboundinfo.keys())
-            # 创建任务并开始采集ip信息
-            co.create_tasks(session=session, hosts=hosts, proxy=proxies)
-            res = await co.start()
-            await session.close()
-            if res:
-                country_code = []
-                asn = []
+            if data:
+                code = []
                 org = []
-                for j in res:
-                    ipcl = cleaner.IPCleaner(j)
-                    country_code.append(ipcl.get_country_code())
-                    asn.append(str(ipcl.get_asn()))
-                    org.append(ipcl.get_org())
-                info.update({'地区': country_code, 'AS编号': asn, '组织': org})
-                numcount = []
-                for v in inboundinfo.values():
-                    numcount.append(int(v))
-                info.update({'出口数量': numcount})
-                new_hosts = []
-                if self.ip_choose == "ip":
+                asns = []
+                for ip in hosts:
+                   c, o, a = geoip.geo_info(ip)
+                   code.append(c)
+                   org.append(o)
+                   asns.append(a)
+                   info.update({'地区': code, 'AS编号': asns, '组织': org})
+                   numcount = []
+                   for v in inboundinfo.values():
+                       numcount.append(int(v))
+                   info.update({'出口数量': numcount})
+                   new_hosts = []
+                   if self.ip_choose == "ip":
                     for host in hosts:
                         if len(host) < 16:  # v4地址最大长度为15
                             try:
@@ -628,9 +625,50 @@ class TopoCore(Basecore):
                         else:
                             new_hosts.append(host)
                     info.update({'入口ip段': new_hosts})
-                elif self.ip_choose == "cluster":
-                    info.update({'簇': ipclus})
-            return info, hosts, cl
+                   elif self.ip_choose == "cluster":
+                       info.update({'簇': ipclus})
+                return info, hosts, cl
+            else:
+              co.create_tasks(session=session, hosts=hosts, proxy=proxies)
+              res = await co.start()
+              await session.close()
+              if res:
+                  country_code = []
+                  asn = []
+                  org = []
+                  for j in res:
+                      ipcl = cleaner.IPCleaner(j)
+                      country_code.append(ipcl.get_country_code())
+                      asn.append(str(ipcl.get_asn()))
+                      org.append(ipcl.get_org())
+                  info.update({'地区': country_code, 'AS编号': asn, '组织': org})
+                  numcount = []
+                  for v in inboundinfo.values():
+                      numcount.append(int(v))
+                  info.update({'出口数量': numcount})
+                  new_hosts = []
+                  if self.ip_choose == "ip":
+                      for host in hosts:
+                          if len(host) < 16:  # v4地址最大长度为15
+                              try:
+                                  old_ip = host.split('.')[:2]
+                                  new_ip = old_ip[0] + "." + old_ip[1] + ".*.*"
+                              except IndexError:
+                                  new_ip = host
+                              new_hosts.append(new_ip)
+                          elif len(host) > 15:
+                              try:
+                                  old_ip = host.split(':')[2:4]
+                                  new_ip = "*:*:" + old_ip[0] + ":" + old_ip[1] + ":*:*"
+                              except IndexError:
+                                  new_ip = host
+                              new_hosts.append(new_ip)
+                          else:
+                              new_hosts.append(host)
+                      info.update({'入口ip段': new_hosts})
+                  elif self.ip_choose == "cluster":
+                      info.update({'簇': ipclus})
+              return info, hosts, cl
 
     async def batch_topo(self, nodename: list, pool: dict):
         resdata = []
@@ -723,6 +761,7 @@ class TopoCore(Basecore):
         # info1 = {}  # 存放测试结果
         info2 = {}  # 存放测试结果
         test_type = kwargs.get('test_type', 'all')
+        data = GCONFIG.config.get("localip", False)
         # 先把节点信息写入文件
         self.join_proxy(proxyinfo)
         # 获取可供测试的测试端口
@@ -752,11 +791,22 @@ class TopoCore(Basecore):
                 ipstackes = []
                 for j in res:
                     ipcl = cleaner.IPCleaner(j)
-                    country_code.append(ipcl.get_country_code())
-                    asn.append(str(ipcl.get_asn()))
-                    org.append(ipcl.get_org())
                     ip = ipcl.get_ip()
                     ipaddr.append(ip)
+                    if data == False:
+                       country_code.append(ipcl.get_country_code())
+                       asn.append(str(ipcl.get_asn()))
+                       org.append(ipcl.get_org())
+                    else:
+                      pass
+                if data:
+                   for ip in ipaddr:
+                     d, g, h = geoip.geo_info(ip)
+                     country_code.append(d)
+                     asn.append(h)
+                     org.append(g)
+                else:
+                   pass            
                 for dictionary in ras:
                     if 'ips' in dictionary:
                         ipstackes.extend(dictionary['ips'])
