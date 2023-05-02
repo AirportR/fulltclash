@@ -8,6 +8,8 @@ from utils import cron_delete_message as cdm
 from utils import cron_edit_message as cem
 
 bot_token = init_bot.bot_token
+bot_config = init_bot.config
+userbot_config = bot_config.config.get('userbot', {})
 # 项目版本号
 __version__ = '3.5.7'
 # 客户端
@@ -20,7 +22,7 @@ app = Client("my_bot",
              ipv6=False
              )
 app2 = None
-if init_bot.config.config.get('userbot', {}).get('enable', False):
+if userbot_config.get('enable', False):
     app2 = Client("my_user",
                   api_id=init_bot.api_id,
                   api_hash=init_bot.api_hash,
@@ -41,6 +43,9 @@ scheduler.add_job(cem, IntervalTrigger(seconds=5, timezone=str(tzlocal.get_local
 def bot_info(_app, _app2):
     if _app2 is not None:
         bot_me2 = _app2.get_me()
+        userbot_config['id'] = bot_me2.id
+        bot_config.yaml['userbot'] = userbot_config
+        bot_config.reload()
         logger.info('>> UserBot enable')
         logger.info(f'>> UserBot ID: {bot_me2.id} Username: @{bot_me2.username}')
     bot_me = _app.get_me()

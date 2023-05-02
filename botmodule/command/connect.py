@@ -52,9 +52,12 @@ async def startclash(app: Client, message: Message):
 
 
 async def conn(app: Client, message: Message):
+    """
+    主端主动对后端连接，交换公钥
+    """
     print("群聊id:", message.chat.id)
     try:
-        bridge = config.config.get('bridge', None)
+        bridge = config.config.get('userbot', {}).get('id', None)
         b1 = await message.reply("开始连接...")
         # 检查连接中继
         if bridge is None:
@@ -130,12 +133,21 @@ async def conn(app: Client, message: Message):
 
 
 async def response(_: Client, message: Message):
+    """
+    userbot专属
+    """
+    logger.info("接收到后端bot消息")
     if message.document is None:
         return
     await connect_queue.put(message)
 
 
 async def relay(app: Client, message: Message):
+    """
+    userbot专属
+    中转初次连接
+    """
+    logger.info("收到relay1，来自：" + str(message.chat.id))
     tgargs = ArgCleaner().getall(message.text)
     if len(tgargs) < 2:
         return
@@ -144,17 +156,25 @@ async def relay(app: Client, message: Message):
 
 
 async def relay2(app: Client, message: Message):
+    """
+    userbot专属
+    中转主端公钥
+    """
+    logger.info("收到relay2，来自：" + str(message.chat.id))
     tgargs = ArgCleaner().getall(str(message.caption))
     if len(tgargs) < 2:
         return
     bot_id = tgargs[1]
     if tgargs[0].startswith("/relay2") and message.document:
-        await app.send_document(bot_id, message.document.file_id,
-                                caption=f'/sconnect2 {str(message.from_user.id)}')
+        await app.send_document(bot_id, message.document.file_id, caption=f'/sconnect2 {str(message.from_user.id)}')
 
 
 @logger.catch()
 async def conn_resp(_: Client, message: Message):
+    """
+    后端bot专属
+    发送公钥
+    """
     logger.info(f"接收连接请求: {message.chat.id}:{message.id}")
     ID = message.from_user.id
     _config = config
@@ -171,6 +191,10 @@ async def conn_resp(_: Client, message: Message):
 
 @logger.catch()
 async def conn_resp2(_: Client, message: Message):
+    """
+    后端bot专属
+    保存主端公钥
+    """
     if message.caption is None:
         return
     master_id = str(message.caption).split(' ')[-1]

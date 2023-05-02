@@ -33,28 +33,16 @@ def user_loder(app: Client):
 
     @app.on_message(filters.user(whitelist))
     async def relay(client: Client, message: Message):
-        logger.info("收到relay1，来自：" + str(message.chat.id))
         if str(message.text).startswith('/relay1'):
             await botmodule.relay(client, message)
             message.stop_propagation()
 
     @app.on_message(filters.user(whitelist) & filters.document & filters.caption, 2)
     async def relay2(client: Client, message: Message):
-        logger.info("收到relay2，来自：" + str(message.chat.id))
         await botmodule.relay2(client, message)
-
-    @app.on_message(filters.chat(bridge), 1)
-    async def relay3(client: Client, message: Message):
-        logger.info("接收到连接,要发给slave")
-        if str(message.caption).startswith("/resp_master") and message.document:
-            bot_username = str(message.caption).split(' ')[-1]
-            await client.send_document(message.chat.id, message.document.file_id,
-                                       caption=f'/resp_master@{bot_username}' + ' ' + str(message.from_user.id))
-            message.stop_propagation()
 
     @app.on_message(filters.bot & filters.caption, 2)
     async def resp1(client: Client, message: Message):
-        logger.info("接收到bot消息")
         if str(message.caption) == "/resp" and message.document:
             await botmodule.response(client, message)
             message.stop_propagation()
