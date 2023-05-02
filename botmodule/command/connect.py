@@ -118,7 +118,7 @@ async def conn(app: Client, message: Message):
         if msg2.document is None:
             logger.info(f"消息ID: {msg2.id}, 无文件。")
             return
-        await msg2.download(file_name=f'./key/{str(msg2.from_user.id)}fulltclash-public.pem')
+        await msg2.download(file_name=f'./key/slave-{str(msg2.from_user.id)}.pem')
         config.add_slave(str(msg2.from_user.id), f'./key/slave-{str(msg2.from_user.id)}.pem', bot_username,
                          comment=_args[2])
         config.save()
@@ -206,7 +206,7 @@ async def conn_resp2(_: Client, message: Message):
     if file is None:
         print("未找到文件")
         return
-    name = await message.download(fr'./key/{master_id}.pem')
+    name = await message.download(fr'./key/master-{master_id}.pem')
     masterconfig = config.getMasterconfig()
     masterconfig[master_id] = {'public-key': fr'./key/master-{master_id}.pem', 'bridge': chat_id}
     config.yaml['masterconfig'] = masterconfig
