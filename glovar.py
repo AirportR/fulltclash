@@ -19,13 +19,16 @@ app = Client("my_bot",
              app_version=__version__,
              ipv6=False
              )
-app2 = Client("my_user",
-              api_id=init_bot.api_id,
-              api_hash=init_bot.api_hash,
-              proxy=init_bot.proxies,
-              app_version=__version__,
-              ipv6=False
-              )
+app2 = None
+if init_bot.config.config.get('userbot', {}).get('enable', False):
+    logger.info(">> UserBot enable")
+    app2 = Client("my_user",
+                  api_id=init_bot.api_id,
+                  api_hash=init_bot.api_hash,
+                  proxy=init_bot.proxies,
+                  app_version=__version__,
+                  ipv6=False
+                  )
 scheduler = AsyncIOScheduler(timezone=str(tzlocal.get_localzone()))
 scheduler.start()
 print("""# --------------------------- [ Start bot AsyncIOScheduler Successful ] ---------------------------- # """)
