@@ -628,7 +628,7 @@ class TopoCore(Basecore):
                    elif self.ip_choose == "cluster":
                        info.update({'簇': ipclus})
                 return info, hosts, cl
-            else: 
+            else:
               co.create_tasks(session=session, hosts=hosts, proxy=proxies)
               res = await co.start()
               await session.close()
@@ -800,13 +800,13 @@ class TopoCore(Basecore):
                     else:
                       pass
                 if data:
-                   for ip in ipaddr: 
+                   for ip in ipaddr:
                      d, g, h = geoip.geo_info(ip)
                      country_code.append(d)
                      asn.append(h)
                      org.append(g)
                 else:
-                   pass                
+                   pass            
                 for dictionary in ras:
                     if 'ips' in dictionary:
                         ipstackes.extend(dictionary['ips'])
