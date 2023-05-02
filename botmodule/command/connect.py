@@ -123,7 +123,7 @@ async def conn(app: Client, message: Message):
                          comment=_args[2])
         config.save()
         logger.info(f"已将{msg2.from_user.username}的公钥保存，配置已更新")
-        await b1.edit_text(f"已将{msg2.from_user.username}的公钥保存，配置已更新")
+        await b1.edit_text(f"已将 @{msg2.from_user.username} 的公钥保存，配置已更新")
         # 发送master公钥
         await app.send_document(bridge, "./key/fulltclash-public.pem", caption=f'/relay2 {bot_id}')
 
