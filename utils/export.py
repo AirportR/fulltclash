@@ -242,7 +242,6 @@ class ExportCommon(BaseExport):
         :return: int
         """
         return (self.nodenum + 4) * 60
-       
 
     def get_width(self, compare: int = None):
         """
@@ -1271,14 +1270,14 @@ class ExportTopo(ExportResult):
         self.min_ct.append(len(ct) - self.last_index)
         
         for j in range(1, len(bh)):
-            if dq[j] != dq[j - 1] or zz[j] != zz[j - 1]: 
+            if dq[j] != dq[j - 1] or zz[j] != zz[j - 1]:
                self.new_bh.append(bh[j])
                self.min_bh.append(j - self.last_index2)
                self.last_index2 = j
         self.min_bh.append(len(bh) - self.last_index2)
         
         for k in range(1, len(zz)):
-            if dq[k] != dq[k - 1] or zz[k] != zz[k - 1]: 
+            if dq[k] != dq[k - 1] or zz[k] != zz[k - 1]:
                self.new_zz.append(zz[k])
                self.min_zz.append(k - self.last_index3)
                self.last_index3 = k
@@ -1322,8 +1321,8 @@ class ExportTopo(ExportResult):
                                     (width + info_list_length[i], (t + 3 + bh_offset2) * 60)],
                                    fill="#e1e1e1", width=2)
                         if self.min_bh[t] > 1:
-                          bh_offset += self.min_bh[t] - 1  
-                elif t1 == "地区": 
+                          bh_offset += self.min_bh[t] - 1
+                elif t1 == "地区":
                       if t < len(self.min_dq):
                            temp = self.min_dq[t]
                            y = ((t + 2) * 60 + (t + 2) * 60 + (60 * (temp - 1))) / 2 + dq_offset * 60
@@ -1333,7 +1332,7 @@ class ExportTopo(ExportResult):
                                        (width + info_list_length[i], (t + 3 + dq_offset2) * 60)],
                                       fill="#e1e1e1", width=2)
                            if self.min_dq[t] > 1:
-                             dq_offset += self.min_dq[t] - 1  
+                             dq_offset += self.min_dq[t] - 1
                 elif t1 == "组织":
                     if t < len(self.min_zz):
                         temp = self.min_zz[t]
@@ -1345,7 +1344,7 @@ class ExportTopo(ExportResult):
                                     (width + info_list_length[i], (t + 3 + zz_offset2) * 60)],
                                    fill="#e1e1e1", width=2)
                         if self.min_zz[t] > 1:
-                             zz_offset += self.min_zz[t] - 1 
+                             zz_offset += self.min_zz[t] - 1
                 elif t1 == "栈":
                     try:
                       if t <= len(dq):
@@ -1470,7 +1469,7 @@ class ExportTopo(ExportResult):
                                     (width + info_list_length[i], (t + 3 + ct_offset2) * 60)],
                                    fill="#e1e1e1", width=2)
                        if self.min_ct[t] > 1:
-                            ct_offset += self.min_ct[t] - 1  
+                            ct_offset += self.min_ct[t] - 1
                 else:
                     idraw.text((self.get_mid(width, width + info_list_length[i], str(self.info[t1][t])), (t + 2) * 60),
                                str(self.info[t1][t]),
