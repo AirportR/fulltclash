@@ -95,7 +95,7 @@ async def conn(app: Client, message: Message):
                 # print("msg2: ", msg2)
         except asyncio.exceptions.TimeoutError:
             logger.warning("连接超时")
-            backmsg = await message.reply("连接超时")
+            backmsg = await b1.edit_text("连接超时")
             message_delete_queue.put_nowait((backmsg.chat.id, backmsg.id, 20))
             return
 
@@ -132,6 +132,7 @@ async def conn(app: Client, message: Message):
 async def response(_: Client, message: Message):
     if message.document is None:
         return
+    print("即将推入消息")
     await connect_queue.put(message)
 
 
@@ -140,7 +141,7 @@ async def relay(app: Client, message: Message):
     if len(tgargs) < 2:
         return
     bot_id = tgargs[1]
-    await app.send_message(bot_id, f"/connect {message.from_user.id}")
+    await app.send_message(bot_id, f"/sconnect {message.from_user.id}")
 
 
 async def relay2(app: Client, message: Message):
@@ -150,7 +151,7 @@ async def relay2(app: Client, message: Message):
     bot_id = tgargs[1]
     if tgargs[0].startswith("/relay2") and message.document:
         await app.send_document(bot_id, message.document.file_id,
-                                caption=f'/connect2 {str(message.from_user.id)}')
+                                caption=f'/sconnect2 {str(message.from_user.id)}')
 
 
 @logger.catch()

@@ -13,7 +13,7 @@ def start():
     if app2 is not None:
         app2.start()
         bot.user_loder(app2)
-    bot_info(app1)
+    bot_info(app1, app2)
     idle()
     app1.stop()
     if app2 is not None:

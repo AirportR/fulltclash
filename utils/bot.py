@@ -22,6 +22,7 @@ task_num = 0  # 任务数
 
 def loader(app: Client):
     command_loader(app)
+    command_loader2(app)
     callback_loader(app)
 
 
@@ -32,31 +33,44 @@ def user_loder(app: Client):
 
     @app.on_message(filters.user(whitelist))
     async def relay(client: Client, message: Message):
-        print("收到relay1，来自：", message.chat.id)
+        logger.info("收到relay1，来自：" + str(message.chat.id))
         if str(message.text).startswith('/relay1'):
             await botmodule.relay(client, message)
             message.stop_propagation()
 
     @app.on_message(filters.user(whitelist), 2)
     async def relay2(client: Client, message: Message):
-        print("收到relay2，来自：", message.chat.id)
+        logger.info("收到relay2，来自：" + str(message.chat.id))
         await botmodule.relay2(client, message)
 
     @app.on_message(filters.chat(bridge), 1)
     async def relay3(client: Client, message: Message):
-        print("接收到连接,要发给slave")
+        logger.info("接收到连接,要发给slave")
         if str(message.caption).startswith("/resp_master") and message.document:
             bot_username = str(message.caption).split(' ')[-1]
             await client.send_document(message.chat.id, message.document.file_id,
                                        caption=f'/resp_master@{bot_username}' + ' ' + str(message.from_user.id))
             message.stop_propagation()
 
-    @app.on_message(filters.bot, 2)
+    @app.on_message(filters.bot & filters.caption, 2)
     async def resp1(client: Client, message: Message):
-        print("接收到连接")
+        logger.info("接收到bot消息")
         if str(message.caption) == "/resp" and message.document:
             await botmodule.response(client, message)
             message.stop_propagation()
+
+
+def command_loader2(app: Client):
+    """
+    后端专属指令
+    """
+    @app.on_message(filters.command(['sconnect']))
+    async def resp_conn(client: Client, message: Message):
+        await botmodule.conn_resp(client, message)
+
+    @app.on_message(filters.command(['sconnect2']))
+    async def resp_conn(client: Client, message: Message):
+        await botmodule.conn_resp2(client, message)
 
 
 def command_loader(app: Client):
@@ -232,16 +246,6 @@ def command_loader(app: Client):
     @AccessCallback(1)
     async def auto_leave(client, message):
         await leavechat(client, message)
-
-
-def command_loader2(app: Client):
-    @app.on_message(filters.command(['connect']))
-    def resp_conn(client: Client, message: Message):
-        botmodule.conn_resp(client, message)
-
-    @app.on_message(filters.command(['connect2']))
-    def resp_conn(client: Client, message: Message):
-        botmodule.conn_resp2(client, message)
 
 
 def callback_loader(app: Client):
