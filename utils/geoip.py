@@ -33,7 +33,6 @@ def geo_info(ip):
 
             if "." in ip or ":" in ip:
               organization = reader.asn(ip).autonomous_system_organization
-              
             else:
               organization = " "
               
@@ -43,16 +42,14 @@ def geo_info(ip):
         
     try:
         with geoip2.database.Reader(f"resources/databases/{asns}") as reader:
-
-            if "." in ip or ":" in ip: 
+            if "." in ip or ":" in ip:
               asm = reader.asn(ip).autonomous_system_number
               asma = "AS"+repr(asm)
             else:
               asma = " "
-
     except AddressNotFoundError as e:
-        print(e)    
-
+        print(e)
+        
     return country_code, organization, asma
 
 
