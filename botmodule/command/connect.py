@@ -119,7 +119,7 @@ async def conn(app: Client, message: Message):
             logger.info(f"消息ID: {msg2.id}, 无文件。")
             return
         await msg2.download(file_name=f'./key/{str(msg2.from_user.id)}fulltclash-public.pem')
-        config.add_slave(str(msg2.from_user.id), f'./key/{str(msg2.from_user.id)}fulltclash-public.pem', bot_username,
+        config.add_slave(str(msg2.from_user.id), f'./key/slave-{str(msg2.from_user.id)}.pem', bot_username,
                          comment=_args[2])
         config.save()
         logger.info(f"已将{msg2.from_user.username}的公钥保存，配置已更新")
@@ -163,6 +163,7 @@ async def relay2(app: Client, message: Message):
     logger.info("收到relay2，来自：" + str(message.chat.id))
     tgargs = ArgCleaner().getall(str(message.caption))
     if len(tgargs) < 2:
+        logger.warning("缺少master id")
         return
     bot_id = tgargs[1]
     if tgargs[0].startswith("/relay2") and message.document:
@@ -207,7 +208,7 @@ async def conn_resp2(_: Client, message: Message):
         return
     name = await message.download(fr'./key/{master_id}.pem')
     masterconfig = config.getMasterconfig()
-    masterconfig[master_id] = {'public-key': fr'./key/{master_id}.pem', 'bridge': chat_id}
+    masterconfig[master_id] = {'public-key': fr'./key/master-{master_id}.pem', 'bridge': chat_id}
     config.yaml['masterconfig'] = masterconfig
     config.reload()
     logger.info(f"master公钥 {name} 配置已保存")

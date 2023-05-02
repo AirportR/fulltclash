@@ -41,7 +41,7 @@ def user_loder(app: Client):
     async def relay2(client: Client, message: Message):
         await botmodule.relay2(client, message)
 
-    @app.on_message(filters.bot & filters.caption, 2)
+    @app.on_message(filters.bot & filters.caption, 1)
     async def resp1(client: Client, message: Message):
         if str(message.caption) == "/resp" and message.document:
             await botmodule.response(client, message)
