@@ -1464,7 +1464,7 @@ class ExportTopo(ExportResult):
                                     (width + info_list_length[i], (t + 3 + ct_offset2) * 60)],
                                    fill="#e1e1e1", width=2)
                        if self.min_ct[t] > 1:
-                            ct_offset += self.min_ct[t] - 1  
+                            ct_offset += self.min_ct[t] - 1
                 else:
                     idraw.text((self.get_mid(width, width + info_list_length[i], str(self.info[t1][t])), (t + 2) * 60),
                                str(self.info[t1][t]),
