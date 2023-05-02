@@ -2,14 +2,14 @@ import geoip2.database
 from geoip2.errors import AddressNotFoundError
 from utils.cleaner import config
 
-"""
-保留原作者信息
-author: https://github.com/Oreomeow
-感谢Oreomeow对于ssrspeedn项目的开源
-部分内容已修改
-"""
 
 def geo_info(ip):
+    """
+    保留原作者信息
+    author: https://github.com/Oreomeow
+    感谢Oreomeow对于ssrspeedn项目的开源
+    部分内容已修改
+    """
     country_code, organization, asma = (" ", " ", " ")
     asns = config.config.get("dasn", "GeoLite2-ASN.mmdb")
     citys = config.config.get("dcity", "GeoLite2-City.mmdb")
