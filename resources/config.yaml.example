@@ -37,6 +37,10 @@ admin:
 #speednodes: 300 # 测速节点数量限制，超过将不会进行测速
 #speedthread: 4 #测速线程
 #nospeed: true #禁用测速，开启后将无法测速。
+#localip: false  #本地ip数据库(MaxMind格式) ,请将asn数据库与city数据库放入"/resources/databases"文件夹
+#dasn: "GeoLite2-ASN.mmdb" #ASN数据库名称，用于获取AS编号
+#dorg: "GeoLite2-ASN.mmdb" #org数据库mingc，用于获取组织名称
+#dcity: "GeoLite2-City.mmdb" #city数据库名称，用于获取地区代码
 #speedconfig: #测速相关配置
 # interval: 10 #每个节点的测速时长
 #entrance:  #入口显示配置
