@@ -27,14 +27,20 @@ def loader(app: Client):
 
 def user_loder(app: Client):
     bridge = config.getBridge()
+    userbotconfig = config.config.get('userbot', {})
+    whitelist = userbotconfig.get('whitelist', [])
 
-    @app.on_message(filters.chat(bridge))
+    @app.on_message(filters.user(whitelist))
     async def relay(client: Client, message: Message):
-        # chat = await client.get_chat(bridge)
-        # print(chat)
-        if str(message.text).startswith('/'):
+        print("收到relay1，来自：", message.chat.id)
+        if str(message.text).startswith('/relay1'):
             await botmodule.relay(client, message)
             message.stop_propagation()
+
+    @app.on_message(filters.user(whitelist), 2)
+    async def relay2(client: Client, message: Message):
+        print("收到relay2，来自：", message.chat.id)
+        await botmodule.relay2(client, message)
 
     @app.on_message(filters.chat(bridge), 1)
     async def relay3(client: Client, message: Message):
@@ -45,8 +51,8 @@ def user_loder(app: Client):
                                        caption=f'/resp_master@{bot_username}' + ' ' + str(message.from_user.id))
             message.stop_propagation()
 
-    @app.on_message(filters.chat(bridge), 2)
-    async def relay2(client: Client, message: Message):
+    @app.on_message(filters.bot, 2)
+    async def resp1(client: Client, message: Message):
         print("接收到连接")
         if str(message.caption) == "/resp" and message.document:
             await botmodule.response(client, message)
@@ -226,6 +232,16 @@ def command_loader(app: Client):
     @AccessCallback(1)
     async def auto_leave(client, message):
         await leavechat(client, message)
+
+
+def command_loader2(app: Client):
+    @app.on_message(filters.command(['connect']))
+    def resp_conn(client: Client, message: Message):
+        botmodule.conn_resp(client, message)
+
+    @app.on_message(filters.command(['connect2']))
+    def resp_conn(client: Client, message: Message):
+        botmodule.conn_resp2(client, message)
 
 
 def callback_loader(app: Client):
