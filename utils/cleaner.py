@@ -712,6 +712,12 @@ class ConfigManager:
         except KeyError:
             return int(300)
 
+    def getMasterconfig(self):
+        return self.config.get('masterconfig', {})
+
+    def getSlaveconfig(self):
+        return self.config.get('slaveconfig', {})
+
     def getBotconfig(self):
         botconfig = self.config.get('bot', {})
         if botconfig is None:
@@ -1369,6 +1375,7 @@ def domain_to_ip(host: str):
     except socket.gaierror:
         return None
 
+
 def cluster(host):
     cluip = domain_to_ip(host)
     if cluip is None:
@@ -1376,6 +1383,7 @@ def cluster(host):
     else:
         clus = len(cluip)
         return clus
+
 
 def count(host):
     ips = domain_to_ip(host)
@@ -1455,6 +1463,7 @@ def batch_domain2ip(host: list):
             else:
                 ipaddrs.append("N/A")
     return ipaddrs
+
 
 def batch_ipcu(host: list):
     """
