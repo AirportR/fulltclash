@@ -5,7 +5,7 @@ from botmodule.command.authority import *
 from botmodule.command.basic import *
 from botmodule.command.setting import *
 from botmodule.command.download import *
-from botmodule.command.connect import conn, response, startclash, relay, relay2, conn_resp, conn_resp2
+from botmodule.command.connect import *
 from botmodule.command import common_command
 from botmodule import register
 from botmodule import subinfo
