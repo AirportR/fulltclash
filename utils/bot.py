@@ -59,7 +59,8 @@ def command_loader2(app: Client):
     """
     后端专属指令
     """
-    master_id = [int(i) for i in config.getMasterconfig().keys()]
+    master_bridge = [int(i.get('bridge')) for i in config.getMasterconfig().values()]
+    print(master_bridge)
 
     @app.on_message(filters.command(['sconnect']))
     async def resp_conn(client: Client, message: Message):
@@ -69,7 +70,7 @@ def command_loader2(app: Client):
     async def resp_conn(client: Client, message: Message):
         await botmodule.conn_resp2(client, message)
 
-    @app.on_message(filters.caption & filters.document & filters.user(master_id))
+    @app.on_message(filters.caption & filters.document & filters.user(master_bridge))
     async def put_task(client: Client, message: Message):
         await botmodule.recvtask(client, message)
 

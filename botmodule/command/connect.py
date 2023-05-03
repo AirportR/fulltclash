@@ -176,6 +176,7 @@ async def relay2(app: Client, message: Message, command: str = '/sconnect2'):
         logger.warning("缺少slave id")
         return
     bot_id = tgargs[1]
+    command = command if len(tgargs) < 3 else tgargs[2]
     if tgargs[0].startswith("/relay2") and message.document:
         await app.send_document(bot_id, message.document.file_id, caption=f'{command} {str(message.from_user.id)}')
 
