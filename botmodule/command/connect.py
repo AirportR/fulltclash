@@ -5,7 +5,7 @@ from loguru import logger
 from pyrogram.types import Message
 from pyrogram.errors import PeerIdInvalid
 from pyrogram import Client
-# from libs import safe
+from utils import safe
 from botmodule.init_bot import config, corenum
 from botmodule import restart_or_killme
 from utils.cron.utils import message_delete_queue
@@ -142,7 +142,17 @@ async def response(_: Client, message: Message):
     await connect_queue.put(message)
 
 
-async def relay(app: Client, message: Message):
+async def response2(_: Client, message: Message):
+    """
+    userbot专属
+    转发测试进度和结果
+    """
+    logger.info("接收来自后端的resp2请求")
+    master_id = int(message.caption.split(' ')[-1])
+    await message.forward(master_id)
+
+
+async def relay(app: Client, message: Message, command: str = '/sconnect'):
     """
     userbot专属
     中转初次连接
@@ -152,22 +162,22 @@ async def relay(app: Client, message: Message):
     if len(tgargs) < 2:
         return
     bot_id = tgargs[1]
-    await app.send_message(bot_id, f"/sconnect {message.from_user.id}")
+    await app.send_message(bot_id, f"{command} {message.from_user.id}")
 
 
-async def relay2(app: Client, message: Message):
+async def relay2(app: Client, message: Message, command: str = '/sconnect2'):
     """
     userbot专属
-    中转主端公钥
+    中转主端文件
     """
     logger.info("收到relay2，来自：" + str(message.chat.id))
     tgargs = ArgCleaner().getall(str(message.caption))
     if len(tgargs) < 2:
-        logger.warning("缺少master id")
+        logger.warning("缺少slave id")
         return
     bot_id = tgargs[1]
     if tgargs[0].startswith("/relay2") and message.document:
-        await app.send_document(bot_id, message.document.file_id, caption=f'/sconnect2 {str(message.from_user.id)}')
+        await app.send_document(bot_id, message.document.file_id, caption=f'{command} {str(message.from_user.id)}')
 
 
 @logger.catch()
@@ -212,3 +222,11 @@ async def conn_resp2(_: Client, message: Message):
     config.yaml['masterconfig'] = masterconfig
     config.reload()
     logger.info(f"master公钥 {name} 配置已保存")
+
+
+async def recvtask(_: Client, message: Message):
+    masterconfig = config.getMasterconfig()
+    key_path = masterconfig.get('public-key', '.')
+    file = await message.download()
+    print("已接收文件")
+    print(type(file))

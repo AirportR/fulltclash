@@ -100,8 +100,8 @@ def plain(_ciphertext: bytes, _private_key_path: str = 'private_key.pem'):
 
 
 if __name__ == '__main__':
-    ciphertext = cipher(b'hello word', 'public_key.pem')
+    ciphertext = cipher(b'hello word', '../key/fulltclash-public.pem')
     print(ciphertext)
-    plaintext = plain(ciphertext)
+    plaintext = plain(ciphertext, '../key/fulltclash-private.pem')
     print(plaintext)
     print(plaintext.decode(encoding='utf-8'))

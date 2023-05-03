@@ -508,8 +508,8 @@ class ExportCommon(BaseExport):
 
         self.draw_line(idraw)  # 绘制线条
         img = self.draw_watermark(img)  # 绘制水印
-        img.show("coffee")
-        # img.save(r"./results/{}.png".format(_export_time))
+        # img.show("coffee")
+        img.save(r"./results/{}.png".format(_export_time))
         print(_export_time)
         return _export_time
 
@@ -653,8 +653,8 @@ class ExportSpeed2(ExportCommon):
             self.draw_block(img, t, _nodename_width, _key_list, _info_list_width)
         self.draw_line(idraw)  # 绘制线条
         img = self.draw_watermark(img)  # 绘制水印
-        img.show("coffee")
-        # img.save(r"./results/{}.png".format(_export_time))
+        # img.show("coffee")
+        img.save(r"./results/{}.png".format(_export_time))
         print(_export_time)
         return _export_time
 

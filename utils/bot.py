@@ -27,8 +27,9 @@ def loader(app: Client):
 
 
 def user_loder(app: Client):
-    bridge = config.getBridge()
     userbotconfig = config.config.get('userbot', {})
+    slaveconfig = config.getSlaveconfig()
+    slaveID = [int(k) for k in slaveconfig.keys()]
     whitelist = userbotconfig.get('whitelist', [])
 
     @app.on_message(filters.user(whitelist))
@@ -44,6 +45,12 @@ def user_loder(app: Client):
     @app.on_message(filters.bot & filters.caption, 1)
     async def resp1(client: Client, message: Message):
         if str(message.caption) == "/resp" and message.document:
+            await botmodule.response2(client, message)
+            message.stop_propagation()
+
+    @app.on_message(filters.user(slaveID) & filters.caption, 2)
+    async def resp2(client: Client, message: Message):
+        if str(message.caption).startswith("/resp2") and message.document:
             await botmodule.response(client, message)
             message.stop_propagation()
 
@@ -52,6 +59,8 @@ def command_loader2(app: Client):
     """
     后端专属指令
     """
+    master_id = [int(i) for i in config.getMasterconfig().keys()]
+
     @app.on_message(filters.command(['sconnect']))
     async def resp_conn(client: Client, message: Message):
         await botmodule.conn_resp(client, message)
@@ -59,6 +68,10 @@ def command_loader2(app: Client):
     @app.on_message(filters.command(['sconnect2']))
     async def resp_conn(client: Client, message: Message):
         await botmodule.conn_resp2(client, message)
+
+    @app.on_message(filters.caption & filters.document & filters.user(master_id))
+    async def put_task(client: Client, message: Message):
+        await botmodule.recvtask(client, message)
 
 
 def command_loader(app: Client):
