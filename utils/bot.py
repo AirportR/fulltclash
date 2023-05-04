@@ -28,8 +28,8 @@ def loader(app: Client):
 
 def user_loder(app: Client):
     userbotconfig = config.config.get('userbot', {})
-    slaveconfig = config.getSlaveconfig()
-    slaveID = [int(k) for k in slaveconfig.keys()] if slaveconfig else []
+    # slaveconfig = config.getSlaveconfig()
+    # slaveID = [int(k) for k in slaveconfig.keys()] if slaveconfig else []
     whitelist = userbotconfig.get('whitelist', [])
 
     @app.on_message(filters.user(whitelist))
@@ -63,14 +63,15 @@ def command_loader2(app: Client):
     """
     后端专属指令
     """
-    master_bridge = [int(i.get('bridge')) for i in config.getMasterconfig().values()]
+    masterconfig = config.getMasterconfig()
+    master_bridge = [int(i.get('bridge')) for i in masterconfig.values()] if masterconfig else []
     print(master_bridge)
 
     @app.on_message(filters.user(master_bridge))
     async def simple_resp(client: Client, message: Message):
         print("")
 
-    @app.on_message(filters.command(['sconnect']) & filters.user(admin + master_bridge))
+    @app.on_message(filters.command(['sconnect']) & filters.user(admin + master_bridge), 2)
     async def resp_conn(client: Client, message: Message):
         await botmodule.simple_conn_resp(client, message)
     # @app.on_message(filters.command(['sconnect']) & filters.user(admin))

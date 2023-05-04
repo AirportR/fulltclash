@@ -1,4 +1,6 @@
 import asyncio.exceptions
+import io
+from typing import Union
 
 import async_timeout
 from loguru import logger
@@ -53,11 +55,13 @@ async def startclash(app: Client, message: Message):
 
 async def simple_relay(app: Client, message: Message):
     text = message.caption if message.caption else message.text
+    if not text.startswith("/relay"):
+        return
     tgargs = ArgCleaner().getall(str(text))
     origin_id = message.from_user.id
     if len(tgargs) < 3:
         logger.info("缺少必要参数")
-        backmsg = await message.edit_text("缺少必要参数")
+        backmsg = await message.reply("缺少必要参数")
         message_delete_queue.put(backmsg)
         return
     target_id = tgargs[1]
@@ -261,8 +265,9 @@ async def simple_conn_resp(_: Client, message: Message):
     """
     后端bot专属
     """
+    logger.info("有新的master请求")
     tgargs = ArgCleaner().getall(message.text)
-    if tgargs < 3:
+    if len(tgargs) < 3:
         return
     master_id = tgargs[1]
     conn_pwd = tgargs[2]
@@ -319,8 +324,23 @@ async def conn_resp2(_: Client, message: Message):
 
 
 async def recvtask(_: Client, message: Message):
-    masterconfig = config.getMasterconfig()
-    key_path = masterconfig.get('public-key', '.')
-    file = await message.download()
-    print("已接收文件")
-    print(type(file))
+    # masterconfig = config.getMasterconfig()
+    # tgargs = ArgCleaner().getall(message.caption)
+    # master_id = tgargs[1] if len(tgargs) > 1 else ''
+    # if not master_id:
+    #     logger.info("无master_id")
+    #     return
+    # key_path = masterconfig.get(master_id, {}).get('public-key', '')
+    # if not key_path:
+    #     logger.warning(f"无法找到master_id为{master_id}的公钥:")
+    file: Union[str, io.BytesIO] = await message.download(in_memory=True)
+    data = file.getvalue()
+    print(data[:100])
+    try:
+        plaindata = safe.plain(data, './key/fulltclash-private.pem')
+        print("已接收并解密文件")
+        print(plaindata)
+    except Exception as e:
+        logger.warning(str(e))
+        logger.warning("解密数据失败！")
+
