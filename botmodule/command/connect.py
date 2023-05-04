@@ -330,6 +330,9 @@ async def conn_resp2(_: Client, message: Message):
 async def recvtask(app: Client, message: Message):
     masterconfig = config.getMasterconfig()
     tgargs = ArgCleaner().getall(message.caption)
+    if tgargs[0] != '/send':
+        logger.info("未知指令")
+        return
     master_id = tgargs[1] if len(tgargs) > 1 else ''
     if not master_id:
         logger.info("无master_id")
