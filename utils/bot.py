@@ -9,11 +9,12 @@ from botmodule.cfilter import dynamic_data_filter, allfilter, AccessCallback
 from botmodule.command.authority import get_url_from_invite
 from botmodule.command.leave import leavechat, set_anti_group
 from utils.cron.utils import message_delete_queue
-from utils.myqueue import q, bot_task_queue
+# from utils.myqueue import q, bot_task_queue
+from utils.myqueue import bot_put
 from utils.check import check_callback_master
+from utils.backend import break_speed
 from utils.collector import reload_config as r1
 from utils.cleaner import reload_config as r2
-from utils.backend import break_speed
 
 config = init_bot.config
 admin = init_bot.admin  # 管理员
@@ -28,11 +29,15 @@ def loader(app: Client):
 
 def user_loder(app: Client):
     userbotconfig = config.config.get('userbot', {})
-    # slaveconfig = config.getSlaveconfig()
-    # slaveID = [int(k) for k in slaveconfig.keys()] if slaveconfig else []
+    slaveconfig = config.getSlaveconfig()
+    slaveID = [int(k) for k in slaveconfig.keys()] if slaveconfig else []
     whitelist = userbotconfig.get('whitelist', [])
 
-    @app.on_message(filters.user(whitelist))
+    @app.on_message(filters.user(whitelist+slaveID))
+    async def _(client: Client, message: Message):
+        await botmodule.simple_relay(client, message)
+
+    @app.on_edited_message(filters.user(whitelist+slaveID))
     async def _(client: Client, message: Message):
         await botmodule.simple_relay(client, message)
 
@@ -69,7 +74,8 @@ def command_loader2(app: Client):
 
     @app.on_message(filters.caption & filters.document & filters.user(master_bridge))
     async def put_task(client: Client, message: Message):
-        await botmodule.recvtask(client, message)
+        if message.caption.startswith('/send'):
+            await botmodule.recvtask(client, message)
 
     # @app.on_message(filters.user(master_bridge))
     # async def simple_resp(client: Client, message: Message):
@@ -310,30 +316,30 @@ def callback_loader(app: Client):
             await bot_put(client, origin_message, test_type, test_items, sort=sort_str, coreindex=3, slaveid=slaveid)
 
 
-async def bot_put(client: Client, message: Message, put_type: str, test_items: list = None, **kwargs):
-    """
-    推送任务，bot推送反馈
-    :param test_items:
-    :param client:
-    :param message:
-    :param put_type:
-    :return:
-    """
-    global task_num
-    task_num += 1
-    try:
-        if test_items is None:
-            test_items = []
-        logger.info("任务测试项为: " + str(test_items))
-        mes = await message.reply("排队中,前方队列任务数量为: " + str(task_num - 1))
-        await q.put(message)
-        r1(test_items)
-        r2(test_items)
-        await mes.delete()
-        await bot_task_queue(client, message, put_type, q, **kwargs)
-        task_num -= 1
-
-    except AttributeError as a:
-        logger.error(str(a))
-    except Exception as e:
-        logger.error(str(e))
+# async def bot_put(client: Client, message: Message, put_type: str, test_items: list = None, **kwargs):
+#     """
+#     推送任务，bot推送反馈
+#     :param test_items:
+#     :param client:
+#     :param message:
+#     :param put_type:
+#     :return:
+#     """
+#     global task_num
+#     task_num += 1
+#     try:
+#         if test_items is None:
+#             test_items = []
+#         logger.info("任务测试项为: " + str(test_items))
+#         mes = await message.reply("排队中,前方队列任务数量为: " + str(task_num - 1))
+#         await q.put(message)
+#         r1(test_items)
+#         r2(test_items)
+#         await mes.delete()
+#         await bot_task_queue(client, message, put_type, q, **kwargs)
+#         task_num -= 1
+#
+#     except AttributeError as a:
+#         logger.error(str(a))
+#     except Exception as e:
+#         logger.error(str(e))

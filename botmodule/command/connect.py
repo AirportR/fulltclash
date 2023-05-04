@@ -1,5 +1,6 @@
 import asyncio.exceptions
 import io
+import json
 from typing import Union
 
 import async_timeout
@@ -13,6 +14,7 @@ from botmodule import restart_or_killme
 from utils.cron.utils import message_delete_queue
 from utils.cleaner import ArgCleaner
 from utils.clash import new_batch_start, check_port
+from utils.myqueue import bot_put_master
 
 connect_list = {}  # 作为主端
 connect_list2 = {}  # 作为后端
@@ -325,7 +327,7 @@ async def conn_resp2(_: Client, message: Message):
     logger.info(f"master公钥 {name} 配置已保存")
 
 
-async def recvtask(_: Client, message: Message):
+async def recvtask(app: Client, message: Message):
     masterconfig = config.getMasterconfig()
     tgargs = ArgCleaner().getall(message.caption)
     master_id = tgargs[1] if len(tgargs) > 1 else ''
@@ -339,6 +341,7 @@ async def recvtask(_: Client, message: Message):
     file: Union[str, io.BytesIO] = await message.download(in_memory=True)
     data = file.getvalue()
     print(data)
+    plaindata = ''
     try:
         plaindata = safe.plain_chahcha20(data, key).decode()
         print("已接收并解密文件")
@@ -347,3 +350,8 @@ async def recvtask(_: Client, message: Message):
         logger.warning(str(e))
         logger.warning("解密数据失败！")
 
+    await message.reply("Get data success!\nplease wait.", quote=True)
+    putinfo: dict = json.loads(plaindata)
+    coreindex = putinfo.get('coreindex', 0)
+    await bot_put_master(app, message, putinfo, master_id=master_id)
+    # await message.reply(f"/relay {master_id} edit status1")

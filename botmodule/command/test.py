@@ -198,7 +198,13 @@ async def put_slave_task(app: Client, message: Message, proxyinfo: list, **kwarg
     print(slaveconfig)
     key = slaveconfig.get(slaveid, {}).get('public-key', '')
     key = sha256_32bytes(key)
-    data1 = json.dumps(proxyinfo)
+
+    payload = {
+        'proxies': proxyinfo,
+        'coreindex': kwargs.get('coreindex', 0)
+    }
+
+    data1 = json.dumps(payload)
     cipherdata = cipher_chacha20(data1.encode(), key)
     print("加密数据预览： \n", cipherdata[:100])
     bytesio = io.BytesIO(cipherdata)
