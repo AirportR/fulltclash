@@ -19,6 +19,7 @@ from utils.cleaner import reload_config as r2
 config = init_bot.config
 admin = init_bot.admin  # 管理员
 task_num = 0  # 任务数
+bridge = config.getBridge()
 
 
 def loader(app: Client):
@@ -33,11 +34,11 @@ def user_loder(app: Client):
     slaveID = [int(k) for k in slaveconfig.keys()] if slaveconfig else []
     whitelist = userbotconfig.get('whitelist', [])
 
-    @app.on_message(filters.user(whitelist+slaveID))
+    @app.on_message(filters.user(whitelist + slaveID))
     async def _(client: Client, message: Message):
         await botmodule.simple_relay(client, message)
 
-    @app.on_edited_message(filters.user(whitelist+slaveID))
+    @app.on_edited_message(filters.user(whitelist + slaveID))
     async def _(client: Client, message: Message):
         await botmodule.simple_relay(client, message)
 
@@ -256,9 +257,9 @@ def command_loader(app: Client):
     async def conn(client, message):
         await botmodule.conn_simple(client, message)
 
-    # @app.on_message(filters.command(['relay']) & allfilter(2), group=2)
-    # async def _(client: Client, message: Message):
-    #     pass
+    @app.on_message(filters.command(['edit']) & filters.user(bridge), group=2)
+    async def _(client: Client, message: Message):
+        await botmodule.edit(client, message)
 
     @app.on_message(filters.command('resp'), group=0)
     async def resp(client, message):
@@ -314,7 +315,6 @@ def callback_loader(app: Client):
             await asyncio.sleep(2)
             await message.delete()
             await bot_put(client, origin_message, test_type, test_items, sort=sort_str, coreindex=3, slaveid=slaveid)
-
 
 # async def bot_put(client: Client, message: Message, put_type: str, test_items: list = None, **kwargs):
 #     """

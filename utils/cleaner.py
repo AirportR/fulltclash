@@ -747,9 +747,10 @@ class ConfigManager:
 
     def getBridge(self):
         """
-        获取连接中继桥，它是一个telegram的群组id，最好是私密群组
+        获取连接中继桥，它是一个telegram的user_id
         """
-        return self.config.get('bridge', None)
+        bridge = self.config.get('bridge', [])
+        return [] if bridge is None else bridge
 
     def getGstatic(self):
         """

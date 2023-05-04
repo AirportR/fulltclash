@@ -30,7 +30,7 @@ async def bot_task_queue(client: Client, message, task_type: str, qu: asyncio.Qu
         await qu.get()
         qu.task_done()
         await botmodule.process(client, message, put_type=task_type, **kwargs)
-    if task_type:
+    else:
         await botmodule.process(client, message, put_type=task_type, **kwargs)
         await qu.get()
         qu.task_done()
@@ -90,6 +90,8 @@ async def bot_put_master(client: Client, message: Message, putinfo: dict, **kwar
         await botmsg.edit_text(f"/relay {master_id} edit 测试结束啦。")
         # await bot_task_queue_master(client, message, put_type, q, **kwargs)
         task_num -= 1
+        await q.get()
+        q.task_done()
 
     except AttributeError as a:
         logger.error(str(a))

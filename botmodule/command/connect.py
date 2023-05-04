@@ -11,7 +11,7 @@ from pyrogram import Client
 from utils import safe
 from botmodule.init_bot import config, corenum
 from botmodule import restart_or_killme
-from utils.cron.utils import message_delete_queue
+from utils import message_delete_queue
 from utils.cleaner import ArgCleaner
 from utils.clash import new_batch_start, check_port
 from utils.myqueue import bot_put_master
