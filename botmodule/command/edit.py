@@ -5,12 +5,13 @@ from loguru import logger
 from utils.cleaner import ArgCleaner
 
 
+@logger.catch()
 async def edit(app: Client, message: Message):
     tgargs = ArgCleaner().getall(message.text)
     if len(tgargs) < 5:
         return
-    edit_chat_id = tgargs[2]
-    edit_msg_id = tgargs[3]
+    edit_chat_id = int(tgargs[2])
+    edit_msg_id = int(tgargs[3])
     text = ' '.join(tgargs[4:])
     try:
         editmsg = await app.get_messages(edit_chat_id, edit_msg_id)

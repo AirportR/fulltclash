@@ -88,9 +88,9 @@ async def bot_put_master(client: Client, message: Message, putinfo: dict, **kwar
         await q.put(message)
         r1(test_items)
         r2(test_items)
-        await message.reply(f"/relay {master_id} edit 测试开始啦~")
+        await message.reply(f"/relay {master_id} {edit_chat_id} {edit_message_id} edit 测试开始啦~")
         await asyncio.sleep(10)
-        await botmsg.edit_text(f"/relay {master_id} edit 测试结束啦。")
+        await botmsg.edit_text(f"/relay {master_id} {edit_chat_id} {edit_message_id} edit 测试结束啦。")
         # await bot_task_queue_master(client, message, put_type, q, **kwargs)
         task_num -= 1
         await q.get()
