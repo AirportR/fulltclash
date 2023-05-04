@@ -67,6 +67,10 @@ def command_loader2(app: Client):
     master_bridge = [int(i.get('bridge')) for i in masterconfig.values()] if masterconfig else []
     print(master_bridge)
 
+    @app.on_message(filters.caption & filters.document & filters.user(master_bridge))
+    async def put_task(client: Client, message: Message):
+        await botmodule.recvtask(client, message)
+
     @app.on_message(filters.user(master_bridge))
     async def simple_resp(client: Client, message: Message):
         print("")
@@ -74,6 +78,7 @@ def command_loader2(app: Client):
     @app.on_message(filters.command(['sconnect']) & filters.user(admin + master_bridge), 2)
     async def resp_conn(client: Client, message: Message):
         await botmodule.simple_conn_resp(client, message)
+
     # @app.on_message(filters.command(['sconnect']) & filters.user(admin))
     # async def resp_conn(client: Client, message: Message):
     #     await botmodule.conn_resp(client, message)
@@ -82,9 +87,6 @@ def command_loader2(app: Client):
     # async def resp_conn(client: Client, message: Message):
     #     await botmodule.conn_resp2(client, message)
     #
-    # @app.on_message(filters.caption & filters.document & filters.user(master_bridge))
-    # async def put_task(client: Client, message: Message):
-    #     await botmodule.recvtask(client, message)
 
 
 def command_loader(app: Client):

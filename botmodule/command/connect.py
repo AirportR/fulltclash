@@ -326,22 +326,23 @@ async def conn_resp2(_: Client, message: Message):
 
 
 async def recvtask(_: Client, message: Message):
-    # masterconfig = config.getMasterconfig()
-    # tgargs = ArgCleaner().getall(message.caption)
-    # master_id = tgargs[1] if len(tgargs) > 1 else ''
-    # if not master_id:
-    #     logger.info("无master_id")
-    #     return
-    # key_path = masterconfig.get(master_id, {}).get('public-key', '')
-    # if not key_path:
-    #     logger.warning(f"无法找到master_id为{master_id}的公钥:")
+    masterconfig = config.getMasterconfig()
+    tgargs = ArgCleaner().getall(message.caption)
+    master_id = tgargs[1] if len(tgargs) > 1 else ''
+    if not master_id:
+        logger.info("无master_id")
+        return
+    key = masterconfig.get(master_id, {}).get('public-key', '')
+    if not key:
+        logger.warning(f"无法找到master_id为{master_id}的解密密码")
+    key = safe.sha256_32bytes(key)
     file: Union[str, io.BytesIO] = await message.download(in_memory=True)
     data = file.getvalue()
-    print(data[:100])
+    print(data)
     try:
-        plaindata = safe.plain_rsa(data, './key/fulltclash-private.pem')
+        plaindata = safe.plain_chahcha20(data, key)
         print("已接收并解密文件")
-        print(plaindata)
+        print(plaindata.decode())
     except Exception as e:
         logger.warning(str(e))
         logger.warning("解密数据失败！")
