@@ -3,6 +3,7 @@ import importlib
 import os
 import re
 import sys
+from typing import Union
 import socket
 import yaml
 from loguru import logger
@@ -372,7 +373,7 @@ class ClashCleaner:
     yaml配置清洗
     """
 
-    def __init__(self, _config, _config2: str = None):
+    def __init__(self, _config, _config2: Union[str, bytes] = None):
         """
         :param _config: 传入一个文件对象，或者一个字符串,文件对象需指向 yaml/yml 后缀文件
         """

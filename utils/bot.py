@@ -71,9 +71,9 @@ def command_loader2(app: Client):
     async def put_task(client: Client, message: Message):
         await botmodule.recvtask(client, message)
 
-    @app.on_message(filters.user(master_bridge))
-    async def simple_resp(client: Client, message: Message):
-        print("")
+    # @app.on_message(filters.user(master_bridge))
+    # async def simple_resp(client: Client, message: Message):
+    #     print("")
 
     @app.on_message(filters.command(['sconnect']) & filters.user(admin + master_bridge), 2)
     async def resp_conn(client: Client, message: Message):
@@ -97,8 +97,9 @@ def command_loader(app: Client):
 
     @app.on_message(filters.command(["test"]) & allfilter(1), group=1)
     @AccessCallback()
-    async def test(_, message):
-        await message.reply("请选择排序方式:", reply_markup=botmodule.IKM2, quote=True)
+    async def test(client: Client, message: Message):
+        await botmodule.select_slave_page(client, message, page=1)
+        # await message.reply("请选择排序方式:", reply_markup=botmodule.IKM2, quote=True)
 
     @app.on_message(filters.command(["invite"]), group=1)
     @AccessCallback()
@@ -249,9 +250,9 @@ def command_loader(app: Client):
     async def conn(client, message):
         await botmodule.conn_simple(client, message)
 
-    @app.on_message(filters.command(['relay']) & allfilter(2), group=2)
-    async def _(client: Client, message: Message):
-        await message
+    # @app.on_message(filters.command(['relay']) & allfilter(2), group=2)
+    # async def _(client: Client, message: Message):
+    #     pass
 
     @app.on_message(filters.command('resp'), group=0)
     async def resp(client, message):
@@ -283,13 +284,19 @@ def callback_loader(app: Client):
         callback_query.stop_propagation()
 
     @app.on_callback_query(group=2)
-    async def settings_test(client, callback_query):
+    async def settings_test(client, callback_query: CallbackQuery):
         if callback_query.data == "blank":
             return
         if await check_callback_master(callback_query, botmodule.init_bot.reloadUser()):
             return
-        elif "page" in callback_query.data:
+        elif callback_query.data.startswith('page'):
             await botmodule.select_page(client, callback_query, page=int(str(callback_query.data)[4:]))
+            return
+        elif callback_query.data.startswith('spage'):
+            await botmodule.select_slave_page(client, callback_query, page=int(callback_query.data[5:]))
+            return
+        elif callback_query.data.startswith('slave'):
+            await botmodule.select_slave(client, callback_query)
             return
         elif "sort" in callback_query.data:
             await botmodule.select_sort(client, callback_query)
@@ -297,9 +304,10 @@ def callback_loader(app: Client):
         test_items, origin_message, message, test_type = await botmodule.test_setting(client, callback_query)
         if message:
             sort_str = botmodule.get_sort_str(message)
-            await asyncio.sleep(3)
+            slaveid = botmodule.get_slave_id(message.chat.id, message.id)
+            await asyncio.sleep(2)
             await message.delete()
-            await bot_put(client, origin_message, test_type, test_items, sort=sort_str, coreindex=3)
+            await bot_put(client, origin_message, test_type, test_items, sort=sort_str, coreindex=3, slaveid=slaveid)
 
 
 async def bot_put(client: Client, message: Message, put_type: str, test_items: list = None, **kwargs):

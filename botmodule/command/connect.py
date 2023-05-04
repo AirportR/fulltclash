@@ -122,7 +122,7 @@ async def conn_simple(app: Client, message: Message):
         me = await app.get_me()
         print(f"主端id: {me.id}")
         await app.send_message(bridge, f"/relay {targetbot.id} sconnect {conn_pwd} {bridge}")
-        config.add_slave(targetbot.id, conn_pwd, bot_username, comment=_args[2])
+        config.add_slave(str(targetbot.id), conn_pwd, bot_username, comment=_args[2])
         config.reload()
         logger.info(f"已添加id为 {targetbot.id} @{bot_username}的bot为测试后端")
         backmsg4 = await b1.edit_text(f"已添加id为 {targetbot.id} @{bot_username}的bot为测试后端")

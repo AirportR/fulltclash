@@ -1,5 +1,6 @@
 import contextlib
 from copy import deepcopy
+from typing import Union
 from loguru import logger
 from pyrogram import types, Client
 from pyrogram.errors import RPCError
@@ -10,6 +11,7 @@ from utils import message_delete_queue as mdq
 from glovar import __version__
 from botmodule.init_bot import latest_version_hash as v_hash
 
+IKB = InlineKeyboardButton
 dbtn = default_button = {
     1: InlineKeyboardButton("✅Netflix", callback_data='✅Netflix'),
     2: InlineKeyboardButton("✅Youtube", callback_data='✅Youtube'),
@@ -30,20 +32,9 @@ dbtn = default_button = {
     'b_origin': InlineKeyboardButton("♾️订阅原序", callback_data="sort:订阅原序"),
     'b_rhttp': InlineKeyboardButton("⬇️HTTP倒序", callback_data="sort:HTTP倒序"),
     'b_http': InlineKeyboardButton("⬆️HTTP升序", callback_data="sort:HTTP升序"),
+    'b_slave': InlineKeyboardButton("默认后端", config.config.get('bot', {}).get('default-slave', 'slave:' + 'local'))
 }
 
-# b4 = InlineKeyboardButton("✅Bilibili", callback_data='✅Bilibili')
-# b5 = InlineKeyboardButton("✅Dazn", callback_data='✅Dazn')
-# ok_b = InlineKeyboardButton("👌完成设置", callback_data='👌完成设置')
-# b_reverse = InlineKeyboardButton("🪞选项翻转", callback_data='🪞选项翻转')
-# yusanjia = InlineKeyboardButton("御三家(N-Y-D)", callback_data='御三家(N-Y-D)')
-# b_cancel = InlineKeyboardButton("👋点错了，给我取消", callback_data='👋点错了，给我取消')
-# b_alive = InlineKeyboardButton("节点存活率", callback_data="节点存活率")
-# b_okpage = InlineKeyboardButton("🔒锁定本页设置", callback_data="ok_p")
-# b_all = InlineKeyboardButton("全测", callback_data="全测")
-# b_origin = InlineKeyboardButton("♾️订阅原序", callback_data="sort:订阅原序")
-# b_rhttp = InlineKeyboardButton("⬇️HTTP倒序", callback_data="sort:HTTP倒序")
-# b_http = InlineKeyboardButton("⬆️HTTP升序", callback_data="sort:HTTP升序")
 buttons = [dbtn[1], dbtn[2], dbtn[3], dbtn[25], dbtn[15], dbtn[18], dbtn[20], dbtn[21], dbtn[19]]
 buttons.extend(addon.init_button(isreload=True))
 max_page_g = int(len(buttons) / 9) + 1
@@ -61,6 +52,7 @@ IKM2 = InlineKeyboardMarkup(
 select_item_cache = {}
 page_is_locked = {}
 sort_cache = {}
+slaveid_cache = {}
 
 
 def reload_button():
@@ -303,6 +295,67 @@ def get_sort_str(message: Message):
     return sort_cache.pop(k, "订阅原序")
 
 
+def get_slave_id(chat_id: int, message_id: int):
+    k = str(chat_id) + ":" + str(message_id)
+    return slaveid_cache.pop(k, "local")
+
+
+async def select_slave_page(_: Client, call: Union[CallbackQuery, Message], **kwargs):
+    slaveconfig = config.getSlaveconfig()
+    comment = [i.get('comment', None) for i in slaveconfig.values() if i.get('comment', None)]
+    print(comment)
+
+    page = kwargs.get('page', 1)
+    row = kwargs.get('row', 5)
+    max_page = int(len(comment) / row) + 1
+    pre_page_text = page - 1 if page - 1 > 0 else 1
+    next_page_text = page + 1 if page < max_page else max_page
+    pre_page = InlineKeyboardButton('⬅️上一页', callback_data=f'spage{pre_page_text}')
+    next_page = InlineKeyboardButton('➡️下一页', callback_data=f'spage{next_page_text}')
+
+    blank = InlineKeyboardButton(f'{page}/{max_page}', callback_data='blank')
+
+    if page > max_page:
+        logger.error("页数错误")
+        return
+    if page == 1:
+        pre_page.text = '        '
+        pre_page.callback_data = 'blank'
+    if page == max_page:
+        content_keyboard = [[IKB(c, 'slave:' + c)] for c in comment[(max_page - 1) * row:]]
+        next_page.text = '        '
+        next_page.callback_data = 'blank'
+    else:
+        content_keyboard = [[IKB(c, 'slave:' + c)] for c in comment[(page - 1) * row:page * row]]
+    content_keyboard.insert(0, [dbtn['b_slave']])
+    content_keyboard.append([pre_page, blank, next_page])
+    content_keyboard.append([dbtn['b_cancel']])
+    IKM = InlineKeyboardMarkup(content_keyboard)
+    if isinstance(call, CallbackQuery):
+        botmsg = call.message
+        await botmsg.edit_text("请选择测试后端:", reply_markup=IKM)
+    else:
+        await call.reply("请选择测试后端:", reply_markup=IKM, quote=True)
+
+
+async def select_slave(_: Client, call: CallbackQuery):
+    botmsg = call.message
+    slavename = call.data[6:]
+    slaveconfig = config.getSlaveconfig()
+    slaveid = 'local'
+    for k, v in slaveconfig.items():
+        if v.get('comment', '') == slavename:
+            slaveid = str(k)
+            break
+    if not slaveid:
+        await botmsg.edit_text("❌未知的后端id")
+        mdq.put(botmsg)
+        return
+    slaveid_cache[str(botmsg.chat.id) + ":" + str(botmsg.id)] = slaveid
+
+    await botmsg.edit_text("请选择排序方式：", reply_markup=IKM2)
+
+
 async def select_sort(app: Client, call: CallbackQuery):
     IKM = InlineKeyboardMarkup(
         [
@@ -332,4 +385,3 @@ async def setting_page(_: Client, message: Message):
     sub_button = InlineKeyboardButton("🌐订阅管理(开发中)", callback_data="blank")
     IKM = InlineKeyboardMarkup([[addon_button], [config_button], [sub_button]])
     await message.reply_text(text, reply_markup=IKM, quote=True)
-

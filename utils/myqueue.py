@@ -21,15 +21,12 @@ async def bot_task_queue(client: Client, message, task_type: str, qu: asyncio.Qu
     :param qu: 队列
     :return: no return
     """
+    slaveid = kwargs.get('slaveid', 'local')
+    if slaveid != 'local':
+        await qu.get()
+        qu.task_done()
+        await botmodule.process(client, message, put_type=task_type, **kwargs)
     if task_type:
         await botmodule.process(client, message, put_type=task_type, **kwargs)
-    else:
-        try:
-            m1 = await message.reply("⚠️未识别的测试类型，任务取消~")
-            await asyncio.sleep(10)
-            await m1.delete()
-            await message.delete()
-        except Exception as e:
-            loguru.logger.warning(str(e))
-    await qu.get()
-    qu.task_done()
+        await qu.get()
+        qu.task_done()

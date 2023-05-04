@@ -10,7 +10,7 @@ import time
 from utils.cleaner import ConfigManager
 import utils.emoji_custom as emoji_source
 
-__version__ = '3.5.7'
+__version__ = '3.5.8'
 
 
 # 这是将测试的结果输出为图片的模块。
