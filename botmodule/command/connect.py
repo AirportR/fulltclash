@@ -340,9 +340,9 @@ async def recvtask(_: Client, message: Message):
     data = file.getvalue()
     print(data)
     try:
-        plaindata = safe.plain_chahcha20(data, key)
+        plaindata = safe.plain_chahcha20(data, key).decode()
         print("已接收并解密文件")
-        print(plaindata.decode())
+        print(plaindata)
     except Exception as e:
         logger.warning(str(e))
         logger.warning("解密数据失败！")
