@@ -29,30 +29,34 @@ def loader(app: Client):
 def user_loder(app: Client):
     userbotconfig = config.config.get('userbot', {})
     slaveconfig = config.getSlaveconfig()
-    slaveID = [int(k) for k in slaveconfig.keys()]
+    slaveID = [int(k) for k in slaveconfig.keys()] if slaveconfig else []
     whitelist = userbotconfig.get('whitelist', [])
 
     @app.on_message(filters.user(whitelist))
-    async def relay(client: Client, message: Message):
-        if str(message.text).startswith('/relay1'):
-            await botmodule.relay(client, message)
-            message.stop_propagation()
+    async def _(client: Client, message: Message):
+        await botmodule.simple_relay(client, message)
 
-    @app.on_message(filters.user(whitelist) & filters.document & filters.caption, 2)
-    async def relay2(client: Client, message: Message):
-        await botmodule.relay2(client, message)
-
-    @app.on_message(filters.bot & filters.caption, 1)
-    async def resp1(client: Client, message: Message):
-        if str(message.caption) == "/resp" and message.document:
-            await botmodule.response2(client, message)
-            message.stop_propagation()
-
-    @app.on_message(filters.user(slaveID) & filters.caption, 2)
-    async def resp2(client: Client, message: Message):
-        if str(message.caption).startswith("/resp2") and message.document:
-            await botmodule.response(client, message)
-            message.stop_propagation()
+    # @app.on_message(filters.user(whitelist))
+    # async def relay(client: Client, message: Message):
+    #     if str(message.text).startswith('/relay1'):
+    #         await botmodule.relay(client, message)
+    #         message.stop_propagation()
+    #
+    # @app.on_message(filters.user(whitelist) & filters.document & filters.caption, 2)
+    # async def relay2(client: Client, message: Message):
+    #     await botmodule.relay2(client, message)
+    #
+    # @app.on_message(filters.bot & filters.caption, 1)
+    # async def resp1(client: Client, message: Message):
+    #     if str(message.caption) == "/resp" and message.document:
+    #         await botmodule.response(client, message)
+    #         message.stop_propagation()
+    #
+    # @app.on_message(filters.user(slaveID) & filters.caption, 2)
+    # async def resp2(client: Client, message: Message):
+    #     if str(message.caption).startswith("/resp2") and message.document:
+    #         await botmodule.response2(client, message)
+    #         message.stop_propagation()
 
 
 def command_loader2(app: Client):
@@ -62,17 +66,24 @@ def command_loader2(app: Client):
     master_bridge = [int(i.get('bridge')) for i in config.getMasterconfig().values()]
     print(master_bridge)
 
-    @app.on_message(filters.command(['sconnect']))
-    async def resp_conn(client: Client, message: Message):
-        await botmodule.conn_resp(client, message)
+    @app.on_message(filters.user(master_bridge))
+    async def simple_resp(client: Client, message: Message):
+        print("")
 
-    @app.on_message(filters.command(['sconnect2']))
+    @app.on_message(filters.command(['sconnect']) & filters.user(admin + master_bridge))
     async def resp_conn(client: Client, message: Message):
-        await botmodule.conn_resp2(client, message)
-
-    @app.on_message(filters.caption & filters.document & filters.user(master_bridge))
-    async def put_task(client: Client, message: Message):
-        await botmodule.recvtask(client, message)
+        await botmodule.simple_conn_resp(client, message)
+    # @app.on_message(filters.command(['sconnect']) & filters.user(admin))
+    # async def resp_conn(client: Client, message: Message):
+    #     await botmodule.conn_resp(client, message)
+    #
+    # @app.on_message(filters.command(['sconnect2']))
+    # async def resp_conn(client: Client, message: Message):
+    #     await botmodule.conn_resp2(client, message)
+    #
+    # @app.on_message(filters.caption & filters.document & filters.user(master_bridge))
+    # async def put_task(client: Client, message: Message):
+    #     await botmodule.recvtask(client, message)
 
 
 def command_loader(app: Client):
@@ -233,7 +244,7 @@ def command_loader(app: Client):
 
     @app.on_message(filters.command(['connect']) & allfilter(2), group=2)
     async def conn(client, message):
-        await botmodule.conn(client, message)
+        await botmodule.conn_simple(client, message)
 
     @app.on_message(filters.command('resp'), group=0)
     async def resp(client, message):

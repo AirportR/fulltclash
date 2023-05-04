@@ -3,9 +3,9 @@ import asyncio.exceptions
 import async_timeout
 from loguru import logger
 from pyrogram.types import Message
-from pyrogram.errors import PeerIdInvalid
+from pyrogram.errors import PeerIdInvalid, RPCError
 from pyrogram import Client
-from utils import safe
+# from utils import safe
 from botmodule.init_bot import config, corenum
 from botmodule import restart_or_killme
 from utils.cron.utils import message_delete_queue
@@ -51,6 +51,81 @@ async def startclash(app: Client, message: Message):
         return
 
 
+async def simple_relay(app: Client, message: Message):
+    text = message.caption if message.caption else message.text
+    tgargs = ArgCleaner().getall(str(text))
+    origin_id = message.from_user.id
+    if len(tgargs) < 3:
+        logger.info("缺少必要参数")
+        backmsg = await message.edit_text("缺少必要参数")
+        message_delete_queue.put(backmsg)
+        return
+    target_id = tgargs[1]
+    command = tgargs[2].strip('/')
+    try:
+        newtext = f'/{command} {origin_id} '
+        if len(tgargs) > 3:
+            newtext += ' '.join(tgargs[3:])
+        if message.document:
+            await app.send_document(int(target_id), message.document.file_id, caption=newtext)
+        else:
+            await app.send_message(int(target_id), newtext)
+    except RPCError as r:
+        logger.error(str(r))
+        return
+
+
+@logger.catch()
+async def conn_simple(app: Client, message: Message):
+    """
+    简单的连接
+    """
+    print("群聊id:", message.chat.id)
+    try:
+        bridge = config.config.get('userbot', {}).get('id', None)
+        b1 = await message.reply("开始连接...")
+        # 检查连接中继
+        if bridge is None:
+            backmsg1 = await b1.edit_text("❌未配置中继连接桥")
+            await message.reply(f"当前群聊id: {message.chat.id}")
+            message_delete_queue.put_nowait((backmsg1.chat.id, backmsg1.id, 10))
+            return
+        try:
+            connchat = await app.get_chat(bridge)
+            print("中继桥id:", connchat.id)
+        except PeerIdInvalid:
+            backmsg3 = await b1.edit_text("❌错误的中继桥")
+            message_delete_queue.put_nowait((backmsg3.chat.id, backmsg3.id, 10))
+            return
+
+        # 检查连接参数
+        _args = ArgCleaner(message.text).getall()
+        if len(_args) < 3:
+            backmsg2 = await b1.edit_text("❌使用方式: /connect <机器人ID> <备注> <连接密码>")
+            message_delete_queue.put_nowait((backmsg2.chat.id, backmsg2.id, 10))
+            return
+        bot_id = _args[1]
+        conn_pwd = _args[3] if len(_args) > 3 else ''
+        # 检查后端id
+        try:
+            targetbot = await app.get_users(bot_id)
+        except PeerIdInvalid:
+            backmsg3 = await b1.edit_text("❌错误的后端bot_id")
+            message_delete_queue.put_nowait((backmsg3.chat.id, backmsg3.id, 10))
+            return
+        bot_username = targetbot.username
+        print("后端BOT名称：", bot_username)
+        await app.send_message(bridge, f"/relay {targetbot.id} sconnect ")
+        config.add_slave(targetbot.id, conn_pwd, bot_username, comment=_args[2])
+        config.reload()
+        logger.info(f"已添加id为 {targetbot.id} @{bot_username}的bot为测试后端")
+        backmsg4 = await b1.edit_text(f"已添加id为 {targetbot.id} @{bot_username}的bot为测试后端")
+        message_delete_queue.put(backmsg4)
+
+    except RPCError as e:
+        logger.error(str(e))
+
+
 async def conn(app: Client, message: Message):
     """
     主端主动对后端连接，交换公钥
@@ -76,7 +151,7 @@ async def conn(app: Client, message: Message):
         # 检查连接参数
         _args = ArgCleaner(message.text).getall()
         if len(_args) < 3:
-            backmsg2 = await b1.edit_text("❌使用方式: /connect <机器人ID> <备注>")
+            backmsg2 = await b1.edit_text("❌使用方式: /connect <机器人ID> <备注> <连接密码>")
             message_delete_queue.put_nowait((backmsg2.chat.id, backmsg2.id, 10))
             return
         bot_id = _args[1]
@@ -165,7 +240,7 @@ async def relay(app: Client, message: Message, command: str = '/sconnect'):
     await app.send_message(bot_id, f"{command} {message.from_user.id}")
 
 
-async def relay2(app: Client, message: Message, command: str = '/sconnect2'):
+async def relay2(app: Client, message: Message, command: str = 'sconnect2'):
     """
     userbot专属
     中转主端文件
@@ -176,9 +251,27 @@ async def relay2(app: Client, message: Message, command: str = '/sconnect2'):
         logger.warning("缺少slave id")
         return
     bot_id = tgargs[1]
-    command = command if len(tgargs) < 3 else tgargs[2]
+    command = command if len(tgargs) < 3 else tgargs[2].lstrip('/')
     if tgargs[0].startswith("/relay2") and message.document:
-        await app.send_document(bot_id, message.document.file_id, caption=f'{command} {str(message.from_user.id)}')
+        await app.send_document(bot_id, message.document.file_id, caption=f'/{command} {str(message.from_user.id)}')
+
+
+@logger.catch()
+async def simple_conn_resp(_: Client, message: Message):
+    """
+    后端bot专属
+    """
+    tgargs = ArgCleaner().getall(message.text)
+    if tgargs < 3:
+        return
+    master_id = tgargs[1]
+    conn_pwd = tgargs[2]
+    bridge = tgargs[3] if len(tgargs) > 3 else ''
+    masterconfig = config.getMasterconfig()
+    masterconfig[master_id] = {'public-key': conn_pwd, 'bridge': bridge}
+    config.yaml['masterconfig'] = masterconfig
+    config.reload()
+    logger.info("master连接配置已保存")
 
 
 @logger.catch()

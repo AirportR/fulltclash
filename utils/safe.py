@@ -100,8 +100,29 @@ def plain(_ciphertext: bytes, _private_key_path: str = 'private_key.pem'):
 
 
 if __name__ == '__main__':
-    ciphertext = cipher(b'hello word', '../key/fulltclash-public.pem')
+    # ciphertext = cipher(b'hello word', '../key/fulltclash-public.pem')
+    # print(ciphertext)
+    # plaintext = plain(ciphertext, '../key/fulltclash-private.pem')
+    # print(plaintext)
+    # print(plaintext.decode(encoding='utf-8'))
+    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms
+    from cryptography.hazmat.backends import default_backend
+    import os
+
+    # 生成密钥，随机数和初始计数
+    key = os.urandom(32)  # 256-bit secret key (32 bytes)
+    print(key, len(key))
+    nonce = os.urandom(16)  # 96-bit nonce (12 bytes)
+    print(nonce)
+
+    # 创建 Cipher 对象
+    cipher = Cipher(algorithms.ChaCha20(key, nonce), mode=None, backend=default_backend())
+
+    # 加密消息
+    encryptor = cipher.encryptor()
+    ciphertext = encryptor.update(b"Hello, world!") + encryptor.finalize()
     print(ciphertext)
-    plaintext = plain(ciphertext, '../key/fulltclash-private.pem')
+    # 解密消息
+    decryptor = cipher.decryptor()
+    plaintext = decryptor.update(ciphertext) + decryptor.finalize()
     print(plaintext)
-    print(plaintext.decode(encoding='utf-8'))
