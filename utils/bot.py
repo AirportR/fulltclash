@@ -247,6 +247,10 @@ def command_loader(app: Client):
     async def conn(client, message):
         await botmodule.conn_simple(client, message)
 
+    @app.on_message(filters.command(['relay']) & allfilter(2), group=2)
+    async def _(client: Client, message: Message):
+        await message
+
     @app.on_message(filters.command('resp'), group=0)
     async def resp(client, message):
         await botmodule.response(client, message)

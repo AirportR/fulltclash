@@ -7,7 +7,7 @@ from loguru import logger
 from pyrogram.types import Message
 from pyrogram.errors import PeerIdInvalid, RPCError
 from pyrogram import Client
-# from utils import safe
+from utils import safe
 from botmodule.init_bot import config, corenum
 from botmodule import restart_or_killme
 from utils.cron.utils import message_delete_queue
@@ -119,7 +119,9 @@ async def conn_simple(app: Client, message: Message):
             return
         bot_username = targetbot.username
         print("后端BOT名称：", bot_username)
-        await app.send_message(bridge, f"/relay {targetbot.id} sconnect ")
+        me = await app.get_me()
+        print(f"主端id: {me.id}")
+        await app.send_message(bridge, f"/relay {targetbot.id} sconnect {conn_pwd} {bridge}")
         config.add_slave(targetbot.id, conn_pwd, bot_username, comment=_args[2])
         config.reload()
         logger.info(f"已添加id为 {targetbot.id} @{bot_username}的bot为测试后端")
@@ -337,7 +339,7 @@ async def recvtask(_: Client, message: Message):
     data = file.getvalue()
     print(data[:100])
     try:
-        plaindata = safe.plain(data, './key/fulltclash-private.pem')
+        plaindata = safe.plain_rsa(data, './key/fulltclash-private.pem')
         print("已接收并解密文件")
         print(plaindata)
     except Exception as e:
