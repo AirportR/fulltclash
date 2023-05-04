@@ -201,7 +201,10 @@ async def put_slave_task(app: Client, message: Message, proxyinfo: list, **kwarg
 
     payload = {
         'proxies': proxyinfo,
-        'coreindex': kwargs.get('coreindex', 0)
+        'coreindex': kwargs.get('coreindex', 0),
+        'test-items': kwargs.get('test_items', None),
+        'edit-message-id': message.id,
+        'edit-chat-id': message.chat.id
     }
 
     data1 = json.dumps(payload)

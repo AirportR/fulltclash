@@ -60,7 +60,7 @@ async def bot_put(client: Client, message: Message, put_type: str, test_items: l
         r1(test_items)
         r2(test_items)
         await mes.delete()
-        await bot_task_queue(client, message, put_type, q, **kwargs)
+        await bot_task_queue(client, message, put_type, q, test_items=test_items, **kwargs)
         task_num -= 1
 
     except AttributeError as a:
@@ -74,14 +74,17 @@ async def bot_put_master(client: Client, message: Message, putinfo: dict, **kwar
     task_num += 1
     try:
         test_items = putinfo.get('test-items', None)
+        edit_chat_id = putinfo.get('edit-chat-id', None)
+        edit_message_id = putinfo.get('edit-message-id', None)
         master_id = kwargs.get('master_id', None)
-        if master_id is None:
+        if master_id is None and edit_chat_id is None and edit_message_id is None:
             task_num -= 1
             return
         if test_items is None:
             test_items = []
         logger.info("任务测试项为: " + str(test_items))
-        botmsg = await message.reply(f"/relay {master_id} edit 排队中,前方队列任务数量为:" + str(task_num - 1))
+        botmsg = await message.reply(f"/relay {master_id} edit {edit_chat_id} {edit_message_id} 排队中,前方队列任务数量为:"
+                                     + str(task_num - 1))
         await q.put(message)
         r1(test_items)
         r2(test_items)

@@ -355,6 +355,6 @@ async def recvtask(app: Client, message: Message):
 
     await message.reply("Get data success!\nplease wait.", quote=True)
     putinfo: dict = json.loads(plaindata)
-    coreindex = putinfo.get('coreindex', 0)
+    # coreindex = putinfo.get('coreindex', 0)
     await bot_put_master(app, message, putinfo, master_id=master_id)
     # await message.reply(f"/relay {master_id} edit status1")
