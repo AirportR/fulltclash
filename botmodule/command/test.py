@@ -150,7 +150,7 @@ async def process(app: Client, message: Message, **kwargs):
         if await check.check_speednode(back_message, core, proxynum):
             return
         proxyinfo = pre_cl.getProxies()
-        info = await put_slave_task(app, message, proxyinfo, core=core, **kwargs)
+        info = await put_slave_task(app, message, proxyinfo, core=core, backmsg=back_message, **kwargs)
         # info = await core.core(proxyinfo, **kwargs)
         if info:
             await select_export(message, back_message, put_type, info, **kwargs)
@@ -174,7 +174,7 @@ async def process(app: Client, message: Message, **kwargs):
         if await check.check_speednode(back_message, core, proxynum):
             return
         proxyinfo = pre_cl.getProxies()
-        info = await put_slave_task(app, message, proxyinfo, core=core, **kwargs)
+        info = await put_slave_task(app, message, proxyinfo, core=core, backmsg=back_message, **kwargs)
         # info = await core.core(proxyinfo, **kwargs)
         if isinstance(info, dict):
             await select_export(message, back_message, put_type, info, **kwargs)
@@ -182,6 +182,7 @@ async def process(app: Client, message: Message, **kwargs):
 
 async def put_slave_task(app: Client, message: Message, proxyinfo: list, **kwargs):
     slaveid = kwargs.pop('slaveid', 'local')
+    raw_backmsg: Message = kwargs.get('backmsg', None)
     if slaveid == 'local':
         core = kwargs.pop('core', None)
         if core is None:
@@ -203,8 +204,8 @@ async def put_slave_task(app: Client, message: Message, proxyinfo: list, **kwarg
         'proxies': proxyinfo,
         'coreindex': kwargs.get('coreindex', 0),
         'test-items': kwargs.get('test_items', None),
-        'edit-message-id': message.id,
-        'edit-chat-id': message.chat.id
+        'edit-message-id': raw_backmsg.id,
+        'edit-chat-id': raw_backmsg.chat.id
     }
 
     data1 = json.dumps(payload)
