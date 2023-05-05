@@ -17,5 +17,5 @@ __all__ = ['grant', 'ungrant', 'user', 'restart_or_killme',
            'version', 'helps',
            'test_setting', 'select_page', 'get_sort_str', 'select_sort', 'setting_page',
            'download_script', 'reload_addon_from_telegram', 'uninstall_script',
-           'common_command'
+           'common_command','select_export'
            ]

@@ -57,22 +57,9 @@ def command_loader2(app: Client):
         if message.caption.startswith('/send'):
             await botmodule.recvtask(client, message)
 
-    # @app.on_message(filters.user(master_bridge))
-    # async def simple_resp(client: Client, message: Message):
-    #     print("")
-
     @app.on_message(filters.command(['sconnect']) & filters.user(admin + master_bridge), 2)
     async def resp_conn(client: Client, message: Message):
         await botmodule.simple_conn_resp(client, message)
-
-    # @app.on_message(filters.command(['sconnect']) & filters.user(admin))
-    # async def resp_conn(client: Client, message: Message):
-    #     await botmodule.conn_resp(client, message)
-    #
-    # @app.on_message(filters.command(['sconnect2']))
-    # async def resp_conn(client: Client, message: Message):
-    #     await botmodule.conn_resp2(client, message)
-    #
 
 
 def command_loader(app: Client):
@@ -245,10 +232,10 @@ def command_loader(app: Client):
         if message.caption.startswith('/result'):
             await botmodule.task_result(client, message)
 
-    @app.on_message(filters.command('resp'), group=0)
-    async def resp(client, message):
-        await botmodule.response(client, message)
-        message.stop_propagation()
+    # @app.on_message(filters.command('resp'), group=0)
+    # async def resp(client, message):
+    #     await botmodule.response(client, message)
+    #     message.stop_propagation()
 
     @app.on_message(filters.command(["setantigroup"]) & allfilter(2), group=2)
     async def setantigroup(client, message):

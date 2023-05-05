@@ -41,15 +41,20 @@ scheduler.add_job(cem, IntervalTrigger(seconds=5, timezone=str(tzlocal.get_local
 
 # ---------------------------- [ Print the bot ] ---------------------------- #
 def bot_info(_app, _app2):
+    bot_me = _app.get_me()
+    logger.info('>> Bot Started')
+    logger.info(f'>> Bot ID: {bot_me.id} Username: @{bot_me.username}')
     if _app2 is not None:
         bot_me2 = _app2.get_me()
+        whitelist = userbot_config.get('whitelist', [])
         userbot_config['id'] = bot_me2.id
+        if bot_me.id not in whitelist:
+            whitelist.append(bot_me.id)
+        userbot_config['whitelist'] = whitelist
         bot_config.yaml['userbot'] = userbot_config
         bot_config.reload()
         logger.info('>> UserBot enable')
         logger.info(f'>> UserBot ID: {bot_me2.id} Username: @{bot_me2.username}')
-    bot_me = _app.get_me()
-    logger.info('>> Bot Started')
-    logger.info(f'>> Bot ID: {bot_me.id} Username: @{bot_me.username}')
+
     print("""# ---------------------------- [ Start the bot ] ---------------------------- #   """)
     print("""# ---------------------------- [ Check Bot Successful ] ---------------------------- #   """)
