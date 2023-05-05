@@ -288,6 +288,7 @@ async def task_result(app: Client, message: Message):
     tgargs = ArgCleaner().getall(message.caption)
     slaveid = tgargs[1] if len(tgargs) > 1 else ''
     key = slaveconfig.get(slaveid, {}).get('public-key', '')
+    slavecomment = slaveconfig.get(slaveid, {}).get('comment', 'Local')
     if not key:
         logger.warning(f"无法找到slave_id为{slaveid}的解密密码")
     logger.info(f"当前后端id:{slaveid}，解密密码：{key}")
@@ -295,7 +296,7 @@ async def task_result(app: Client, message: Message):
     resultdata: dict = json.loads(plaindata)
 
     info = resultdata.pop('result', {})
-    info['slave'] = resultdata.pop('slave', {})
+    info['slave'] = {'comment': slavecomment, 'id': int(slaveid)}
     origin_message_d = resultdata.get('origin-message', {})
     botmsg_d = resultdata.get('edit-message', {})
     try:

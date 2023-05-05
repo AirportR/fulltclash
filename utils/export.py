@@ -333,7 +333,8 @@ class ExportCommon(BaseExport):
         _filter_include = self.image['filter_include']
         _filter_exclude = self.image['filter_exclude']
         _export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())
-        footer = f"后端: {self.allinfo.pop('backend', 'Local')}  总共耗时: {_wtime}s  排序: {_sort}   " + \
+        _slavename = self.allinfo.pop('slave', {}).get('comment', 'Local')
+        footer = f"后端: {_slavename}  总共耗时: {_wtime}s  排序: {_sort}   " + \
                  f"过滤器: {_filter_include} <-> {_filter_exclude}"
         footer2 = f"版本:{__version__}  测试时间: {_export_time}  测试结果仅供参考,以实际情况为准"
 
