@@ -224,7 +224,7 @@ async def put_slave_task(app: Client, message: Message, proxyinfo: list, **kwarg
             'id': slaveid,
             'comment': slaveconfig.get(slaveid, {}).get('comment', '')
         },
-        'kwargs': kwargs
+        'sort': kwargs.get('sort', '订阅原序')
     }
 
     data1 = json.dumps(payload)
