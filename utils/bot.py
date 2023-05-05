@@ -51,8 +51,9 @@ def command_loader2(app: Client):
     master_bridge = [int(i.get('bridge')) for i in masterconfig.values()] if masterconfig else []
     print(master_bridge)
 
-    @app.on_message(filters.caption & filters.document & filters.user(master_bridge))
+    @app.on_message(filters.caption & filters.document & filters.user(master_bridge), 1)
     async def put_task(client: Client, message: Message):
+        logger.info("接收任务成功")
         if message.caption.startswith('/send'):
             await botmodule.recvtask(client, message)
 

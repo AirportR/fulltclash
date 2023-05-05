@@ -28,8 +28,10 @@ def select_core_slave(coreindex: str, edit_chat_id: int, edit_msg_id: int):
 
 @logger.catch()
 async def process_slave(app: Client, message: Message, putinfo: dict, **kwargs):
+    print(message)
     slaveconfig = config.getSlaveconfig()
     slaveid = putinfo.get('slave', {}).get('id', None)
+    master_id = putinfo.get('master', {}).get('id', 1)
     coreindex = putinfo.get('coreindex', None)
     proxyinfo = putinfo.pop('proxies', [])
     core = select_core_slave(coreindex, message.chat.id, message.id)
@@ -43,7 +45,7 @@ async def process_slave(app: Client, message: Message, putinfo: dict, **kwargs):
     cipherdata = cipher_chacha20(infostr.encode(), key)
     bytesio = io.BytesIO(cipherdata)
     bytesio.name = "result"
-    await app.send_document(message.chat.id, bytesio, caption=f'/relay {slaveid} result')
+    await app.send_document(message.chat.id, bytesio, caption=f'/relay {master_id} result')
 
 
 async def select_core(put_type: str, message: Message, **kwargs):
@@ -221,6 +223,7 @@ async def put_slave_task(app: Client, message: Message, proxyinfo: list, **kwarg
         info = await core.core(proxyinfo, **kwargs)
         return info
     userbot_id = config.config.get('userbot', {}).get('id', '')
+    bot_info = await app.get_me()
     if not userbot_id:
         backmsg = await message.reply("❌读取中继桥id错误")
         message_delete_queue.put(backmsg)
@@ -232,6 +235,7 @@ async def put_slave_task(app: Client, message: Message, proxyinfo: list, **kwarg
 
     payload = {
         'proxies': proxyinfo,
+        'master': {'id': bot_info.id},
         'coreindex': kwargs.get('coreindex', 0),
         'test-items': kwargs.get('test_items', None),
         'edit-message-id': raw_backmsg.id,
