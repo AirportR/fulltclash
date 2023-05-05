@@ -7,6 +7,7 @@ from pyrogram.errors import RPCError
 from pyrogram.types import BotCommand, CallbackQuery, Message
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from utils.cleaner import addon, config
+from utils.myqueue import bot_put
 from utils import message_delete_queue as mdq
 from glovar import __version__
 from botmodule.init_bot import latest_version_hash as v_hash
@@ -338,8 +339,9 @@ async def select_slave_page(_: Client, call: Union[CallbackQuery, Message], **kw
         await call.reply("请选择测试后端:", reply_markup=IKM, quote=True)
 
 
-async def select_slave(_: Client, call: CallbackQuery):
+async def select_slave(app: Client, call: CallbackQuery):
     botmsg = call.message
+    originmsg = call.message.reply_to_message
     slavename = call.data[6:]
     slaveconfig = config.getSlaveconfig()
     slaveid = 'local'
@@ -352,8 +354,17 @@ async def select_slave(_: Client, call: CallbackQuery):
         mdq.put(botmsg)
         return
     slaveid_cache[str(botmsg.chat.id) + ":" + str(botmsg.id)] = slaveid
-
-    await botmsg.edit_text("请选择排序方式：", reply_markup=IKM2)
+    if originmsg.text.startswith('/test'):
+        await botmsg.edit_text("请选择排序方式：", reply_markup=IKM2)
+    elif originmsg.text.startswith('/topo') or originmsg.text.startswith('/analyze'):
+        sort_str = get_sort_str(botmsg)
+        slaveid = get_slave_id(botmsg.chat.id, botmsg.id)
+        put_type = "analyzeurl" if originmsg.text.split(' ', 1)[0].split('@', 1)[0].endswith('url') else "analyze"
+        await botmsg.delete()
+        await bot_put(app, originmsg, put_type, None, sort=sort_str, coreindex=2, slaveid=slaveid)
+    else:
+        await botmsg.edit_text("🐛暂时未适配")
+        return
 
 
 async def select_sort(app: Client, call: CallbackQuery):

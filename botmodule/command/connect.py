@@ -15,6 +15,7 @@ from utils.clash import new_batch_start, check_port
 from utils.myqueue import bot_put_slave
 from glovar import app2
 
+
 async def startclash(app: Client, message: Message):
     tgargs = [i for i in str(message.text).split(" ") if i != '']
     if len(tgargs) < 2:

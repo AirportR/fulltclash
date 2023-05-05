@@ -65,8 +65,9 @@ def command_loader2(app: Client):
 def command_loader(app: Client):
     @app.on_message(filters.command(["testurl"]) & allfilter(1), group=1)
     @AccessCallback()
-    async def testurl(_, message):
-        await message.reply("请选择排序方式:", reply_markup=botmodule.IKM2, quote=True)
+    async def testurl(client: Client, message: Message):
+        await botmodule.select_slave_page(client, message, page=1)
+        # await message.reply("请选择排序方式:", reply_markup=botmodule.IKM2, quote=True)
 
     @app.on_message(filters.command(["test"]) & allfilter(1), group=1)
     @AccessCallback()
@@ -117,12 +118,14 @@ def command_loader(app: Client):
     @app.on_message(filters.command(["analyzeurl", "topourl"]) & allfilter(1), group=1)
     @AccessCallback()
     async def analyzeurl(client, message):
-        await bot_put(client, message, "analyzeurl")
+        await botmodule.select_slave_page(client, message, page=1)
+        # await bot_put(client, message, "analyzeurl")
 
     @app.on_message(filters.command(["analyze", "topo"]) & allfilter(1), group=1)
     @AccessCallback()
     async def analyze(client, message):
-        await bot_put(client, message, "analyze")
+        await botmodule.select_slave_page(client, message, page=1)
+        # await bot_put(client, message, "analyze")
 
     @app.on_message(filters.command(["reload"]) & allfilter(2), group=2)
     async def reload_testmember(_, message):
