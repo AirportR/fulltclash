@@ -15,6 +15,7 @@ from utils import message_delete_queue
 from utils.cleaner import ArgCleaner
 from utils.clash import new_batch_start, check_port
 from utils.myqueue import bot_put_slave
+from utils.safe import sha256_32bytes
 
 connect_list = {}  # 作为主端
 connect_list2 = {}  # 作为后端
@@ -387,6 +388,7 @@ async def task_result(app: Client, message: Message):
     key = slaveconfig.get(slaveid, {}).get('public-key', '')
     if not key:
         logger.warning(f"无法找到slave_id为{slaveid}的解密密码")
+    key = sha256_32bytes(key)
     plaindata = await plain_data(message, key)
     resultdata: dict = json.loads(plaindata)
 
