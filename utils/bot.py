@@ -241,9 +241,9 @@ def command_loader(app: Client):
         await botmodule.edit(client, message)
 
     @app.on_message(filters.caption & filters.document & filters.user(bridge))
-    async def _(client: Client, message: Message):
+    async def task_result(client: Client, message: Message):
         if message.caption.startswith('/result'):
-            pass
+            await botmodule.task_result(client, message)
 
     @app.on_message(filters.command('resp'), group=0)
     async def resp(client, message):
