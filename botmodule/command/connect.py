@@ -10,11 +10,11 @@ from pyrogram.errors import PeerIdInvalid, RPCError
 from pyrogram import Client
 from utils import safe
 from botmodule.init_bot import config, corenum
-from botmodule import restart_or_killme
+from botmodule import restart_or_killme, select_export
 from utils import message_delete_queue
 from utils.cleaner import ArgCleaner
 from utils.clash import new_batch_start, check_port
-from utils.myqueue import bot_put_master
+from utils.myqueue import bot_put_slave
 
 connect_list = {}  # 作为主端
 connect_list2 = {}  # 作为后端
@@ -356,5 +356,54 @@ async def recvtask(app: Client, message: Message):
     await message.reply("Get data success!\nplease wait.", quote=True)
     putinfo: dict = json.loads(plaindata)
     # coreindex = putinfo.get('coreindex', 0)
-    await bot_put_master(app, message, putinfo, master_id=master_id)
+    await bot_put_slave(app, message, putinfo, master_id=master_id)
     # await message.reply(f"/relay {master_id} edit status1")
+
+
+async def plain_data(message: Message, key: str):
+    key = safe.sha256_32bytes(key)
+    file: Union[str, io.BytesIO] = await message.download(in_memory=True)
+    data = file.getvalue()
+    print(data)
+    plaindata = ''
+    try:
+        plaindata = safe.plain_chahcha20(data, key).decode()
+        print("已接收并解密文件")
+        print(plaindata)
+    except Exception as e:
+        logger.warning(str(e))
+        logger.warning("解密数据失败！")
+    finally:
+        return plaindata
+
+
+async def task_result(app: Client, message: Message):
+    """
+    接收来自后端的最终结果
+    """
+    slaveconfig = config.getSlaveconfig()
+    tgargs = ArgCleaner().getall(message.caption)
+    slaveid = tgargs[1] if len(tgargs) > 1 else ''
+    key = slaveconfig.get(slaveid, {}).get('public-key', '')
+    if not key:
+        logger.warning(f"无法找到slave_id为{slaveid}的解密密码")
+    plaindata = await plain_data(message, key)
+    resultdata: dict = json.loads(plaindata)
+
+    info = resultdata.pop('result', {})
+    info['slave'] = resultdata.pop('slave', {})
+    origin_message_d = resultdata.get('origin-message', {})
+    botmsg_d = resultdata.get('edit-message', {})
+    try:
+        origin_msg = await app.get_messages(origin_message_d.get('chat-id', 0), origin_message_d.get('message-id', 0))
+        botmsg = await app.get_messages(botmsg_d.get('chat-id', 0), botmsg_d.get('message-id', 0))
+    except RPCError as e:
+        logger.error(str(e))
+        return
+    puttype = {
+        1: 'speed',
+        2: 'analyze',
+        3: 'test',
+        -1: 'unknown'
+    }
+    await select_export(origin_msg, botmsg, puttype[resultdata.get('coreindex', -1)], info)

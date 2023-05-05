@@ -36,8 +36,10 @@ async def bot_task_queue(client: Client, message, task_type: str, qu: asyncio.Qu
         qu.task_done()
 
 
-async def bot_task_queue_master(client: Client, message, task_type: str, qu: asyncio.Queue, **kwargs):
-    pass
+async def bot_task_queue_slave(app: Client, message: Message, putinfo: dict, qu: asyncio.Queue, **kwargs):
+    await botmodule.process_slave(app,message, putinfo, **kwargs)
+    await qu.get()
+    qu.task_done()
 
 
 async def bot_put(client: Client, message: Message, put_type: str, test_items: list = None, **kwargs):
@@ -69,7 +71,7 @@ async def bot_put(client: Client, message: Message, put_type: str, test_items: l
         logger.error(str(e))
 
 
-async def bot_put_master(client: Client, message: Message, putinfo: dict, **kwargs):
+async def bot_put_slave(client: Client, message: Message, putinfo: dict, **kwargs):
     global task_num
     task_num += 1
     try:
@@ -88,13 +90,11 @@ async def bot_put_master(client: Client, message: Message, putinfo: dict, **kwar
         await q.put(message)
         r1(test_items)
         r2(test_items)
-        await message.reply(f"/relay {master_id} edit {edit_chat_id} {edit_message_id} 测试开始啦~")
-        await asyncio.sleep(10)
+        await botmsg.edit_text(f"/relay {master_id} edit {edit_chat_id} {edit_message_id} 测试开始啦~")
+        await bot_task_queue_slave(client, message, putinfo, q, **kwargs)
         await botmsg.edit_text(f"/relay {master_id} edit {edit_chat_id} {edit_message_id} 测试结束啦。")
         # await bot_task_queue_master(client, message, put_type, q, **kwargs)
         task_num -= 1
-        await q.get()
-        q.task_done()
 
     except AttributeError as a:
         logger.error(str(a))

@@ -7,13 +7,43 @@ from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram import enums, Client
 from pyrogram.errors import RPCError
 from loguru import logger
-import botmodule.init_bot
-from botmodule.init_bot import config
+
+from botmodule.init_bot import config, admin
 from utils.backend import SpeedCore, ScriptCore, TopoCore
 from utils.safe import cipher_chacha20, sha256_32bytes
 from utils import message_delete_queue, check, cleaner, collector, export
 
-admin = botmodule.init_bot.admin
+
+def select_core_slave(coreindex: str, edit_chat_id: int, edit_msg_id: int):
+    if coreindex == 1:
+        return SpeedCore(edit_chat_id, edit_msg_id)
+    elif coreindex == 2:
+        return TopoCore(edit_chat_id, edit_msg_id)
+    elif coreindex == 3:
+        return ScriptCore(edit_chat_id, edit_msg_id)
+    else:
+        logger.warning("未知的测试核心类型")
+        return None
+
+
+@logger.catch()
+async def process_slave(app: Client, message: Message, putinfo: dict, **kwargs):
+    slaveconfig = config.getSlaveconfig()
+    slaveid = putinfo.get('slave', {}).get('id', None)
+    coreindex = putinfo.get('coreindex', None)
+    proxyinfo = putinfo.pop('proxies', [])
+    core = select_core_slave(coreindex, message.chat.id, message.id)
+    info = await core.core(proxyinfo, **kwargs)
+    print("后端结果：", info)
+
+    putinfo['result'] = info
+    infostr = json.dumps(putinfo)
+    key = slaveconfig.get(slaveid, {}).get('public-key', '')
+    key = sha256_32bytes(key)
+    cipherdata = cipher_chacha20(infostr.encode(), key)
+    bytesio = io.BytesIO(cipherdata)
+    bytesio.name = "result"
+    await app.send_document(message.chat.id, bytesio, caption=f'/relay {slaveid} result')
 
 
 async def select_core(put_type: str, message: Message, **kwargs):
@@ -205,7 +235,13 @@ async def put_slave_task(app: Client, message: Message, proxyinfo: list, **kwarg
         'coreindex': kwargs.get('coreindex', 0),
         'test-items': kwargs.get('test_items', None),
         'edit-message-id': raw_backmsg.id,
-        'edit-chat-id': raw_backmsg.chat.id
+        'edit-chat-id': raw_backmsg.chat.id,
+        'edit-message': {'message-id': raw_backmsg.id, 'chat-id': raw_backmsg.chat.id},
+        'origin-message': {'chat-id': message.chat.id, 'message-id': message.id},
+        'slave': {
+            'id': slaveid,
+            'comment': slaveconfig.get(slaveid, {}).get('comment', '')
+        }
     }
 
     data1 = json.dumps(payload)

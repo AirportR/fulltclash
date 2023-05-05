@@ -42,28 +42,6 @@ def user_loder(app: Client):
     async def _(client: Client, message: Message):
         await botmodule.simple_relay(client, message)
 
-    # @app.on_message(filters.user(whitelist))
-    # async def relay(client: Client, message: Message):
-    #     if str(message.text).startswith('/relay1'):
-    #         await botmodule.relay(client, message)
-    #         message.stop_propagation()
-    #
-    # @app.on_message(filters.user(whitelist) & filters.document & filters.caption, 2)
-    # async def relay2(client: Client, message: Message):
-    #     await botmodule.relay2(client, message)
-    #
-    # @app.on_message(filters.bot & filters.caption, 1)
-    # async def resp1(client: Client, message: Message):
-    #     if str(message.caption) == "/resp" and message.document:
-    #         await botmodule.response(client, message)
-    #         message.stop_propagation()
-    #
-    # @app.on_message(filters.user(slaveID) & filters.caption, 2)
-    # async def resp2(client: Client, message: Message):
-    #     if str(message.caption).startswith("/resp2") and message.document:
-    #         await botmodule.response2(client, message)
-    #         message.stop_propagation()
-
 
 def command_loader2(app: Client):
     """
@@ -261,6 +239,11 @@ def command_loader(app: Client):
     async def _(client: Client, message: Message):
         await botmodule.edit(client, message)
 
+    @app.on_message(filters.caption & filters.document & filters.user(bridge))
+    async def _(client: Client, message: Message):
+        if message.caption.startswith('/result'):
+            pass
+
     @app.on_message(filters.command('resp'), group=0)
     async def resp(client, message):
         await botmodule.response(client, message)
@@ -315,31 +298,3 @@ def callback_loader(app: Client):
             await asyncio.sleep(2)
             await message.delete()
             await bot_put(client, origin_message, test_type, test_items, sort=sort_str, coreindex=3, slaveid=slaveid)
-
-# async def bot_put(client: Client, message: Message, put_type: str, test_items: list = None, **kwargs):
-#     """
-#     推送任务，bot推送反馈
-#     :param test_items:
-#     :param client:
-#     :param message:
-#     :param put_type:
-#     :return:
-#     """
-#     global task_num
-#     task_num += 1
-#     try:
-#         if test_items is None:
-#             test_items = []
-#         logger.info("任务测试项为: " + str(test_items))
-#         mes = await message.reply("排队中,前方队列任务数量为: " + str(task_num - 1))
-#         await q.put(message)
-#         r1(test_items)
-#         r2(test_items)
-#         await mes.delete()
-#         await bot_task_queue(client, message, put_type, q, **kwargs)
-#         task_num -= 1
-#
-#     except AttributeError as a:
-#         logger.error(str(a))
-#     except Exception as e:
-#         logger.error(str(e))

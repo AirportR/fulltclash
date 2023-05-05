@@ -304,7 +304,7 @@ class SpeedCore(Basecore):
         message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1, self.IKM))
         for name in nodelist:
             proxys.switchProxy(name, 0)
-            #delay = await proxys.http_delay_tls(index=0)
+            # delay = await proxys.http_delay_tls(index=0)
             delay = await proxys.http_delay(index=0)
             udptype, _, _, _, _ = self.nat_type_test('127.0.0.1', proxyport=port)
             if udptype is None:
@@ -396,7 +396,7 @@ class ScriptCore(Basecore):
         """
         info = []
         delay = await proxys.http_delay(index=index)
-        #delay = await proxys.http_delay_tls(index=index, timeout=5)
+        # delay = await proxys.http_delay_tls(index=index, timeout=5)
         if delay == 0:
             logger.warning("超时节点，跳过测试")
             for t in test_items:
@@ -596,79 +596,79 @@ class TopoCore(Basecore):
                 org = []
                 asns = []
                 for ip in hosts:
-                   c, o, a = geoip.geo_info(ip)
-                   code.append(c)
-                   org.append(o)
-                   asns.append(a)
-                   info.update({'地区': code, 'AS编号': asns, '组织': org})
-                   numcount = []
-                   for v in inboundinfo.values():
-                       numcount.append(int(v))
-                   info.update({'出口数量': numcount})
-                   new_hosts = []
-                   if self.ip_choose == "ip":
-                    for host in hosts:
-                        if len(host) < 16:  # v4地址最大长度为15
-                            try:
-                                old_ip = host.split('.')[:2]
-                                new_ip = old_ip[0] + "." + old_ip[1] + ".*.*"
-                            except IndexError:
-                                new_ip = host
-                            new_hosts.append(new_ip)
-                        elif len(host) > 15:
-                            try:
-                                old_ip = host.split(':')[2:4]
-                                new_ip = "*:*:" + old_ip[0] + ":" + old_ip[1] + ":*:*"
-                            except IndexError:
-                                new_ip = host
-                            new_hosts.append(new_ip)
-                        else:
-                            new_hosts.append(host)
-                    info.update({'入口ip段': new_hosts})
-                   elif self.ip_choose == "cluster":
-                       info.update({'簇': ipclus})
+                    c, o, a = geoip.geo_info(ip)
+                    code.append(c)
+                    org.append(o)
+                    asns.append(a)
+                    info.update({'地区': code, 'AS编号': asns, '组织': org})
+                    numcount = []
+                    for v in inboundinfo.values():
+                        numcount.append(int(v))
+                    info.update({'出口数量': numcount})
+                    new_hosts = []
+                    if self.ip_choose == "ip":
+                        for host in hosts:
+                            if len(host) < 16:  # v4地址最大长度为15
+                                try:
+                                    old_ip = host.split('.')[:2]
+                                    new_ip = old_ip[0] + "." + old_ip[1] + ".*.*"
+                                except IndexError:
+                                    new_ip = host
+                                new_hosts.append(new_ip)
+                            elif len(host) > 15:
+                                try:
+                                    old_ip = host.split(':')[2:4]
+                                    new_ip = "*:*:" + old_ip[0] + ":" + old_ip[1] + ":*:*"
+                                except IndexError:
+                                    new_ip = host
+                                new_hosts.append(new_ip)
+                            else:
+                                new_hosts.append(host)
+                        info.update({'入口ip段': new_hosts})
+                    elif self.ip_choose == "cluster":
+                        info.update({'簇': ipclus})
                 return info, hosts, cl
             else:
-              co.create_tasks(session=session, hosts=hosts, proxy=proxies)
-              res = await co.start()
-              await session.close()
-              if res:
-                  country_code = []
-                  asn = []
-                  org = []
-                  for j in res:
-                      ipcl = cleaner.IPCleaner(j)
-                      country_code.append(ipcl.get_country_code())
-                      asn.append(str(ipcl.get_asn()))
-                      org.append(ipcl.get_org())
-                  info.update({'地区': country_code, 'AS编号': asn, '组织': org})
-                  numcount = []
-                  for v in inboundinfo.values():
-                      numcount.append(int(v))
-                  info.update({'出口数量': numcount})
-                  new_hosts = []
-                  if self.ip_choose == "ip":
-                      for host in hosts:
-                          if len(host) < 16:  # v4地址最大长度为15
-                              try:
-                                  old_ip = host.split('.')[:2]
-                                  new_ip = old_ip[0] + "." + old_ip[1] + ".*.*"
-                              except IndexError:
-                                  new_ip = host
-                              new_hosts.append(new_ip)
-                          elif len(host) > 15:
-                              try:
-                                  old_ip = host.split(':')[2:4]
-                                  new_ip = "*:*:" + old_ip[0] + ":" + old_ip[1] + ":*:*"
-                              except IndexError:
-                                  new_ip = host
-                              new_hosts.append(new_ip)
-                          else:
-                              new_hosts.append(host)
-                      info.update({'入口ip段': new_hosts})
-                  elif self.ip_choose == "cluster":
-                      info.update({'簇': ipclus})
-              return info, hosts, cl
+                co.create_tasks(session=session, hosts=hosts, proxy=proxies)
+                res = await co.start()
+                await session.close()
+                if res:
+                    country_code = []
+                    asn = []
+                    org = []
+                    for j in res:
+                        ipcl = cleaner.IPCleaner(j)
+                        country_code.append(ipcl.get_country_code())
+                        asn.append(str(ipcl.get_asn()))
+                        org.append(ipcl.get_org())
+                    info.update({'地区': country_code, 'AS编号': asn, '组织': org})
+                    numcount = []
+                    for v in inboundinfo.values():
+                        numcount.append(int(v))
+                    info.update({'出口数量': numcount})
+                    new_hosts = []
+                    if self.ip_choose == "ip":
+                        for host in hosts:
+                            if len(host) < 16:  # v4地址最大长度为15
+                                try:
+                                    old_ip = host.split('.')[:2]
+                                    new_ip = old_ip[0] + "." + old_ip[1] + ".*.*"
+                                except IndexError:
+                                    new_ip = host
+                                new_hosts.append(new_ip)
+                            elif len(host) > 15:
+                                try:
+                                    old_ip = host.split(':')[2:4]
+                                    new_ip = "*:*:" + old_ip[0] + ":" + old_ip[1] + ":*:*"
+                                except IndexError:
+                                    new_ip = host
+                                new_hosts.append(new_ip)
+                            else:
+                                new_hosts.append(host)
+                        info.update({'入口ip段': new_hosts})
+                    elif self.ip_choose == "cluster":
+                        info.update({'簇': ipclus})
+                return info, hosts, cl
 
     async def batch_topo(self, nodename: list, pool: dict):
         resdata = []
@@ -794,19 +794,19 @@ class TopoCore(Basecore):
                     ip = ipcl.get_ip()
                     ipaddr.append(ip)
                     if data == False:
-                       country_code.append(ipcl.get_country_code())
-                       asn.append(str(ipcl.get_asn()))
-                       org.append(ipcl.get_org())
+                        country_code.append(ipcl.get_country_code())
+                        asn.append(str(ipcl.get_asn()))
+                        org.append(ipcl.get_org())
                     else:
-                      pass
+                        pass
                 if data:
-                   for ip in ipaddr:
-                     d, g, h = geoip.geo_info(ip)
-                     country_code.append(d)
-                     asn.append(h)
-                     org.append(g)
+                    for ip in ipaddr:
+                        d, g, h = geoip.geo_info(ip)
+                        country_code.append(d)
+                        asn.append(h)
+                        org.append(g)
                 else:
-                   pass            
+                    pass
                 for dictionary in ras:
                     if 'ips' in dictionary:
                         ipstackes.extend(dictionary['ips'])
