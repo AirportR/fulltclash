@@ -368,7 +368,7 @@ async def plain_data(message: Message, key: str):
     print(data)
     plaindata = ''
     try:
-        plaindata = safe.plain_chahcha20(data, key).decode()
+        plaindata = safe.plain_chahcha20(data, key)
         print("已接收并解密文件")
         print(plaindata)
     except Exception as e:
@@ -388,7 +388,7 @@ async def task_result(app: Client, message: Message):
     key = slaveconfig.get(slaveid, {}).get('public-key', '')
     if not key:
         logger.warning(f"无法找到slave_id为{slaveid}的解密密码")
-    key = sha256_32bytes(key)
+    print(key)
     plaindata = await plain_data(message, key)
     resultdata: dict = json.loads(plaindata)
 

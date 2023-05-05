@@ -26,28 +26,6 @@ def select_core_slave(coreindex: str, edit_chat_id: int, edit_msg_id: int):
         return None
 
 
-@logger.catch()
-async def process_slave(app: Client, message: Message, putinfo: dict, **kwargs):
-    print(message)
-    slaveconfig = config.getSlaveconfig()
-    slaveid = putinfo.get('slave', {}).get('id', None)
-    master_id = putinfo.get('master', {}).get('id', 1)
-    coreindex = putinfo.get('coreindex', None)
-    proxyinfo = putinfo.pop('proxies', [])
-    core = select_core_slave(coreindex, message.chat.id, message.id)
-    info = await core.core(proxyinfo, **kwargs)
-    print("后端结果：", info)
-
-    putinfo['result'] = info
-    infostr = json.dumps(putinfo)
-    key = slaveconfig.get(slaveid, {}).get('public-key', '')
-    key = sha256_32bytes(key)
-    cipherdata = cipher_chacha20(infostr.encode(), key)
-    bytesio = io.BytesIO(cipherdata)
-    bytesio.name = "result"
-    await app.send_document(message.chat.id, bytesio, caption=f'/relay {master_id} result')
-
-
 async def select_core(put_type: str, message: Message, **kwargs):
     """
     1 为速度核心， 2为拓扑核心， 3为解锁脚本测试核心
@@ -255,3 +233,26 @@ async def put_slave_task(app: Client, message: Message, proxyinfo: list, **kwarg
     bytesio.name = "subinfo"
     await app.send_document(userbot_id, bytesio, caption=f'/relay {slaveid} send')
     return None
+
+
+@logger.catch()
+async def process_slave(app: Client, message: Message, putinfo: dict, **kwargs):
+    print(message)
+    slaveconfig = config.getSlaveconfig()
+    slaveid = putinfo.get('slave', {}).get('id', None)
+    master_id = putinfo.get('master', {}).get('id', 1)
+    coreindex = putinfo.get('coreindex', None)
+    proxyinfo = putinfo.pop('proxies', [])
+    core = select_core_slave(coreindex, message.chat.id, message.id)
+    info = await core.core(proxyinfo, **kwargs)
+    print("后端结果：", info)
+
+    putinfo['result'] = info
+    infostr = json.dumps(putinfo)
+    key = slaveconfig.get(slaveid, {}).get('public-key', '')
+    logger.info(f"后端加密key: {key}")
+    key = sha256_32bytes(key)
+    cipherdata = cipher_chacha20(infostr.encode(), key)
+    bytesio = io.BytesIO(cipherdata)
+    bytesio.name = "result"
+    await app.send_document(message.chat.id, bytesio, caption=f'/relay {master_id} result')
