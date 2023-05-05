@@ -13,7 +13,7 @@ from utils import message_delete_queue, safe
 from utils.cleaner import ArgCleaner
 from utils.clash import new_batch_start, check_port
 from utils.myqueue import bot_put_slave
-
+from glovar import app2
 
 async def startclash(app: Client, message: Message):
     tgargs = [i for i in str(message.text).split(" ") if i != '']
@@ -108,7 +108,9 @@ async def conn_simple(app: Client, message: Message):
         conn_pwd = _args[3] if len(_args) > 3 else ''
         # 检查后端id
         try:
-            targetbot = await app.get_users(bot_id)
+            if app2 is None:
+                return
+            targetbot = await app2.get_users(bot_id)
         except PeerIdInvalid:
             backmsg3 = await b1.edit_text("❌错误的后端bot_id")
             message_delete_queue.put_nowait((backmsg3.chat.id, backmsg3.id, 10))
@@ -194,6 +196,7 @@ async def simple_conn_resp(_: Client, message: Message):
     config.yaml['masterconfig'] = masterconfig
     config.reload()
     logger.info("master连接配置已保存")
+    await message.reply("已收到master请求，配置已保存，重启生效", quote=True)
 
 
 # @logger.catch()
