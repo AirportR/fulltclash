@@ -19,7 +19,7 @@ from utils.cleaner import reload_config as r2
 config = init_bot.config
 admin = init_bot.admin  # 管理员
 task_num = 0  # 任务数
-bridge = config.getBridge()
+bridge = config.config.get('userbot', {}).get('id', [])
 
 
 def loader(app: Client):
