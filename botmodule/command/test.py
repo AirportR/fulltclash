@@ -239,19 +239,18 @@ async def put_slave_task(app: Client, message: Message, proxyinfo: list, **kwarg
 @logger.catch()
 async def process_slave(app: Client, message: Message, putinfo: dict, **kwargs):
     print(message)
-    slaveconfig = config.getSlaveconfig()
-    slaveid = putinfo.get('slave', {}).get('id', None)
+    masterconfig = config.getMasterconfig()
     master_id = putinfo.get('master', {}).get('id', 1)
     coreindex = putinfo.get('coreindex', None)
     proxyinfo = putinfo.pop('proxies', [])
-    kwargs.update(putinfo.get('kwargs', {}))
+    kwargs.update(putinfo)
     core = select_core_slave(coreindex, message.chat.id, message.id)
     info = await core.core(proxyinfo, **kwargs)
     print("后端结果：", info)
 
     putinfo['result'] = info
     infostr = json.dumps(putinfo)
-    key = slaveconfig.get(slaveid, {}).get('public-key', '')
+    key = masterconfig.get(str(master_id), {}).get('public-key', '')
     logger.info(f"后端加密key: {key}")
     key = sha256_32bytes(key)
     cipherdata = cipher_chacha20(infostr.encode(), key)

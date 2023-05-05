@@ -538,7 +538,8 @@ class ExportSpeed2(ExportCommon):
         _filter_include = self.image['filter_include']
         _filter_exclude = self.image['filter_exclude']
         _export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())
-        footer = f"后端: {self.allinfo.pop('backend', 'Local')}  耗时: {_wtime}s  消耗流量: {self.image['traffic']}MB   " \
+        _slavename = self.allinfo.pop('slave', {}).get('comment', 'Local')
+        footer = f"后端: {_slavename}  耗时: {_wtime}s  消耗流量: {self.image['traffic']}MB   " \
                  f"线程: {self.image['thread']}  过滤器: {_filter_include} <-> {_filter_exclude}"
         footer2 = f"版本:{__version__}  测试时间: {_export_time}  测试结果仅供参考,以实际情况为准"
         idraw.text((self.get_mid(0, _width, _title), 3), _title, fill=(0, 0, 0))  # 标题
