@@ -37,7 +37,7 @@ async def bot_task_queue(client: Client, message, task_type: str, qu: asyncio.Qu
 
 
 async def bot_task_queue_slave(app: Client, message: Message, putinfo: dict, qu: asyncio.Queue, **kwargs):
-    await botmodule.process_slave(app,message, putinfo, **kwargs)
+    await botmodule.process_slave(app, message, putinfo, **kwargs)
     await qu.get()
     qu.task_done()
 

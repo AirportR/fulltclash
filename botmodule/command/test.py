@@ -223,7 +223,8 @@ async def put_slave_task(app: Client, message: Message, proxyinfo: list, **kwarg
         'slave': {
             'id': slaveid,
             'comment': slaveconfig.get(slaveid, {}).get('comment', '')
-        }
+        },
+        'kwargs': kwargs
     }
 
     data1 = json.dumps(payload)
@@ -243,6 +244,7 @@ async def process_slave(app: Client, message: Message, putinfo: dict, **kwargs):
     master_id = putinfo.get('master', {}).get('id', 1)
     coreindex = putinfo.get('coreindex', None)
     proxyinfo = putinfo.pop('proxies', [])
+    kwargs.update(putinfo.get('kwargs', {}))
     core = select_core_slave(coreindex, message.chat.id, message.id)
     info = await core.core(proxyinfo, **kwargs)
     print("后端结果：", info)

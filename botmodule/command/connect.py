@@ -341,31 +341,17 @@ async def recvtask(app: Client, message: Message):
     key = masterconfig.get(master_id, {}).get('public-key', '')
     if not key:
         logger.warning(f"无法找到master_id为{master_id}的解密密码")
-    key = safe.sha256_32bytes(key)
-    file: Union[str, io.BytesIO] = await message.download(in_memory=True)
-    data = file.getvalue()
-    print(data)
-    plaindata = ''
-    try:
-        plaindata = safe.plain_chahcha20(data, key).decode()
-        print("已接收并解密文件")
-        print(plaindata)
-    except Exception as e:
-        logger.warning(str(e))
-        logger.warning("解密数据失败！")
-
+    plaindata = await plain_data(message, key)
     await message.reply("Get data success!\nplease wait.", quote=True)
     putinfo: dict = json.loads(plaindata)
     # coreindex = putinfo.get('coreindex', 0)
     await bot_put_slave(app, message, putinfo, master_id=master_id)
-    # await message.reply(f"/relay {master_id} edit status1")
 
 
 async def plain_data(message: Message, key: str):
     key = safe.sha256_32bytes(key)
     file: Union[str, io.BytesIO] = await message.download(in_memory=True)
     data = file.getvalue()
-    print(data)
     plaindata = ''
     try:
         plaindata = safe.plain_chahcha20(data, key)
@@ -388,7 +374,7 @@ async def task_result(app: Client, message: Message):
     key = slaveconfig.get(slaveid, {}).get('public-key', '')
     if not key:
         logger.warning(f"无法找到slave_id为{slaveid}的解密密码")
-    print(key)
+    logger.info(f"当前后端id:{slaveid}，解密密码：{key}")
     plaindata = await plain_data(message, key)
     resultdata: dict = json.loads(plaindata)
 
