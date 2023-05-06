@@ -1,10 +1,11 @@
 import asyncio
 import hashlib
 import re
+import contextlib
 
 import pyrogram.types
 from pyrogram.types import Message
-from pyrogram.errors import RPCError
+from pyrogram.errors import RPCError, MessageDeleteForbidden
 from loguru import logger
 from pyrogram.filters import private_filter
 from botmodule.init_bot import config
@@ -376,14 +377,13 @@ async def check_photo(message: pyrogram.types.Message, back_message, name, wtime
         if name == '' or name is None:
             m2 = await back_message.edit_text("⚠️生成图片失败,可能原因: 节点过多/网络不稳定")
             message_delete_queue.put_nowait((m2.chat.id, m2.id, 10))
-            # await asyncio.sleep(10)
-            # await m2.delete()
         else:
             await message.reply_document(r"./results/{}.png".format(name),
                                          caption="⏱️总共耗时: {}s".format(wtime))
             await back_message.delete()
             if not await private_filter(name, name, message):
-                await message.delete()
+                with contextlib.suppress(MessageDeleteForbidden):
+                    await message.delete()
     except RPCError as r:
         logger.error(r)
 

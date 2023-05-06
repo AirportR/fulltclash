@@ -10,7 +10,7 @@ import time
 from utils.cleaner import ConfigManager
 import utils.emoji_custom as emoji_source
 
-__version__ = '3.5.7'
+__version__ = '3.5.8'
 
 
 # 这是将测试的结果输出为图片的模块。
@@ -333,7 +333,8 @@ class ExportCommon(BaseExport):
         _filter_include = self.image['filter_include']
         _filter_exclude = self.image['filter_exclude']
         _export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())
-        footer = f"后端: {self.allinfo.pop('backend', 'Local')}  总共耗时: {_wtime}s  排序: {_sort}   " + \
+        _slavename = self.allinfo.pop('slave', {}).get('comment', 'Local')
+        footer = f"后端: {_slavename}  总共耗时: {_wtime}s  排序: {_sort}   " + \
                  f"过滤器: {_filter_include} <-> {_filter_exclude}"
         footer2 = f"版本:{__version__}  测试时间: {_export_time}  测试结果仅供参考,以实际情况为准"
 
@@ -538,7 +539,8 @@ class ExportSpeed2(ExportCommon):
         _filter_include = self.image['filter_include']
         _filter_exclude = self.image['filter_exclude']
         _export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())
-        footer = f"后端: {self.allinfo.pop('backend', 'Local')}  耗时: {_wtime}s  消耗流量: {self.image['traffic']}MB   " \
+        _slavename = self.allinfo.pop('slave', {}).get('comment', 'Local')
+        footer = f"后端: {_slavename}  耗时: {_wtime}s  消耗流量: {self.image['traffic']}MB   " \
                  f"线程: {self.image['thread']}  过滤器: {_filter_include} <-> {_filter_exclude}"
         footer2 = f"版本:{__version__}  测试时间: {_export_time}  测试结果仅供参考,以实际情况为准"
         idraw.text((self.get_mid(0, _width, _title), 3), _title, fill=(0, 0, 0))  # 标题
@@ -1116,6 +1118,7 @@ class ExportTopo(ExportResult):
     def exportTopoOutbound(self, nodename: list = None, info: dict = None, img2_width: int = None):
         if nodename or info:
             self.__init__(nodename, info)
+        slavecomment = self.info.pop('slave', {}).get('comment', '未知')
         fnt = self.__font
         image_width, info_list_length = self.get_width(compare=img2_width)
         image_height = self.get_height()
@@ -1138,8 +1141,8 @@ class ExportTopo(ExportResult):
         max_entrance = max(entrances)
         cuk = len(fail)
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
-        list1 = ["出口分析", "版本:{} 概要={}->{} 总共耗时: {}s".format(__version__, max_entrance, cuk, self.wtime),
-                 "测试时间: {}  测试结果仅供参考,以实际情况为准。簇代表节点复用。".format(export_time)]
+        list1 = ["出口分析", "后端:{} 概要={}->{} 总共耗时: {}s".format(slavecomment, max_entrance, cuk, self.wtime),
+                 f"版本:{__version__}  测试时间: {export_time}  测试结果仅供参考,以实际情况为准。簇代表节点复用。"]
         export_time = export_time.replace(':', '-')
         title = list1[0]
         idraw.text((self.get_mid(0, image_width, title), 1), title, font=fnt, fill=(0, 0, 0))  # 标题
@@ -1447,6 +1450,7 @@ class ExportSpeed(ExportResult):
         self.front_size = 38
         self.__font = ImageFont.truetype(self.config.getFont(), self.front_size)
         self.speedblock_width = 20
+        self.slave = info.pop('slave', {})
 
     def key_value(self):
         """
@@ -1569,10 +1573,11 @@ class ExportSpeed(ExportResult):
         idraw = ImageDraw.Draw(img)
         # 绘制标题栏与结尾栏
         export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
+        slavecomment = self.slave.get('comment', '未知')
         list1 = [f"{self.title} - 速度测试",
-                 f"版本:{__version__}    总共耗时: {self.wtime}s   消耗流量: {self.traffic}MB   线程: {self.thread}  " +
+                 f"后端: {slavecomment}   总共耗时: {self.wtime}s   消耗流量: {self.traffic}MB   线程: {self.thread}  " +
                  f"过滤器: {self.filter_include} <-> {self.filter_exclude}",
-                 f"测试时间: {export_time}  测试结果仅供参考,以实际情况为准"]
+                 f"版本:{__version__}  测试时间: {export_time}  测试结果仅供参考,以实际情况为准"]
         export_time = export_time.replace(':', '-')
         title = list1[0]
         idraw.text((self.get_mid(0, image_width, title), 5), title, font=fnt, fill=(0, 0, 0))  # 标题

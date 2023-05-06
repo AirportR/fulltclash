@@ -1,20 +1,20 @@
-import asyncio.exceptions
+import asyncio
+import io
+import json
+from typing import Union
 
-import async_timeout
 from loguru import logger
 from pyrogram.types import Message
-from pyrogram.errors import PeerIdInvalid
+from pyrogram.errors import PeerIdInvalid, RPCError
 from pyrogram import Client
-from utils import safe
+
 from botmodule.init_bot import config, corenum
-from botmodule import restart_or_killme
-from utils.cron.utils import message_delete_queue
+from botmodule import restart_or_killme, select_export
+from utils import message_delete_queue, safe
 from utils.cleaner import ArgCleaner
 from utils.clash import new_batch_start, check_port
-
-connect_list = {}  # 作为主端
-connect_list2 = {}  # 作为后端
-connect_queue = asyncio.Queue(1)
+from utils.myqueue import bot_put_slave
+from glovar import app2
 
 
 async def startclash(app: Client, message: Message):
@@ -51,9 +51,39 @@ async def startclash(app: Client, message: Message):
         return
 
 
-async def conn(app: Client, message: Message):
+async def simple_relay(app: Client, message: Message):
+    text = message.caption if message.caption else message.text
+    if not text.startswith("/relay"):
+        return
+    tgargs = ArgCleaner().getall(str(text))
+    origin_id = message.from_user.id
+    if len(tgargs) < 3:
+        logger.info("缺少必要参数")
+        backmsg = await message.reply("缺少必要参数")
+        message_delete_queue.put(backmsg)
+        return
+    target_id = tgargs[1]
+    command = tgargs[2].strip('/')
+    try:
+        newtext = f'/{command} {origin_id} '
+        if len(tgargs) > 3:
+            newtext += ' '.join(tgargs[3:])
+        if message.document:
+            await app.send_document(int(target_id), message.document.file_id, caption=newtext)
+        else:
+            backmsg = await app.send_message(int(target_id), newtext)
+            if command == 'edit':
+                await asyncio.sleep(2)
+                await backmsg.delete(revoke=False)
+    except RPCError as r:
+        logger.error(str(r))
+        return
+
+
+@logger.catch()
+async def conn_simple(app: Client, message: Message):
     """
-    主端主动对后端连接，交换公钥
+    简单的连接
     """
     print("群聊id:", message.chat.id)
     try:
@@ -76,157 +106,123 @@ async def conn(app: Client, message: Message):
         # 检查连接参数
         _args = ArgCleaner(message.text).getall()
         if len(_args) < 3:
-            backmsg2 = await b1.edit_text("❌使用方式: /connect <机器人ID> <备注>")
+            backmsg2 = await b1.edit_text("❌使用方式: /connect <机器人ID> <备注> <连接密码>")
             message_delete_queue.put_nowait((backmsg2.chat.id, backmsg2.id, 10))
             return
         bot_id = _args[1]
+        conn_pwd = _args[3] if len(_args) > 3 else ''
         # 检查后端id
         try:
-            targetbot = await app.get_users(bot_id)
+            if app2 is None:
+                return
+            targetbot = await app2.get_users(bot_id)
         except PeerIdInvalid:
             backmsg3 = await b1.edit_text("❌错误的后端bot_id")
             message_delete_queue.put_nowait((backmsg3.chat.id, backmsg3.id, 10))
             return
         bot_username = targetbot.username
-        print("后端BOT名称：", targetbot.username)
-        # 将此id放入待连接队列
-        connect_list[str(_args[1])] = _args[1]
-        await app.send_message(bridge, f"/relay1 {targetbot.id}")
-        try:
-            with async_timeout.timeout(10):
-                msg2: Message = await connect_queue.get()
-                # print("msg2: ", msg2)
-        except asyncio.exceptions.TimeoutError:
-            logger.warning("连接超时")
-            backmsg = await b1.edit_text("连接超时")
-            message_delete_queue.put_nowait((backmsg.chat.id, backmsg.id, 20))
-            return
+        print("后端BOT名称：", bot_username)
+        me = await app.get_me()
+        print(f"主端id: {me.id}")
+        await app.send_message(bridge, f"/relay {targetbot.id} sconnect {conn_pwd} {bridge}")
+        config.add_slave(str(targetbot.id), conn_pwd, bot_username, comment=_args[2])
+        config.reload()
+        logger.info(f"已添加id为 {targetbot.id} @{bot_username}的bot为测试后端")
+        backmsg4 = await b1.edit_text(f"已添加id为 {targetbot.id} @{bot_username}的bot为测试后端")
+        message_delete_queue.put(backmsg4)
 
-        # 走到这说明接收到了响应
-        print(connect_list)
-        # 尝试匹配待连接队列有无该id
-        msg1 = connect_list.pop(str(msg2.from_user.id), None)
-        if msg1 is None:
-            logger.info(f"待连接列表未找到id为: {str(msg2.from_user.id)}的连接请求。")
-            return
-        # 防止连接造假
-        if str(msg2.from_user.id) != _args[1]:
-            logger.warning("连接id不匹配")
-            return
-
-        # 检查是否发送了公钥文件
-        if msg2.document is None:
-            logger.info(f"消息ID: {msg2.id}, 无文件。")
-            return
-        await msg2.download(file_name=f'./key/slave-{str(msg2.from_user.id)}.pem')
-        config.add_slave(str(msg2.from_user.id), f'./key/slave-{str(msg2.from_user.id)}.pem', bot_username,
-                         comment=_args[2])
-        config.save()
-        logger.info(f"已将{msg2.from_user.username}的公钥保存，配置已更新")
-        await b1.edit_text(f"已将 @{msg2.from_user.username} 的公钥保存，配置已更新")
-        # 发送master公钥
-        await app.send_document(bridge, "./key/fulltclash-public.pem", caption=f'/relay2 {bot_id}')
-
-    except Exception as e:
-        print(e)
-        return
+    except RPCError as e:
+        logger.error(str(e))
 
 
-async def response(_: Client, message: Message):
+@logger.catch()
+async def simple_conn_resp(_: Client, message: Message):
     """
-    userbot专属
+    后端bot专属
     """
-    logger.info("接收到后端bot消息")
-    if message.document is None:
-        return
-    await connect_queue.put(message)
-
-
-async def response2(_: Client, message: Message):
-    """
-    userbot专属
-    转发测试进度和结果
-    """
-    logger.info("接收来自后端的resp2请求")
-    master_id = int(message.caption.split(' ')[-1])
-    await message.forward(master_id)
-
-
-async def relay(app: Client, message: Message, command: str = '/sconnect'):
-    """
-    userbot专属
-    中转初次连接
-    """
-    logger.info("收到relay1，来自：" + str(message.chat.id))
+    logger.info("有新的master请求")
     tgargs = ArgCleaner().getall(message.text)
-    if len(tgargs) < 2:
+    if len(tgargs) < 3:
         return
-    bot_id = tgargs[1]
-    await app.send_message(bot_id, f"{command} {message.from_user.id}")
-
-
-async def relay2(app: Client, message: Message, command: str = '/sconnect2'):
-    """
-    userbot专属
-    中转主端文件
-    """
-    logger.info("收到relay2，来自：" + str(message.chat.id))
-    tgargs = ArgCleaner().getall(str(message.caption))
-    if len(tgargs) < 2:
-        logger.warning("缺少slave id")
-        return
-    bot_id = tgargs[1]
-    if tgargs[0].startswith("/relay2") and message.document:
-        await app.send_document(bot_id, message.document.file_id, caption=f'{command} {str(message.from_user.id)}')
-
-
-@logger.catch()
-async def conn_resp(_: Client, message: Message):
-    """
-    后端bot专属
-    发送公钥
-    """
-    logger.info(f"接收连接请求: {message.chat.id}:{message.id}")
-    ID = message.from_user.id
-    _config = config
-    whitelist = _config.config.get('whitelist', [])
-    if whitelist:
-        if ID not in whitelist:
-            logger.error("非白名单:" + str(ID) + f"在{message.chat.id}中")
-            return
-    tgargs = ArgCleaner().getall(str(message.text))
-    # 发送公钥
-    await message.reply_document('./key/fulltclash-public.pem', quote=True, caption='/resp')
-    connect_list2[tgargs[-1]] = str(message.chat.id)
-
-
-@logger.catch()
-async def conn_resp2(_: Client, message: Message):
-    """
-    后端bot专属
-    保存主端公钥
-    """
-    if message.caption is None:
-        return
-    master_id = str(message.caption).split(' ')[-1]
-    chat_id = connect_list2.pop(master_id, None)
-    if chat_id is None:
-        return
-    file = message.document
-    if file is None:
-        print("未找到文件")
-        return
-    name = await message.download(fr'./key/master-{master_id}.pem')
+    master_id = tgargs[1]
+    conn_pwd = tgargs[2]
+    bridge = tgargs[3] if len(tgargs) > 3 else ''
     masterconfig = config.getMasterconfig()
-    masterconfig[master_id] = {'public-key': fr'./key/master-{master_id}.pem', 'bridge': chat_id}
+    masterconfig[master_id] = {'public-key': conn_pwd, 'bridge': bridge}
     config.yaml['masterconfig'] = masterconfig
     config.reload()
-    logger.info(f"master公钥 {name} 配置已保存")
+    logger.info("master连接配置已保存")
+    await message.reply("已收到master请求，配置已保存，重启生效", quote=True)
 
 
-async def recvtask(_: Client, message: Message):
+async def recvtask(app: Client, message: Message):
     masterconfig = config.getMasterconfig()
-    key_path = masterconfig.get('public-key', '.')
-    file = await message.download()
-    print("已接收文件")
-    print(type(file))
+    tgargs = ArgCleaner().getall(message.caption)
+    if tgargs[0] != '/send':
+        logger.info("未知指令")
+        return
+    master_id = tgargs[1] if len(tgargs) > 1 else ''
+    if not master_id:
+        logger.info("无master_id")
+        return
+    key = masterconfig.get(master_id, {}).get('public-key', '')
+    if not key:
+        logger.warning(f"无法找到master_id为{master_id}的解密密码")
+    plaindata = await plain_data(message, key)
+    await message.reply("Get data success!\nplease wait.", quote=True)
+    putinfo: dict = json.loads(plaindata)
+    # coreindex = putinfo.get('coreindex', 0)
+    await bot_put_slave(app, message, putinfo, master_id=master_id)
+
+
+async def plain_data(message: Message, key: str):
+    key = safe.sha256_32bytes(key)
+    file: Union[str, io.BytesIO] = await message.download(in_memory=True)
+    data = file.getvalue()
+    plaindata = ''
+    try:
+        plaindata = safe.plain_chahcha20(data, key)
+        print("已接收并解密文件")
+        print(plaindata)
+    except Exception as e:
+        logger.warning(str(e))
+        logger.warning("解密数据失败！")
+    finally:
+        return plaindata
+
+
+async def task_result(app: Client, message: Message):
+    """
+    接收来自后端的最终结果
+    """
+    slaveconfig = config.getSlaveconfig()
+    tgargs = ArgCleaner().getall(message.caption)
+    slaveid = tgargs[1] if len(tgargs) > 1 else ''
+    key = slaveconfig.get(slaveid, {}).get('public-key', '')
+    slavecomment = slaveconfig.get(slaveid, {}).get('comment', 'Local')
+    if not key:
+        logger.warning(f"无法找到slave_id为{slaveid}的解密密码")
+    logger.info(f"当前后端id:{slaveid}，解密密码：{key}")
+    plaindata = await plain_data(message, key)
+    resultdata: dict = json.loads(plaindata)
+
+    info = resultdata.pop('result', {})
+    if not info:
+        logger.info("无结果数据")
+        return
+    info['slave'] = {'comment': slavecomment, 'id': int(slaveid)}
+    origin_message_d = resultdata.get('origin-message', {})
+    botmsg_d = resultdata.get('edit-message', {})
+    try:
+        origin_msg = await app.get_messages(origin_message_d.get('chat-id', 0), origin_message_d.get('message-id', 0))
+        botmsg = await app.get_messages(botmsg_d.get('chat-id', 0), botmsg_d.get('message-id', 0))
+    except RPCError as e:
+        logger.error(str(e))
+        return
+    puttype = {
+        1: 'speed',
+        2: 'analyze',
+        3: 'test',
+        -1: 'unknown'
+    }
+    await select_export(origin_msg, botmsg, puttype[resultdata.get('coreindex', -1)], info)

@@ -18,7 +18,9 @@ async def cron_edit_message(app: Client):
             break
     for edit_message in edit_messages:
         try:
-            message = await app.get_messages(edit_message[0], edit_message[1])
+            message = None
+            if edit_message[0] and edit_message[1]:
+                message = await app.get_messages(edit_message[0], edit_message[1])
             if message is None:
                 continue
             if message.date is None:

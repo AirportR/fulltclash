@@ -3,9 +3,10 @@ import contextlib
 import copy
 import socket
 import time
+
 from collections import Counter
 from operator import itemgetter
-from typing import Union
+from typing import Union, Callable, Coroutine, Tuple
 
 import aiohttp
 import socks
@@ -27,7 +28,22 @@ class Basecore:
     测试核心基类
     """
 
-    def __init__(self):
+    def __init__(self, progress_func: Tuple[Union[Callable, Coroutine], Tuple] = None):
+        """
+        progress_func: 第一个元素是一个进度反馈回调函数，这个函数可以是协程函数。第二个元素是该函数所需要的参数（元组形式），
+        其中函数第一和第二位置形参固定为progress --> 当前已经测试的节点数， nodenum --> 这次测试所有节点数 ,
+        自己需要的额外参数将从第三个位置开始
+        例子:
+
+        假设函数名为 func 它所需的参数为 arg1 arg2 ，则在定义时，需要这样定义：
+        func(progress, nodenum, arg1, arg2) ,前两个参数 core核心会自动传入，不需要可以设置为_ __
+        func(_, __, arg1, arg2) 不需要默认传入参数的形式
+        当然如果参数过多 ，假如有 10个参数： arg1 - arg10 ，也可以这样定义函数：
+        func(progress, nodenum, *args)
+
+        如果progress_func为None，则使用默认的: default_progress()
+        """
+        self.prs = progress_func
         self._info = {}
         self._pre_include_text = GCONFIG.config.get('subconvertor', {}).get('include', '')  # 从配置文件里预定义过滤规则
         self._pre_exclude_text = GCONFIG.config.get('subconvertor', {}).get('exclude', '')
@@ -89,16 +105,33 @@ class Basecore:
         """
         cl1 = cleaner.ConfigManager(configpath=fr"./results/{self.start_time}.yaml", data=info)
         cl1.save(fr"./results/{self.start_time}.yaml")
-        if GCONFIG.config.get('clash', {}).get('allow-caching', False):
-            try:
-                pass
-                # os.remove(fr"./clash/sub{self.start_time}.yaml")
-            except Exception as e:
-                print(e)
+
+    async def progress(self, *args):
+        """
+        进度反馈用的回调函数，需要实现。
+        其中func是一个函数对象，它可以是协程函数，即用 async def func 定义的函数
+        """
+        progress = args[0]
+        nodenum = args[1]
+        if self.prs is None:
+            self.default_progress(progress, nodenum)
+        else:
+            func, funcarg = self.prs
+            if asyncio.iscoroutinefunction(func):
+                await func(progress, nodenum, *funcarg)
+            else:
+                func(progress, nodenum, *funcarg)
+            return
+
+    def default_progress(self, *args, **kwargs):
+        raise NotImplementedError
 
 
-# 部分内容已被修改  Some codes has been modified
 class Speedtest:
+    """
+    此类代码原本来源于 https://github.com/OreosLab/SSRSpeedN 项目。代码已做修改。
+    """
+
     def __init__(self):
         self._config = cleaner.ConfigManager()
         self._stopped = False
@@ -187,13 +220,35 @@ class Speedtest:
 
 
 class SpeedCore(Basecore):
-    def __init__(self, chat_id=None, message_id=None, IKM=None):
+    def __init__(self, chat_id=None, message_id=None, IKM=None, prs: Tuple[Union[Callable, Coroutine], Tuple] = None):
         """
         IKM: 内联按钮（中止测速）
         """
         super().__init__()
         self.IKM = IKM
         self.edit = (chat_id, message_id)
+        self.prs = prs
+
+    def default_progress(self, progress: int, nodenum: int):
+        """
+        默认的进度条反馈函数
+        """
+        # speedtext = GCONFIG.config.get('bot', {}).get('speedtext', "⏳速度测试进行中...")
+        # progress_bars = GCONFIG.config.get('bot', {}).get('bar', "=")
+        # bracketsleft = GCONFIG.config.get('bot', {}).get('bleft', "[")
+        # bracketsright = GCONFIG.config.get('bot', {}).get('bright', "]")
+        # bracketsspace = GCONFIG.config.get('bot', {}).get('bspace', "  ")
+        # cal = progress / nodenum * 100
+        # p_text = "%.2f" % cal
+        # equal_signs = int(cal / 5)
+        # space_count = 20 - equal_signs
+        # progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + f"{bracketsspace}" * space_count \
+        #                + bracketsright
+        # edit_text = f"{speedtext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + p_text + \
+        #             "%     [" + str(progress) + "/" + str(nodenum) + "]"
+        edit_text = default_progress_text(self.__class__.__name__, progress, nodenum)
+        print(edit_text)
+        message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1, self.IKM))
 
     @staticmethod
     def nat_type_test(proxyaddr=None, proxyport=None):
@@ -285,26 +340,19 @@ class SpeedCore(Basecore):
         info = {}
         progress = 0
         sending_time = 0
-        speedtext = GCONFIG.config.get('bot', {}).get('speedtext', "⏳速度测试进行中...")
-        progress_bars = GCONFIG.config.get('bot', {}).get('bar', "=")
-        bracketsleft = GCONFIG.config.get('bot', {}).get('bleft', "[")
-        bracketsright = GCONFIG.config.get('bot', {}).get('bright', "]")
-        bracketsspace = GCONFIG.config.get('bot', {}).get('bspace', "  ")
         nodenum = len(nodelist)
-        progress_bar = str(bracketsleft) + f"{bracketsspace}" * 20 + str(bracketsright)
-        edit_text = f"{speedtext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + "0" + \
-                    "%     [" + str(progress) + "/" + str(nodenum) + "]"
+
         test_items = ["HTTP(S)延迟", "平均速度", "最大速度", "每秒速度", "UDP类型"]
         for item in test_items:
             info[item] = []
         info["消耗流量"] = 0  # 单位:MB
         if not self.check_node():
             return info
-        print(edit_text)
-        message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1, self.IKM))
+
+        await self.progress(progress, nodenum)
         for name in nodelist:
             proxys.switchProxy(name, 0)
-            #delay = await proxys.http_delay_tls(index=0)
+            # delay = await proxys.http_delay_tls(index=0)
             delay = await proxys.http_delay(index=0)
             udptype, _, _, _, _ = self.nat_type_test('127.0.0.1', proxyport=port)
             if udptype is None:
@@ -332,17 +380,10 @@ class SpeedCore(Basecore):
                 break
             progress += 1
             cal = progress / nodenum * 100
-            p_text = "%.2f" % cal
+            # p_text = "%.2f" % cal
             if cal >= sending_time:
                 sending_time += 10
-                equal_signs = int(cal / 5)
-                space_count = 20 - equal_signs
-                progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + f"{bracketsspace}" * space_count \
-                               + bracketsright
-                edit_text = f"{speedtext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + p_text + \
-                            "%     [" + str(progress) + "/" + str(nodenum) + "]"
-                print(edit_text)
-                message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1, self.IKM))
+                await self.progress(progress, nodenum)
 
         return info
 
@@ -380,9 +421,32 @@ class SpeedCore(Basecore):
 
 
 class ScriptCore(Basecore):
-    def __init__(self, chat_id=None, message_id=None):
+    def __init__(self, chat_id=None, message_id=None, progress_func: Tuple[Union[Callable, Coroutine], Tuple] = None):
         super().__init__()
         self.edit = (chat_id, message_id)
+        self.prs = progress_func
+
+    def default_progress(self, progress: int, nodenum: int):
+        """
+        默认的进度条反馈函数
+        """
+        # scripttext = GCONFIG.config.get('bot', {}).get('scripttext', "⏳联通性测试进行中...")
+        # progress_bars = GCONFIG.config.get('bot', {}).get('bar', "=")
+        # bracketsleft = GCONFIG.config.get('bot', {}).get('bleft', "[")
+        # bracketsright = GCONFIG.config.get('bot', {}).get('bright', "]")
+        # bracketsspace = GCONFIG.config.get('bot', {}).get('bspace', "  ")
+        # cal = progress / nodenum * 100
+        # p_text = "%.2f" % cal
+        #
+        # equal_signs = int(cal / 5)
+        # space_count = 20 - equal_signs
+        # progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + \
+        #                f"{bracketsspace}" * space_count + f"{bracketsright}"
+        # edit_text = f"{scripttext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + \
+        #             p_text + "%     [" + str(progress) + "/" + str(nodenum) + "]"
+        edit_text = default_progress_text(self.__class__.__name__, progress, nodenum)
+        print(edit_text)
+        message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
 
     @staticmethod
     async def unit(test_items: list, host="127.0.0.1", port=11220, index=0):
@@ -396,7 +460,7 @@ class ScriptCore(Basecore):
         """
         info = []
         delay = await proxys.http_delay(index=index)
-        #delay = await proxys.http_delay_tls(index=index, timeout=5)
+        # delay = await proxys.http_delay_tls(index=index, timeout=5)
         if delay == 0:
             logger.warning("超时节点，跳过测试")
             for t in test_items:
@@ -426,21 +490,12 @@ class ScriptCore(Basecore):
         info = {}
         progress = 0
         sending_time = 0
-        nodenum = len(nodename)
-        scripttext = GCONFIG.config.get('bot', {}).get('scripttext', "⏳联通性测试进行中...")
-        progress_bars = GCONFIG.config.get('bot', {}).get('bar', "=")
-        bracketsleft = GCONFIG.config.get('bot', {}).get('bleft', "[")
-        bracketsright = GCONFIG.config.get('bot', {}).get('bright', "]")
-        bracketsspace = GCONFIG.config.get('bot', {}).get('bspace', "  ")
-        # corestartup = GCONFIG.config.get('clash', {}).get('startup', 11220)
-        progress_bar = str(bracketsleft) + f"{bracketsspace}" * 20 + str(bracketsright)
-        edit_text = f"{scripttext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + "0" + \
-                    "%     [" + str(progress) + "/" + str(nodenum) + "]"
         host = pool.get('host', [])
         port = pool.get('port', [])
         psize = len(port)
-
+        nodenum = len(nodename)
         tasks = []
+
         for item in test_items:
             info[item] = []
         logger.info("接受任务数量: {} 线程数: {}".format(nodenum, psize))
@@ -449,8 +504,8 @@ class ScriptCore(Basecore):
         if psize <= 0:
             logger.error("无可用的代理程序接口")
             return {}
-        print(edit_text)
-        message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
+
+        await self.progress(progress, nodenum)
         if nodenum < psize:
             for i in range(len(port[:nodenum])):
                 proxys.switchProxy(nodename[i], i)
@@ -479,18 +534,11 @@ class ScriptCore(Basecore):
                 # 反馈进度
                 progress += psize
                 cal = progress / nodenum * 100
-                p_text = "%.2f" % cal
                 # 判断进度条，每隔10%发送一次反馈，有效防止洪水等待(FloodWait)
                 if cal > sending_time:
                     sending_time += 20
-                    equal_signs = int(cal / 5)
-                    space_count = 20 - equal_signs
-                    progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + \
-                                   f"{bracketsspace}" * space_count + f"{bracketsright}"
-                    edit_text = f"{scripttext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + \
-                                p_text + "%     [" + str(progress) + "/" + str(nodenum) + "]"
-                    print(edit_text)
-                    message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
+                    await self.progress(progress, nodenum)
+
                 # 简单处理一下数据
                 res = []
                 for j in range(len(test_items)):
@@ -514,16 +562,10 @@ class ScriptCore(Basecore):
                         res.append(d[j])
                     info[test_items[j]].extend(res)
         # 最终进度条
-        bar_length = 20
         if nodenum % psize != 0:
             progress += nodenum % psize
-            bar = f"{progress_bars}" * bar_length
-            bar_with_frame = f"{bracketsleft}" + f"{bar}" + f"{bracketsright}"
-            edit_text = f"{scripttext}\n\n" + bar_with_frame + "\n\n" + "当前进度:\n" + '100' + "%     [" + str(
-                progress) + "/" + str(
-                nodenum) + "]"
-            print(edit_text)
-            message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 2))
+            await self.progress(progress, nodenum)
+
         logger.info(str(info))
         return info
 
@@ -565,10 +607,33 @@ class TopoCore(Basecore):
     拓扑测试核心
     """
 
-    def __init__(self, chat_id=None, message_id=None):
+    def __init__(self, chat_id=None, message_id=None, progress_func: Tuple[Union[Callable, Coroutine], Tuple] = None):
         super().__init__()
         self.edit = (chat_id, message_id)
         self.ip_choose = GCONFIG.config.get('entrance', {}).get('switch', 'ip')
+        self.prs = progress_func
+
+    def default_progress(self, progress: int, nodenum: int):
+        """
+        默认的进度条反馈函数
+        """
+        # analyzetext = GCONFIG.config.get('bot', {}).get('analyzetext', "⏳节点拓扑分析测试进行中...")
+        # progress_bars = GCONFIG.config.get('bot', {}).get('bar', "=")
+        # bracketsleft = GCONFIG.config.get('bot', {}).get('bleft', "[")
+        # bracketsright = GCONFIG.config.get('bot', {}).get('bright', "]")
+        # bracketsspace = GCONFIG.config.get('bot', {}).get('bspace', "  ")
+        #
+        # cal = progress / nodenum * 100
+        # p_text = "%.2f" % cal
+        # equal_signs = int(cal / 5)
+        # space_count = 20 - equal_signs
+        # progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + \
+        #                f"{bracketsspace}" * space_count + f"{bracketsright}"
+        # edit_text = f"{analyzetext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + \
+        #             p_text + "%     [" + str(progress) + "/" + str(nodenum) + "]"
+        edit_text = default_progress_text(self.__class__.__name__, progress, nodenum)
+        print(edit_text)
+        message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
 
     async def topo(self):
         if self.ip_choose == "ip":
@@ -578,7 +643,7 @@ class TopoCore(Basecore):
         else:
             info = {'地区': [], 'AS编号': [], '组织': [], '栈': []}
         cl = copy.deepcopy(self._config)
-        data = GCONFIG.config.get("localip", False)
+        _data = GCONFIG.config.get("localip", False)
         if not self.check_node():
             return info, [], cl
         co = collector.IPCollector()
@@ -591,112 +656,104 @@ class TopoCore(Basecore):
         if nodename and inboundinfo and cl:
             # 拿地址，已经转换了域名为ip,hosts变量去除了N/A
             hosts = list(inboundinfo.keys())
-            if data:
+            if _data:
                 code = []
                 org = []
                 asns = []
                 for ip in hosts:
-                   c, o, a = geoip.geo_info(ip)
-                   code.append(c)
-                   org.append(o)
-                   asns.append(a)
-                   info.update({'地区': code, 'AS编号': asns, '组织': org})
-                   numcount = []
-                   for v in inboundinfo.values():
-                       numcount.append(int(v))
-                   info.update({'出口数量': numcount})
-                   new_hosts = []
-                   if self.ip_choose == "ip":
-                    for host in hosts:
-                        if len(host) < 16:  # v4地址最大长度为15
-                            try:
-                                old_ip = host.split('.')[:2]
-                                new_ip = old_ip[0] + "." + old_ip[1] + ".*.*"
-                            except IndexError:
-                                new_ip = host
-                            new_hosts.append(new_ip)
-                        elif len(host) > 15:
-                            try:
-                                old_ip = host.split(':')[2:4]
-                                new_ip = "*:*:" + old_ip[0] + ":" + old_ip[1] + ":*:*"
-                            except IndexError:
-                                new_ip = host
-                            new_hosts.append(new_ip)
-                        else:
-                            new_hosts.append(host)
-                    info.update({'入口ip段': new_hosts})
-                   elif self.ip_choose == "cluster":
-                       info.update({'簇': ipclus})
+                    c, o, a = geoip.geo_info(ip)
+                    code.append(c)
+                    org.append(o)
+                    asns.append(a)
+                    info.update({'地区': code, 'AS编号': asns, '组织': org})
+                    numcount = []
+                    for v in inboundinfo.values():
+                        numcount.append(int(v))
+                    info.update({'出口数量': numcount})
+                    new_hosts = []
+                    if self.ip_choose == "ip":
+                        for host in hosts:
+                            if len(host) < 16:  # v4地址最大长度为15
+                                try:
+                                    old_ip = host.split('.')[:2]
+                                    new_ip = old_ip[0] + "." + old_ip[1] + ".*.*"
+                                except IndexError:
+                                    new_ip = host
+                                new_hosts.append(new_ip)
+                            elif len(host) > 15:
+                                try:
+                                    old_ip = host.split(':')[2:4]
+                                    new_ip = "*:*:" + old_ip[0] + ":" + old_ip[1] + ":*:*"
+                                except IndexError:
+                                    new_ip = host
+                                new_hosts.append(new_ip)
+                            else:
+                                new_hosts.append(host)
+                        info.update({'入口ip段': new_hosts})
+                    elif self.ip_choose == "cluster":
+                        info.update({'簇': ipclus})
                 return info, hosts, cl
             else:
-              co.create_tasks(session=session, hosts=hosts, proxy=proxies)
-              res = await co.start()
-              await session.close()
-              if res:
-                  country_code = []
-                  asn = []
-                  org = []
-                  for j in res:
-                      ipcl = cleaner.IPCleaner(j)
-                      country_code.append(ipcl.get_country_code())
-                      asn.append(str(ipcl.get_asn()))
-                      org.append(ipcl.get_org())
-                  info.update({'地区': country_code, 'AS编号': asn, '组织': org})
-                  numcount = []
-                  for v in inboundinfo.values():
-                      numcount.append(int(v))
-                  info.update({'出口数量': numcount})
-                  new_hosts = []
-                  if self.ip_choose == "ip":
-                      for host in hosts:
-                          if len(host) < 16:  # v4地址最大长度为15
-                              try:
-                                  old_ip = host.split('.')[:2]
-                                  new_ip = old_ip[0] + "." + old_ip[1] + ".*.*"
-                              except IndexError:
-                                  new_ip = host
-                              new_hosts.append(new_ip)
-                          elif len(host) > 15:
-                              try:
-                                  old_ip = host.split(':')[2:4]
-                                  new_ip = "*:*:" + old_ip[0] + ":" + old_ip[1] + ":*:*"
-                              except IndexError:
-                                  new_ip = host
-                              new_hosts.append(new_ip)
-                          else:
-                              new_hosts.append(host)
-                      info.update({'入口ip段': new_hosts})
-                  elif self.ip_choose == "cluster":
-                      info.update({'簇': ipclus})
-              return info, hosts, cl
+                co.create_tasks(session=session, hosts=hosts, proxy=proxies)
+                res = await co.start()
+                await session.close()
+                if res:
+                    country_code = []
+                    asn = []
+                    org = []
+                    for j in res:
+                        ipcl = cleaner.IPCleaner(j)
+                        country_code.append(ipcl.get_country_code())
+                        asn.append(str(ipcl.get_asn()))
+                        org.append(ipcl.get_org())
+                    info.update({'地区': country_code, 'AS编号': asn, '组织': org})
+                    numcount = []
+                    for v in inboundinfo.values():
+                        numcount.append(int(v))
+                    info.update({'出口数量': numcount})
+                    new_hosts = []
+                    if self.ip_choose == "ip":
+                        for host in hosts:
+                            if len(host) < 16:  # v4地址最大长度为15
+                                try:
+                                    old_ip = host.split('.')[:2]
+                                    new_ip = old_ip[0] + "." + old_ip[1] + ".*.*"
+                                except IndexError:
+                                    new_ip = host
+                                new_hosts.append(new_ip)
+                            elif len(host) > 15:
+                                try:
+                                    old_ip = host.split(':')[2:4]
+                                    new_ip = "*:*:" + old_ip[0] + ":" + old_ip[1] + ":*:*"
+                                except IndexError:
+                                    new_ip = host
+                                new_hosts.append(new_ip)
+                            else:
+                                new_hosts.append(host)
+                        info.update({'入口ip段': new_hosts})
+                    elif self.ip_choose == "cluster":
+                        info.update({'簇': ipclus})
+                return info, hosts, cl
 
     async def batch_topo(self, nodename: list, pool: dict):
         resdata = []
         ipstackes = []
         progress = 0
         sending_time = 0
-        analyzetext = GCONFIG.config.get('bot', {}).get('analyzetext', "⏳节点拓扑分析测试进行中...")
-        progress_bars = GCONFIG.config.get('bot', {}).get('bar', "=")
-        bracketsleft = GCONFIG.config.get('bot', {}).get('bleft', "[")
-        bracketsright = GCONFIG.config.get('bot', {}).get('bright', "]")
-        bracketsspace = GCONFIG.config.get('bot', {}).get('bspace', "  ")
         host = pool.get('host', [])
         port = pool.get('port', [])
         psize = len(port)
         nodenum = len(nodename)
-        progress_bar = str(bracketsleft) + f"{bracketsspace}" * 20 + str(bracketsright)
-        edit_text = f"{analyzetext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + "0" + \
-                    "%     [" + str(progress) + "/" + str(nodenum) + "]"
 
-        logger.info("接受任务数量: {} 线程数: {}".format(nodenum, psize))
         if psize <= 0:
             logger.error("无可用的代理程序接口")
-            return []
+            return [], []
         if not self.check_node():
             return resdata, ipstackes
-        print(edit_text)
-        message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
+
+        logger.info("接受任务数量: {} 线程数: {}".format(nodenum, psize))
         logger.info("⏳节点链路拓扑测试进行中...")
+        await self.progress(progress, nodenum)
         if nodenum < psize:
             for i in range(nodenum):
                 proxys.switchProxy(nodename[i], i)
@@ -721,17 +778,10 @@ class TopoCore(Basecore):
 
                 progress += psize
                 cal = progress / nodenum * 100
-                p_text = "%.2f" % cal
+                # p_text = "%.2f" % cal
                 if cal >= sending_time:
                     sending_time += 10
-                    equal_signs = int(cal / 5)
-                    space_count = 20 - equal_signs
-                    progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + \
-                                   f"{bracketsspace}" * space_count + f"{bracketsright}"
-                    edit_text = f"{analyzetext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + \
-                                p_text + "%     [" + str(progress) + "/" + str(nodenum) + "]"
-                    print(edit_text)
-                    message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
+                    await self.progress(progress, nodenum)
 
             if nodenum % psize != 0:
                 logger.info("最后批次: " + str(subbatch + 1))
@@ -745,23 +795,16 @@ class TopoCore(Basecore):
                 ipstackes.append({'ips': ipstat})
 
             # 最终进度条
-            bar_length = 20
             if nodenum % psize != 0:
                 progress += nodenum % psize
-                bar = f"{progress_bars}" * bar_length
-                bar_with_frame = f"{bracketsleft}" + f"{bar}" + f"{bracketsright}"
-                edit_text = f"{analyzetext}\n\n" + bar_with_frame + "\n\n" + "当前进度:\n" + '100' + "%     [" + str(
-                    progress) + "/" + str(
-                    nodenum) + "]"
-                print(edit_text)
-                message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
+                await self.progress(progress, nodenum)
             return resdata, ipstackes
 
     async def core(self, proxyinfo: list, **kwargs):
         # info1 = {}  # 存放测试结果
         info2 = {}  # 存放测试结果
         test_type = kwargs.get('test_type', 'all')
-        data = GCONFIG.config.get("localip", False)
+        _data = GCONFIG.config.get("localip", False)
         # 先把节点信息写入文件
         self.join_proxy(proxyinfo)
         # 获取可供测试的测试端口
@@ -793,20 +836,20 @@ class TopoCore(Basecore):
                     ipcl = cleaner.IPCleaner(j)
                     ip = ipcl.get_ip()
                     ipaddr.append(ip)
-                    if data == False:
-                       country_code.append(ipcl.get_country_code())
-                       asn.append(str(ipcl.get_asn()))
-                       org.append(ipcl.get_org())
+                    if not _data:
+                        country_code.append(ipcl.get_country_code())
+                        asn.append(str(ipcl.get_asn()))
+                        org.append(ipcl.get_org())
                     else:
-                      pass
-                if data:
-                   for ip in ipaddr:
-                     d, g, h = geoip.geo_info(ip)
-                     country_code.append(d)
-                     asn.append(h)
-                     org.append(g)
+                        pass
+                if _data:
+                    for ip in ipaddr:
+                        d, g, h = geoip.geo_info(ip)
+                        country_code.append(d)
+                        asn.append(h)
+                        org.append(g)
                 else:
-                   pass            
+                    pass
                 for dictionary in ras:
                     if 'ips' in dictionary:
                         ipstackes.extend(dictionary['ips'])
@@ -847,6 +890,32 @@ class TopoCore(Basecore):
         # 保存结果
         self.saveresult({'inbound': info1, 'outbound': info2})
         return {'inbound': info1, 'outbound': info2}
+
+
+def default_progress_text(corelabel: Union[int, str], progress: int, nodenum: int, slavecomment: str = "Local"):
+    if corelabel == 'SpeedCore' or corelabel == 1:
+        testtext = GCONFIG.config.get('bot', {}).get('speedtext', "⏳速度测试进行中...")
+    elif corelabel == 'TopoCore' or corelabel == 2:
+        testtext = GCONFIG.config.get('bot', {}).get('analyzetext', "⏳节点拓扑分析测试进行中...")
+    elif corelabel == 'ScriptCore' or corelabel == 3:
+        testtext = GCONFIG.config.get('bot', {}).get('scripttext', "⏳连通性测试进行中...")
+    else:
+        testtext = "未知测试进行中"
+    progress_bars = GCONFIG.config.get('bot', {}).get('bar', "=")
+    bracketsleft = GCONFIG.config.get('bot', {}).get('bleft', "[")
+    bracketsright = GCONFIG.config.get('bot', {}).get('bright', "]")
+    bracketsspace = GCONFIG.config.get('bot', {}).get('bspace', "  ")
+
+    cal = progress / nodenum * 100
+    p_text = "%.2f" % cal
+    equal_signs = int(cal / 5)
+    space_count = 20 - equal_signs
+    progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + \
+                   f"{bracketsspace}" * space_count + f"{bracketsright}"
+    edit_text = f"🍀后端:{slavecomment}\n{testtext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + \
+                p_text + "%     [" + str(progress) + "/" + str(nodenum) + "]"
+    # print(edit_text)
+    return edit_text
 
 
 def check_init():

@@ -3,6 +3,7 @@ import importlib
 import os
 import re
 import sys
+from typing import Union
 import socket
 import yaml
 from loguru import logger
@@ -372,7 +373,7 @@ class ClashCleaner:
     yaml配置清洗
     """
 
-    def __init__(self, _config, _config2: str = None):
+    def __init__(self, _config, _config2: Union[str, bytes] = None):
         """
         :param _config: 传入一个文件对象，或者一个字符串,文件对象需指向 yaml/yml 后缀文件
         """
@@ -746,9 +747,10 @@ class ConfigManager:
 
     def getBridge(self):
         """
-        获取连接中继桥，它是一个telegram的群组id，最好是私密群组
+        获取连接中继桥，它是一个telegram的user_id
         """
-        return self.config.get('bridge', None)
+        bridge = self.config.get('userbot', {}).get('id', None)
+        return bridge
 
     def getGstatic(self):
         """
@@ -913,9 +915,11 @@ class ConfigManager:
         except TypeError:
             logger.error("删除失败")
 
-    def add_slave(self, slave_id: str, key_path: str, username: str, comment: str = '-'):
+    def add_slave(self, slave_id: str, key: str, username: str, comment: str = '-'):
         slaveconfig = self.config.get('slaveconfig', {})
-        slaveconfig[slave_id] = {'public-key': key_path, 'username': username, 'comment': comment}
+        if slaveconfig is None:
+            slaveconfig = {}
+        slaveconfig[slave_id] = {'public-key': key, 'username': username, 'comment': comment}
         self.yaml['slaveconfig'] = slaveconfig
 
     @logger.catch
