@@ -135,55 +135,6 @@ async def conn_simple(app: Client, message: Message):
         logger.error(str(e))
 
 
-# async def response(_: Client, message: Message):
-#     """
-#     userbot专属
-#     """
-#     logger.info("接收到后端bot消息")
-#     if message.document is None:
-#         return
-#     await connect_queue.put(message)
-
-
-# async def response2(_: Client, message: Message):
-#     """
-#     userbot专属
-#     转发测试进度和结果
-#     """
-#     logger.info("接收来自后端的resp2请求")
-#     master_id = int(message.caption.split(' ')[-1])
-#     await message.forward(master_id)
-
-
-# async def relay(app: Client, message: Message, command: str = '/sconnect'):
-#     """
-#     userbot专属
-#     中转初次连接
-#     """
-#     logger.info("收到relay1，来自：" + str(message.chat.id))
-#     tgargs = ArgCleaner().getall(message.text)
-#     if len(tgargs) < 2:
-#         return
-#     bot_id = tgargs[1]
-#     await app.send_message(bot_id, f"{command} {message.from_user.id}")
-
-
-# async def relay2(app: Client, message: Message, command: str = 'sconnect2'):
-#     """
-#     userbot专属
-#     中转主端文件
-#     """
-#     logger.info("收到relay2，来自：" + str(message.chat.id))
-#     tgargs = ArgCleaner().getall(str(message.caption))
-#     if len(tgargs) < 2:
-#         logger.warning("缺少slave id")
-#         return
-#     bot_id = tgargs[1]
-#     command = command if len(tgargs) < 3 else tgargs[2].lstrip('/')
-#     if tgargs[0].startswith("/relay2") and message.document:
-#         await app.send_document(bot_id, message.document.file_id, caption=f'/{command} {str(message.from_user.id)}')
-
-
 @logger.catch()
 async def simple_conn_resp(_: Client, message: Message):
     """
@@ -202,50 +153,6 @@ async def simple_conn_resp(_: Client, message: Message):
     config.reload()
     logger.info("master连接配置已保存")
     await message.reply("已收到master请求，配置已保存，重启生效", quote=True)
-
-
-# @logger.catch()
-# async def conn_resp(_: Client, message: Message):
-#     """
-#     后端bot专属
-#     发送公钥
-#     """
-#     logger.info(f"接收连接请求: {message.chat.id}:{message.id}")
-#     ID = message.from_user.id
-#     _config = config
-#     whitelist = _config.config.get('whitelist', [])
-#     if whitelist:
-#         if ID not in whitelist:
-#             logger.error("非白名单:" + str(ID) + f"在{message.chat.id}中")
-#             return
-#     tgargs = ArgCleaner().getall(str(message.text))
-#     # 发送公钥
-#     await message.reply_document('./key/fulltclash-public.pem', quote=True, caption='/resp')
-#     connect_list2[tgargs[-1]] = str(message.chat.id)
-
-
-# @logger.catch()
-# async def conn_resp2(_: Client, message: Message):
-#     """
-#     后端bot专属
-#     保存主端公钥
-#     """
-#     if message.caption is None:
-#         return
-#     master_id = str(message.caption).split(' ')[-1]
-#     chat_id = connect_list2.pop(master_id, None)
-#     if chat_id is None:
-#         return
-#     file = message.document
-#     if file is None:
-#         print("未找到文件")
-#         return
-#     name = await message.download(fr'./key/master-{master_id}.pem')
-#     masterconfig = config.getMasterconfig()
-#     masterconfig[master_id] = {'public-key': fr'./key/master-{master_id}.pem', 'bridge': chat_id}
-#     config.yaml['masterconfig'] = masterconfig
-#     config.reload()
-#     logger.info(f"master公钥 {name} 配置已保存")
 
 
 async def recvtask(app: Client, message: Message):
@@ -300,6 +207,9 @@ async def task_result(app: Client, message: Message):
     resultdata: dict = json.loads(plaindata)
 
     info = resultdata.pop('result', {})
+    if not info:
+        logger.info("无结果数据")
+        return
     info['slave'] = {'comment': slavecomment, 'id': int(slaveid)}
     origin_message_d = resultdata.get('origin-message', {})
     botmsg_d = resultdata.get('edit-message', {})

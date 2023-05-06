@@ -91,7 +91,6 @@ async def bot_put_slave(client: Client, message: Message, putinfo: dict, **kwarg
         await q.put(message)
         r1(test_items)
         r2(test_items)
-        await botmsg.edit_text(f"/relay {master_id} edit {edit_chat_id} {edit_message_id} 测试开始啦~")
         await bot_task_queue_slave(client, botmsg, putinfo, q, **kwargs)
         bot_edit_text = f"/relay {master_id} edit {edit_chat_id} {edit_message_id} 测试结束啦。"
         message_edit_queue.put((botmsg.chat.id, botmsg.id, bot_edit_text, 2))

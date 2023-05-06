@@ -18,6 +18,8 @@ async def edit(app: Client, message: Message):
     s1 = tgargs[4]
     try:
         editmsg = await app.get_messages(edit_chat_id, edit_msg_id)
+        if editmsg is None:
+            return
     except RPCError as r:
         logger.error(str(r))
         return
@@ -41,3 +43,7 @@ async def edit(app: Client, message: Message):
     except RPCError as r:
         logger.error(str(r))
         return
+    except Exception as e:
+        logger.warning(str(e))
+        return
+

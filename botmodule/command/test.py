@@ -228,7 +228,6 @@ async def put_slave_task(app: Client, message: Message, proxyinfo: list, **kwarg
         message_delete_queue.put(backmsg)
         return
     slaveconfig = config.getSlaveconfig()
-    print(slaveconfig)
     key = slaveconfig.get(slaveid, {}).get('public-key', '')
     key = sha256_32bytes(key)
 
@@ -252,7 +251,6 @@ async def put_slave_task(app: Client, message: Message, proxyinfo: list, **kwarg
         SPEEDTEST_LIST.append(slaveid)
     data1 = json.dumps(payload)
     cipherdata = cipher_chacha20(data1.encode(), key)
-    print("加密数据预览： \n", cipherdata[:100])
     bytesio = io.BytesIO(cipherdata)
     bytesio.name = "subinfo"
     await app.send_document(userbot_id, bytesio, caption=f'/relay {slaveid} send')
