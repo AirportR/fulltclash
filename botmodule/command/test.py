@@ -13,14 +13,31 @@ from utils.backend import SpeedCore, ScriptCore, TopoCore
 from utils.safe import cipher_chacha20, sha256_32bytes
 from utils import message_delete_queue, check, cleaner, collector, export
 
+SPEEDTESTIKM = InlineKeyboardMarkup(
+    [
+        [InlineKeyboardButton("👋中止测速", callback_data='stop')],
+    ]
+)
 
-def select_core_slave(coreindex: str, edit_chat_id: int, edit_msg_id: int):
+
+async def slave_progress(progress, nodenum, botmsg: Message, corenum, master_id, master_chat_id, master_msg_id):
+    await botmsg.edit_text(f"/relay {master_id} edit {master_chat_id} {master_msg_id} ${corenum}:{progress}:{nodenum}")
+
+
+sp = slave_progress
+
+
+def select_core_slave(coreindex: str, botmsg: Message, putinfo: dict):
+    edit_chat_id = putinfo.get('edit-chat-id', None)
+    edit_msg_id = putinfo.get('edit-message-id', None)
+    masterid = putinfo.get('master', {}).get('id', 1)
     if coreindex == 1:
-        return SpeedCore(edit_chat_id, edit_msg_id)
+        return SpeedCore(botmsg.chat.id, botmsg.id, SPEEDTESTIKM,
+                         (sp, (botmsg, 1, masterid, edit_chat_id, edit_msg_id)))
     elif coreindex == 2:
-        return TopoCore(edit_chat_id, edit_msg_id)
+        return TopoCore(botmsg.chat.id, botmsg.id, (sp, (botmsg, 2, masterid, edit_chat_id, edit_msg_id)))
     elif coreindex == 3:
-        return ScriptCore(edit_chat_id, edit_msg_id)
+        return ScriptCore(botmsg.chat.id, botmsg.id, (sp, (botmsg, 3, masterid, edit_chat_id, edit_msg_id)))
     else:
         logger.warning("未知的测试核心类型")
         return None
@@ -238,13 +255,12 @@ async def put_slave_task(app: Client, message: Message, proxyinfo: list, **kwarg
 
 @logger.catch()
 async def process_slave(app: Client, message: Message, putinfo: dict, **kwargs):
-    print(message)
     masterconfig = config.getMasterconfig()
     master_id = putinfo.get('master', {}).get('id', 1)
     coreindex = putinfo.get('coreindex', None)
     proxyinfo = putinfo.pop('proxies', [])
     kwargs.update(putinfo)
-    core = select_core_slave(coreindex, message.chat.id, message.id)
+    core = select_core_slave(coreindex, message, putinfo)
     info = await core.core(proxyinfo, **kwargs)
     print("后端结果：", info)
 
