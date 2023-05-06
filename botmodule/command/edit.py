@@ -1,3 +1,5 @@
+from contextlib import suppress
+
 from pyrogram import Client
 from pyrogram.types import Message
 from pyrogram.errors import RPCError
@@ -26,10 +28,11 @@ async def edit(app: Client, message: Message):
         p3 = int(p[2])
         slavecomment = tgargs[5].strip('"') if len(tgargs) > 5 else ''
         edittext = default_progress_text(p1, p2, p3, slavecomment)
-        if p1 == 1:
-            await editmsg.edit_text(edittext, reply_markup=SPEEDTESTIKM)
-        else:
-            await editmsg.edit_text(edittext)
+        with suppress(RPCError):
+            if p1 == 1:
+                await editmsg.edit_text(edittext, reply_markup=SPEEDTESTIKM)
+            else:
+                await editmsg.edit_text(edittext)
         return
     text = ' '.join(tgargs[4:])
     reply_markup = editmsg.reply_markup

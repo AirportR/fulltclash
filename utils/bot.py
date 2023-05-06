@@ -256,12 +256,8 @@ def command_loader(app: Client):
 
 def callback_loader(app: Client):
     @app.on_callback_query(filters=dynamic_data_filter('stop') & filters.user(botmodule.init_bot.reloadUser()), group=1)
-    async def invite_test(_, callback_query: CallbackQuery):
-        break_speed.append(True)
-        logger.info("测速中止")
-        backmsg = await callback_query.message.edit_text("❌测速任务已取消")
-        message_delete_queue.put_nowait((backmsg.chat.id, backmsg.id, 10))
-        callback_query.stop_propagation()
+    async def invite_test(client: Client, callback_query: CallbackQuery):
+        await botmodule.stopspeed(client, callback_query)
 
     @app.on_callback_query(filters=dynamic_data_filter('reload:addon') & filters.user(init_bot.admin), group=1)
     async def reload_addon(client, callback_query):
