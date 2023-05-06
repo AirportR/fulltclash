@@ -362,6 +362,12 @@ async def select_slave(app: Client, call: CallbackQuery):
         put_type = "analyzeurl" if originmsg.text.split(' ', 1)[0].split('@', 1)[0].endswith('url') else "analyze"
         await botmsg.delete()
         await bot_put(app, originmsg, put_type, None, sort=sort_str, coreindex=2, slaveid=slaveid)
+    elif originmsg.text.startswith('/speed'):
+        sort_str = get_sort_str(botmsg)
+        slaveid = get_slave_id(botmsg.chat.id, botmsg.id)
+        put_type = "speedurl" if originmsg.text.split(' ', 1)[0].split('@', 1)[0].endswith('url') else "speed"
+        await botmsg.delete()
+        await bot_put(app, originmsg, put_type, None, sort=sort_str, coreindex=1, slaveid=slaveid)
     else:
         await botmsg.edit_text("🐛暂时未适配")
         return

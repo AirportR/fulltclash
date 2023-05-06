@@ -27,6 +27,7 @@ class Basecore:
     """
     测试核心基类
     """
+
     def __init__(self, progress_func: Tuple[Union[Callable, Coroutine], Tuple] = None):
         """
         progress_func: 第一个元素是一个进度反馈回调函数，这个函数可以是协程函数。第二个元素是该函数所需要的参数（元组形式），
@@ -232,19 +233,20 @@ class SpeedCore(Basecore):
         """
         默认的进度条反馈函数
         """
-        speedtext = GCONFIG.config.get('bot', {}).get('speedtext', "⏳速度测试进行中...")
-        progress_bars = GCONFIG.config.get('bot', {}).get('bar', "=")
-        bracketsleft = GCONFIG.config.get('bot', {}).get('bleft', "[")
-        bracketsright = GCONFIG.config.get('bot', {}).get('bright', "]")
-        bracketsspace = GCONFIG.config.get('bot', {}).get('bspace', "  ")
-        cal = progress / nodenum * 100
-        p_text = "%.2f" % cal
-        equal_signs = int(cal / 5)
-        space_count = 20 - equal_signs
-        progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + f"{bracketsspace}" * space_count \
-                       + bracketsright
-        edit_text = f"{speedtext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + p_text + \
-                    "%     [" + str(progress) + "/" + str(nodenum) + "]"
+        # speedtext = GCONFIG.config.get('bot', {}).get('speedtext', "⏳速度测试进行中...")
+        # progress_bars = GCONFIG.config.get('bot', {}).get('bar', "=")
+        # bracketsleft = GCONFIG.config.get('bot', {}).get('bleft', "[")
+        # bracketsright = GCONFIG.config.get('bot', {}).get('bright', "]")
+        # bracketsspace = GCONFIG.config.get('bot', {}).get('bspace', "  ")
+        # cal = progress / nodenum * 100
+        # p_text = "%.2f" % cal
+        # equal_signs = int(cal / 5)
+        # space_count = 20 - equal_signs
+        # progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + f"{bracketsspace}" * space_count \
+        #                + bracketsright
+        # edit_text = f"{speedtext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + p_text + \
+        #             "%     [" + str(progress) + "/" + str(nodenum) + "]"
+        edit_text = default_progress_text(self.__class__.__name__, progress, nodenum)
         print(edit_text)
         message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1, self.IKM))
 
@@ -428,20 +430,21 @@ class ScriptCore(Basecore):
         """
         默认的进度条反馈函数
         """
-        scripttext = GCONFIG.config.get('bot', {}).get('scripttext', "⏳联通性测试进行中...")
-        progress_bars = GCONFIG.config.get('bot', {}).get('bar', "=")
-        bracketsleft = GCONFIG.config.get('bot', {}).get('bleft', "[")
-        bracketsright = GCONFIG.config.get('bot', {}).get('bright', "]")
-        bracketsspace = GCONFIG.config.get('bot', {}).get('bspace', "  ")
-        cal = progress / nodenum * 100
-        p_text = "%.2f" % cal
-
-        equal_signs = int(cal / 5)
-        space_count = 20 - equal_signs
-        progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + \
-                       f"{bracketsspace}" * space_count + f"{bracketsright}"
-        edit_text = f"{scripttext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + \
-                    p_text + "%     [" + str(progress) + "/" + str(nodenum) + "]"
+        # scripttext = GCONFIG.config.get('bot', {}).get('scripttext', "⏳联通性测试进行中...")
+        # progress_bars = GCONFIG.config.get('bot', {}).get('bar', "=")
+        # bracketsleft = GCONFIG.config.get('bot', {}).get('bleft', "[")
+        # bracketsright = GCONFIG.config.get('bot', {}).get('bright', "]")
+        # bracketsspace = GCONFIG.config.get('bot', {}).get('bspace', "  ")
+        # cal = progress / nodenum * 100
+        # p_text = "%.2f" % cal
+        #
+        # equal_signs = int(cal / 5)
+        # space_count = 20 - equal_signs
+        # progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + \
+        #                f"{bracketsspace}" * space_count + f"{bracketsright}"
+        # edit_text = f"{scripttext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + \
+        #             p_text + "%     [" + str(progress) + "/" + str(nodenum) + "]"
+        edit_text = default_progress_text(self.__class__.__name__, progress, nodenum)
         print(edit_text)
         message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
 
@@ -614,20 +617,21 @@ class TopoCore(Basecore):
         """
         默认的进度条反馈函数
         """
-        analyzetext = GCONFIG.config.get('bot', {}).get('analyzetext', "⏳节点拓扑分析测试进行中...")
-        progress_bars = GCONFIG.config.get('bot', {}).get('bar', "=")
-        bracketsleft = GCONFIG.config.get('bot', {}).get('bleft', "[")
-        bracketsright = GCONFIG.config.get('bot', {}).get('bright', "]")
-        bracketsspace = GCONFIG.config.get('bot', {}).get('bspace', "  ")
-
-        cal = progress / nodenum * 100
-        p_text = "%.2f" % cal
-        equal_signs = int(cal / 5)
-        space_count = 20 - equal_signs
-        progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + \
-                       f"{bracketsspace}" * space_count + f"{bracketsright}"
-        edit_text = f"{analyzetext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + \
-                    p_text + "%     [" + str(progress) + "/" + str(nodenum) + "]"
+        # analyzetext = GCONFIG.config.get('bot', {}).get('analyzetext', "⏳节点拓扑分析测试进行中...")
+        # progress_bars = GCONFIG.config.get('bot', {}).get('bar', "=")
+        # bracketsleft = GCONFIG.config.get('bot', {}).get('bleft', "[")
+        # bracketsright = GCONFIG.config.get('bot', {}).get('bright', "]")
+        # bracketsspace = GCONFIG.config.get('bot', {}).get('bspace', "  ")
+        #
+        # cal = progress / nodenum * 100
+        # p_text = "%.2f" % cal
+        # equal_signs = int(cal / 5)
+        # space_count = 20 - equal_signs
+        # progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + \
+        #                f"{bracketsspace}" * space_count + f"{bracketsright}"
+        # edit_text = f"{analyzetext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + \
+        #             p_text + "%     [" + str(progress) + "/" + str(nodenum) + "]"
+        edit_text = default_progress_text(self.__class__.__name__, progress, nodenum)
         print(edit_text)
         message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
 
@@ -886,6 +890,32 @@ class TopoCore(Basecore):
         # 保存结果
         self.saveresult({'inbound': info1, 'outbound': info2})
         return {'inbound': info1, 'outbound': info2}
+
+
+def default_progress_text(corelabel: Union[int, str], progress: int, nodenum: int, slavecomment: str = "Local"):
+    if corelabel == 'SpeedCore' or corelabel == 1:
+        testtext = GCONFIG.config.get('bot', {}).get('speedtext', "⏳节点拓扑分析测试进行中...")
+    elif corelabel == 'TopoCore' or corelabel == 2:
+        testtext = GCONFIG.config.get('bot', {}).get('analyzetext', "⏳节点拓扑分析测试进行中...")
+    elif corelabel == 'ScriptCore' or corelabel == 3:
+        testtext = GCONFIG.config.get('bot', {}).get('scripttext', "⏳节点拓扑分析测试进行中...")
+    else:
+        testtext = "未知测试进行中"
+    progress_bars = GCONFIG.config.get('bot', {}).get('bar', "=")
+    bracketsleft = GCONFIG.config.get('bot', {}).get('bleft', "[")
+    bracketsright = GCONFIG.config.get('bot', {}).get('bright', "]")
+    bracketsspace = GCONFIG.config.get('bot', {}).get('bspace', "  ")
+
+    cal = progress / nodenum * 100
+    p_text = "%.2f" % cal
+    equal_signs = int(cal / 5)
+    space_count = 20 - equal_signs
+    progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + \
+                   f"{bracketsspace}" * space_count + f"{bracketsright}"
+    edit_text = f"🍀后端:{slavecomment}\n{testtext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + \
+                p_text + "%     [" + str(progress) + "/" + str(nodenum) + "]"
+    # print(edit_text)
+    return edit_text
 
 
 def check_init():

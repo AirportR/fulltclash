@@ -3,13 +3,13 @@ import io
 import json
 from concurrent.futures import ThreadPoolExecutor
 
-from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from pyrogram import enums, Client
 from pyrogram.errors import RPCError
 from loguru import logger
 
 from botmodule.init_bot import config, admin
-from utils.backend import SpeedCore, ScriptCore, TopoCore
+from utils.backend import SpeedCore, ScriptCore, TopoCore, break_speed
 from utils.safe import cipher_chacha20, sha256_32bytes
 from utils import message_delete_queue, check, cleaner, collector, export
 
@@ -18,10 +18,12 @@ SPEEDTESTIKM = InlineKeyboardMarkup(
         [InlineKeyboardButton("👋中止测速", callback_data='stop')],
     ]
 )
+SPEEDTEST_LIST = []
 
 
-async def slave_progress(progress, nodenum, botmsg: Message, corenum, master_id, master_chat_id, master_msg_id):
-    await botmsg.edit_text(f"/relay {master_id} edit {master_chat_id} {master_msg_id} ${corenum}:{progress}:{nodenum}")
+async def slave_progress(progress, nodenum, botmsg: Message, corenum, master_id, master_chat_id, master_msg_id, name):
+    progresstext = f"${corenum}:{progress}:{nodenum}"
+    await botmsg.edit_text(f'/relay {master_id} edit {master_chat_id} {master_msg_id} {progresstext} "{name}"')
 
 
 sp = slave_progress
@@ -31,13 +33,14 @@ def select_core_slave(coreindex: str, botmsg: Message, putinfo: dict):
     edit_chat_id = putinfo.get('edit-chat-id', None)
     edit_msg_id = putinfo.get('edit-message-id', None)
     masterid = putinfo.get('master', {}).get('id', 1)
+    slavename = putinfo.get('slave', {}).get('comment', '未知')
     if coreindex == 1:
         return SpeedCore(botmsg.chat.id, botmsg.id, SPEEDTESTIKM,
-                         (sp, (botmsg, 1, masterid, edit_chat_id, edit_msg_id)))
+                         (sp, (botmsg, 1, masterid, edit_chat_id, edit_msg_id, slavename)))
     elif coreindex == 2:
-        return TopoCore(botmsg.chat.id, botmsg.id, (sp, (botmsg, 2, masterid, edit_chat_id, edit_msg_id)))
+        return TopoCore(botmsg.chat.id, botmsg.id, (sp, (botmsg, 2, masterid, edit_chat_id, edit_msg_id, slavename)))
     elif coreindex == 3:
-        return ScriptCore(botmsg.chat.id, botmsg.id, (sp, (botmsg, 3, masterid, edit_chat_id, edit_msg_id)))
+        return ScriptCore(botmsg.chat.id, botmsg.id, (sp, (botmsg, 3, masterid, edit_chat_id, edit_msg_id, slavename)))
     else:
         logger.warning("未知的测试核心类型")
         return None
@@ -210,6 +213,7 @@ async def process(app: Client, message: Message, **kwargs):
 async def put_slave_task(app: Client, message: Message, proxyinfo: list, **kwargs):
     slaveid = kwargs.pop('slaveid', 'local')
     raw_backmsg: Message = kwargs.get('backmsg', None)
+    coreindex = kwargs.get('coreindex', 0)
     if slaveid == 'local':
         core = kwargs.pop('core', None)
         if core is None:
@@ -231,7 +235,7 @@ async def put_slave_task(app: Client, message: Message, proxyinfo: list, **kwarg
     payload = {
         'proxies': proxyinfo,
         'master': {'id': bot_info.id},
-        'coreindex': kwargs.get('coreindex', 0),
+        'coreindex': coreindex,
         'test-items': kwargs.get('test_items', None),
         'edit-message-id': raw_backmsg.id,
         'edit-chat-id': raw_backmsg.chat.id,
@@ -243,7 +247,9 @@ async def put_slave_task(app: Client, message: Message, proxyinfo: list, **kwarg
         },
         'sort': kwargs.get('sort', '订阅原序')
     }
-
+    # 设置指定的后端为测速状态
+    if coreindex == 1:
+        SPEEDTEST_LIST.append(slaveid)
     data1 = json.dumps(payload)
     cipherdata = cipher_chacha20(data1.encode(), key)
     print("加密数据预览： \n", cipherdata[:100])
@@ -273,3 +279,25 @@ async def process_slave(app: Client, message: Message, putinfo: dict, **kwargs):
     bytesio = io.BytesIO(cipherdata)
     bytesio.name = "result"
     await app.send_document(message.chat.id, bytesio, caption=f'/relay {master_id} result')
+
+
+async def stopspeed(app: Client, callback_query: CallbackQuery):
+    slaveconfig = config.getSlaveconfig()
+    bridge = config.getBridge()
+    botmsg = callback_query.message
+    commenttext = botmsg.text.split('\n', 1)[0].split(':')[1]
+    if commenttext == 'Local':
+        break_speed.append(True)
+        return
+    slaveid = 0
+    for k, v in slaveconfig.items():
+        comment = v.get('comment', '')
+        if comment == commenttext:
+            slaveid = int(k)
+            break
+    if slaveid:
+        await app.send_message(bridge, f'/relay {slaveid} stopspeed')
+        backmsg = await botmsg.edit_text("❌测速任务已取消")
+        message_delete_queue.put(backmsg)
+    logger.info("测速中止")
+    callback_query.stop_propagation()

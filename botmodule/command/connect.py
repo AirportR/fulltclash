@@ -1,3 +1,4 @@
+import asyncio
 import io
 import json
 from typing import Union
@@ -70,7 +71,10 @@ async def simple_relay(app: Client, message: Message):
         if message.document:
             await app.send_document(int(target_id), message.document.file_id, caption=newtext)
         else:
-            await app.send_message(int(target_id), newtext)
+            backmsg = await app.send_message(int(target_id), newtext)
+            if command == 'edit':
+                await asyncio.sleep(2)
+                await backmsg.delete(revoke=False)
     except RPCError as r:
         logger.error(str(r))
         return

@@ -1,5 +1,5 @@
 import asyncio
-
+import contextlib
 from loguru import logger
 from pyrogram import Client
 from pyrogram.types import Message
@@ -26,15 +26,9 @@ async def bot_task_queue(client: Client, message, task_type: str, qu: asyncio.Qu
     :param qu: 队列
     :return: no return
     """
-    slaveid = kwargs.get('slaveid', 'local')
-    if slaveid != 'local':
-        await qu.get()
-        qu.task_done()
-        await botmodule.process(client, message, put_type=task_type, **kwargs)
-    else:
-        await botmodule.process(client, message, put_type=task_type, **kwargs)
-        await qu.get()
-        qu.task_done()
+    await botmodule.process(client, message, put_type=task_type, **kwargs)
+    await qu.get()
+    qu.task_done()
 
 
 async def bot_task_queue_slave(app: Client, message: Message, putinfo: dict, qu: asyncio.Queue, **kwargs):
@@ -58,11 +52,17 @@ async def bot_put(client: Client, message: Message, put_type: str, test_items: l
         if test_items is None:
             test_items = []
         logger.info("任务测试项为: " + str(test_items))
+        slaveid = kwargs.get('slaveid', 'local')
+        if slaveid != 'local':
+            await botmodule.process(client, message, put_type, **kwargs)
+            task_num -= 1
+            return
         mes = await message.reply("排队中,前方队列任务数量为: " + str(task_num - 1))
         await q.put(message)
         r1(test_items)
         r2(test_items)
         await mes.delete()
+
         await bot_task_queue(client, message, put_type, q, test_items=test_items, **kwargs)
         task_num -= 1
 

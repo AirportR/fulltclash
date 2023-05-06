@@ -49,7 +49,7 @@ def command_loader2(app: Client):
     """
     masterconfig = config.getMasterconfig()
     master_bridge = [int(i.get('bridge')) for i in masterconfig.values()] if masterconfig else []
-    print(master_bridge)
+    print("userbot白名单：", master_bridge)
 
     @app.on_message(filters.caption & filters.document & filters.user(master_bridge), 1)
     async def put_task(client: Client, message: Message):
@@ -60,6 +60,10 @@ def command_loader2(app: Client):
     @app.on_message(filters.command(['sconnect']) & filters.user(admin + master_bridge), 2)
     async def resp_conn(client: Client, message: Message):
         await botmodule.simple_conn_resp(client, message)
+
+    @app.on_message(filters.command(['stopspeed']) & filters.user(admin + master_bridge), 2)
+    async def _(_: Client, __: Message):
+        break_speed.append(True)
 
 
 def command_loader(app: Client):
@@ -161,12 +165,12 @@ def command_loader(app: Client):
     @app.on_message(filters.command(["speed"]) & allfilter(1), group=1)
     @AccessCallback()
     async def speed(client, message):
-        await bot_put(client, message, "speed")
+        await botmodule.select_slave_page(client, message, page=1)
 
     @app.on_message(filters.command(["speedurl"]) & allfilter(1), group=1)
     @AccessCallback()
     async def speedurl(client, message):
-        await bot_put(client, message, "speedurl")
+        await botmodule.select_slave_page(client, message, page=1)
 
     @app.on_message(filters.command(["subinfo", "traffic", "流量", "流量信息", "流量查询"]), group=0)
     async def subinfo(client, message):

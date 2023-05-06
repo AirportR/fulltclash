@@ -749,8 +749,8 @@ class ConfigManager:
         """
         获取连接中继桥，它是一个telegram的user_id
         """
-        bridge = self.config.get('bridge', [])
-        return [] if bridge is None else bridge
+        bridge = self.config.get('userbot', {}).get('id', None)
+        return bridge
 
     def getGstatic(self):
         """
