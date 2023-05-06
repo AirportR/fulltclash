@@ -8,7 +8,7 @@ from botmodule import init_bot
 from botmodule.cfilter import dynamic_data_filter, allfilter, AccessCallback
 from botmodule.command.authority import get_url_from_invite
 from botmodule.command.leave import leavechat, set_anti_group
-from utils.cron.utils import message_delete_queue
+# from utils.cron.utils import message_delete_queue
 # from utils.myqueue import q, bot_task_queue
 from utils.myqueue import bot_put
 from utils.check import check_callback_master
@@ -283,6 +283,7 @@ def callback_loader(app: Client):
             await botmodule.select_sort(client, callback_query)
             return
         test_items, origin_message, message, test_type = await botmodule.test_setting(client, callback_query)
+        # logger.info(str(test_items))
         if message:
             sort_str = botmodule.get_sort_str(message)
             slaveid = botmodule.get_slave_id(message.chat.id, message.id)

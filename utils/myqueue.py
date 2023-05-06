@@ -1,5 +1,4 @@
 import asyncio
-import contextlib
 from loguru import logger
 from pyrogram import Client
 from pyrogram.types import Message
@@ -54,7 +53,7 @@ async def bot_put(client: Client, message: Message, put_type: str, test_items: l
         logger.info("任务测试项为: " + str(test_items))
         slaveid = kwargs.get('slaveid', 'local')
         if slaveid != 'local':
-            await botmodule.process(client, message, put_type=put_type, **kwargs)
+            await botmodule.process(client, message, put_type=put_type, test_items=test_items, **kwargs)
             task_num -= 1
             return
         mes = await message.reply("排队中,前方队列任务数量为: " + str(task_num - 1))
