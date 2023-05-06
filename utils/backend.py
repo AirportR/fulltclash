@@ -894,11 +894,11 @@ class TopoCore(Basecore):
 
 def default_progress_text(corelabel: Union[int, str], progress: int, nodenum: int, slavecomment: str = "Local"):
     if corelabel == 'SpeedCore' or corelabel == 1:
-        testtext = GCONFIG.config.get('bot', {}).get('speedtext', "⏳节点拓扑分析测试进行中...")
+        testtext = GCONFIG.config.get('bot', {}).get('speedtext', "⏳速度测试进行中...")
     elif corelabel == 'TopoCore' or corelabel == 2:
         testtext = GCONFIG.config.get('bot', {}).get('analyzetext', "⏳节点拓扑分析测试进行中...")
     elif corelabel == 'ScriptCore' or corelabel == 3:
-        testtext = GCONFIG.config.get('bot', {}).get('scripttext', "⏳节点拓扑分析测试进行中...")
+        testtext = GCONFIG.config.get('bot', {}).get('scripttext', "⏳连通性测试进行中...")
     else:
         testtext = "未知测试进行中"
     progress_bars = GCONFIG.config.get('bot', {}).get('bar', "=")
