@@ -167,6 +167,12 @@ class AddonCleaner:
             for b in blacklist:
                 self._script.pop(b, None)
 
+    def mix_script(self, alist: list[str]) -> list:
+        """
+        适配后端脚本不足的兼容测试项，返回后端支持的所有测试项。
+        """
+        return list(set(alist).intersection(set((i for i in self._script.keys()))))
+
     def remove_addons(self, script_name: list):
         success_list = []
         if script_name:

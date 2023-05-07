@@ -3,7 +3,7 @@ from loguru import logger
 from pyrogram import Client
 from pyrogram.types import Message
 from utils.collector import reload_config as r1
-from utils.cleaner import reload_config as r2
+from utils.cleaner import reload_config as r2, addon
 from utils import message_edit_queue
 
 import botmodule
@@ -84,6 +84,7 @@ async def bot_put_slave(client: Client, message: Message, putinfo: dict, **kwarg
             return
         if test_items is None:
             test_items = []
+        test_items = addon.mix_script(test_items)
         logger.info("任务测试项为: " + str(test_items))
         botmsg = await message.reply(f"/relay {master_id} edit {edit_chat_id} {edit_message_id} 排队中,前方队列任务数量为:"
                                      + str(task_num - 1))

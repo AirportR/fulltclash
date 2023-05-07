@@ -40,7 +40,7 @@ buttons = [dbtn[1], dbtn[2], dbtn[3], dbtn[25], dbtn[15], dbtn[18], dbtn[20], db
 buttons.extend(addon.init_button(isreload=True))
 max_page_g = int(len(buttons) / 9) + 1
 blank_g = InlineKeyboardButton(f"{1}/{max_page_g}", callback_data="blank")
-next_page_g = InlineKeyboardButton("➡️下一页", callback_data=f"page{2}")
+next_page_g = InlineKeyboardButton("下一页➡️", callback_data=f"page{2}")
 
 IKM2 = InlineKeyboardMarkup(
     [

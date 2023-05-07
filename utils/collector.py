@@ -389,7 +389,6 @@ class Collector:
     def __init__(self):
         self.session = None
         self.tasks = []
-        self.script = addon.script
         self._headers = {
             'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                           "Chrome/106.0.0.0 Safari/537.36"}
@@ -431,8 +430,8 @@ class Collector:
             if len(items):
                 for item in items:
                     i = item
-                    if i in self.script:
-                        task = self.script[i][0]
+                    if i in addon.script:
+                        task = addon.script[i][0]
                         self.tasks.append(task(self, session, proxy=proxy))
                         continue
                     if i == "Youtube":
