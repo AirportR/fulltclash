@@ -75,11 +75,6 @@ class Basecore:
     def join_proxy(self, proxyinfo: list):
         self._config.setProxies(proxyinfo)
         self._config.node_filter(self._pre_include_text, self._pre_exclude_text, issave=False)  # 从配置文件过滤文件
-        # if self._include_text or self._exclude_text:
-        #     self._config.node_filter(self._include_text, self._exclude_text, issave=False)
-        if self._node_issave:
-            self._config.save(savePath=f'./clash/sub{self.start_time}.yaml')
-            logger.info(f"已将测试节点缓存到 ./clash/sub{self.start_time}.yaml")
 
     def setfilter(self, include_text: str = '', exclude_text: str = ''):
         self._include_text = include_text

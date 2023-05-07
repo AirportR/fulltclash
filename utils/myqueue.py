@@ -84,6 +84,7 @@ async def bot_put_slave(client: Client, message: Message, putinfo: dict, **kwarg
             return
         if test_items is None:
             test_items = []
+        print("检查前测试项:", test_items)
         test_items = addon.mix_script(test_items)
         logger.info("任务测试项为: " + str(test_items))
         botmsg = await message.reply(f"/relay {master_id} edit {edit_chat_id} {edit_message_id} 排队中,前方队列任务数量为:"

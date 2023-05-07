@@ -146,7 +146,7 @@ class AddonCleaner:
         self._script = {}
         self.blacklist = []
 
-    def global_test_item(self):
+    def global_test_item(self, httptest: bool = False):
         """
         经过去重并支持黑名单一并去除。最后返回一个新列表
         :return:
@@ -155,6 +155,8 @@ class AddonCleaner:
                      '维基百科', '落地IP风险']
         base_item = base_item + list(self._script.keys())
         new_item = sorted(set(base_item) - set(self.blacklist), key=base_item.index)
+        if httptest:
+            new_item.insert(0, "HTTP(S)延迟")
         return new_item
 
     @property
@@ -167,11 +169,15 @@ class AddonCleaner:
             for b in blacklist:
                 self._script.pop(b, None)
 
-    def mix_script(self, alist: list[str]) -> list:
+    def mix_script(self, alist: list[str], httptest: bool = True) -> list:
         """
         适配后端脚本不足的兼容测试项，返回后端支持的所有测试项。
         """
-        return list(set(alist).intersection(set((i for i in self._script.keys()))))
+        newlist = list(set(alist).intersection(set(self.global_test_item())))
+        if httptest:
+            newlist.insert(0, "HTTP(S)延迟")
+        newlist = sorted(newlist, key=newlist.index)
+        return newlist
 
     def remove_addons(self, script_name: list):
         success_list = []
