@@ -79,10 +79,13 @@ class IPCollector:
         elif self.style == "ip.sb":
             return "https://api.ip.sb/geoip/"
         elif self.style == "ipleak.net":
-            return "https://ipleak.net/json/"
+            return "https://ipv4.ipleak.net/json/"
         elif self.style == "ipdata.co":
             self.get_payload = f"?api-key={self.key}"
             return "https://api.ipdata.co/"
+        elif self.style == "ipapi.co":
+            self.get_payload = "/json/"
+            return "https://ipapi.co/"
 
     def create_tasks(self, session: aiohttp.ClientSession, hosts: list = None, proxy=None):
         """
@@ -636,7 +639,7 @@ async def delay(session: aiohttp.ClientSession, proxyname, testurl, hostname, po
             return -1
 
 
-async def delay_providers(providername, hostname='127.0.0.1', port=1123, session: aiohttp.ClientSession = None):
+async def delay_providers(providername, hostname='127.0.0.1', port=11230, session: aiohttp.ClientSession = None):
     healthcheckurl = 'http://{}:{}/providers/proxies/{}/healthcheck'.format(hostname, port, providername)
     url = 'http://{}:{}/providers/proxies/{}/'.format(hostname, port, providername)
     if session is None:
@@ -667,7 +670,7 @@ async def delay_providers(providername, hostname='127.0.0.1', port=1123, session
 
 async def batch_delay(proxyname: list, session: aiohttp.ClientSession = None,
                       testurl=config.getGstatic(),
-                      hostname='127.0.0.1', port=1123, timeout='5000'):
+                      hostname='127.0.0.1', port=11230, timeout='5000'):
     """
     批量测试延迟，仅适用于不含providers的订阅
     :param timeout:

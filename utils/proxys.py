@@ -3,6 +3,7 @@ import json
 import os
 import threading
 
+import async_timeout
 import yaml
 import ctypes
 import aiohttp
@@ -52,18 +53,27 @@ async def http_delay(url: str = config.getGstatic(), index: int = 0) -> int:
 
 
 async def http_delay_tls(url: str = config.getGstatic(), index: int = 0, timeout=10):
-    mean_delay = await asyncio.to_thread(_urlTest, url.encode(), index, timeout)
-    print(mean_delay)
+    mean_delay1 = None
     try:
-        mean_delay = json.loads(mean_delay).get('delay', 0)
+        async with async_timeout.timeout(20):
+            mean_delay1 = await asyncio.to_thread(_urlTest, url.encode(), index, timeout)
+            print(mean_delay1.decode())
+            mean_delay = json.loads(mean_delay1.decode()).get('delay', 0)
+    except asyncio.TimeoutError:
+        logger.error("HTTP(S)延迟测试已超时")
+        mean_delay = 0
     except Exception as e:
         logger.error(repr(e))
         mean_delay = 0
+    finally:
+        if mean_delay1 is not None:
+            pass
+            # _free_me(ctypes.pointer(mean_delay1))
     return mean_delay
 
 
 # 切换节点
-def switchProxy_old(proxyName, proxyGroup, clashHost: str = "127.0.0.1", clashPort: int = 1123):
+def switchProxy_old(proxyName, proxyGroup, clashHost: str = "127.0.0.1", clashPort: int = 11230):
     """
     切换clash核心中的代理节点，此版本为requests库实现
     :param proxyName: 想要切换代理节点的名称
@@ -114,7 +124,7 @@ def stopclash():
     stop(1)
 
 
-async def reloadConfig(filePath: str, clashHost: str = "127.0.0.1", clashPort: int = 1123):
+async def reloadConfig(filePath: str, clashHost: str = "127.0.0.1", clashPort: int = 11230):
     """
     若重载成功返回True，否则为False
     :param filePath: 文件路径,最好是绝对路径，如果是相对路径，则会尝试处理成绝对路径
@@ -142,7 +152,7 @@ async def reloadConfig(filePath: str, clashHost: str = "127.0.0.1", clashPort: i
 
 
 async def reloadConfig_batch(nodenum: int, pool: dict):
-    if not await reloadConfig(filePath='./clash/proxy.yaml', clashPort=1123):
+    if not await reloadConfig(filePath='./clash/proxy.yaml', clashPort=11230):
         return False
     try:
         if nodenum < len(pool.get('port', [])):
@@ -186,8 +196,8 @@ async def reloadConfig_batch(nodenum: int, pool: dict):
 #         clashconf.save(proxy_file_path)
 #         start_client(path=config.get_clash_path(), workpath=config.get_clash_work_path(), _config=proxy_file_path)
 #     clashconf = ClashCleaner(proxy_file_path)
-#     clashconf.changeClashPort(port=1122)
-#     clashconf.changeClashEC(ec="127.0.0.1:1123")
+#     clashconf.changeClashPort(port=11220)
+#     clashconf.changeClashEC(ec="127.0.0.1:11230")
 #     clashconf.save(proxy_file_path)
 
 

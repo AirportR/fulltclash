@@ -7,6 +7,7 @@ import botmodule
 from botmodule import init_bot
 from botmodule.cfilter import dynamic_data_filter, allfilter, AccessCallback
 from botmodule.command.authority import get_url_from_invite
+from botmodule.command.leave import leavechat, set_anti_group
 from utils.cron.utils import message_delete_queue
 from utils.myqueue import q, bot_task_queue
 from utils.check import check_callback_master
@@ -216,6 +217,15 @@ def command_loader(app: Client):
     async def resp(client, message):
         await botmodule.response(client, message)
         message.stop_propagation()
+
+    @app.on_message(filters.command(["setantigroup"]) & allfilter(2), group=2)
+    async def setantigroup(client, message):
+        await set_anti_group(client, message)
+
+    @app.on_message(filters.new_chat_members)
+    @AccessCallback(1)
+    async def auto_leave(client, message):
+        await leavechat(client, message)
 
 
 def callback_loader(app: Client):

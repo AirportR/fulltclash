@@ -38,6 +38,8 @@ class IPCleaner:
             org = self.get('isp_name')
         elif self.style == "ipdata.co":
             org = self.get('asn', {}).get('name')
+        elif self.style == "ipapi.co":
+            org = self.get('org')
         else:
             org = ""
         if org:
@@ -54,6 +56,8 @@ class IPCleaner:
         elif self.style == "ipleak.net":
             ip = self.get('query_text')
         elif self.style == "ipdata.co":
+            ip = self.get('ip')
+        elif self.style == "ipapi.co":
             ip = self.get('ip')
         else:
             pass
@@ -72,6 +76,8 @@ class IPCleaner:
             region_code = self.get('country_code')
         elif self.style == "ipdata.co":
             region_code = self.get('country_code')
+        elif self.style == "ipapi.co":
+            region_code = self.get('country_code')
         else:
             pass
         if region_code:
@@ -88,6 +94,8 @@ class IPCleaner:
         elif self.style == "ipleak.net":
             city = self.get('city_name')
         elif self.style == "ipdata.co":
+            city = self.get('city')
+        elif self.style == "ipapi.co":
             city = self.get('city')
         else:
             pass
@@ -115,6 +123,9 @@ class IPCleaner:
             return asd
         elif self.style == "ipdata.co":
             asn = self.get('asn', {}).get('asn', '0')
+            return asn
+        elif self.style == "ipapi.co":
+            asn = self.get('asn', '0')
             return asn
         else:
             return ''
@@ -315,10 +326,10 @@ dns:
   - 119.29.29.29
   - 223.5.5.5
   - 114.114.114.114
-external-controller: 127.0.0.1:1123
+external-controller: 127.0.0.1:11230
 ipv6: true
 log-level: info
-mixed-port: 1122
+mixed-port: 11220
 mode: rule
 proxies: null
 proxy-groups:
@@ -544,7 +555,7 @@ class ClashCleaner:
             logger.warning("读取节点信息失败！")
             return None
 
-    def changeClashPort(self, port: str or int = 1122):
+    def changeClashPort(self, port: str or int = 11220):
         """
         改变配置文件端口
         """
@@ -555,7 +566,7 @@ class ClashCleaner:
             self.yaml['port'] = int(port)
             logger.info("配置端口已被改变为：" + str(port))
 
-    def changeClashEC(self, ec: str = '127.0.0.1:1123'):
+    def changeClashEC(self, ec: str = '127.0.0.1:11230'):
         """
         改变external-controller地址与端口
         """
@@ -1358,6 +1369,13 @@ def domain_to_ip(host: str):
     except socket.gaierror:
         return None
 
+def cluster(host):
+    cluip = domain_to_ip(host)
+    if cluip is None:
+        return None
+    else:
+        clus = len(cluip)
+        return clus
 
 def count(host):
     ips = domain_to_ip(host)
@@ -1437,3 +1455,30 @@ def batch_domain2ip(host: list):
             else:
                 ipaddrs.append("N/A")
     return ipaddrs
+
+def batch_ipcu(host: list):
+    """
+    批量将域名转成簇列表
+    :param host: 一个列表
+    :return:
+    """
+    ipcu = []
+    for h in host:
+        if type(h).__name__ == 'dict':
+            try:
+                ipss = cluster(h['ipcu'])
+                if ipss:
+                    h['ipcu'] = ipss
+                else:
+                    h['ipcu'] = "N/A"
+                ipcu.append(h)
+            except KeyError:
+                h['ipcu'] = "N/A"
+                ipcu.append(h)
+        else:
+            ipss = cluster(h)
+            if ipss:
+                ipcu.append(ipss)
+            else:
+                ipcu.append("N/A")
+    return ipcu

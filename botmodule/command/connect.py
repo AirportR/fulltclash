@@ -27,7 +27,7 @@ async def startclash(app: Client, message: Message):
     start_or_stop = tgargs[1] if len(tgargs) > 1 else ''
     if start_or_stop == "start":
         backmsg = await message.reply("正在启动clash核心...")
-        start_port = config.config.get('clash', {}).get('startup', 1122)
+        start_port = config.config.get('clash', {}).get('startup', 11220)
         port_list = [start_port + i * 2 for i in range(corenum)]
         res2 = await check_port(start_port, start_port + 1 + corenum * 2)
         if res2:

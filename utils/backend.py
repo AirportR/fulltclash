@@ -13,7 +13,7 @@ from aiohttp_socks import ProxyConnector
 from loguru import logger
 from utils.collector import proxies
 from libs import pynat
-from utils import message_edit_queue, cleaner, collector, ipstack, proxys, sorter
+from utils import message_edit_queue, cleaner, collector, ipstack, proxys, sorter, geoip
 
 # 重写整个测试核心，技术栈分离。
 
@@ -99,17 +99,17 @@ class Basecore:
 
 # 部分内容已被修改  Some codes has been modified
 class Speedtest:
-    """
-    保留原作者信息
-    author: https://github.com/Oreomeow
-    """
-
     def __init__(self):
         self._config = cleaner.ConfigManager()
         self._stopped = False
-        self.speedurl = self.config.get('speedfile',
-                                        "https://dl.google.com/dl/android/studio/install/3.4.1.0/" +
-                                        "android-studio-ide-183.5522156-windows.exe")
+        self.speedurls = self.config.get('speedfile',
+                                         "https://dl.google.com/dl/android/studio/install/3.4.1.0/" +
+                                         "android-studio-ide-183.5522156-windows.exe")
+        if isinstance(self.speedurls, str):
+            self.speedurl = []
+            self.speedurl.append(self.speedurls)
+        else:
+            self.speedurl = self.speedurls
         self._thread = self.config.get('speedthread', 4)
         self.result = []
         self._total_red = 0
@@ -118,8 +118,9 @@ class Speedtest:
         self._statistics_time = 0
         self._time_used = 0
         self._count = 0
-        interval = GCONFIG.speedconfig().get('interval', 10)
-        self._download_interval = interval if 0 < interval < 60 else 10
+        interval = self.config.get('speedconfig', {}).get('interval', 10)
+        self._download_intervals = interval if 0 < interval < 60 else 10
+        self._download_interval = self._download_intervals + 1
 
     @property
     def thread(self):
@@ -218,26 +219,34 @@ class SpeedCore(Basecore):
             mysocket.close()
 
     @staticmethod
-    async def fetch(self, url: str, host: str, port: int, buffer: int):
+    async def fetch(self: Speedtest, urls: list, host: str, port: int, buffer: int):
         try:
-            # logger.info(f"Fetching {url} via {host}:{port}.")
             async with aiohttp.ClientSession(
                     headers={"User-Agent": "FullTclash"},
                     connector=ProxyConnector(host=host, port=port),
             ) as session:
-                # logger.debug("Session created.")
-                async with session.get(url, timeout=self._download_interval+10) as response:
-                    # logger.debug("Awaiting response.")
-                    while not self._stopped:
-                        if not break_speed:
-                            chunk = await response.content.read(buffer)
-                            if not chunk:
-                                logger.info("No chunk, task stopped.")
-                                break
-                            await self.record(len(chunk))
-                        else:
+                flag = 0
+                while True:
+                    for url in urls:
+                        if self._stopped:
                             break
-
+                        async with session.get(url, timeout=self._download_interval + 3) as response:
+                            while not self._stopped:
+                                if not break_speed:
+                                    chunk = await response.content.read(buffer)
+                                    if not chunk:
+                                        logger.info("polling start")
+                                        break
+                                    await self.record(len(chunk))
+                                else:
+                                    flag = 1
+                                    break
+                        if flag == 1:
+                            break
+                    if self._stopped:
+                        break
+                    elif break_speed:
+                        break
         except Exception as e:
             logger.error(f"Download link error: {str(e)}")
 
@@ -251,12 +260,12 @@ class SpeedCore(Basecore):
         download_semaphore = asyncio.Semaphore(workers if workers else Speedtest().thread)
         async with download_semaphore:
             st = Speedtest()
-            url = st.speedurl
+            urls = st.speedurl
             # logger.debug(f"Url: {url}")
             thread = workers if workers else st.thread
             logger.info(f"Running st_async, workers: {thread}.")
             tasks = [
-                asyncio.create_task(SpeedCore.fetch(st, url, proxy_host, proxy_port, buffer))
+                asyncio.create_task(SpeedCore.fetch(st, urls, proxy_host, proxy_port, buffer))
                 for _ in range(thread)
             ]
             await asyncio.wait(tasks)
@@ -272,7 +281,7 @@ class SpeedCore(Basecore):
             return 0, 0, [], 0
 
     # 以下为 另一部分
-    async def batch_speed(self, nodelist: list, port: int = 1122):
+    async def batch_speed(self, nodelist: list, port: int = 11220):
         info = {}
         progress = 0
         sending_time = 0
@@ -285,7 +294,7 @@ class SpeedCore(Basecore):
         progress_bar = str(bracketsleft) + f"{bracketsspace}" * 20 + str(bracketsright)
         edit_text = f"{speedtext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + "0" + \
                     "%     [" + str(progress) + "/" + str(nodenum) + "]"
-        test_items = ["HTTP(S)延迟", "平均速度", "最大速度", "速度变化", "UDP类型"]
+        test_items = ["HTTP(S)延迟", "平均速度", "最大速度", "每秒速度", "UDP类型"]
         for item in test_items:
             info[item] = []
         info["消耗流量"] = 0  # 单位:MB
@@ -295,13 +304,22 @@ class SpeedCore(Basecore):
         message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1, self.IKM))
         for name in nodelist:
             proxys.switchProxy(name, 0)
-            delay = await proxys.http_delay_tls(index=0)
+            #delay = await proxys.http_delay_tls(index=0)
+            delay = await proxys.http_delay(index=0)
             udptype, _, _, _, _ = self.nat_type_test('127.0.0.1', proxyport=port)
             if udptype is None:
                 udptype = "Unknown"
             res = await self.speed_start("127.0.0.1", port, 4096)
-            avgspeed = "%.2f" % (res[0] / 1024 / 1024) + "MB"
-            maxspeed = "%.2f" % (res[1] / 1024 / 1024) + "MB"
+            avgspeed_mb = res[0] / 1024 / 1024
+            if avgspeed_mb < 1:
+                avgspeed = "%.2f" % (res[0] / 1024) + "KB"
+            else:
+                avgspeed = "%.2f" % avgspeed_mb + "MB"
+            maxspeed_mb = res[1] / 1024 / 1024
+            if maxspeed_mb < 1:
+                maxspeed = "%.2f" % (res[1] / 1024) + "KB"
+            else:
+                maxspeed = "%.2f" % maxspeed_mb + "MB"
             speedresult = [v / 1024 / 1024 for v in res[2]]
             traffic_used = float("%.2f" % (res[3] / 1024 / 1024))
             info["消耗流量"] += traffic_used
@@ -319,7 +337,7 @@ class SpeedCore(Basecore):
                 sending_time += 10
                 equal_signs = int(cal / 5)
                 space_count = 20 - equal_signs
-                progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + f"{bracketsspace}" * space_count\
+                progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + f"{bracketsspace}" * space_count \
                                + bracketsright
                 edit_text = f"{speedtext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + p_text + \
                             "%     [" + str(progress) + "/" + str(nodenum) + "]"
@@ -331,7 +349,7 @@ class SpeedCore(Basecore):
     async def core(self, proxyinfo: list, **kwargs):
         info = {}  # 存放测速结果
         self.join_proxy(proxyinfo)
-        start_port = GCONFIG.config.get('clash', {}).get('startup', 1122)
+        start_port = GCONFIG.config.get('clash', {}).get('startup', 11220)
         # 获取可供测试的测试端口
         # 测速仅需要一个端口，因此这里不处理
         # 订阅加载
@@ -367,7 +385,7 @@ class ScriptCore(Basecore):
         self.edit = (chat_id, message_id)
 
     @staticmethod
-    async def unit(test_items: list, host="127.0.0.1", port=1122, index=0):
+    async def unit(test_items: list, host="127.0.0.1", port=11220, index=0):
         """
         以一个节点的所有测试项为一个基本单元unit,返回单个节点的测试结果
         :param port: 代理端口
@@ -377,8 +395,8 @@ class ScriptCore(Basecore):
         :return: list 返回test_items对应顺序的信息
         """
         info = []
-        # delay = await proxys.http_delay(index=index)
-        delay = await proxys.http_delay_tls(index=index, timeout=5)
+        delay = await proxys.http_delay(index=index)
+        #delay = await proxys.http_delay_tls(index=index, timeout=5)
         if delay == 0:
             logger.warning("超时节点，跳过测试")
             for t in test_items:
@@ -414,7 +432,7 @@ class ScriptCore(Basecore):
         bracketsleft = GCONFIG.config.get('bot', {}).get('bleft', "[")
         bracketsright = GCONFIG.config.get('bot', {}).get('bright', "]")
         bracketsspace = GCONFIG.config.get('bot', {}).get('bspace', "  ")
-        # corestartup = GCONFIG.config.get('clash', {}).get('startup', 1122)
+        # corestartup = GCONFIG.config.get('clash', {}).get('startup', 11220)
         progress_bar = str(bracketsleft) + f"{bracketsspace}" * 20 + str(bracketsright)
         edit_text = f"{scripttext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + "0" + \
                     "%     [" + str(progress) + "/" + str(nodenum) + "]"
@@ -517,7 +535,7 @@ class ScriptCore(Basecore):
         self.join_proxy(proxyinfo)
         # 获取可供测试的测试端口
         thread = GCONFIG.config.get('clash', {}).get('core', 1)
-        startup = GCONFIG.config.get('clash', {}).get('startup', 1124)
+        startup = GCONFIG.config.get('clash', {}).get('startup', 11220)
         pool = {'host': ['127.0.0.1' for _ in range(thread)],
                 'port': [startup + t * 2 for t in range(thread)]}
         # 订阅加载
@@ -550,59 +568,107 @@ class TopoCore(Basecore):
     def __init__(self, chat_id=None, message_id=None):
         super().__init__()
         self.edit = (chat_id, message_id)
+        self.ip_choose = GCONFIG.config.get('entrance', {}).get('switch', 'ip')
 
     async def topo(self):
-        info = {'地区': [], 'AS编号': [], '组织': [], '栈': [], '入口ip段': []}
+        if self.ip_choose == "ip":
+            info = {'地区': [], 'AS编号': [], '组织': [], '栈': [], '入口ip段': []}
+        elif self.ip_choose == "cluster":
+            info = {'地区': [], 'AS编号': [], '组织': [], '栈': [], '簇': []}
+        else:
+            info = {'地区': [], 'AS编号': [], '组织': [], '栈': []}
         cl = copy.deepcopy(self._config)
+        data = GCONFIG.config.get("localip", False)
         if not self.check_node():
             return info, [], cl
         co = collector.IPCollector()
         session = aiohttp.ClientSession()
         # node_addrs = cl.nodehost()
-        nodename, inboundinfo, cl, ipstack_list = sorter.sort_nodename_topo(cl)
+        nodename, inboundinfo, cl, ipstack_list, ipclu = sorter.sort_nodename_topo(cl)
         ipstack_lists = list(ipstack_list.values())
+        ipclus = list(ipclu.values())
         info['栈'] = ipstack_lists
         if nodename and inboundinfo and cl:
             # 拿地址，已经转换了域名为ip,hosts变量去除了N/A
             hosts = list(inboundinfo.keys())
-            # 创建任务并开始采集ip信息
-            co.create_tasks(session=session, hosts=hosts, proxy=proxies)
-            res = await co.start()
-            await session.close()
-            if res:
-                country_code = []
-                asn = []
+            if data:
+                code = []
                 org = []
-                for j in res:
-                    ipcl = cleaner.IPCleaner(j)
-                    country_code.append(ipcl.get_country_code())
-                    asn.append(str(ipcl.get_asn()))
-                    org.append(ipcl.get_org())
-                info.update({'地区': country_code, 'AS编号': asn, '组织': org})
-                numcount = []
-                for v in inboundinfo.values():
-                    numcount.append(int(v))
-                new_hosts = []
-                for host in hosts:
-                    if len(host) < 16:  # v4地址最大长度为15
-                        try:
-                            old_ip = host.split('.')[:2]
-                            new_ip = old_ip[0] + "." + old_ip[1] + ".*.*"
-                        except IndexError:
-                            new_ip = host
-                        new_hosts.append(new_ip)
-                    elif len(host) > 15:
-                        try:
-                            old_ip = host.split(':')[2:4]
-                            new_ip = "*:*:" + old_ip[0] + ":" + old_ip[1] + ":*:*"
-                        except IndexError:
-                            new_ip = host
-                        new_hosts.append(new_ip)
-                    else:
-                        new_hosts.append(host)
-                info.update({'入口ip段': new_hosts})
-                info.update({'出口数量': numcount})
-            return info, hosts, cl
+                asns = []
+                for ip in hosts:
+                   c, o, a = geoip.geo_info(ip)
+                   code.append(c)
+                   org.append(o)
+                   asns.append(a)
+                   info.update({'地区': code, 'AS编号': asns, '组织': org})
+                   numcount = []
+                   for v in inboundinfo.values():
+                       numcount.append(int(v))
+                   info.update({'出口数量': numcount})
+                   new_hosts = []
+                   if self.ip_choose == "ip":
+                    for host in hosts:
+                        if len(host) < 16:  # v4地址最大长度为15
+                            try:
+                                old_ip = host.split('.')[:2]
+                                new_ip = old_ip[0] + "." + old_ip[1] + ".*.*"
+                            except IndexError:
+                                new_ip = host
+                            new_hosts.append(new_ip)
+                        elif len(host) > 15:
+                            try:
+                                old_ip = host.split(':')[2:4]
+                                new_ip = "*:*:" + old_ip[0] + ":" + old_ip[1] + ":*:*"
+                            except IndexError:
+                                new_ip = host
+                            new_hosts.append(new_ip)
+                        else:
+                            new_hosts.append(host)
+                    info.update({'入口ip段': new_hosts})
+                   elif self.ip_choose == "cluster":
+                       info.update({'簇': ipclus})
+                return info, hosts, cl
+            else:
+              co.create_tasks(session=session, hosts=hosts, proxy=proxies)
+              res = await co.start()
+              await session.close()
+              if res:
+                  country_code = []
+                  asn = []
+                  org = []
+                  for j in res:
+                      ipcl = cleaner.IPCleaner(j)
+                      country_code.append(ipcl.get_country_code())
+                      asn.append(str(ipcl.get_asn()))
+                      org.append(ipcl.get_org())
+                  info.update({'地区': country_code, 'AS编号': asn, '组织': org})
+                  numcount = []
+                  for v in inboundinfo.values():
+                      numcount.append(int(v))
+                  info.update({'出口数量': numcount})
+                  new_hosts = []
+                  if self.ip_choose == "ip":
+                      for host in hosts:
+                          if len(host) < 16:  # v4地址最大长度为15
+                              try:
+                                  old_ip = host.split('.')[:2]
+                                  new_ip = old_ip[0] + "." + old_ip[1] + ".*.*"
+                              except IndexError:
+                                  new_ip = host
+                              new_hosts.append(new_ip)
+                          elif len(host) > 15:
+                              try:
+                                  old_ip = host.split(':')[2:4]
+                                  new_ip = "*:*:" + old_ip[0] + ":" + old_ip[1] + ":*:*"
+                              except IndexError:
+                                  new_ip = host
+                              new_hosts.append(new_ip)
+                          else:
+                              new_hosts.append(host)
+                      info.update({'入口ip段': new_hosts})
+                  elif self.ip_choose == "cluster":
+                      info.update({'簇': ipclus})
+              return info, hosts, cl
 
     async def batch_topo(self, nodename: list, pool: dict):
         resdata = []
@@ -695,11 +761,12 @@ class TopoCore(Basecore):
         # info1 = {}  # 存放测试结果
         info2 = {}  # 存放测试结果
         test_type = kwargs.get('test_type', 'all')
+        data = GCONFIG.config.get("localip", False)
         # 先把节点信息写入文件
         self.join_proxy(proxyinfo)
         # 获取可供测试的测试端口
         thread = GCONFIG.config.get('clash', {}).get('core', 1)
-        startup = GCONFIG.config.get('clash', {}).get('startup', 1124)
+        startup = GCONFIG.config.get('clash', {}).get('startup', 11220)
         pool = {'host': ['127.0.0.1' for _ in range(thread)],
                 'port': [startup + t * 2 for t in range(thread)]}
         # 开始测试
@@ -724,11 +791,22 @@ class TopoCore(Basecore):
                 ipstackes = []
                 for j in res:
                     ipcl = cleaner.IPCleaner(j)
-                    country_code.append(ipcl.get_country_code())
-                    asn.append(str(ipcl.get_asn()))
-                    org.append(ipcl.get_org())
                     ip = ipcl.get_ip()
                     ipaddr.append(ip)
+                    if data == False:
+                       country_code.append(ipcl.get_country_code())
+                       asn.append(str(ipcl.get_asn()))
+                       org.append(ipcl.get_org())
+                    else:
+                      pass
+                if data:
+                   for ip in ipaddr:
+                     d, g, h = geoip.geo_info(ip)
+                     country_code.append(d)
+                     asn.append(h)
+                     org.append(g)
+                else:
+                   pass            
                 for dictionary in ras:
                     if 'ips' in dictionary:
                         ipstackes.extend(dictionary['ips'])

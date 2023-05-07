@@ -109,7 +109,6 @@ async def check_speednode(backmsg: Message, core, nodenum: int) -> bool:
     """
     检查节点数量是否超出限制
     """
-    dir(core)
     if type(core).__name__ == 'SpeedCore':
         if config.speednodes() < nodenum:
             await backmsg.edit_text("节点数量超出限制，已取消测试")
