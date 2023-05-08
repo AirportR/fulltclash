@@ -53,6 +53,7 @@ async def startclash(app: Client, message: Message):
 
 async def simple_relay(app: Client, message: Message):
     text = message.caption if message.caption else message.text
+    slaveconfig = config.getSlaveconfig()
     if not text.startswith("/relay"):
         return
     tgargs = ArgCleaner().getall(str(text))
@@ -63,15 +64,17 @@ async def simple_relay(app: Client, message: Message):
         message_delete_queue.put(backmsg)
         return
     target_id = tgargs[1]
+    slave_name = slaveconfig.get(target_id, {}).get('username', '')
+    target = slave_name if slave_name else int(target_id)
     command = tgargs[2].strip('/')
     try:
         newtext = f'/{command} {origin_id} '
         if len(tgargs) > 3:
             newtext += ' '.join(tgargs[3:])
         if message.document:
-            await app.send_document(int(target_id), message.document.file_id, caption=newtext)
+            await app.send_document(target, message.document.file_id, caption=newtext)
         else:
-            backmsg = await app.send_message(int(target_id), newtext)
+            backmsg = await app.send_message(target, newtext)
             if command == 'edit':
                 await asyncio.sleep(2)
                 await backmsg.delete(revoke=False)
@@ -106,18 +109,23 @@ async def conn_simple(app: Client, message: Message):
         # 检查连接参数
         _args = ArgCleaner(message.text).getall()
         if len(_args) < 3:
-            backmsg2 = await b1.edit_text("❌使用方式: /connect <机器人ID> <备注> <连接密码>")
+            backmsg2 = await b1.edit_text("❌使用方式: /connect <bot用户名> <备注> <连接密码>")
             message_delete_queue.put_nowait((backmsg2.chat.id, backmsg2.id, 10))
             return
-        bot_id = _args[1]
+        bot_name = _args[1]
+        # 判断第一个字符的ASCII码是否属于数字范围
+        if 48 <= ord(bot_name[0]) <= 57:
+            backmsg2 = await b1.edit_text("❌使用方式: \n/connect <bot用户名> <备注> <连接密码>\n\n第一个参数应是bot的用户名！")
+            message_delete_queue.put_nowait((backmsg2.chat.id, backmsg2.id, 10))
+            return
         conn_pwd = _args[3] if len(_args) > 3 else ''
         # 检查后端id
         try:
             if app2 is None:
                 return
-            targetbot = await app2.get_users(bot_id)
+            targetbot = await app2.get_chat(bot_name)
         except PeerIdInvalid:
-            backmsg3 = await b1.edit_text("❌错误的后端bot_id")
+            backmsg3 = await b1.edit_text("❌错误的后端bot_username")
             message_delete_queue.put_nowait((backmsg3.chat.id, backmsg3.id, 10))
             return
         bot_username = targetbot.username

@@ -253,7 +253,7 @@ class ExportCommon(BaseExport):
             print(compare)
         img_width = 100  # 序号
         nodename_width = self.text_maxwidth(self.basedata)
-        nodename_width = max(nodename_width, 420)
+        nodename_width = max(nodename_width, 500)
         nodename_width = nodename_width + 150
 
         infolist_width = self.key_width_list()

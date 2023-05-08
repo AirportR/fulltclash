@@ -42,6 +42,11 @@ def user_loder(app: Client):
     async def _(client: Client, message: Message):
         await botmodule.simple_relay(client, message)
 
+    @app.on_message(filters.command(config.config.get('bot', {}).get('command', [])))
+    @AccessCallback(1)
+    async def common_command(client: Client, message: Message):
+        await botmodule.common_command(client, message)
+
 
 def command_loader2(app: Client):
     """
