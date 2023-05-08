@@ -312,7 +312,7 @@ async def select_slave_page(_: Client, call: Union[CallbackQuery, Message], **kw
     pre_page_text = page - 1 if page - 1 > 0 else 1
     next_page_text = page + 1 if page < max_page else max_page
     pre_page = InlineKeyboardButton('⬅️上一页', callback_data=f'spage{pre_page_text}')
-    next_page = InlineKeyboardButton('➡️下一页', callback_data=f'spage{next_page_text}')
+    next_page = InlineKeyboardButton('下一页➡️', callback_data=f'spage{next_page_text}')
 
     blank = InlineKeyboardButton(f'{page}/{max_page}', callback_data='blank')
 
