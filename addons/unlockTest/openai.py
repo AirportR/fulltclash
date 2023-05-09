@@ -42,10 +42,15 @@ async def fetch_openai(Collector, session: aiohttp.ClientSession, proxy=None, re
         async with session.get(openaiurl1, headers=_headers, proxy=proxy, timeout=10) as res:
             if res.status == 403:
                 text = await res.text()
-                index = text.find("You do not have access to chat.openai.com.")
+                index = text.find("Sorry, you have been blocked")
                 if index > 0:
                     Collector.info['OpenAI'] = "失败"
                     return
+                index2 = text.find("You do not have access to chat.openai.com.")
+                if index2 > 0:
+                    Collector.info['OpenAI'] = "失败"
+                    return
+
             else:
                 Collector.info['OpenAI'] = "未知"
         async with session.get(openaiurl2, headers=_headers, proxy=proxy, timeout=10) as res2:

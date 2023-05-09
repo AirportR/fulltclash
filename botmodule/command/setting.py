@@ -33,7 +33,7 @@ dbtn = default_button = {
     'b_origin': InlineKeyboardButton("♾️订阅原序", callback_data="sort:订阅原序"),
     'b_rhttp': InlineKeyboardButton("⬇️HTTP倒序", callback_data="sort:HTTP倒序"),
     'b_http': InlineKeyboardButton("⬆️HTTP升序", callback_data="sort:HTTP升序"),
-    'b_slave': InlineKeyboardButton("默认后端", config.config.get('bot', {}).get('default-slave', 'slave:' + 'local'))
+    'b_slave': InlineKeyboardButton("本地后端", config.config.get('bot', {}).get('default-slave', 'slave:' + 'local'))
 }
 
 buttons = [dbtn[1], dbtn[2], dbtn[3], dbtn[25], dbtn[15], dbtn[18], dbtn[20], dbtn[21], dbtn[19]]
@@ -304,7 +304,6 @@ def get_slave_id(chat_id: int, message_id: int):
 async def select_slave_page(_: Client, call: Union[CallbackQuery, Message], **kwargs):
     slaveconfig = config.getSlaveconfig()
     comment = [i.get('comment', None) for i in slaveconfig.values() if i.get('comment', None)]
-    print(comment)
 
     page = kwargs.get('page', 1)
     row = kwargs.get('row', 5)
@@ -397,8 +396,12 @@ async def select_sort(app: Client, call: CallbackQuery):
 
 async def setting_page(_: Client, message: Message):
     text = config.config.get('bot', {}).get('description', f"🛠️FullTclash bot管理总枢🛠️\n\n版本: {__version__}({v_hash})")
-    addon_button = InlineKeyboardButton("🧰插件管理(开发中)", callback_data="blank")
+    addon_button = InlineKeyboardButton("🧩插件管理(开发中)", callback_data="blank")
     config_button = InlineKeyboardButton("⚙️配置管理(开发中)", callback_data="blank")
     sub_button = InlineKeyboardButton("🌐订阅管理(开发中)", callback_data="blank")
-    IKM = InlineKeyboardMarkup([[addon_button], [config_button], [sub_button]])
+    slave_button = InlineKeyboardButton("🧰后端管理(开发中)", callback_data="blank")
+    IKM = InlineKeyboardMarkup([[addon_button], [config_button], [sub_button], [slave_button]])
     await message.reply_text(text, reply_markup=IKM, quote=True)
+
+# async def setting_slave(_: Client, message: Message):
+#     pass
