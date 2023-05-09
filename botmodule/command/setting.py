@@ -33,7 +33,8 @@ dbtn = default_button = {
     'b_origin': InlineKeyboardButton("♾️订阅原序", callback_data="sort:订阅原序"),
     'b_rhttp': InlineKeyboardButton("⬇️HTTP倒序", callback_data="sort:HTTP倒序"),
     'b_http': InlineKeyboardButton("⬆️HTTP升序", callback_data="sort:HTTP升序"),
-    'b_slave': InlineKeyboardButton("本地后端", config.config.get('bot', {}).get('default-slave', 'slave:' + 'local'))
+    'b_slave': InlineKeyboardButton("本地后端", config.config.get('bot', {}).get('default-slave', 'slave:' + 'local')),
+    'b_close': InlineKeyboardButton("❌关闭页面", callback_data="close"),
 }
 
 buttons = [dbtn[1], dbtn[2], dbtn[3], dbtn[25], dbtn[15], dbtn[18], dbtn[20], dbtn[21], dbtn[19]]
@@ -301,6 +302,53 @@ def get_slave_id(chat_id: int, message_id: int):
     return slaveid_cache.pop(k, "local")
 
 
+def page_frame(pageprefix: str, contentprefix, content: list[str], **kwargs) -> list:
+    """
+    翻页框架，返回一个内联键盘列表：[若干行的内容按钮,(上一页、页数预览、下一页）按钮]
+    pageprefix: 页面回调数据的前缀字符串
+    contentprefix: 具体翻页内容的回调数据的前缀字符串
+    """
+    page = kwargs.get('page', 1)
+    row = kwargs.get('row', 5)
+    column = kwargs.get('column', 1)
+    max_page = int(len(content) / (row * column)) + 1
+    pre_page_text = page - 1 if page - 1 > 0 else 1
+    next_page_text = page + 1 if page < max_page else max_page
+    pre_page = InlineKeyboardButton('⬅️上一页', callback_data=f'{pageprefix}{pre_page_text}')
+    next_page = InlineKeyboardButton('下一页➡️', callback_data=f'{pageprefix}{next_page_text}')
+    preview = InlineKeyboardButton(f'{page}/{max_page}', callback_data='blank')
+
+    if page > max_page:
+        logger.error("页数错误")
+        return []
+    if page == 1:
+        pre_page.text = '        '
+        pre_page.callback_data = 'blank'
+
+    if page == max_page:
+        next_page.text = '        '
+        next_page.callback_data = 'blank'
+        content_keyboard = []
+        temp_row = []
+        for i, c in enumerate(content[(max_page - 1) * row * column:]):
+            if i % column == 0 and i != 0:
+                content_keyboard.append(deepcopy(temp_row))
+                temp_row.clear()
+            temp_row.append(IKB(c, f'{contentprefix}:{c}'))
+        content_keyboard.append(deepcopy(temp_row))
+    else:
+        content_keyboard = []
+        temp_row = []
+        for i, c in enumerate(content[(page - 1) * row * column:page * row * column]):
+            if i % column == 0 and i != 0:
+                content_keyboard.append(deepcopy(temp_row))
+                temp_row.clear()
+            temp_row.append(IKB(c, f'{contentprefix}:{c}'))
+        content_keyboard.append(deepcopy(temp_row))
+    content_keyboard.append([pre_page, preview, next_page])
+    return content_keyboard
+
+
 async def select_slave_page(_: Client, call: Union[CallbackQuery, Message], **kwargs):
     slaveconfig = config.getSlaveconfig()
     comment = [i.get('comment', None) for i in slaveconfig.values() if i.get('comment', None)]
@@ -312,7 +360,6 @@ async def select_slave_page(_: Client, call: Union[CallbackQuery, Message], **kw
     next_page_text = page + 1 if page < max_page else max_page
     pre_page = InlineKeyboardButton('⬅️上一页', callback_data=f'spage{pre_page_text}')
     next_page = InlineKeyboardButton('下一页➡️', callback_data=f'spage{next_page_text}')
-
     blank = InlineKeyboardButton(f'{page}/{max_page}', callback_data='blank')
 
     if page > max_page:
@@ -397,11 +444,29 @@ async def select_sort(app: Client, call: CallbackQuery):
 async def setting_page(_: Client, message: Message):
     text = config.config.get('bot', {}).get('description', f"🛠️FullTclash bot管理总枢🛠️\n\n版本: {__version__}({v_hash})")
     addon_button = InlineKeyboardButton("🧩插件管理(开发中)", callback_data="blank")
-    config_button = InlineKeyboardButton("⚙️配置管理(开发中)", callback_data="blank")
+    config_button = InlineKeyboardButton("⚙️配置管理", callback_data="setconfig")
     sub_button = InlineKeyboardButton("🌐订阅管理(开发中)", callback_data="blank")
     slave_button = InlineKeyboardButton("🧰后端管理(开发中)", callback_data="blank")
     IKM = InlineKeyboardMarkup([[addon_button], [config_button], [sub_button], [slave_button]])
     await message.reply_text(text, reply_markup=IKM, quote=True)
 
-# async def setting_slave(_: Client, message: Message):
-#     pass
+
+async def select_config_page(app: Client, callback: Union[CallbackQuery, Message], **kwargs):
+    # page = kwargs.get('page', 1)
+    # row = kwargs.get('row', 5)
+    configkeys = list(config.config.keys())
+    # max_page = int(len(configkeys) / row * 2) + 1
+    content_keyboard = page_frame('cpage', 'config', configkeys, **kwargs)
+    content_keyboard.append([dbtn['b_close']])
+
+    IKM = InlineKeyboardMarkup(content_keyboard)
+    if isinstance(callback, CallbackQuery):
+        botmsg = callback.message
+        await botmsg.edit_text(f"⚙️以下是配置项预览: \n\n共找到{len(configkeys)}条配置项", reply_markup=IKM)
+    else:
+        await callback.reply("请选择测试后端:", reply_markup=IKM, quote=True)
+
+
+async def setting_config(_: Client, message: Message):
+    list(config.config.keys())
+    # text = f"当前配置路径: {}\n值: {}"

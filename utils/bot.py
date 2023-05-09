@@ -269,11 +269,23 @@ def callback_loader(app: Client):
         await botmodule.reload_addon_from_telegram(client, call=callback_query)
         callback_query.stop_propagation()
 
+    @app.on_callback_query(filters.user(init_bot.admin), group=1)
+    async def bot_setting(client, callback_query: CallbackQuery):
+        if callback_query.data.startswith('cpage'):
+            await botmodule.select_config_page(client, callback_query, page=int(callback_query.data[5:]), column=2)
+            return
+        elif callback_query.data == 'setconfig':
+            await botmodule.select_config_page(client, callback_query, page=1, column=2)
+            return
+
     @app.on_callback_query(group=2)
     async def settings_test(client, callback_query: CallbackQuery):
         if callback_query.data == "blank":
             return
         if await check_callback_master(callback_query, botmodule.init_bot.reloadUser()):
+            return
+        elif callback_query.data == "close":
+            await callback_query.message.delete()
             return
         elif callback_query.data.startswith('page'):
             await botmodule.select_page(client, callback_query, page=int(str(callback_query.data)[4:]))
