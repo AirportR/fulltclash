@@ -1,6 +1,6 @@
 import contextlib
 from copy import deepcopy
-from typing import Union
+from typing import Union, List
 from loguru import logger
 from pyrogram import types, Client
 from pyrogram.errors import RPCError
@@ -302,7 +302,7 @@ def get_slave_id(chat_id: int, message_id: int):
     return slaveid_cache.pop(k, "local")
 
 
-def page_frame(pageprefix: str, contentprefix, content: list[str], **kwargs) -> list:
+def page_frame(pageprefix: str, contentprefix, content: List[str], **kwargs) -> list:
     """
     翻页框架，返回一个内联键盘列表：[若干行的内容按钮,(上一页、页数预览、下一页）按钮]
     pageprefix: 页面回调数据的前缀字符串
@@ -451,7 +451,7 @@ async def setting_page(_: Client, message: Message):
     await message.reply_text(text, reply_markup=IKM, quote=True)
 
 
-async def select_config_page(app: Client, callback: Union[CallbackQuery, Message], **kwargs):
+async def select_config_page(_: Client, callback: Union[CallbackQuery, Message], **kwargs):
     # page = kwargs.get('page', 1)
     # row = kwargs.get('row', 5)
     configkeys = list(config.config.keys())
@@ -467,6 +467,6 @@ async def select_config_page(app: Client, callback: Union[CallbackQuery, Message
         await callback.reply("请选择测试后端:", reply_markup=IKM, quote=True)
 
 
-async def setting_config(_: Client, message: Message):
+async def setting_config(_: Client, __: Message):
     list(config.config.keys())
     # text = f"当前配置路径: {}\n值: {}"
