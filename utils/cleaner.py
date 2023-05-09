@@ -3,7 +3,7 @@ import importlib
 import os
 import re
 import sys
-from typing import Union
+from typing import Union, List
 import socket
 import yaml
 from loguru import logger
@@ -169,7 +169,7 @@ class AddonCleaner:
             for b in blacklist:
                 self._script.pop(b, None)
 
-    def mix_script(self, alist: list[str], httptest: bool = True) -> list:
+    def mix_script(self, alist: List[str], httptest: bool = True) -> list:
         """
         适配后端脚本不足的兼容测试项，返回后端支持的所有测试项。
         """
@@ -718,7 +718,6 @@ class ConfigManager:
         except KeyError:
             return {}
 
-    # TODO(@AirportR): 三项speed配置可以合在一个母项中
     def speednodes(self):
         try:
             return self.config['speednodes']
