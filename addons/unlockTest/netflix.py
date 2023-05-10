@@ -47,7 +47,7 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
                         else:
                             region = "未知"
                             Collector.info['netflix_new'] = f"解锁({region})"
-                    except Exception as e:
+                    except IndexError as e:
                         logger.error(e)
                         Collector.info['netflix_new'] = "N/A"
                 elif res.status == 403:

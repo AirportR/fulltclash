@@ -228,19 +228,6 @@ class SpeedCore(Basecore):
         """
         默认的进度条反馈函数
         """
-        # speedtext = GCONFIG.config.get('bot', {}).get('speedtext', "⏳速度测试进行中...")
-        # progress_bars = GCONFIG.config.get('bot', {}).get('bar', "=")
-        # bracketsleft = GCONFIG.config.get('bot', {}).get('bleft', "[")
-        # bracketsright = GCONFIG.config.get('bot', {}).get('bright', "]")
-        # bracketsspace = GCONFIG.config.get('bot', {}).get('bspace', "  ")
-        # cal = progress / nodenum * 100
-        # p_text = "%.2f" % cal
-        # equal_signs = int(cal / 5)
-        # space_count = 20 - equal_signs
-        # progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + f"{bracketsspace}" * space_count \
-        #                + bracketsright
-        # edit_text = f"{speedtext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + p_text + \
-        #             "%     [" + str(progress) + "/" + str(nodenum) + "]"
         edit_text = default_progress_text(self.__class__.__name__, progress, nodenum)
         print(edit_text)
         message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1, self.IKM))
@@ -425,20 +412,6 @@ class ScriptCore(Basecore):
         """
         默认的进度条反馈函数
         """
-        # scripttext = GCONFIG.config.get('bot', {}).get('scripttext', "⏳联通性测试进行中...")
-        # progress_bars = GCONFIG.config.get('bot', {}).get('bar', "=")
-        # bracketsleft = GCONFIG.config.get('bot', {}).get('bleft', "[")
-        # bracketsright = GCONFIG.config.get('bot', {}).get('bright', "]")
-        # bracketsspace = GCONFIG.config.get('bot', {}).get('bspace', "  ")
-        # cal = progress / nodenum * 100
-        # p_text = "%.2f" % cal
-        #
-        # equal_signs = int(cal / 5)
-        # space_count = 20 - equal_signs
-        # progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + \
-        #                f"{bracketsspace}" * space_count + f"{bracketsright}"
-        # edit_text = f"{scripttext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + \
-        #             p_text + "%     [" + str(progress) + "/" + str(nodenum) + "]"
         edit_text = default_progress_text(self.__class__.__name__, progress, nodenum)
         print(edit_text)
         message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
@@ -454,7 +427,12 @@ class ScriptCore(Basecore):
         :return: list 返回test_items对应顺序的信息
         """
         info = []
-        delay = await proxys.http_delay(index=index)
+        from async_timeout import timeout
+        try:
+            async with timeout(10):
+                delay = await proxys.http_delay(index=index)
+        except asyncio.exceptions.TimeoutError:
+            delay = 0
         # delay = await proxys.http_delay_tls(index=index, timeout=5)
         if delay == 0:
             logger.warning("超时节点，跳过测试")
