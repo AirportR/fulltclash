@@ -5,8 +5,8 @@ from loguru import logger
 from utils.collector import config
 
 # collector section
-netflix_url1 = config.config.get('netflixurl', "https://www.netflix.com/title/80113701")  # 非自制
-netflix_url2 = "https://www.netflix.com/title/70242311"  # 自制
+netflix_url1 = config.config.get('netflixurl', "https://www.netflix.com/title/70143836")  # 非自制
+netflix_url2 = "https://www.netflix.com/title/81280792"  # 自制
 
 
 async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, proxy=None, reconnection=30):
