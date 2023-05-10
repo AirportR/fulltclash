@@ -1,6 +1,6 @@
 import asyncio
 import aiohttp
-from aiohttp import ClientConnectorError
+from aiohttp import ClientConnectorError, ServerDisconnectedError
 from loguru import logger
 from utils.collector import config
 
@@ -56,6 +56,9 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
                         await fetch_netflix_new(Collector, session, flag=flag + 1, proxy=proxy, reconnection=5)
                         return
                     await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection - 1)
+                elif res.status == 503:
+                    await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection - 1)
+                    return
                 else:
                     logger.info("不支持非自制剧，正在检测自制剧...")
                     await fetch_netflix_new(Collector, session, flag=flag + 1, proxy=proxy, reconnection=reconnection)
@@ -68,6 +71,9 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
                         Collector.info['netflix_new'] = "失败"
                         return
                     await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection - 1)
+                elif res.status == 503:
+                    await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection - 1)
+                    return
                 else:
                     Collector.info['netflix_new'] = "失败"
         else:
@@ -78,6 +84,13 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
             await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection - 1)
         else:
             Collector.info['netflix_new'] = "连接错误"
+    except ServerDisconnectedError as s:
+        logger.warning("Netflix请求发生错误:" + str(s))
+        if reconnection != 0 and reconnection > 25:
+            await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection - 1)
+        else:
+            Collector.info['netflix_new'] = "连接错误"
+
     except asyncio.exceptions.TimeoutError:
         logger.warning("Netflix请求超时，正在重新发送请求......")
         if reconnection > 27:
