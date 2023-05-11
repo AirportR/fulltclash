@@ -1345,6 +1345,12 @@ class ArgCleaner:
     def __init__(self, string: str = None):
         self.string = string
 
+    @staticmethod
+    def getarg(string: str):
+        arg = string.strip().split(' ')
+        arg = [x for x in arg if x != '']
+        return arg
+
     def getall(self, string: str = None):
         """
         分割一段字符串中的参数，返回参数列表

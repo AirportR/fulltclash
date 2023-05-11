@@ -86,7 +86,7 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
             Collector.info['netflix_new'] = "连接错误"
     except ServerDisconnectedError as s:
         logger.warning("Netflix请求发生错误:" + str(s))
-        if reconnection != 0 and reconnection > 25:
+        if reconnection != 0 and reconnection > 27:
             await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection - 1)
         else:
             Collector.info['netflix_new'] = "连接错误"
@@ -97,6 +97,15 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
             await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection - 1)
         else:
             Collector.info['netflix_new'] = "超时"
+
+
+def retry(count=5):
+    def wrapper(func):
+        async def inner(*args, **kwargs):
+            for _ in range(count):
+                result = await func(*args, **kwargs)
+                if result is True:
+                    break
 
 
 def task(Collector, session, proxy):
