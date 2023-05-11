@@ -4,6 +4,8 @@ from aiohttp import ClientConnectorError
 from loguru import logger
 
 # collector section
+from pyrogram.types import InlineKeyboardButton
+
 SUPPORT_REGION = ['AL', 'DZ', 'AD', 'AO', 'AG', 'AR', 'AM', 'AU', 'AT', 'AZ', 'BS', 'BD', 'BB', 'BE', 'BZ', 'BJ', 'BT',
                   'BA',
                   'BW', 'BR', 'BG', 'BF', 'CV', 'CA', 'CL', 'CO', 'KM', 'CR', 'HR', 'CY', 'DK', 'DJ', 'DM', 'DO', 'EC',
@@ -107,6 +109,7 @@ def get_openai_info(ReCleaner):
         return "N/A"
 
 
+button = InlineKeyboardButton("✅OpenAI", callback_data='✅OpenAI')
 SCRIPT = {
     "MYNAME": "OpenAI",
     "TASK": task,
