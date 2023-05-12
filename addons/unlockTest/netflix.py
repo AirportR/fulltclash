@@ -57,7 +57,8 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
                         return
                     await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection - 1)
                 elif res.status == 503:
-                    await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection - 1)
+                    logger.info("非自制剧服务不可用（被banIP），正在检测自制剧...")
+                    await fetch_netflix_new(Collector, session, flag=flag + 1, proxy=proxy, reconnection=5)
                     return
                 else:
                     logger.info("不支持非自制剧，正在检测自制剧...")
@@ -72,7 +73,7 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
                         return
                     await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection - 1)
                 elif res.status == 503:
-                    await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection - 1)
+                    Collector.info['netflix_new'] = "不可用"
                     return
                 else:
                     Collector.info['netflix_new'] = "失败"
@@ -89,7 +90,7 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
         if reconnection != 0 and reconnection > 27:
             await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection - 1)
         else:
-            Collector.info['netflix_new'] = "连接错误"
+            Collector.info['netflix_new'] = "不可用"
 
     except asyncio.exceptions.TimeoutError:
         logger.warning("Netflix请求超时，正在重新发送请求......")

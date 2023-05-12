@@ -437,7 +437,7 @@ class ExportCommon(BaseExport):
             elif ('解锁' in self.info[t1][t] or '允许' in self.info[t1][t]) and '待' not in self.info[t1][t]:
                 block = color_block((_info_list_width[i], 60), color_value=c_block['成功'], alpha=c_alpha['成功'])
                 img.alpha_composite(block, (width, 60 * (t + 2)))
-            elif '失败' in self.info[t1][t] or '禁止' in self.info[t1][t]:
+            elif '失败' in self.info[t1][t] or '禁止' in self.info[t1][t] or '不' in self.info[t1][t]:
                 block = color_block((_info_list_width[i], 60), color_value=c_block['失败'], alpha=c_alpha['失败'])
                 img.alpha_composite(block, (width, 60 * (t + 2)))
             elif '待解' in self.info[t1][t]:

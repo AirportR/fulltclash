@@ -455,6 +455,19 @@ class ClashCleaner:
             logger.warning("读取节点信息失败！")
             return None
 
+    def nodesAddr(self):
+        """
+        获取节点地址信息，返回（host,port）元组形式
+        """
+        try:
+            return [(i['server'], i['port']) for i in self.yaml['proxies']]
+        except KeyError:
+            logger.warning("读取节点信息失败！")
+            return None
+        except TypeError:
+            logger.warning("读取节点信息失败！")
+            return None
+
     def nodesType(self):
         """
         获取节点类型
