@@ -57,7 +57,6 @@ class BaseExport:
         return new_info
 
 
-# TODO@AiprortR 绘图类需要重写，现如今的框架不够好
 class ExportResult:
     """
     生成图片类
@@ -369,7 +368,7 @@ class ExportResult:
                 elif ('解锁' in self.info[t1][t] or '允许' in self.info[t1][t]) and '待' not in self.info[t1][t]:
                     block = color_block((info_list_length[i], 60), color_value=c_block['成功'])
                     img.paste(block, (width, 60 * (t + 2)))
-                elif '失败' in self.info[t1][t] or '禁止' in self.info[t1][t]:
+                elif '失败' in self.info[t1][t] or '禁止' in self.info[t1][t] or '不' in self.info[t1][t]:
                     block = color_block((info_list_length[i], 60), color_value=c_block['失败'])
                     img.paste(block, (width, 60 * (t + 2)))
                 elif '待解' in self.info[t1][t]:
