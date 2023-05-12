@@ -100,13 +100,13 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
             Collector.info['netflix_new'] = "超时"
 
 
-def retry(count=5):
-    def wrapper(func):
-        async def inner(*args, **kwargs):
-            for _ in range(count):
-                result = await func(*args, **kwargs)
-                if result is True:
-                    break
+# def retry(count=5):
+#     def wrapper(func):
+#         async def inner(*args, **kwargs):
+#             for _ in range(count):
+#                 result = await func(*args, **kwargs)
+#                 if result is True:
+#                     break
 
 
 def task(Collector, session, proxy):
