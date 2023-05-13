@@ -2,6 +2,8 @@ import asyncio
 import aiohttp
 from aiohttp import ClientConnectorError, ServerDisconnectedError
 from loguru import logger
+from pyrogram.types import InlineKeyboardButton
+
 from utils.collector import config
 
 # collector section
@@ -100,13 +102,13 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
             Collector.info['netflix_new'] = "超时"
 
 
-# def retry(count=5):
-#     def wrapper(func):
-#         async def inner(*args, **kwargs):
-#             for _ in range(count):
-#                 result = await func(*args, **kwargs)
-#                 if result is True:
-#                     break
+def retry(count=5):
+    def wrapper(func):
+        async def inner(*args, **kwargs):
+            for _ in range(count):
+                result = await func(*args, **kwargs)
+                if result is True:
+                    break
 
 
 def task(Collector, session, proxy):
@@ -132,6 +134,7 @@ def get_netflix_info_new(ReCleaner):
         return "N/A"
 
 
+button = InlineKeyboardButton("✅Netflix", callback_data='✅Netflix')
 SCRIPT = {
     "MYNAME": "Netflix",
     "TASK": task,
