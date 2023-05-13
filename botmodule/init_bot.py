@@ -16,12 +16,12 @@ config = ConfigManager()
 
 
 def check_init():
-    emoji_source = config.config.get('emoji', {}).get('emoji-source', '')
+    emoji_source = config.config.get('emoji', {}).get('emoji-source', 'TwemojiLocalSource')
     if config.config.get('emoji', {}).get('enable', True) and emoji_source == 'TwemojiLocalSource':
         from utils.emoji_custom import TwemojiLocalSource
         if not os.path.isdir('./resources/emoji/twemoji'):
             twemoji = TwemojiLocalSource()
-            logger.info("正在初始化本地emoji...")
+            logger.info("检测到未安装emoji资源包，正在初始化本地emoji...")
             asyncio.get_event_loop().run_until_complete(twemoji.download_emoji(proxy=config.get_proxy()))
             if twemoji.init_emoji(twemoji.savepath):
                 logger.info("初始化emoji成功")
@@ -64,6 +64,7 @@ try:
             latest_version_hash = line.split()[1][:7]
             break
 except Exception as e:
+    logger.info("可能不是通过git拉取源码，因此version将无法查看提交哈希。")
     logger.warning(str(e))
     latest_version_hash = "Unavailable"
 
@@ -82,7 +83,7 @@ config.reload()
 USER_TARGET = config.getuser()  # 这是用户列表，从配置文件读取
 logger.info("管理员名单加载:" + str(admin))
 # 你的机器人的用户名
-USERNAME = "@vvFullTclashBot"
+USERNAME = "@FullTclashBot"
 port = config.get_proxy_port()
 try:
     _proxy = config.get_bot_proxy(isjoint=False).split(':')
