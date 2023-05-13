@@ -2,6 +2,8 @@ import asyncio
 import aiohttp
 from aiohttp import ClientConnectorError, ServerDisconnectedError
 from loguru import logger
+from pyrogram.types import InlineKeyboardButton
+
 from utils.collector import config
 
 # collector section
@@ -132,6 +134,7 @@ def get_netflix_info_new(ReCleaner):
         return "N/A"
 
 
+button = InlineKeyboardButton("✅Netflix", callback_data='✅Netflix')
 SCRIPT = {
     "MYNAME": "Netflix",
     "TASK": task,
