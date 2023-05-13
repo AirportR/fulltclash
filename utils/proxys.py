@@ -2,7 +2,7 @@ import asyncio
 import json
 import os
 import threading
-
+from typing import Union
 import async_timeout
 import yaml
 import ctypes
@@ -33,18 +33,35 @@ _urlTest.restype = ctypes.c_char_p
 
 
 class Clash(threading.Thread):  # 继承父类threading.Thread
-    def __init__(self, _port, _index: int):
+    def __init__(self, _port: Union[str, int], _index: int):
         threading.Thread.__init__(self)
         self._port = _port
         self._index = _index
 
     def run(self):  # 把要执行的代码写到run函数里面 线程在创建后会直接运行run函数
+        self.run_2()
 
+    def run_1(self):
         _myclash = lib.myclash
         _myclash.argtypes = [ctypes.c_char_p, ctypes.c_longlong]
         # create a task for myclash
         _addr = "127.0.0.1:" + str(self._port)
         _myclash(_addr.encode(), self._index)
+
+    def run_2(self):
+        _myclash = lib.startclash2
+        _myclash.argtypes = [ctypes.c_char_p, ctypes.c_longlong]
+        # create a task for myclash
+        _addr = "127.0.0.1:" + str(self._port)
+        _myclash(_addr.encode(), self._index)
+
+    def stoplisten(self, index: int = None):
+        closeclash = getattr(lib, 'closeclash')
+        closeclash.argtypes = [ctypes.c_longlong]
+        if index is None:
+            closeclash(self._index)
+        else:
+            closeclash(index)
 
 
 async def http_delay(url: str = config.getGstatic(), index: int = 0) -> int:
@@ -118,7 +135,7 @@ def switchProxy(_nodeinfo: dict, _index: int) -> bool:
         return False
 
 
-def stopclash():
+def killclash():
     stop = getattr(lib, 'stop')
     stop.argtypes = [ctypes.c_int64]
     stop(1)

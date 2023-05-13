@@ -332,6 +332,8 @@ class SpeedCore(Basecore):
             return info
 
         await self.progress(progress, nodenum)
+        clash = proxys.Clash(port, 0)
+        clash.start()
         for name in nodelist:
             proxys.switchProxy(name, 0)
             # delay = await proxys.http_delay_tls(index=0)
@@ -366,7 +368,7 @@ class SpeedCore(Basecore):
             if cal >= sending_time:
                 sending_time += 10
                 await self.progress(progress, nodenum)
-
+        clash.stoplisten()
         return info
 
     async def core(self, proxyinfo: list, **kwargs):
@@ -468,6 +470,7 @@ class ScriptCore(Basecore):
         psize = len(port)
         nodenum = len(nodename)
         tasks = []
+        clash_list = []
 
         for item in test_items:
             info[item] = []
@@ -479,12 +482,19 @@ class ScriptCore(Basecore):
             return {}
 
         await self.progress(progress, nodenum)
+
         if nodenum < psize:
+            clash_list.clear()
             for i in range(len(port[:nodenum])):
+                clash = proxys.Clash(port[i], i)
+                clash.start()
+                clash_list.append(clash)
                 proxys.switchProxy(nodename[i], i)
                 task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i], index=i))
                 tasks.append(task)
             done = await asyncio.gather(*tasks)
+            for clash in clash_list:
+                clash.stoplisten()
             # 简单处理一下数据
             res = []
             for j in range(len(test_items)):
@@ -496,9 +506,15 @@ class ScriptCore(Basecore):
             return info
         else:
             subbatch = nodenum // psize
+            clash_list.clear()
+            for i1 in range(psize):
+                clash = proxys.Clash(port[i1], i1)
+                clash.start()
+                clash_list.append(clash)
             for s in range(subbatch):
                 logger.info("当前批次: " + str(s + 1))
                 tasks.clear()
+
                 for i in range(psize):
                     proxys.switchProxy(nodename[s * psize + i], i)
                     task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i], index=i))
@@ -534,6 +550,10 @@ class ScriptCore(Basecore):
                     for d in done:
                         res.append(d[j])
                     info[test_items[j]].extend(res)
+
+            # 关闭监听端口
+            for clash in clash_list:
+                clash.stoplisten()
         # 最终进度条
         if nodenum % psize != 0:
             progress += nodenum % psize
@@ -717,6 +737,7 @@ class TopoCore(Basecore):
         port = pool.get('port', [])
         psize = len(port)
         nodenum = len(nodename)
+        clash_list = []
 
         if psize <= 0:
             logger.error("无可用的代理程序接口")
@@ -728,16 +749,27 @@ class TopoCore(Basecore):
         logger.info("⏳节点链路拓扑测试进行中...")
         await self.progress(progress, nodenum)
         if nodenum < psize:
+            clash_list.clear()
             for i in range(nodenum):
+                clash = proxys.Clash(port[i], i)
+                clash.start()
+                clash_list.append(clash)
                 proxys.switchProxy(nodename[i], i)
             ipcol = collector.IPCollector()
             sub_res = await ipcol.batch(proxyhost=host[:nodenum], proxyport=port[:nodenum])
             resdata.extend(sub_res)
             ipstat = await ipstack.get_ips(proxyhost=host[:nodenum], proxyport=port[:nodenum])
             ipstackes.append({'ips': ipstat})
+            for clash in clash_list:
+                clash.stoplisten()
             return resdata, ipstackes
         else:
             subbatch = nodenum // psize
+            clash_list.clear()
+            for i1 in range(psize):
+                clash = proxys.Clash(port[i1], i1)
+                clash.start()
+                clash_list.append(clash)
             for s in range(subbatch):
                 logger.info("当前批次: " + str(s + 1))
                 for i in range(psize):
@@ -767,6 +799,8 @@ class TopoCore(Basecore):
                 ipstat = await ipstack.get_ips(proxyhost=host[:nodenum % psize], proxyport=port[:nodenum % psize])
                 ipstackes.append({'ips': ipstat})
 
+            for clash in clash_list:
+                clash.stoplisten()
             # 最终进度条
             if nodenum % psize != 0:
                 progress += nodenum % psize
