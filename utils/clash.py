@@ -157,8 +157,8 @@ def new_batch_start(portlist: list):
     addr = ["127.0.0.1:" + str(p) for p in portlist]
     for _i in range(len(addr)):
         clash = Clash(portlist[_i], _i)
+        clash.daemon = True
         clash.start()
-
 
 # def batch_start(portlist: list, proxy_file_path="./clash/proxy.yaml"):
 #     """

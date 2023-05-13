@@ -375,8 +375,7 @@ async def check_photo(message: pyrogram.types.Message, back_message, name, wtime
     """
     try:
         if name == '' or name is None:
-            m2 = await back_message.edit_text("⚠️生成图片失败,可能原因: 节点过多/网络不稳定")
-            message_delete_queue.put_nowait((m2.chat.id, m2.id, 10))
+            await back_message.edit_text("⚠️生成图片失败,可能原因: 节点过多/网络不稳定")
         else:
             await message.reply_document(r"./results/{}.png".format(name),
                                          caption="⏱️总共耗时: {}s".format(wtime))

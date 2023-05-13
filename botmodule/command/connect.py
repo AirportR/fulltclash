@@ -227,6 +227,8 @@ async def task_result(app: Client, message: Message):
     except RPCError as e:
         logger.error(str(e))
         return
+    if origin_msg is None or botmsg is None:
+        logger.warning("获取消息失败！")
     puttype = {
         1: 'speed',
         2: 'analyze',
