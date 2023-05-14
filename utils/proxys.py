@@ -39,7 +39,7 @@ class Clash(threading.Thread):  # 继承父类threading.Thread
         self._index = _index
 
     def run(self):  # 把要执行的代码写到run函数里面 线程在创建后会直接运行run函数
-        self.run_2()
+        self.run_1()
 
     def run_1(self):
         _myclash = lib.myclash
