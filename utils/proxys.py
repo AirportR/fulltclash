@@ -15,7 +15,6 @@ from utils.cleaner import config
 """
 这个模块主要是一些对clash 动态库 api的python调用
 """
-os.getcwd()
 clash_path = config.get_clash_path()
 lib = ctypes.cdll.LoadLibrary(clash_path)
 _setProxy = getattr(lib, 'setProxy')

@@ -28,7 +28,7 @@ import (
 )
 
 //go:embed rootCA.crt
-var FullTClashRootCa []byte
+var FULLTCLASH_ROOT_CA []byte
 
 func main() {
 
@@ -56,14 +56,19 @@ func myURLTest(URL *C.char, index int) uint16 {
 	return meanDelay
 }
 func startclash(addr *C.char, index int) {
-	in := make(chan constant.ConnContext, 500)
+	in := make(chan constant.ConnContext, 100)
 	defer close(in)
 
 	l, err := socks.New(C.GoString(addr), in)
 	if err != nil {
 		panic(err)
 	}
-	defer l.Close()
+	defer func(l *socks.Listener) {
+		err := l.Close()
+		if err != nil {
+
+		}
+	}(l)
 
 	println("listen at:", l.Address())
 
@@ -96,55 +101,6 @@ func startclash(addr *C.char, index int) {
 	}
 }
 
-var listener = make([]*socks.Listener, 128)
-
-//export closeclash
-func closeclash(index int) {
-	l := &listener[index]
-	err := (*l).Close()
-	if err != nil {
-		panic(err)
-	}
-	//} else {
-	//	fmt.Printf("The sock listening port has been successfully closed. index: %d\n", index)
-	//}
-}
-
-//export startclash2
-func startclash2(addr *C.char, index int) {
-	in := make(chan constant.ConnContext, 512)
-	defer close(in)
-
-	l, err := socks.New(C.GoString(addr), in)
-	if err != nil {
-		panic(err)
-	}
-	defer l.Close()
-
-	println("listen at:", l.Address())
-	listener[index] = l
-
-	for c := range in {
-		conn := c
-		metadata := conn.Metadata()
-		proxy, err := adapter.ParseProxy(rawcfgs[index].Proxy)
-
-		if err != nil {
-			fmt.Printf("error: %s \n", err.Error())
-		}
-		fmt.Printf("request incoming from %s to %s, using %s , index: %d\n", metadata.SourceAddress(), metadata.RemoteAddress(), proxy.Name(), index)
-		go func() {
-			remote, err := proxy.DialContext(context.Background(), metadata)
-			if err != nil {
-				fmt.Printf("dial error: %s\n", err.Error())
-				return
-			}
-			relay(remote, conn.Conn())
-		}()
-	}
-	fmt.Println("我到达末尾啦")
-}
-
 //export myclash
 func myclash(addr *C.char, index int) {
 	go startclash(addr, index)
@@ -153,22 +109,6 @@ func myclash(addr *C.char, index int) {
 	<-sigCh
 }
 
-//export sendsinal
-func sendsinal() {
-	pid := os.Getpid()
-	fmt.Printf("当前进程PID: %d\n", pid)
-	proc, err := os.FindProcess(pid)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	err = proc.Kill()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-}
 func relay(l, r net.Conn) {
 	go func() {
 		_, err := io.Copy(l, r)
@@ -184,12 +124,12 @@ func relay(l, r net.Conn) {
 
 //export setProxy
 func setProxy(oldstr *C.char, index int) *C.char {
-	if index > 128 {
+	if index > 64 {
 		fmt.Printf("setProxy index must be less than 65, current index is %d", index)
-		errtext := "setProxy index must be less than 129, current index is " + strconv.Itoa(index)
+		errtext := "setProxy index must be less than 65, current index is " + strconv.Itoa(index)
 		return C.CString(errtext)
 	}
-	if len(rawcfgs) < 128 {
+	if len(rawcfgs) < 64 {
 		fmt.Println("init rawconfigs")
 		for i := 0; i < 128; i++ {
 			rawcfgs = append(rawcfgs, &RawConfig{Proxy: map[string]any{}})
@@ -239,15 +179,19 @@ func urlTest(rawurl *C.char, index int, timeout int) (uint16, uint16, error) {
 	if err != nil {
 		return 0, 0, err
 	}
-	defer instance.Close()
+	defer func(instance constant.Conn) {
+		err := instance.Close()
+		if err != nil {
+
+		}
+	}(instance)
 
 	transport := &http.Transport{
-		DialContext: func(ctx context.Context, network string, addr string) (net.Conn, error) { return instance, nil },
-		//Dial: func(network, addr string) (net.Conn, error) { return instance, nil },
+		Dial: func(network, addr string) (net.Conn, error) { return instance, nil },
 		// from http.DefaultTransport
 		MaxIdleConns:          100,
 		IdleConnTimeout:       3 * time.Second,
-		TLSHandshakeTimeout:   time.Duration(timeout) * time.Second,
+		TLSHandshakeTimeout:   3 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: false,
@@ -308,9 +252,6 @@ func urlTest(rawurl *C.char, index int, timeout int) (uint16, uint16, error) {
 func urltestJson(url *C.char, index int, timeout int) *C.char {
 	retMap := make(map[string]interface{})
 	rtt, delay, err := urlTest(url, index, timeout)
-	if err != nil {
-
-	}
 	retMap["rtt"] = rtt
 	retMap["delay"] = delay
 	retMap["err"] = err
@@ -320,7 +261,7 @@ func urltestJson(url *C.char, index int, timeout int) *C.char {
 
 func rootCAPrepare() *x509.CertPool {
 	rootCAs := x509.NewCertPool()
-	rootCAs.AppendCertsFromPEM(FullTClashRootCa)
+	rootCAs.AppendCertsFromPEM(FULLTCLASH_ROOT_CA)
 	return rootCAs
 }
 func urlToMetadata(rawURL string) (addr constant.Metadata, err error) {
