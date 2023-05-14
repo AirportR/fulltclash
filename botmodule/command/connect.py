@@ -193,8 +193,6 @@ async def plain_data(message: Message, key: str):
     plaindata = ''
     try:
         plaindata = safe.plain_chahcha20(data, key)
-        print("已接收并解密文件")
-        print(plaindata)
     except Exception as e:
         logger.warning(str(e))
         logger.warning("解密数据失败！")
@@ -213,7 +211,6 @@ async def task_result(app: Client, message: Message):
     slavecomment = slaveconfig.get(slaveid, {}).get('comment', 'Local')
     if not key:
         logger.warning(f"无法找到slave_id为{slaveid}的解密密码")
-    logger.info(f"当前后端id:{slaveid}，解密密码：{key}")
     plaindata = await plain_data(message, key)
     resultdata: dict = json.loads(plaindata)
 

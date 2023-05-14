@@ -181,8 +181,8 @@ async def test_setting(client: Client, callback_query: CallbackQuery, row=3, **k
                 for b in b_1:
                     if "⬅️上一页" == b.text:
                         pre_page = InlineKeyboardButton("⬅️上一页", callback_data=b.callback_data)
-                    elif "➡️下一页" == b.text:
-                        next_page = InlineKeyboardButton("➡️下一页", callback_data=b.callback_data)
+                    elif "下一页➡️" == b.text:
+                        next_page = InlineKeyboardButton("下一页➡️", callback_data=b.callback_data)
                     elif f"/{max_page}" in b.text:
                         blank = InlineKeyboardButton(b.text, callback_data='blank')
                         page = str(b.text)[0]
@@ -224,7 +224,7 @@ async def select_page(client: Client, call: CallbackQuery, **kwargs):
     mess_id = call.message.id
     max_page = int(len(buttons) / (row * 3)) + 1
     pre_page = InlineKeyboardButton('⬅️上一页', callback_data=f'page{page - 1}')
-    next_page = InlineKeyboardButton('➡️下一页', callback_data=f'page{page + 1}')
+    next_page = InlineKeyboardButton('下一页➡️', callback_data=f'page{page + 1}')
     blank1 = InlineKeyboardButton("已完成本页提交", callback_data="blank")
     blank_button = InlineKeyboardButton('        ', callback_data='blank')
     blank = InlineKeyboardButton(f'{page}/{max_page}', callback_data='blank')
