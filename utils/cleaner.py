@@ -23,7 +23,7 @@ class IPCleaner:
             return _default
         except TypeError:
             # logger.warning("无法获取对应信息: " + str(key))
-            return None
+            return NoneDes
 
     def get_org(self):
         """
@@ -1210,7 +1210,7 @@ class ReCleaner:
         """
         try:
             if 'disney' not in self.data:
-                logger.warning("无法读取Desney Plus解锁信息")
+                logger.warning("无法读取Disney Plus解锁信息")
                 return "N/A"
             else:
                 logger.info("Disney+ 状态：" + str(self.data['disney']))
