@@ -512,7 +512,7 @@ class ExportCommon(BaseExport):
         # img.show("coffee")
         img.save(r"./results/{}.png".format(_export_time))
         print(_export_time)
-        return _export_time
+        return _export_time, img.size
 
 
 class ExportSpeed2(ExportCommon):
@@ -1106,13 +1106,13 @@ class ExportTopo(ExportResult):
             print(export_time)
             # img3.show()
             img3.save(r"./results/Topo{}.png".format(export_time.replace(':', '-')))
-            return export_time
+            return export_time, img3.size
         else:
             if self.watermark['enable']:
                 img = self.draw_watermark(img.convert("RGBA"))
             print(export_time)
             img.save(r"./results/Topo{}.png".format(export_time.replace(':', '-')))
-            return export_time
+            return export_time, img.size
 
     @logger.catch
     def exportTopoOutbound(self, nodename: list = None, info: dict = None, img2_width: int = None):
@@ -1752,4 +1752,4 @@ class ExportSpeed(ExportResult):
         # 保存结果
         img.save(r"./results/{}.png".format(export_time.replace(':', '-')))
         print(export_time)
-        return export_time
+        return export_time, img.size

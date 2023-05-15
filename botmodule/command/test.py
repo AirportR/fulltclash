@@ -81,11 +81,11 @@ async def select_export(msg: Message, backmsg: Message, put_type: str, info: dic
                 ex = export.ExportSpeed(name=None, info=info)
                 with ThreadPoolExecutor() as pool:
                     loop = asyncio.get_running_loop()
-                    stime = await loop.run_in_executor(
+                    stime, img_size = await loop.run_in_executor(
                         pool, ex.exportImage)
                 # 发送回TG
                 await msg.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
-                await check.check_photo(msg, backmsg, stime, wtime)
+                await check.check_photo(msg, backmsg, stime, wtime, img_size)
         elif put_type.startswith("analyze") or put_type.startswith("topo") or put_type.startswith("inbound") \
                 or put_type.startswith("outbound") or kwargs.get('coreindex', -1) == 2:
             info1 = info.get('inbound', {})
@@ -97,9 +97,9 @@ async def select_export(msg: Message, backmsg: Message, put_type: str, info: dic
                     ex = export.ExportTopo(name=None, info=info1)
                     with ThreadPoolExecutor() as pool:
                         loop = asyncio.get_running_loop()
-                        stime = await loop.run_in_executor(
+                        stime, img_size = await loop.run_in_executor(
                             pool, ex.exportTopoInbound)
-                    await check.check_photo(msg, backmsg, 'Topo' + stime, wtime)
+                    await check.check_photo(msg, backmsg, 'Topo' + stime, wtime, img_size)
                     return
                 if info2:
                     # 生成图片
@@ -113,27 +113,24 @@ async def select_export(msg: Message, backmsg: Message, put_type: str, info: dic
                         ex = export.ExportTopo(name=None, info=info2)
                         with ThreadPoolExecutor() as pool:
                             loop = asyncio.get_running_loop()
-                            stime = await loop.run_in_executor(
+                            stime, h, w = await loop.run_in_executor(
                                 pool, ex.exportTopoOutbound)
+                            img_size = (w, h)
                     else:
-                        stime = export.ExportTopo(name=None, info=info1).exportTopoInbound(info2.get('节点名称', []), info2,
-                                                                                           img2_width=image_width2)
+                        stime, img_size = export.ExportTopo(name=None, info=info1).exportTopoInbound(
+                            info2.get('节点名称', []), info2,
+                            img2_width=image_width2)
                     # 发送回TG
                     await msg.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
-                    await check.check_photo(msg, backmsg, 'Topo' + stime, wtime)
+                    await check.check_photo(msg, backmsg, 'Topo' + stime, wtime, img_size)
         elif put_type.startswith("test") or kwargs.get('coreindex', -1) == 3:
             if info:
                 wtime = info.get('wtime', "-1")
                 # 生成图片
-                file_name = export.ExportCommon(info.pop('节点名称', []), info).draw()
-                # ex = export.ExportResult(nodename=None, info=info)
-                # with ThreadPoolExecutor() as pool:
-                #     loop = asyncio.get_running_loop()
-                #     stime = await loop.run_in_executor(
-                #         pool, ex.exportUnlock)
+                file_name, img_size = export.ExportCommon(info.pop('节点名称', []), info).draw()
                 # 发送回TG
                 await msg.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
-                await check.check_photo(msg, backmsg, file_name, wtime)
+                await check.check_photo(msg, backmsg, file_name, wtime, img_size)
         else:
             raise TypeError("Unknown export type, please input again.\n未知的绘图类型，请重新输入!")
     except RPCError as r:

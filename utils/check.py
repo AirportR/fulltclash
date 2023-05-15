@@ -266,8 +266,6 @@ async def check_sub(message, subconfig):
         try:
             m2 = await message.edit_text("ERROR: 无法获取到订阅文件")
             message_delete_queue.put_nowait((m2.chat.id, m2.id, 10))
-            # await asyncio.sleep(10)
-            # await m2.delete()
         except RPCError as r:
             logger.error(r)
         return True
@@ -288,8 +286,6 @@ async def check_nodes(message, nodenum, args: tuple, max_num=300):
         try:
             m2 = await message.edit_text("❌发生错误，请检查订阅文件")
             message_delete_queue.put_nowait((m2.chat.id, m2.id, 10))
-            # await asyncio.sleep(10)
-            # await m2.delete()
             return True
         except RPCError as r:
             logger.error(r)
@@ -298,8 +294,6 @@ async def check_nodes(message, nodenum, args: tuple, max_num=300):
             try:
                 m3 = await message.edit_text("❌发生错误，请检查订阅文件")
                 message_delete_queue.put_nowait((m3.chat.id, m3.id, 10))
-                # await asyncio.sleep(10)
-                # await m3.delete()
             except RPCError as r:
                 logger.error(r)
             return True
@@ -310,8 +304,6 @@ async def check_nodes(message, nodenum, args: tuple, max_num=300):
         try:
             m4 = await message.edit_text("❌节点数量过多！已取消本次测试")
             message_delete_queue.put_nowait((m4.chat.id, m4.id, 10))
-            # await asyncio.sleep(10)
-            # await m4.delete()
         except RPCError as r:
             logger.error(r)
         return True
@@ -332,8 +324,6 @@ async def check_speed_nodes(message, nodenum, args: tuple, speed_max_num=config.
         try:
             m2 = await message.edit_text("❌发生错误，请检查订阅文件")
             message_delete_queue.put_nowait((m2.chat.id, m2.id, 10))
-            # await asyncio.sleep(10)
-            # await m2.delete()
             return True
         except RPCError as r:
             logger.error(r)
@@ -342,21 +332,16 @@ async def check_speed_nodes(message, nodenum, args: tuple, speed_max_num=config.
             try:
                 m3 = await message.edit_text("❌发生错误，请检查订阅文件")
                 message_delete_queue.put_nowait((m3.chat.id, m3.id, 10))
-                # await asyncio.sleep(10)
-                # await m3.delete()
             except RPCError as r:
                 logger.error(r)
             return True
         else:
             pass
-    # print(speed_max_num)
     if nodenum > speed_max_num:
         logger.warning(f"❌节点数量超过了{speed_max_num}个的限制！已取消本次测试")
         try:
             m4 = await message.edit_text(f"❌节点数量超过了{speed_max_num}个的限制！已取消本次测试")
             message_delete_queue.put_nowait((m4.chat.id, m4.id, 10))
-            # await asyncio.sleep(10)
-            # await m4.delete()
         except RPCError as r:
             logger.error(r)
         return True
@@ -364,21 +349,28 @@ async def check_speed_nodes(message, nodenum, args: tuple, speed_max_num=config.
         return False
 
 
-async def check_photo(message: pyrogram.types.Message, back_message, name, wtime):
+async def check_photo(message: pyrogram.types.Message, back_message, name, wtime, size: tuple = None):
     """
     检查图片是否生成成功
     :param wtime: 消耗时间
     :param message: 消息对象
     :param back_message: 消息对象
     :param name: 图片名
+    :param size: 图片大小
     :return:
     """
     try:
         if name == '' or name is None:
             await back_message.edit_text("⚠️生成图片失败,可能原因: 节点过多/网络不稳定")
         else:
-            await message.reply_document(r"./results/{}.png".format(name),
-                                         caption="⏱️总共耗时: {}s".format(wtime))
+            x, y = size if size is not None else (0, 0)
+            if x > 0 and y > 0:
+                if x < 2500 and y < 3500:
+                    await message.reply_photo(fr'./results/{name}.png', caption=f"⏱️总共耗时: {wtime}s")
+                else:
+                    await message.reply_document(fr"./results/{name}.png", caption=f"⏱️总共耗时: {wtime}s")
+            else:
+                await message.reply_document(fr"./results/{name}.png", caption=f"⏱️总共耗时: {wtime}s")
             await back_message.delete()
             if not await private_filter(name, name, message):
                 with contextlib.suppress(MessageDeleteForbidden):
