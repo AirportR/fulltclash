@@ -37,14 +37,18 @@ async def getsub_async(url: str, username: str, pwd: str, proxy=None):
         try:
             resp = await session.post(url=apiurl, data=data, proxy=proxy, timeout=5, headers=_headers)
             if resp.status == 200:
-                text = await resp.text()
+                text = await resp.json()
                 try:
-                    res = text.split('token":"')[1].split('","auth_data')[0]
+                    print(text)
+                    res = text.get('data', {}).get('token', '')
+                    # res = text.split('token":"')[1].split('","auth_data')[0]
                 except IndexError:
+                    res = ''
+                except AttributeError:
                     res = ''
                 if len(res) < 1:
                     return None
-                suburl = "https://{}/api/v1/client/subscribe?token=".format(domain) + res
+                suburl = f"https://{domain}/api/v1/client/subscribe?token=" + res
                 return suburl
             else:
                 return None
