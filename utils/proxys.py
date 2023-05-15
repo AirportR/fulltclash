@@ -123,11 +123,11 @@ def switchProxy(_nodeinfo: dict, _index: int) -> bool:
         _status = _setProxy(_payload.encode(), _index)
         if not _status.contents:
             logger.info(f"切换节点: {_nodeinfo.get('name', 'not found')} 成功")
-            _free_me(_status)
+            # _free_me(_status)
             return True
         else:
             logger.error(str(_status))
-            _free_me(_status)
+            # _free_me(_status)
             return False
     except Exception as e:
         logger.error(str(e))

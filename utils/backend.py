@@ -591,20 +591,6 @@ class TopoCore(Basecore):
         """
         默认的进度条反馈函数
         """
-        # analyzetext = GCONFIG.config.get('bot', {}).get('analyzetext', "⏳节点拓扑分析测试进行中...")
-        # progress_bars = GCONFIG.config.get('bot', {}).get('bar', "=")
-        # bracketsleft = GCONFIG.config.get('bot', {}).get('bleft', "[")
-        # bracketsright = GCONFIG.config.get('bot', {}).get('bright', "]")
-        # bracketsspace = GCONFIG.config.get('bot', {}).get('bspace', "  ")
-        #
-        # cal = progress / nodenum * 100
-        # p_text = "%.2f" % cal
-        # equal_signs = int(cal / 5)
-        # space_count = 20 - equal_signs
-        # progress_bar = f"{bracketsleft}" + f"{progress_bars}" * equal_signs + \
-        #                f"{bracketsspace}" * space_count + f"{bracketsright}"
-        # edit_text = f"{analyzetext}\n\n" + progress_bar + "\n\n" + "当前进度:\n" + \
-        #             p_text + "%     [" + str(progress) + "/" + str(nodenum) + "]"
         edit_text = default_progress_text(self.__class__.__name__, progress, nodenum)
         print(edit_text)
         message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
@@ -718,6 +704,7 @@ class TopoCore(Basecore):
         port = pool.get('port', [])
         psize = len(port)
         nodenum = len(nodename)
+        ipstack_enable = GCONFIG.config.get('ipstack', False)
 
         if psize <= 0:
             logger.error("无可用的代理程序接口")
@@ -734,8 +721,11 @@ class TopoCore(Basecore):
             ipcol = collector.IPCollector()
             sub_res = await ipcol.batch(proxyhost=host[:nodenum], proxyport=port[:nodenum])
             resdata.extend(sub_res)
-            ipstat = await ipstack.get_ips(proxyhost=host[:nodenum], proxyport=port[:nodenum])
-            ipstackes.append({'ips': ipstat})
+            if ipstack_enable:
+                ipstat = await ipstack.get_ips(proxyhost=host[:nodenum], proxyport=port[:nodenum])
+                ipstackes.append({'ips': ipstat})
+            else:
+                ipstackes.extend([{'ips': '-'} for _ in range(nodenum)])
             return resdata, ipstackes
         else:
             subbatch = nodenum // psize
@@ -746,13 +736,15 @@ class TopoCore(Basecore):
                 ipcol = collector.IPCollector()
                 sub_res = await ipcol.batch(proxyhost=host, proxyport=port)
                 resdata.extend(sub_res)
-                ipstat = await ipstack.get_ips(proxyhost=host, proxyport=port)
-                ipstackes.append({'ips': ipstat})
-                # 反馈进度
+                if ipstack_enable:
+                    ipstat = await ipstack.get_ips(proxyhost=host, proxyport=port)
+                    ipstackes.append({'ips': ipstat})
+                else:
+                    ipstackes.extend([{'ips': '-'} for _ in range(psize)])
 
+                # 反馈进度
                 progress += psize
                 cal = progress / nodenum * 100
-                # p_text = "%.2f" % cal
                 if cal >= sending_time:
                     sending_time += 10
                     await self.progress(progress, nodenum)
@@ -765,8 +757,11 @@ class TopoCore(Basecore):
                 sub_res = await ipcol.batch(proxyhost=host[:nodenum % psize],
                                             proxyport=port[:nodenum % psize])
                 resdata.extend(sub_res)
-                ipstat = await ipstack.get_ips(proxyhost=host[:nodenum % psize], proxyport=port[:nodenum % psize])
-                ipstackes.append({'ips': ipstat})
+                if ipstack_enable:
+                    ipstat = await ipstack.get_ips(proxyhost=host[:nodenum % psize], proxyport=port[:nodenum % psize])
+                    ipstackes.append({'ips': ipstat})
+                else:
+                    ipstackes.extend([{'ips': '-'} for _ in range(nodenum % psize)])
 
             # 最终进度条
             if nodenum % psize != 0:
@@ -800,6 +795,7 @@ class TopoCore(Basecore):
         try:
             info2.update({'入口': [], '地区': [], 'AS编号': [], '组织': [], '栈': [], '簇': [], '节点名称': []})
             res, ras = await self.batch_topo(nodelist, pool)
+
             if res:
                 country_code = []
                 asn = []
@@ -855,6 +851,8 @@ class TopoCore(Basecore):
                 results4 = [v for k, v in d4_count.items()]
                 info2.update({'入口': d0, '地区': d1, 'AS编号': d2, '组织': d3, '栈': d6, '簇': results4})
                 info2.update({'节点名称': d5})
+                if not GCONFIG.config.get('ipstack', False):
+                    info2.pop('栈', [])
             # 计算测试消耗时间
             wtime = "%.1f" % float(time.time() - s1)
             info2.update({'wtime': wtime})
