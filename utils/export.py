@@ -229,7 +229,7 @@ class ExportResult:
 
         angle = float(self.watermark['angle'])
         rotated_text_image = text_image.rotate(angle, expand=True, fillcolor=(0, 0, 0, 0),
-                                               resample=Image.Resampling.BILINEAR)
+                                               resample=Image.BILINEAR)
         watermarks_image = Image.new('RGBA', original_image.size, (255, 255, 255, 0))
 
         x = original_image.size[0] // 2 - rotated_text_image.size[0] // 2
@@ -430,7 +430,7 @@ class ExportResult:
         # 保存结果
         img.save(r"./results/{}.png".format(export_time.replace(':', '-')))
         print(export_time)
-        return export_time
+        return export_time, img.size
 
 
 class ExportTopo(ExportResult):
@@ -675,13 +675,13 @@ class ExportTopo(ExportResult):
             print(export_time)
             # img3.show()
             img3.save(r"./results/Topo{}.png".format(export_time.replace(':', '-')))
-            return export_time
+            return export_time, img3.size
         else:
             if self.watermark['enable']:
                 img = self.draw_watermark(img.convert("RGBA"))
             print(export_time)
             img.save(r"./results/Topo{}.png".format(export_time.replace(':', '-')))
-            return export_time
+            return export_time, img.size
 
     @logger.catch
     def exportTopoOutbound(self, nodename: list = None, info: dict = None, img2_width: int = None):
@@ -1113,4 +1113,4 @@ class ExportSpeed(ExportResult):
         # 保存结果
         img.save(r"./results/{}.png".format(export_time.replace(':', '-')))
         print(export_time)
-        return export_time
+        return export_time, img.size

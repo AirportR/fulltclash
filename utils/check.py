@@ -1,9 +1,10 @@
 import asyncio
+import contextlib
 import hashlib
 import re
 
 import pyrogram.types
-from pyrogram.errors import RPCError
+from pyrogram.errors import RPCError, MessageDeleteForbidden
 from loguru import logger
 from pyrogram.filters import private_filter
 from botmodule.init_bot import config
@@ -348,27 +349,32 @@ async def check_speed_nodes(message, nodenum, args: tuple, speed_max_num=config.
         return False
 
 
-async def check_photo(message: pyrogram.types.Message, back_message, name, wtime):
+async def check_photo(message: pyrogram.types.Message, back_message, name, wtime, size: tuple = None):
     """
     检查图片是否生成成功
     :param wtime: 消耗时间
     :param message: 消息对象
     :param back_message: 消息对象
     :param name: 图片名
+    :param size: 图片大小
     :return:
     """
     try:
         if name == '' or name is None:
-            m2 = await back_message.edit_text("⚠️生成图片失败,可能原因: 节点过多/网络不稳定")
-            message_delete_queue.put_nowait((m2.chat.id, m2.id, 10))
-            # await asyncio.sleep(10)
-            # await m2.delete()
+            await back_message.edit_text("⚠️生成图片失败,可能原因: 节点过多/网络不稳定")
         else:
-            await message.reply_document(r"./results/{}.png".format(name),
-                                         caption="⏱️总共耗时: {}s".format(wtime))
+            x, y = size if size is not None else (0, 0)
+            if x > 0 and y > 0:
+                if x < 2500 and y < 3500:
+                    await message.reply_photo(fr'./results/{name}.png', caption=f"⏱️总共耗时: {wtime}s")
+                else:
+                    await message.reply_document(fr"./results/{name}.png", caption=f"⏱️总共耗时: {wtime}s")
+            else:
+                await message.reply_document(fr"./results/{name}.png", caption=f"⏱️总共耗时: {wtime}s")
             await back_message.delete()
             if not await private_filter(name, name, message):
-                await message.delete()
+                with contextlib.suppress(MessageDeleteForbidden):
+                    await message.delete()
     except RPCError as r:
         logger.error(r)
 

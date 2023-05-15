@@ -20,38 +20,8 @@ def reloadUser():
     return USER_TARGET
 
 
-def select_core(message: Message, put_type):
-    pass
-
-
 @logger.catch()
-async def process(_, message: Message, **kwargs):
-    back_message = await message.reply("任务接收成功，测试进行中...")
-    start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
-    ma = cleaner.ConfigManager('./clash/proxy.yaml')
-    suburl = kwargs.get('url', None)
-    put_type = kwargs.get('put_type', None)
-    if put_type is None:
-        await message.reply('❌不支持的测试任务类型')
-        return
-    elif put_type == 'testurl':
-        pass
-    elif put_type == 'test':
-        pass
-    elif put_type == 'speedurl':
-        pass
-    elif put_type == 'speed':
-        pass
-    elif put_type == 'analyzeurl':
-        pass
-    elif put_type == 'analyze':
-        pass
-    elif put_type == 'udp':
-        pass
-
-
-@logger.catch()
-async def testurl(app, message: Message, **kwargs):
+async def testurl(_, message: Message, **kwargs):
     """
 
     :param _:
@@ -73,11 +43,11 @@ async def testurl(app, message: Message, **kwargs):
             ex = export.ExportResult(nodename=None, info=info)
             with ThreadPoolExecutor() as pool:
                 loop = asyncio.get_running_loop()
-                stime = await loop.run_in_executor(
+                stime, img_size = await loop.run_in_executor(
                     pool, ex.exportUnlock)
             # 发送回TG
             await message.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
-            await check.check_photo(message, back_message, stime, wtime)
+            await check.check_photo(message, back_message, stime, wtime, img_size)
             ma.delsub2provider(subname=start_time)
             ma.save(savePath='./clash/proxy.yaml')
     except RPCError as r:
@@ -114,11 +84,11 @@ async def test(_, message: Message, **kwargs):
                 ex = export.ExportResult(nodename=None, info=info)
                 with ThreadPoolExecutor() as pool:
                     loop = asyncio.get_running_loop()
-                    stime = await loop.run_in_executor(
+                    stime, img_size = await loop.run_in_executor(
                         pool, ex.exportUnlock)
                 # 发送回TG
                 await message.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
-                await check.check_photo(message, back_message, stime, wtime)
+                await check.check_photo(message, back_message, stime, wtime, img_size)
                 ma.delsub2provider(subname=start_time)
                 ma.save(savePath='./clash/proxy.yaml')
         else:
@@ -153,9 +123,9 @@ async def analyzeurl(_, message: Message, test_type="all", **kwargs):
                 ex = export.ExportTopo(name=None, info=info1)
                 with ThreadPoolExecutor() as pool:
                     loop = asyncio.get_running_loop()
-                    stime = await loop.run_in_executor(
+                    stime, img_size = await loop.run_in_executor(
                         pool, ex.exportTopoInbound)
-                await check.check_photo(message, back_message, 'Topo' + stime, wtime)
+                await check.check_photo(message, back_message, 'Topo' + stime, wtime, img_size)
                 ma.delsub2provider(subname=start_time)
                 ma.save(savePath='./clash/proxy.yaml')
                 return
@@ -171,14 +141,16 @@ async def analyzeurl(_, message: Message, test_type="all", **kwargs):
                     ex = export.ExportTopo(name=None, info=info2)
                     with ThreadPoolExecutor() as pool:
                         loop = asyncio.get_running_loop()
-                        stime = await loop.run_in_executor(
-                            pool, ex.exportTopoOutbound)
+                        stime, y, x = await loop.run_in_executor(pool, ex.exportTopoOutbound)
+                        img_size = (x, y)
                 else:
-                    stime = export.ExportTopo(name=None, info=info1).exportTopoInbound(info2.get('节点名称', []), info2,
-                                                                                       img2_width=image_width2)
+                    stime, img_size = export.ExportTopo(name=None, info=info1).exportTopoInbound(
+                        info2.get('节点名称', []),
+                        info2,
+                        img2_width=image_width2)
                 # 发送回TG
                 await message.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
-                await check.check_photo(message, back_message, 'Topo' + stime, wtime)
+                await check.check_photo(message, back_message, 'Topo' + stime, wtime, img_size)
                 ma.delsub2provider(subname=start_time)
                 ma.save(savePath='./clash/proxy.yaml')
     except RPCError as r:
@@ -218,10 +190,10 @@ async def analyze(_, message: Message, test_type="all"):
                     ex = export.ExportTopo(name=None, info=info1)
                     with ThreadPoolExecutor() as pool:
                         loop = asyncio.get_running_loop()
-                        stime = await loop.run_in_executor(
+                        stime, img_size = await loop.run_in_executor(
                             pool, ex.exportTopoInbound)
                     await message.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
-                    await check.check_photo(message, back_message, 'Topo' + stime, wtime)
+                    await check.check_photo(message, back_message, 'Topo' + stime, wtime, img_size)
                     ma.delsub2provider(subname=start_time)
                     ma.save(savePath='./clash/proxy.yaml')
                     return
@@ -236,14 +208,16 @@ async def analyze(_, message: Message, test_type="all"):
                         ex = export.ExportTopo(name=None, info=info2)
                         with ThreadPoolExecutor() as pool:
                             loop = asyncio.get_running_loop()
-                            stime = await loop.run_in_executor(
+                            stime, y, x = await loop.run_in_executor(
                                 pool, ex.exportTopoOutbound)
+                            img_size = (x, y)
                     else:
-                        stime = export.ExportTopo(name=None, info=info1).exportTopoInbound(info2.get('节点名称', []), info2,
-                                                                                           img2_width=image_width2)
+                        stime, img_size = export.ExportTopo(name=None, info=info1).exportTopoInbound(
+                            info2.get('节点名称', []), info2,
+                            img2_width=image_width2)
                     # 发送回TG
                     await message.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
-                    await check.check_photo(message, back_message, 'Topo' + stime, wtime)
+                    await check.check_photo(message, back_message, 'Topo' + stime, wtime, img_size)
                     ma.delsub2provider(subname=start_time)
                     ma.save(savePath='./clash/proxy.yaml')
         else:
@@ -285,11 +259,11 @@ async def speedurl(_, message: Message, **kwargs):
             ex = export.ExportSpeed(name=None, info=info)
             with ThreadPoolExecutor() as pool:
                 loop = asyncio.get_running_loop()
-                stime = await loop.run_in_executor(
+                stime, img_size = await loop.run_in_executor(
                     pool, ex.exportImage)
             # 发送回TG
             await message.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
-            await check.check_photo(message, back_message, stime, wtime)
+            await check.check_photo(message, back_message, stime, wtime, img_size)
     except RPCError as r:
         logger.error(str(r))
         await message.reply(str(r))
@@ -330,11 +304,11 @@ async def speed(_, message: Message):
                 ex = export.ExportSpeed(name=None, info=info)
                 with ThreadPoolExecutor() as pool:
                     loop = asyncio.get_running_loop()
-                    stime = await loop.run_in_executor(
+                    stime, img_size = await loop.run_in_executor(
                         pool, ex.exportImage)
                 # 发送回TG
                 await message.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
-                await check.check_photo(message, back_message, stime, wtime)
+                await check.check_photo(message, back_message, stime, wtime, img_size)
         else:
             await back_message.edit_text("❌无接受参数，使用方法: /speed <订阅名>")
             await asyncio.sleep(10)
