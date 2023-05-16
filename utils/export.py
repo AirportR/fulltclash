@@ -623,39 +623,41 @@ class ExportSpeed2(ExportCommon):
         return _export_time.replace(':', '-')
 
     def draw_block(self, img: Image.Image, index: int, _nodename_width, _key_list, _info_list_width):
+        """
+        绘制颜色块
+        """
         t = index
         colorvalue = self.image['colorvalue']
         interval = self.image['interval']
         alphas = self.image['alphas']
-        # c_block = self.c_block
-        # c_alpha = self.c_alpha
+        end_color = self.image['end_color']
         width = 100 + _nodename_width
         for i, t1 in enumerate(_key_list):
             if "RTT延迟" == t1 or "HTTP(S)延迟" == t1:
                 rtt = float(self.info[t1][t][:-2])
                 if interval[0] < rtt < interval[1]:
-                    block = color_block((_info_list_width[i], 60), color_value=colorvalue[0], alpha=alphas[0])
+                    block = color_blocks((_info_list_width[i], 60), color_value=colorvalue[0], end_color=end_color[0], alpha=alphas[0])
                     img.alpha_composite(block, (width, 60 * (t + 2)))
                 elif interval[1] <= rtt < interval[2]:
-                    block = color_block((_info_list_width[i], 60), color_value=colorvalue[1], alpha=alphas[1])
+                    block = color_blocks((_info_list_width[i], 60), color_value=colorvalue[1], end_color=end_color[1], alpha=alphas[1])
                     img.alpha_composite(block, (width, 60 * (t + 2)))
                 elif interval[2] <= rtt < interval[3]:
-                    block = color_block((_info_list_width[i], 60), color_value=colorvalue[2], alpha=alphas[2])
+                    block = color_blocks((_info_list_width[i], 60), color_value=colorvalue[2], end_color=end_color[2], alpha=alphas[2])
                     img.alpha_composite(block, (width, 60 * (t + 2)))
                 elif interval[3] <= rtt < interval[4]:
-                    block = color_block((_info_list_width[i], 60), color_value=colorvalue[3], alpha=alphas[3])
+                    block = color_blocks((_info_list_width[i], 60), color_value=colorvalue[3], end_color=end_color[3], alpha=alphas[3])
                     img.alpha_composite(block, (width, 60 * (t + 2)))
                 elif interval[4] <= rtt < interval[5]:
-                    block = color_block((_info_list_width[i], 60), color_value=colorvalue[4], alpha=alphas[4])
+                    block = color_blocks((_info_list_width[i], 60), color_value=colorvalue[4], end_color=end_color[4], alpha=alphas[4])
                     img.alpha_composite(block, (width, 60 * (t + 2)))
                 elif interval[5] <= rtt < interval[6]:
-                    block = color_block((_info_list_width[i], 60), color_value=colorvalue[5], alpha=alphas[5])
+                    block = color_blocks((_info_list_width[i], 60), color_value=colorvalue[5], end_color=end_color[5], alpha=alphas[5])
                     img.alpha_composite(block, (width, 60 * (t + 2)))
                 elif interval[6] <= rtt:
-                    block = color_block((_info_list_width[i], 60), color_value=colorvalue[6], alpha=alphas[6])
+                    block = color_blocks((_info_list_width[i], 60), color_value=colorvalue[6], end_color=end_color[6], alpha=alphas[6])
                     img.alpha_composite(block, (width, 60 * (t + 2)))
                 elif rtt == 0:
-                    block = color_block((_info_list_width[i], 60), color_value=colorvalue[7], alpha=alphas[7])
+                    block = color_blocks((_info_list_width[i], 60), color_value=colorvalue[7], end_color=end_color[7], alpha=alphas[7])
                     img.alpha_composite(block, (width, 60 * (t + 2)))
 
     def draw_delay(self, img, t1: str, t: int, info_list_length, speedblock_height):
@@ -1787,7 +1789,7 @@ class ExportSpeed(ExportResult):
                         block = color_blocks((info_list_length[i], 60), color_value=colorvalue[6], end_color=end_color[6], alpha=alphas[6])
                         img.alpha_composite(block, (width, 60 * (t + 2)))
                     elif rtt == 0:
-                        block = color_block((info_list_length[i], 60), color_value=colorvalue[7], end_color=end_color[7], alpha=alphas[7])
+                        block = color_blocks((info_list_length[i], 60), color_value=colorvalue[7], end_color=end_color[7], alpha=alphas[7])
                         img.alpha_composite(block, (width, 60 * (t + 2)))
                 if t1 == "平均速度" or t1 == "最大速度":
                     if "MB" in self.info[t1][t]:
