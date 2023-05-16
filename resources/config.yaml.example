@@ -37,6 +37,8 @@ admin:
 #speednodes: 300 # 测速节点数量限制，超过将不会进行测速
 #speedthread: 4 #测速线程
 #nospeed: true #禁用测速，开启后将无法测速。
+#speed_end_colors_switch: false #速度测试渐变色模式，默认关闭
+#end_colors_switch: false #联通性测试渐变色模式，默认关闭
 #ipstack: true #开启ipv4，ipv6双栈检测。默认关闭(false)，开启后可以检测节点是否支持ipv4和ipv6，代价是检测时间会延长。
 #localip: false  #本地ip数据库(MaxMind格式) ,请将asn数据库与city数据库放入"/resources/databases"文件夹
 #dasn: "GeoLite2-ASN.mmdb" #ASN数据库名称，用于获取AS编号
@@ -59,41 +61,50 @@ admin:
 # 以下是颜色配置，其中speed是速度相关,name为颜色名字，value为颜色值，目前仅支持十六进制，label是颜色对应的速度区间（单位MB）,不用动，只需改value值，其他项是为了做区分。
 # color:
 #  speed: # 刚刚好有七个颜色，多一个少一个可能会有奇怪的效果。注意缩进。如果不想有太多颜色，可以两个颜色取同样的颜色值。
-#   - { label: 0, name: '云水', value: '#B4C3D0', alpha: 255 }
-#   - { label: 1, name: '晴山', value: '#91AEC4', alpha: 255 }
-#   - { label: 5, name: '秋波', value: '#8BB8CB', alpha: 255 }
-#   - { label: 10, name: '天韵', value: '#5796B3', alpha: 255 }
-#   - { label: 20, name: '鸢尾', value: '#1988AE', alpha: 255 }
-#   - { label: 60, name: '甸子', value: '#238BBC', alpha: 255 }
-#   - { label: 100, name: '景泰', value: '#2A73AC', alpha: 255 }
+#   - { label: 0, name: '云水', value: '#B4C3D0', alpha: 255, end_color: '#B4C3D0' }
+#   - { label: 1, name: '晴山', value: '#91AEC4', alpha: 255, end_color: '#91AEC4' }
+#   - { label: 5, name: '秋波', value: '#8BB8CB', alpha: 255, end_color: '#8BB8CB' }
+#   - { label: 10, name: '天韵', value: '#5796B3', alpha: 255, end_color: '#5796B3' }
+#   - { label: 20, name: '鸢尾', value: '#1988AE', alpha: 255, end_color: '#1988AE' }
+#   - { label: 60, name: '甸子', value: '#238BBC', alpha: 255, end_color: '#238BBC' }
+#   - { label: 100, name: '景泰', value: '#2A73AC', alpha: 255, end_color: '#2A73AC' }
 #  delay: #延迟单位: ms
-#   - { label: 1, name: '云水', value: '#B4C3D0', alpha: 255 }
-#   - { label: 100, name: '晴山', value: '#91AEC4', alpha: 255 }
-#   - { label: 200, name: '秋波', value: '#8BB8CB', alpha: 255 }
-#   - { label: 300, name: '天韵', value: '#5796B3', alpha: 255 }
-#   - { label: 500, name: '鸢尾', value: '#1988AE', alpha: 255 }
-#   - { label: 1000, name: '甸子', value: '#238BBC', alpha: 255 }
-#   - { label: 2000, name: '景泰', value: '#2A73AC', alpha: 255 }
+#   - { label: 1, name: '云水', value: '#B4C3D0', alpha: 255, end_color: '#B4C3D0' }
+#   - { label: 100, name: '晴山', value: '#91AEC4', alpha: 255, end_color: '#91AEC4' }
+#   - { label: 200, name: '秋波', value: '#8BB8CB', alpha: 255, end_color: '#8BB8CB' }
+#   - { label: 300, name: '天韵', value: '#5796B3', alpha: 255, end_color: '#5796B3' }
+#   - { label: 500, name: '鸢尾', value: '#1988AE', alpha: 255, end_color: '#1988AE' }
+#   - { label: 1000, name: '甸子', value: '#238BBC', alpha: 255, end_color: '#238BBC' }
+#   - { label: 2000, name: '景泰', value: '#2A73AC', alpha: 255, end_color: '#2A73AC' }
 #   - { label: 99999, name: '景泰', value: '#8d8b8e', alpha: 255 }  #第八个为超时，label无用
 #  "yes": '#bee47e' #解锁色块的颜色，注意不要去掉双引号
 #  "yesalpha": 255 #解锁颜色块透明度
+#  "yesend": '#bee47e' #解锁色块的渐变结束颜色，注意不要去掉双引号
 #  "no": '#ee6b73' #失败色块的颜色，注意不要去掉双引号
 #  "noalpha": 255 #失败颜色块透明度
+#  "noend": '#ee6b73' #失败色块的渐变结束颜色，注意不要去掉双引号
 #  na: '#8d8b8e' #N/A色块的颜色
 #  naalpha: 255  #N/A颜色块透明度
+#  naend: '#8d8b8e' #N/A色块的渐变结束颜色
 #  wait: '#dcc7e1' #待解锁色块的颜色
 #  waitalpha: 255  #待解锁色块的颜色
+#  waitend: '#dcc7e1' #待解锁色块的渐变结束颜色
 #  iprisk: #IP风险色块颜色,名称后面加alpha为颜色块透明度属性
 #   low: '#ffffff'
 #   lowalpha: 255
+#   lowend: '#ffffff'
 #   medium: '#ffffff'
 #   mediumalpha: 255
+#   mediumend: '#ffffff'
 #   high: '#ffffff'
 #   highalpha: 255
+#   hightend: '#ffffff' 
 #   veryhigh: '#ffffff'
 #   veryhighalpha: 255
+#   veryhighend: '#ffffff'
 #  warn: '#fcc43c' #警告色块，一般为黄色或橙色
 #  warnalpha: 255  #警告颜色块透明度
+#  warnend: '#fcc43c' #警告渐变结束色块
 # watermark: #水印
 #  enable: true #是否启用
 #  text: '只是一个水印' #水印文本
