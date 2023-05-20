@@ -231,11 +231,11 @@ class SubCollector(BaseCollector):
             async with aiohttp.ClientSession(headers=_headers) as session:
                 async with session.get(self.url, proxy=proxy, timeout=20) as response:
                     info = response.headers.get('subscription-userinfo', "")
-                    info = info.replace(';', '').split(' ')
+                    info = info.split(';')
                     info2 = {'upload': 0, 'download': 0, 'total': 0, 'expire': 0}
                     for i in info:
                         try:
-                            i1 = i.split('=')
+                            i1 = i.strip().split('=')
                             info2[i1[0]] = float(i1[1]) if i1[1] else 0
                         except IndexError:
                             pass
@@ -245,6 +245,8 @@ class SubCollector(BaseCollector):
                     traffic_use = traffic_up + traffic_download
                     traffic_total = info2.get('total', 0) / 1024 / 1024 / 1024
                     expire_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(info2.get('expire', time.time())))
+                    if expire_time.startswith('1970') and traffic_total and traffic_use:
+                        expire_time = '长期有效'
                 return [traffic_up, traffic_download, traffic_use, traffic_total, expire_time]
         except asyncio.exceptions.TimeoutError:
             logger.info("获取订阅超时")
