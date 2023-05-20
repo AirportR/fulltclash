@@ -1,3 +1,5 @@
+import time
+
 import tzlocal
 from pyrogram import Client
 from loguru import logger
@@ -7,6 +9,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 from utils import cron_delete_message as cdm
 from utils import cron_edit_message as cem
 
+program_run_time = time.time()
 bot_token = init_bot.bot_token
 bot_config = init_bot.config
 userbot_config = bot_config.config.get('userbot', {})
