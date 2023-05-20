@@ -15,6 +15,7 @@ from utils.check import check_callback_master
 from utils.backend import break_speed
 from utils.collector import reload_config as r1
 from utils.cleaner import reload_config as r2
+from glovar import program_run_time
 
 config = init_bot.config
 admin = init_bot.admin  # 管理员
@@ -65,6 +66,14 @@ def command_loader2(app: Client):
     @app.on_message(filters.command(['sconnect']) & filters.user(admin + master_bridge), 2)
     async def resp_conn(client: Client, message: Message):
         await botmodule.simple_conn_resp(client, message)
+
+    @app.on_message(filters.command(['sreboot']) & filters.user(admin + master_bridge), 2)
+    async def _(client: Client, message: Message):
+        await botmodule.restart_or_killme(client, message)
+
+    @app.on_message(filters.command(['sreboot']) & filters.user(admin + master_bridge), 2)
+    async def _(client: Client, message: Message):
+        await message.reply('0')
 
     @app.on_message(filters.command(['stopspeed']) & filters.user(admin + master_bridge), 2)
     async def _(_: Client, __: Message):
@@ -212,12 +221,12 @@ def command_loader(app: Client):
     async def setting(client, message):
         await botmodule.setting_page(client, message)
 
-    @app.on_message(filters.command(['fulltest']), group=1)
-    @AccessCallback()
-    async def fulltest(client, message):
-        await message.reply("请选择排序方式:", reply_markup=botmodule.IKM2, quote=True)
-        await bot_put(client, message, "analyze", coreindex=2)
-        await bot_put(client, message, "speed", coreindex=1)
+    # @app.on_message(filters.command(['fulltest']), group=1)
+    # @AccessCallback()
+    # async def fulltest(client, message):
+    #     await message.reply("请选择排序方式:", reply_markup=botmodule.IKM2, quote=True)
+    #     await bot_put(client, message, "analyze", coreindex=2)
+    #     await bot_put(client, message, "speed", coreindex=1)
 
     @app.on_message(filters.command(['restart', 'reboot']) & allfilter(2), group=2)
     async def restart(client, message):
@@ -243,11 +252,6 @@ def command_loader(app: Client):
     async def task_result(client: Client, message: Message):
         if message.caption.startswith('/result'):
             await botmodule.task_result(client, message)
-
-    # @app.on_message(filters.command('resp'), group=0)
-    # async def resp(client, message):
-    #     await botmodule.response(client, message)
-    #     message.stop_propagation()
 
     @app.on_message(filters.command(["setantigroup"]) & allfilter(2), group=2)
     async def setantigroup(client, message):

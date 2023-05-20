@@ -109,15 +109,6 @@ async def user(_, message):
 
 async def restart_or_killme(_, message, kill=False):
     try:
-        if int(message.from_user.id) not in admin and str(
-                message.from_user.username) not in admin:  # 如果不在USER_TARGET名单是不会有权限的
-            await message.reply("⚠️您不是bot的管理员，无法使用该命令")
-            return
-    except AttributeError:
-        if int(message.sender_chat.id) not in admin:  # 如果不在USER_TARGET名单是不会有权限的
-            await message.reply("⚠️您不是bot的管理员，无法使用该命令")
-            return
-    try:
         if kill:
             await message.reply("再见~")
             killclash()
