@@ -418,6 +418,9 @@ class ClashCleaner:
 
     def filter_unsupprt_proxy(self):
         try:
+            if self.yaml is None:
+                self.yaml = {}
+                return
             proxies: list = self.yaml['proxies']
             for i, proxy in enumerate(proxies):
                 if isinstance(proxy, dict):
@@ -1381,7 +1384,16 @@ class ArgCleaner:
         self.string = string
 
     @staticmethod
-    def getarg(string: str, sep: str = ' '):
+    def getarg(string: str, sep: str = ' ') -> list:
+        """
+        对字符串使用特定字符进行切片
+        Args:
+            string: 要切片的字符串
+            sep: 指定用来切片的字符依据，默认为空格
+
+        Returns: 返回一个切好的字符串列表
+
+        """
         return [x for x in string.strip().split(sep) if x != '']
 
     def getall(self, string: str = None):
