@@ -1381,10 +1381,8 @@ class ArgCleaner:
         self.string = string
 
     @staticmethod
-    def getarg(string: str):
-        arg = string.strip().split(' ')
-        arg = [x for x in arg if x != '']
-        return arg
+    def getarg(string: str, sep: str = ' '):
+        return [x for x in string.strip().split(sep) if x != '']
 
     def getall(self, string: str = None):
         """
