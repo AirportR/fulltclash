@@ -326,7 +326,7 @@ dns:
   - 119.29.29.29
   - 223.5.5.5
   enable: false
-  enhanced-mode: redir-host
+  enhanced-mode: fake-ip
   fallback:
   - https://208.67.222.222/dns-query
   - https://public.dns.iij.jp/dns-query
@@ -390,6 +390,7 @@ class ClashCleaner:
         :param _config: 传入一个文件对象，或者一个字符串,文件对象需指向 yaml/yml 后缀文件
         """
         self.path = ''
+        self.unsupport_type = ['wireguard', 'vless', 'hysteria']
         self.yaml = {}
         if _config == ':memory:':
             try:
@@ -419,7 +420,18 @@ class ClashCleaner:
         :return: list[dict,dict...]
         """
         try:
-            return self.yaml['proxies']
+            proxies: list = self.yaml['proxies']
+            for i, proxy in enumerate(proxies):
+                if isinstance(proxy, dict):
+                    name = proxy['name']
+                    ptype = proxy['type']
+                    if not isinstance(name, str):
+                        # 将节点名称转为字符串
+                        proxy['name'] = str(name)
+                    if ptype in self.unsupport_type:
+                        logger.warning(f"出现了可能不受支持的节点：{ptype}")
+                        proxies.pop(i)
+            return proxies
         except KeyError:
             logger.warning("读取节点信息失败！")
             return []
@@ -515,7 +527,7 @@ class ClashCleaner:
             logger.error(str(e))
             return None
 
-    def nodesAddr(self, name=None):
+    def nodesAddr_plus(self, name=None):
         """
         获取节点地址
         :return: list | str
