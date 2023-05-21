@@ -382,6 +382,7 @@ class ClashCleaner:
             self.path = _config
         else:
             self.yaml = yaml.safe_load(_config)
+        self.filter_unsupprt_proxy()
 
     def setProxies(self, proxyinfo: list):
         """
@@ -390,11 +391,7 @@ class ClashCleaner:
         """
         self.yaml['proxies'] = proxyinfo
 
-    def getProxies(self):
-        """
-        获取整个代理信息
-        :return: list[dict,dict...]
-        """
+    def filter_unsupprt_proxy(self):
         try:
             proxies: list = self.yaml['proxies']
             for i, proxy in enumerate(proxies):
@@ -407,7 +404,19 @@ class ClashCleaner:
                     if ptype in self.unsupport_type:
                         logger.warning(f"出现了可能不受支持的节点：{ptype}")
                         proxies.pop(i)
-            return proxies
+            self.yaml['proxies'] = proxies
+        except KeyError:
+            logger.warning("读取节点信息失败！")
+        except TypeError:
+            logger.warning("读取节点信息失败！")
+
+    def getProxies(self):
+        """
+        获取整个代理信息
+        :return: list[dict,dict...]
+        """
+        try:
+            return self.yaml['proxies']
         except KeyError:
             logger.warning("读取节点信息失败！")
             return []
