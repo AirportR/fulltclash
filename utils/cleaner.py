@@ -366,6 +366,7 @@ class ClashCleaner:
         :param _config: 传入一个文件对象，或者一个字符串,文件对象需指向 yaml/yml 后缀文件
         """
         self.path = ''
+        self.unsupport_type = ['wireguard', 'vless', 'hysteria']
         self.yaml = {}
         if _config == ':memory:':
             try:
@@ -395,7 +396,18 @@ class ClashCleaner:
         :return: list[dict,dict...]
         """
         try:
-            return self.yaml['proxies']
+            proxies: list = self.yaml['proxies']
+            for i, proxy in enumerate(proxies):
+                if isinstance(proxy, dict):
+                    name = proxy['name']
+                    ptype = proxy['type']
+                    if not isinstance(name, str):
+                        # 将节点名称转为字符串
+                        proxy['name'] = str(name)
+                    if ptype in self.unsupport_type:
+                        logger.warning(f"出现了可能不受支持的节点：{ptype}")
+                        proxies.pop(i)
+            return proxies
         except KeyError:
             logger.warning("读取节点信息失败！")
             return []
@@ -694,7 +706,6 @@ class ConfigManager:
         except KeyError:
             return {}
 
-    # TODO(@AirportR): 三项speed配置可以合在一个母项中
     def speednodes(self):
         try:
             return self.config['speednodes']
