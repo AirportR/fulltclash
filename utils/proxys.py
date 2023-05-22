@@ -20,7 +20,7 @@ lib = ctypes.cdll.LoadLibrary(clash_path)
 _setProxy = getattr(lib, 'setProxy')
 _setProxy.argtypes = [ctypes.c_char_p, ctypes.c_int64]
 # _setProxy.restype = ctypes.c_char_p
-_setProxy.restype = ctypes.POINTER(ctypes.c_char)
+_setProxy.restype = ctypes.c_int8
 _free_me = getattr(lib, 'freeMe')
 _free_me.argtypes = [ctypes.POINTER(ctypes.c_char)]
 _myURLTest = getattr(lib, 'myURLTest')
@@ -48,11 +48,11 @@ class Clash(threading.Thread):  # 继承父类threading.Thread
         _myclash(_addr.encode(), self._index)
 
     def run_2(self):
-        startclashMixed = getattr(lib, 'startclashMixed')
-        startclashMixed.argtypes = [ctypes.c_char_p, ctypes.c_longlong]
+        _myclash2 = lib.myclash2
+        _myclash2.argtypes = [ctypes.c_char_p, ctypes.c_longlong]
         # create a task for myclash
         _addr = "127.0.0.1:" + str(self._port)
-        startclashMixed(_addr.encode(), self._index)
+        _myclash2(_addr.encode(), self._index)
 
     def stoplisten(self, index: int = None):
         closeclash = getattr(lib, 'closeclash')
@@ -100,7 +100,8 @@ def switchProxy(_nodeinfo: dict, _index: int) -> bool:
     try:
         _payload = yaml.dump({'proxies': _nodeinfo})
         _status = _setProxy(_payload.encode(), _index)
-        if not _status.contents:
+        # logger.info(f"切换结果: {_status}")
+        if not _status:
             logger.info(f"切换节点: {_nodeinfo.get('name', 'not found')} 成功")
             # _free_me(_status)
             return True

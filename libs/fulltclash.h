@@ -81,7 +81,8 @@ extern "C" {
 extern GoUint16 myURLTest(char* URL, GoInt index);
 extern void startclashMixed(char* rawaddr, GoInt index);
 extern void myclash(char* addr, GoInt index);
-extern char* setProxy(char* oldstr, GoInt index);
+extern void myclash2(char* addr, GoInt index);
+extern GoInt8 setProxy(char* oldstr, GoInt index);
 extern void stop(GoInt flag);
 extern void freeMe(char* data);
 
