@@ -524,6 +524,9 @@ class Collector:
             logger.warning("Youtube请求超时，正在重新发送请求......")
             if reconnection != 0:
                 await self.fetch_youtube(session=session, proxy=proxy, reconnection=reconnection - 1)
+        except ProxyConnectionError as p:
+            logger.warning("似乎目标端口未开启监听")
+            logger.warning(str(p))
 
     async def fetch_dis(self, session: aiohttp.ClientSession, proxy=None, reconnection=2):
         """
@@ -594,6 +597,9 @@ class Collector:
             logger.warning("disney+请求超时，正在重新发送请求......")
             if reconnection != 0:
                 await self.fetch_dis(session=session, proxy=proxy, reconnection=reconnection - 1)
+        except ProxyConnectionError as p:
+            logger.warning("似乎目标端口未开启监听")
+            logger.warning(str(p))
 
     async def start(self, host: str, port: int, proxy=None):
         """

@@ -141,7 +141,7 @@ async def select_export(msg: Message, backmsg: Message, put_type: str, info: dic
 
 @logger.catch()
 async def process(app: Client, message: Message, **kwargs):
-    back_message = await message.reply("⏳任务接收成功，测试进行中...")
+    back_message = await message.reply("⏳任务接收成功，测试进行中...", quote=True)
     tgtext = str(message.text)
     tgargs = cleaner.ArgCleaner().getall(tgtext)
     suburl = cleaner.geturl(tgtext) if kwargs.get('url', None) is None else kwargs.get('url', None)

@@ -38,7 +38,7 @@ class Clash(threading.Thread):  # 继承父类threading.Thread
         self._index = _index
 
     def run(self):  # 把要执行的代码写到run函数里面 线程在创建后会直接运行run函数
-        self.run_1()
+        self.run_2()
 
     def run_1(self):
         _myclash = lib.myclash
@@ -48,11 +48,11 @@ class Clash(threading.Thread):  # 继承父类threading.Thread
         _myclash(_addr.encode(), self._index)
 
     def run_2(self):
-        _myclash = lib.startclash2
-        _myclash.argtypes = [ctypes.c_char_p, ctypes.c_longlong]
+        startclashMixed = getattr(lib, 'startclashMixed')
+        startclashMixed.argtypes = [ctypes.c_char_p, ctypes.c_longlong]
         # create a task for myclash
         _addr = "127.0.0.1:" + str(self._port)
-        _myclash(_addr.encode(), self._index)
+        startclashMixed(_addr.encode(), self._index)
 
     def stoplisten(self, index: int = None):
         closeclash = getattr(lib, 'closeclash')
@@ -88,27 +88,6 @@ async def http_delay_tls(url: str = config.getGstatic(), index: int = 0, timeout
     return mean_delay
 
 
-# 切换节点
-def switchProxy_old(proxyName, proxyGroup, clashHost: str = "127.0.0.1", clashPort: int = 11230):
-    """
-    切换clash核心中的代理节点，此版本为requests库实现
-    :param proxyName: 想要切换代理节点的名称
-    :param proxyGroup: 代理组名称
-    :param clashHost: clash的地址
-    :param clashPort: clash的api端口
-    :return:
-    """
-    url = "http://{}:{}/proxies/{}".format(clashHost, str(clashPort), proxyGroup)
-    payload = json.dumps({"name": proxyName})
-    _headers = {'Content-Type': 'application/json'}
-    try:
-        r = requests.request("PUT", url, headers=_headers, data=payload)
-        logger.info("切换节点: {} ".format(proxyName) + str(r.status_code))
-        return r
-    except Exception as e:
-        logger.error(e)
-
-
 def switchProxy(_nodeinfo: dict, _index: int) -> bool:
     """
     切换clash核心中的代理节点，会将数据直接发往动态链接库
@@ -132,6 +111,27 @@ def switchProxy(_nodeinfo: dict, _index: int) -> bool:
     except Exception as e:
         logger.error(str(e))
         return False
+
+
+# 切换节点
+def switchProxy_old(proxyName, proxyGroup, clashHost: str = "127.0.0.1", clashPort: int = 11230):
+    """
+    切换clash核心中的代理节点，此版本为requests库实现
+    :param proxyName: 想要切换代理节点的名称
+    :param proxyGroup: 代理组名称
+    :param clashHost: clash的地址
+    :param clashPort: clash的api端口
+    :return:
+    """
+    url = "http://{}:{}/proxies/{}".format(clashHost, str(clashPort), proxyGroup)
+    payload = json.dumps({"name": proxyName})
+    _headers = {'Content-Type': 'application/json'}
+    try:
+        r = requests.request("PUT", url, headers=_headers, data=payload)
+        logger.info("切换节点: {} ".format(proxyName) + str(r.status_code))
+        return r
+    except Exception as e:
+        logger.error(e)
 
 
 def killclash():

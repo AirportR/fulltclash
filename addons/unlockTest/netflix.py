@@ -3,6 +3,7 @@ import aiohttp
 from aiohttp import ClientConnectorError, ServerDisconnectedError
 from loguru import logger
 from pyrogram.types import InlineKeyboardButton
+from aiohttp_socks import ProxyConnectionError
 
 from utils.collector import config
 
@@ -100,15 +101,18 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
             await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection - 1)
         else:
             Collector.info['netflix_new'] = "超时"
+    except ProxyConnectionError as p:
+        logger.warning("似乎目标端口未开启监听")
+        logger.warning(str(p))
 
 
-def retry(count=5):
-    def wrapper(func):
-        async def inner(*args, **kwargs):
-            for _ in range(count):
-                result = await func(*args, **kwargs)
-                if result is True:
-                    break
+# def retry(count=5):
+#     def wrapper(func):
+#         async def inner(*args, **kwargs):
+#             for _ in range(count):
+#                 result = await func(*args, **kwargs)
+#                 if result is True:
+#                     break
 
 
 def task(Collector, session, proxy):
