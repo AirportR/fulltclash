@@ -79,6 +79,7 @@ extern "C" {
 #endif
 
 extern GoUint16 myURLTest(char* URL, GoInt index);
+extern void startclashMixed(char* rawaddr, GoInt index);
 extern void myclash(char* addr, GoInt index);
 extern char* setProxy(char* oldstr, GoInt index);
 extern void stop(GoInt flag);
