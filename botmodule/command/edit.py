@@ -6,7 +6,7 @@ from pyrogram.errors import RPCError
 from loguru import logger
 from utils.cleaner import ArgCleaner
 from utils.backend import default_progress_text
-from botmodule import SPEEDTESTIKM
+from botmodule import SPEEDTESTIKM, BOT_MESSAGE_LIST
 
 
 async def edit(app: Client, message: Message):
@@ -17,8 +17,11 @@ async def edit(app: Client, message: Message):
     edit_msg_id = int(tgargs[3])
     s1 = tgargs[4]
     try:
-        editmsg = await app.get_messages(edit_chat_id, edit_msg_id)
+        editmsg = BOT_MESSAGE_LIST.pop(tgargs[2]+':'+tgargs[3], None)
         if editmsg is None:
+            editmsg = await app.get_messages(edit_chat_id, edit_msg_id)
+        if editmsg is None:
+            logger.info(f"无法获取{edit_chat_id}:{edit_msg_id}的源消息。")
             return
     except RPCError as r:
         logger.error(str(r))

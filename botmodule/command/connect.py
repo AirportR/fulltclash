@@ -112,13 +112,13 @@ async def conn_simple(app: Client, message: Message):
         # 检查连接参数
         _args = ArgCleaner(message.text).getall()
         if len(_args) < 3:
-            backmsg2 = await b1.edit_text("❌使用方式: /connect <bot用户名> <备注> <连接密码>")
+            backmsg2 = await b1.edit_text("❌使用方式: /connect <BO.T用户名> <备注> <连接密码>")
             message_delete_queue.put_nowait((backmsg2.chat.id, backmsg2.id, 10))
             return
         bot_name = _args[1]
         # 判断第一个字符的ASCII码是否属于数字范围
         if 48 <= ord(bot_name[0]) <= 57:
-            backmsg2 = await b1.edit_text("❌使用方式: \n/connect <bot用户名> <备注> <连接密码>\n\n第一个参数应是bot的用户名！")
+            backmsg2 = await b1.edit_text("❌使用方式: \n/connect <BO.T用户名> <备注> <连接密码>\n\n第一个参数应是bot的用户名！")
             message_delete_queue.put_nowait((backmsg2.chat.id, backmsg2.id, 10))
             return
         conn_pwd = _args[3] if len(_args) > 3 else ''
@@ -147,7 +147,7 @@ async def conn_simple(app: Client, message: Message):
 
 
 @logger.catch()
-async def simple_conn_resp(_: Client, message: Message):
+async def simple_conn_resp(app: Client, message: Message):
     """
     后端bot专属
     """
@@ -164,6 +164,7 @@ async def simple_conn_resp(_: Client, message: Message):
     config.reload()
     logger.info("master连接配置已保存")
     await message.reply("已收到master请求，配置已保存，重启生效", quote=True)
+    await restart_or_killme(app, message)
 
 
 async def recvtask(app: Client, message: Message):

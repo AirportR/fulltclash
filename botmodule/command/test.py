@@ -19,6 +19,7 @@ SPEEDTESTIKM = InlineKeyboardMarkup(
     ]
 )
 SPEEDTEST_LIST = []
+BOT_MESSAGE_LIST = {}
 
 
 async def slave_progress(progress, nodenum, botmsg: Message, corenum, master_id, master_chat_id, master_msg_id, name):
@@ -210,7 +211,15 @@ async def process(app: Client, message: Message, **kwargs):
 async def put_slave_task(app: Client, message: Message, proxyinfo: list, **kwargs):
     slaveid = kwargs.pop('slaveid', 'local')
     raw_backmsg: Message = kwargs.get('backmsg', None)
+    if raw_backmsg is None:
+        logger.warning("已丢失BOT消息！")
+        return
+    else:
+        logger.info(f"BOT进度条编辑的chat_id:{raw_backmsg.chat.id},message_id:{raw_backmsg.id}")
+        BOT_MESSAGE_LIST[str(raw_backmsg.chat.id)+':'+str(raw_backmsg.id)] = raw_backmsg
     coreindex = kwargs.get('coreindex', 0)
+    userbot_id = config.config.get('userbot', {}).get('id', '')
+    bot_info = await app.get_me()
     if slaveid == 'local':
         core = kwargs.pop('core', None)
         if core is None:
@@ -218,8 +227,6 @@ async def put_slave_task(app: Client, message: Message, proxyinfo: list, **kwarg
             return None
         info = await core.core(proxyinfo, **kwargs)
         return info
-    userbot_id = config.config.get('userbot', {}).get('id', '')
-    bot_info = await app.get_me()
     if not userbot_id:
         backmsg = await message.reply("❌读取中继桥id错误")
         message_delete_queue.put(backmsg)

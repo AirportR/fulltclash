@@ -71,10 +71,6 @@ def command_loader2(app: Client):
     async def _(client: Client, message: Message):
         await botmodule.restart_or_killme(client, message)
 
-    @app.on_message(filters.command(['sreboot']) & filters.user(admin + master_bridge), 2)
-    async def _(client: Client, message: Message):
-        await message.reply('0')
-
     @app.on_message(filters.command(['stopspeed']) & filters.user(admin + master_bridge), 2)
     async def _(_: Client, __: Message):
         break_speed.append(True)

@@ -238,8 +238,7 @@ class AddonCleaner:
                 continue
             try:
                 script = getattr(mo1, 'SCRIPT')
-            except AttributeError as a:
-                logger.warning(str(a))
+            except AttributeError:
                 script = None
             if script is None or type(script).__name__ != "dict":
                 continue
@@ -1415,7 +1414,7 @@ class ArgCleaner:
 def geturl(string: str):
     text = string
     pattern = re.compile(
-        r"https?://(?:[a-zA-Z]|\d|[$-_@.&+]|[!*,]|(?:%[\da-fA-F][\da-fA-F])|[\w\u4e00-\u9fa5])+")  # 匹配订阅地址
+        r"https?://(?:[a-zA-Z]|\d|[$-_@.&+]|[!*,]|[\w\u4e00-\u9fa5])+")  # 匹配订阅地址
     # 获取订阅地址
     try:
         url = pattern.findall(text)[0]  # 列表中第一个项为订阅地址
