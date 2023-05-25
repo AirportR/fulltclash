@@ -14,7 +14,7 @@ from aiohttp_socks import ProxyConnector
 from loguru import logger
 from utils.collector import proxies
 from libs import pynat
-from utils import message_edit_queue, cleaner, collector, ipstack, proxys, sorter, geoip, clash
+from utils import message_edit_queue, cleaner, collector, ipstack, proxys, sorter, geoip
 
 # 重写整个测试核心，技术栈分离。
 
@@ -482,8 +482,8 @@ class ScriptCore(Basecore):
 
         if nodenum < psize:
             for i in range(len(port[:nodenum])):
-                clash_instance = clash.Clash(GCONFIG.get_clash_path(), port[i], i, nodename[i])
-                clash_list.append()
+                # clash_instance = clash.Clash(GCONFIG.get_clash_path(), port[i], i, nodename[i])
+                # clash_list.append()
                 proxys.switchProxy(nodename[i], i)
                 task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i], index=i))
                 tasks.append(task)
