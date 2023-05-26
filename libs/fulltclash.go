@@ -67,8 +67,14 @@ func myURLTest(URL *C.char, index int) uint16 {
 		fmt.Printf("error: %s \n", err.Error())
 		return 0
 	}
-	_, meanDelay, err := proxy.URLTest(context.Background(), C.GoString(URL))
-	if err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	delay, meanDelay, err := proxy.URLTest(ctx, C.GoString(URL))
+	if ctx.Err() != nil {
+		return 0
+	}
+
+	if err != nil || delay == 0 {
 		fmt.Printf("error: %s \n", err.Error())
 		return meanDelay
 	}
@@ -160,12 +166,6 @@ func ReCreateMixed(rawaddr string, tcpIn chan<- constant.ConnContext, udpIn chan
 	return mixedListener, mixedUDPLister
 }
 
-//	func processUDP(index int) {
-//		queue := udpQueue
-//		for conn := range queue {
-//			handleUDPConn(conn, index)
-//		}
-//	}
 func handleUDPConn(packet *inbound.PacketAdapter, index int) {
 	metadata := packet.Metadata()
 	if !metadata.Valid() {
@@ -330,6 +330,7 @@ func handleTCPConn(connCtx constant.ConnContext, index int) {
 	}
 	defer remoteConn.Close()
 	N.Relay(connCtx.Conn(), remoteConn)
+	connCtx.Conn().Close()
 }
 
 //export myclash
