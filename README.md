@@ -1,10 +1,8 @@
-## 
-
 <div align="center">  
     <h1> FullTClash</h1>  
     <p>🤖 A Telegram bot that operates based on the Clash core </p>  
-    <p>English        <a href="https://github.com/AirportR/FullTclash/blob/dev/README_zh_CN.md">简体中文</a></p>   
-    <a href="https://fulltclash.gitbook.io/fulltclash-doc"><img src="https://img.shields.io/static/v1?message=doc&color=blue&logo=micropython&label=FullTClash"></a> 
+    <p><a href="https://github.com/AirportR/FullTclash/blob/dev/README_EN.md">English</a> 简体中文</p>  
+    <a href="https://fulltclash.gitbook.io/fulltclash-doc"><img src="https://img.shields.io/static/v1?message=doc&color=blue&logo=micropython&label=FullTClash"></a>   
     <img src="https://img.shields.io/github/license/AirportR/FullTclash">  
     <a href="https://app.codacy.com/gh/AirportR/FullTclash/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade"><img src="https://app.codacy.com/project/badge/Grade/389b2787eb7647dfad486ccaa70eabf4"></a>  
     <a href="https://github.com/AirportR/FullTclash/issues"><img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat"></a>  
@@ -15,217 +13,240 @@
    <br>  
 </div>
 
-## Introduction
+## 最近更新(3.5.8)
 
-FullTclash bot is a Telegram bot (hereinafter referred to as "bot") that carries out its testing tasks. It currently supports batch connectivity testing using Clash configuration files and supports the following test items:
+✏️3.5.8版本更新日志：
 
-- Netflix
-- Youtube
-- DisneyPlus
-- Bilibili
-- Steam Currency
-- OpenAI (ChatGPT)
-- Landing IP risk (IP fraudulence)
-- Wikipedia
+✨ 重写部分绘图代码，使之更易读。\  
+✨ 支持本地geoip库。前往配置文件查看使用方法。[@mlmmlm 的pr]\  
+✨ 全新的geoip-api支持：ipapi.co[@mlmmlm 的pr]\  
+✨ 支持配置绘图时的颜色透明度，更自由的绘图结果。[@mlmmlm 的pr]\  
+✨ 入口绘图现已支持居中显示。[@mlmmlm 的pr]\  
+✨ 速度测试结果图更细颗粒度的数值显示。[@mlmmlm 的pr]\  
+✨ 速度测试支持配置多个speedfile的downloadURL地址。将采用轮询机制进行测速。[@mlmmlm 的pr]\  
+✨ 新增bot指令。/setantigroup 将bot设置为防拉群模式。在bot存活期间，非管理员邀请入群bot将自动退群。[@cpploveme 的pr]\  
+🐛 经过测试，现如今自主实现的支持tls验证的延迟尚存bug，故暂时更换为原版clash URLTest。\  
+✨ 入口测试中有“入口IP段”、和 “栈” 两种形式。默认为前者，可通过配置：entrance 选项更换为后者。具体可查看配置样例。[@mlmmlm 的pr]\  
+🐛 修复防拉群的部分bug。\  
+🐛 修复绘图透明度适配bug。\  
+🧵 默认的测试启动端口从1122更改为11220。\  
+⬆️升级pillow、aiohttp、cryptography模块的版本以支持Python3.11。\
 
-As well as HTTP latency testing and network topology testing (inbound and outbound analysis).
+历史更新请到TG频道查看:
 
-## Preview
+https://t.me/FullTClash
 
-Media streaming test:
+## 基本介绍
 
-![test picture](https://upload.cc/i1/2023/03/30/xyTGRu.png)
+FullTclash bot 是承载其测试任务的Telegram 机器人（以下简称bot）,目前支持以clash配置文件为载体的**批量**联通性测试,支持以下测试条目:
 
-![test picture](https://upload.cc/i1/2023/03/30/1gdtWf.png)
+> - Netflix Youtube DisneyPlus Bilibili steam货币 OpenAI(ChatGPT) 落地ip风险(IP欺诈度) 维基百科  
+>   以及HTTP延迟测试和链路拓扑测试（节点出入口分析）。
 
-## Getting Started
+## 效果预览
 
-### Preparation
+流媒体测试:
 
-To successfully run the project code, you first need to prepare the following information:
+## 如何开始
 
-- Telegram's api_id and api_hash [Get it here](https://my.telegram.org/apps) (Google it if you don't know how to get it) (Some Telegram accounts have been blacklisted and cannot be used normally)
+### 基础准备
 
-- Create a bot from [@BotFather](https://t.me/BotFather) and get the bot_token, which should look like:
+要成功运行该项目代码，首先需要准备以下信息：
+
+- Telegram 的api_id 、api_hash [获取地址](https://my.telegram.org/apps) 不会请Google。(部分TG账号已被拉黑，无法正常使用)
   
-  bot_token = "123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
+- 去 [@BotFather](https://t.me/BotFather) 那里创建一个机器人，获得该机器人的bot_token，应形如：
+  
 
-### Pulling the source code
+bot_token = "123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
 
-Method 1: Direct download (everyone knows where to download, right?)
+这步不会请Google。
 
-Method 2: Use Git (recommended for Linux, convenient for updates). First, install Git, and then clone the repository. The following command is an example for the Ubuntu distribution, for Windows please solve it yourself.
-
-```shell
-apt install -y git && git clone https://github.com/AirportR/FullTclash.git && cd FullTclash
-```
-
-This method may require a proxy to speed up in mainland China, please solve it yourself.
-
-### Preparing the environment
-
-- Python 3.9 or above.
-- And various related package dependencies.
-
-You can use the following command to quickly install the environment in the current project directory:
+- 字体文件。（可选，可以用默认的） ### 拉取源码  
+  方法1：直接下载（不会有人不知道在哪下吧？）\  
+  方法2：使用git（Linux推荐，方便更新），首先安装git，然后拉取仓库。以下指令为 Ubuntu 发行版作示例，Windows自行解决。
+  
+  ```shell
+  apt install -y git && git clone https://github.com/AirportR/FullTclash.git && cd FullTclash```  
+  此方法在中国大陆可能需要代理加速，请自行解决。  
+  ### 环境准备  
+  ```
+  
+- Python 3.8 以上(3.11暂时不推荐)
+  
+- 以及各种相关包依赖  
+  您可以用以下命令，在当前项目目录下运行以快速安装环境：
+  
 
 > Windows:
 > 
 > ```shell
-> pip install -r requirements.txt
+> pip install -r requirements.txt>```  
 > ```
 
 > Linux:
 > 
 > ```shell
-> pip3 install -r requirements.txt
+> pip3 install -r requirements.txt>```  
 > ```
 
-### Configuring
+### 为bot进行相关配置
 
-The following are the minimum requirements to start the bot. If you are a beginner, it is recommended that you start with the minimum requirements to avoid unpredictable errors caused by making random changes to the configuration.
+以下为启动bot的最低要求（如果您是新手，建议先以最低要求把bot跑起来，否则自己乱改配置容易出现不可预知的错误。）
 
-- Admin configuration
+- 管理员配置
+  
+  新建一个名为config.yaml的文件，放在./resources下，项目有模板例子名为./resources/config.yaml.example,在config.yaml中写入如下信息：
+  
 
-Create a file named config.yaml in the ./resources directory. The project has a template example named ./resources/config.yaml.example. Enter the following information in config.yaml:
+````yaml
+  admin:  
+  - 12345678 # 改成自己的telegram uid  
+  - 8765431 # 这是第二行，表示第二个管理员，没有第二个管理员就把该行删除。  
+  ```  - bot相关配置    
+```yaml  
+  bot:  
+   api_id: 123456 #改成自己的api_id  
+   api_hash: 123456ABCDefg #改成自己的api_hash  
+   bot_token: 123456:ABCDefgh123455  # bot_token, 从 @BotFather 获取  
+  # 如果是在中国大陆地区使用，则程序需要代理才能连接上Telegram服务器。写入如下信息：  
+  proxy: 127.0.0.1:7890 #socks5 替换成自己的代理地址和端口  
+  ```  - 代理配置（可选）    
 
-```yaml
-admin:
-- 12345678 #change to your telegram uid
-- 8765431 #this is the second line, indicating the second administrator. If there is no second administrator, delete this line.
-```
+  如果是在中国大陆地区使用，可能部分订阅网址无法直接连接。可在config.yaml中写入如下信息：   
+````
 
-- Bot configuration
+# 获取订阅时使用代理（可选）
 
-```yaml
-bot:
- api_id: 123456 #change to your api_id
- api_hash: 123456ABCDefg #change to your api_hash
- bot_token: 123456:ABCDefgh123455  # bot_token, obtained from @BotFather
- # If you are in mainland China, the program needs a proxy to connect to the Telegram server. Enter the following information:
- proxy: 127.0.0.1:7890 #replace with your proxy address and port
-```
+proxy: 127.0.0.1:7890 #http 替换成自己的代理地址和端口,注意，此配置与上面的独立分开。
 
-- Proxy configuration (optional)
+````###
+您需要在项目文件目录下，放置一个已经登陆好的.session后缀文件，这个文件是程序生成的，形如： my_bot.session  
+>方法1：可以直接在配置文件config.yaml中配置，这样程序启动后会自动读取配置文件里面的值来生成session文件(要求一定要正确)。  
+```yaml  
+#配置文件示例，注意缩进要正确  
+bot:  
+ api_id: 123456 api_hash: 123456ABCDefg bot_token: 123456:ABCDefgh123455  
+````
 
-If you are in mainland China, some subscription URLs may not be directly accessible. You can enter the following information in config.yaml:
+> 方法2： 您可以参阅[这篇文档](https://docs.pyrogram.org/start/auth)，以快速获得后缀为 .session 的文件
 
-```
-# Use a proxy when obtaining subscriptions (optional)
-proxy: 127.0.0.1:7890 #replace with your proxy address and port. Note that this configuration is separate from the one above.
-```
+> 方法3： 项目的 ./utils/tool/ 目录下有一个文件名为 login.py ，可以通过指令运行它：
+> 
+> ```
+> python .\login.py  
+> ```
 
-Getting the session file (optional)
+当程序退出后即可自动生成一个名为 my_bot.session 的文件 ，之后将它移动到项目根目录。  
+运行后它会尝试给你输入的用户名的目标发送消息，当接收到：嗨, 我在正常工作哦！
 
-You need to place a logged-in .session file in the project file directory. This file is generated by the program and looks like this: my_bot.session
+这句话时，即可说明该session文件有效，否则无效。
 
-Method 1: You can directly configure it in the config.yaml file, and the program will automatically read the values in the configuration file to generate the session file (make sure it is correct).
+如果启动后无法验证，请删除生成的mybot.session文件，此时的文件是坏的，不可用，如果不删除程序会一直使用坏的文件，不会重新生成。
 
-```yaml
-#example configuration file, make sure the indentations are correct
-bot:
- api_id: 123456
- api_hash: 123456ABCDefg
- bot_token: 123456:ABCDefgh123455
-```
+### 开始启动
 
-Method 2: You can refer to this document to quickly obtain a .session file with the suffix.
-
-Method 3: In the ./utils/tool/ directory of the project, there is a file named login.py, which can be run with the following command:
-
-```
-python .\login.py
-```
-
-After the program exits, a file named my_bot.session will be generated, which can be moved to the project root directory. When it runs, it will try to send a message to the target username you entered. When you receive the message "Hi, I'm working normally!", it means that the session file is valid; otherwise, it is invalid.
-
-If the verification fails after starting, delete the generated mybot.session file. The file is corrupted and cannot be used. If you do not delete it, the program will continue to use the corrupted file and will not regenerate it.
-
-Starting the bot
-
-After configuring the bot, run the following command in the project directory:
+配置好后，在项目目录下运行以下指令
 
 > Windows:
 > 
 > ```shell
-> python main.py
+> python main.py>```  
 > ```
 
 > Ubuntu(Linux):
 > 
 > ```shell
-> python3 main.py
+> python3 main.py>```  
 > ```
 
-Wait for the initialization process. If you see the message "The program has started!"(Chinese version), it means that it is running.
+等待初始化操作，出现“程序已启动!”字样就说明在运行了。  
+运行之后和bot私聊指令：
 
-To communicate with the bot, use the following commands:
+> /clash start 用于启动clash，否则测试结果会全部是N/A。
 
-> /clash start: start clash core. Otherwise, all test results will be N/A.
+> /testurl <订阅地址>(clash配置格式)即可开始测试
 
-> /testurl <subscription URL> (in clash configuration format) to start testing.
+> /help 可查看所有命令说明
 
-> /help: view all command instructions.     
+### 动态链接库编译(高级)
 
-### Compiling Dynamic Link Libraries (Advanced)
+项目所用到的动态链接库存放在 ./libs/下。其中:
 
-The dynamic link libraries used in the project are stored in ./libs/. Among them:
+> fulltclash.so为 Linux-amd64 所支持的，fulltclash.dll 为 Windows-amd64 所支持的。
 
-> fulltclash.so is supported by Linux-amd64, and fulltclash.dll is supported by Windows-amd64.
+没有所用架构？  
+如果没有您所用架构的动态链接库文件，比如arm64，或者您担心仓库自带的有安全隐患，那么您可以自行编译。
 
-No architecture specified?
-If you don't have a dynamic link library file for your architecture, such as arm64, or if you are concerned about security issues with the repository-provided file, you can compile it yourself.
+在 ./libs/ 下有一源码文件为 fulltclash.go ，您需要将该文件自行用Golang编译器编译成 fulltclash.so动态链接库。  
+大致流程为:
 
-There is a source code file named fulltclash.go in ./libs/. You need to compile the file into a dynamic link library fulltclash.so using the Golang compiler.
-The general process is as follows:
-
-- Install the Golang compiler on your platform (the higher the version, the better)
+- 在您的平台安装GO编译器(版本越高越好)
   
   ```shell
-  go mod init <path>
+  go mod init <路径>  
   ```
   
-  ```shell
-  go mod tidy
-  ```
+  ````shell
+  go mod tidy``` 以下是编译arm64架构的例子:  
+  ```shell  
+  go build -buildmode=c-shared -o fulltclash.so fulltclash.go```  
+  交叉编译:   
+  ```shell  
+  GOOS=linux GOARCH=arm64 GOARM=7 CGO_ENABLED=1 CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ AR=aarch64-linux-gnu-ar go build -buildmode=c-shared -o fulltclash.so fulltclash.go  
+  ````
   
-  Here is an example of compiling for the arm64 architecture:
+  编译完成覆盖原文件即可  
+  如果操作难度太大，可以发起issue详谈。
   
-  ```shell
-  go build -buildmode=c-shared -o fulltclash.so fulltclash.go
-  ```
+  ### Docker启动
   
-    Cross-compiling:
+  教程文档待更新
   
-  ```shell
-  GOOS=linux GOARCH=arm64 GOARM=7 CGO_ENABLED=1 CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ AR=aarch64-linux-gnu-ar go build -buildmode=c-shared -o fulltclash.so fulltclash.go
-  ```
+  ### 为程序设置进程守护(Linux)
   
-  After the compilation is complete, overwrite the original file.
-  If the operation is too difficult, you can initiate an issue for detailed discussion.
-
-### Docker Startup
-
-Tutorial documentation to be updated.
-
-### Setting Process Guardianship for Programs (Linux)
-
-Due to the characteristics of the Linux system, the foreground program will be closed after the SSH connection is closed. You need to set up process guardianship to run the program continuously in the background. The specific method can be found by searching on Google.
-
-## Communication and Discussion
-
-We welcome feedback from all parties:
-
-- Raise an issue on the project page
-
-## References
-
-- [Streaming Unlocking Idea](https://github.com/lmc999/RegionRestrictionCheck)
+  由于Linux系统特性，关闭ssh连接后，前台程序会被关闭。您需要设置进程守护，才能在后台不间断地运行程序。具体方法Google搜索即可。
+  
+  ## 交流探讨
+  
+  我们欢迎各方朋友提出针对性的反馈：
+  
+- [TG更新发布频道](https://t.me/FullTClash)
+  
+- 在项目页面提出issue
+  
+  ## 致谢
+  
+- [流媒体解锁思路](https://github.com/lmc999/RegionRestrictionCheck)
+  
 - [Clash](https://github.com/Dreamacro/clash)
+  
 - [aiohttp](https://github.com/aio-libs/aiohttp)
+  
 - [pyrogram](https://github.com/pyrogram/pyrogram)
+  
 - [async-timeout](https://github.com/aio-libs/async-timeout)
+  
 - [Pillow](https://github.com/python-pillow/Pillow)
+  
 - [pilmoji](https://github.com/jay3332/pilmoji)
+  
 - [pyyaml](https://github.com/yaml/pyyaml)
+  
 - [requests](https://github.com/psf/requests)
+  
+
+## 如何给本项目做贡献：
+
+1、在本项目的主GitHub仓库进行fork，你可以只fork dev的分支。 \  
+2、在你的计算机上使用git clone来下载你fork后的仓库。 \  
+3、在下载后的本地仓库进行修改。\  
+4、执行git add .（请不要忘记句号！！！）\  
+5、执行git commit，并输入你做出的更改。\  
+6、回到你的仓库，发起pr请求，等待下一步（通过/驳回/修改）。
+
+如果不这样做可能会：
+
+1、仓库维护者看到的是一片绿色加号，根本不知道你改了什么。\  
+2、你的操作会很麻烦，可能还会改错文件。\  
+3、维护者很难看懂你都干了些什么。
