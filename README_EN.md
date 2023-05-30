@@ -38,6 +38,9 @@ Media streaming test:
 
 ![test picture](https://upload.cc/i1/2023/03/30/1gdtWf.png)
 
+## Document
+
+You can read the documentation [here](https://fulltclash.gitbook.io/fulltclash-doc) (Chinese only)
 ## Getting Started
 
 ### Preparation

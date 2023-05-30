@@ -42,6 +42,9 @@ FullTclash bot 是承载其测试任务的Telegram 机器人（以下简称bot�
 
 > - Netflix Youtube DisneyPlus Bilibili steam货币 OpenAI(ChatGPT) 落地ip风险(IP欺诈度) 维基百科  
 >   以及HTTP延迟测试和链路拓扑测试（节点出入口分析）。
+## 文档支持
+
+您可以在[这里](https://fulltclash.gitbook.io/fulltclash-doc)找到 FullTClash的使用文档
 
 ## 效果预览
 
