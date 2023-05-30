@@ -7,7 +7,7 @@ from pyrogram import Client
 from pyrogram.errors import RPCError
 from botmodule.init_bot import admin, config, reloadUser
 from utils.cron.utils import message_delete_queue
-from utils.proxys import stopclash
+from utils.proxys import killclash
 
 
 async def grant(client: Client, message: pyrogram.types.Message):
@@ -109,18 +109,9 @@ async def user(_, message):
 
 async def restart_or_killme(_, message, kill=False):
     try:
-        if int(message.from_user.id) not in admin and str(
-                message.from_user.username) not in admin:  # 如果不在USER_TARGET名单是不会有权限的
-            await message.reply("⚠️您不是bot的管理员，无法使用该命令")
-            return
-    except AttributeError:
-        if int(message.sender_chat.id) not in admin:  # 如果不在USER_TARGET名单是不会有权限的
-            await message.reply("⚠️您不是bot的管理员，无法使用该命令")
-            return
-    try:
         if kill:
             await message.reply("再见~")
-            stopclash()
+            killclash()
             os.kill(os.getpid(), signal.SIGINT)
         else:
             await message.reply("开始重启(大约等待五秒)")

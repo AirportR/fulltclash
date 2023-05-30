@@ -4,6 +4,31 @@ import ctypes
 import time
 import yaml
 from time import sleep
+from multiprocessing import Process
+
+
+class Clash(Process):
+    def __init__(self, libpath: str, port: int, index: int, proxyinfo: dict):
+        super().__init__()
+        self.path = libpath
+        self.port = str(port)
+        self.index = index
+        self.proxyinfo = proxyinfo
+
+    def run(self) -> None:
+        lib = ctypes.cdll.LoadLibrary(self.path)
+        _setProxy = getattr(lib, 'setProxy')
+        _setProxy.argtypes = [ctypes.c_char_p, ctypes.c_int64]
+        # _setProxy.restype = ctypes.c_char_p
+        _setProxy.restype = ctypes.c_int8
+        _payload = yaml.dump({'proxies': self.proxyinfo})
+        _status = _setProxy(_payload.encode(), self.index)
+        print(f"切换结果: {_status}")
+        _myclash2 = lib.myclash2
+        _myclash2.argtypes = [ctypes.c_char_p, ctypes.c_longlong]
+        # create a task for myclash
+        _addr = "127.0.0.1:" + str(self.port)
+        _myclash2(_addr.encode(), self.index)
 
 
 class ClashCleaner:
@@ -157,6 +182,7 @@ def new_batch_start(portlist: list):
     addr = ["127.0.0.1:" + str(p) for p in portlist]
     for _i in range(len(addr)):
         clash = Clash(portlist[_i], _i)
+        clash.daemon = True
         clash.start()
 
 
@@ -199,7 +225,7 @@ dns:
   - 119.29.29.29
   - 223.5.5.5
   enable: false
-  enhanced-mode: redir-host
+  enhanced-mode: fake-ip
   fallback:
   - https://208.67.222.222/dns-query
   - https://public.dns.iij.jp/dns-query
@@ -324,6 +350,7 @@ if __name__ == "__main__":
     try:
         # subp.wait()
         import signal
+
         signal.signal(signal.SIGINT, signal.SIG_DFL)
     except KeyboardInterrupt:
         exit()

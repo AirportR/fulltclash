@@ -1,17 +1,42 @@
-# FullTclash
 
-基于clash 核心运作的、进行全量订阅测试的telegram机器人
+<div align="center">
+    <h1> FullTClash</h1>
+    <p>🤖 A Telegram bot that operates based on the Clash core </p>
+    <p><a href="https://github.com/AirportR/FullTclash/blob/dev/README_EN.md">English</a>   简体中文</p>
+    <a href="https://fulltclash.gitbook.io/fulltclash-doc"><img src="https://img.shields.io/static/v1?message=doc&color=blue&logo=micropython&label=FullTClash"></a> 
+    <img src="https://img.shields.io/github/license/AirportR/FullTclash">
+    <a href="https://app.codacy.com/gh/AirportR/FullTclash/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade"><img src="https://app.codacy.com/project/badge/Grade/389b2787eb7647dfad486ccaa70eabf4"></a>
+    <a href="https://github.com/AirportR/FullTclash/issues"><img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat"></a>
+    <br>
+    <a href="https://github.com/AirportR/FullTclash/"><img src="https://img.shields.io/github/stars/AirportR/FullTclash?style=social"></a>
+	<a href = "https://t.me/FullTclash"><img src="https://img.shields.io/static/v1?style=social&logo=telegram&label=channel&message=channel" ></a>
+	<br>
+	<br>
+</div>
 
-## 最近更新(3.5.6)
-✏️3.5.6版本更新如下特性：
+## 最近更新(3.5.8)
+✏️3.5.8版本更新日志：
 
-✨ 支持外置python脚本的权限回调（高级用法），放在 ./addons/callback/ 下即可生效，本项目自带一个示例。
-✨ 新增配置: "bot"->"allow-cache"，是否保存测试订阅，默认关闭。
-✨ 新增配置: "bot"->"command"，自定义bot指令，用于适配权限回调，高级用法。
-🐛 修复延迟测试阻塞问题。
-🐛 修复bot使用问题。
-🚗 优化HTTPS延迟测试。对于部分代理供应商的劫持具备抵抗性。
-🚗 对于URLTest提供了TLS验证。 🌹新贡献者: @wu-mx 的pr
+💥 新增前后端模式。此为实验性功能，普通使用者无需理会\
+🔍 对测试节点的类型进行审查，暂时屏蔽 Hysteria、vless、Tuic、wireguard等meta系所支持的新型协议（因为不稳定）。
+✨ 默认设置emoji源为本地源。意味着初次安装下载emoji资源包。后续考虑将会考虑移除在线emoji源。\
+✨ 支持绘图结果的渐变效果。[@mlmmlm 的pr]\
+✨ 发送测试图优化。如果图片的 宽度 < 2500 像素并且 高 < 3500像素，将发送TG的压缩图，而非原图。清晰度肉眼几乎看不出来。\
+✨ 新增英文README文档，更好看的项目预览。\
+✨ 新增 github action 的构建文件，用于自动构建运行所需的动态链接库文件。需要的可自行前往项目主页的action选项里获取，需要注意改名或者收到指定文件.\
+🚗 拓扑测试中的双栈检测将默认关闭。由于双栈检测将多消耗一倍的时间，为了加快测试速度已默认关闭，开启需要在配置中写入 ipstack: true\
+🚗 优化绘图算法。\
+🐛 修复OpenAI解锁检测脚本。\
+🐛 修复 /register 指令输出的冗余文本问题。\
+🐛 修复 /subinfo 偶现无法获取流量信息的bug。\
+🐛 修复自3.5.4以来UDP类型无法检测的问题。\
+🔥 移除 allow-caching 配置。\
+🔥 取消 /fulltest 指令。
+🧩 更疯狂的回调功能支持。稍后将会写一份文档详细说明这个功能。\
+👦 按钮设计优化。\
+
+
+
 
 
 历史更新请到TG频道查看: 
@@ -24,7 +49,9 @@ FullTclash bot 是承载其测试任务的Telegram 机器人（以下简称bot�
 >- Netflix  Youtube DisneyPlus Bilibili steam货币 OpenAI(ChatGPT) 落地ip风险(IP欺诈度) 维基百科  
 
 以及HTTP延迟测试和链路拓扑测试（节点出入口分析）。  
+## 使用文档
 
+可以在 [这里](https://fulltclash.gitbook.io/fulltclash-doc) 找到FullTclash的使用文档。
 ## 效果预览
 
 流媒体测试:
@@ -157,12 +184,16 @@ bot:
 大致流程为:  
 - 在您的平台安装GO编译器(版本越高越好)  
 ```shell
-go mod init
+go mod init <路径>
 ```
 ```shell
 go mod tidy
 ``` 
 以下是编译arm64架构的例子:
+```shell
+go build -buildmode=c-shared -o fulltclash.so fulltclash.go
+```
+交叉编译: 
 ```shell
 GOOS=linux GOARCH=arm64 GOARM=7 CGO_ENABLED=1 CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ AR=aarch64-linux-gnu-ar go build -buildmode=c-shared -o fulltclash.so fulltclash.go
 ```

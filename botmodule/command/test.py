@@ -1,16 +1,50 @@
 import asyncio
+import io
+import json
 from concurrent.futures import ThreadPoolExecutor
 
-from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
-from pyrogram import enums
+from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+from pyrogram import enums, Client
 from pyrogram.errors import RPCError
 from loguru import logger
-import botmodule.init_bot
-from botmodule.init_bot import config
-from utils.backend import SpeedCore, ScriptCore, TopoCore
+
+from botmodule.init_bot import config, admin
+from utils.backend import SpeedCore, ScriptCore, TopoCore, break_speed
+from utils.safe import cipher_chacha20, sha256_32bytes
 from utils import message_delete_queue, check, cleaner, collector, export
 
-admin = botmodule.init_bot.admin
+SPEEDTESTIKM = InlineKeyboardMarkup(
+    [
+        [InlineKeyboardButton("👋中止测速", callback_data='stop')],
+    ]
+)
+SPEEDTEST_LIST = []
+BOT_MESSAGE_LIST = {}
+
+
+async def slave_progress(progress, nodenum, botmsg: Message, corenum, master_id, master_chat_id, master_msg_id, name):
+    progresstext = f"${corenum}:{progress}:{nodenum}"
+    await botmsg.edit_text(f'/relay {master_id} edit {master_chat_id} {master_msg_id} {progresstext} "{name}"')
+
+
+sp = slave_progress
+
+
+def select_core_slave(coreindex: str, botmsg: Message, putinfo: dict):
+    edit_chat_id = putinfo.get('edit-chat-id', None)
+    edit_msg_id = putinfo.get('edit-message-id', None)
+    masterid = putinfo.get('master', {}).get('id', 1)
+    slavename = putinfo.get('slave', {}).get('comment', '未知')
+    if coreindex == 1:
+        return SpeedCore(botmsg.chat.id, botmsg.id, SPEEDTESTIKM,
+                         (sp, (botmsg, 1, masterid, edit_chat_id, edit_msg_id, slavename)))
+    elif coreindex == 2:
+        return TopoCore(botmsg.chat.id, botmsg.id, (sp, (botmsg, 2, masterid, edit_chat_id, edit_msg_id, slavename)))
+    elif coreindex == 3:
+        return ScriptCore(botmsg.chat.id, botmsg.id, (sp, (botmsg, 3, masterid, edit_chat_id, edit_msg_id, slavename)))
+    else:
+        logger.warning("未知的测试核心类型")
+        return None
 
 
 async def select_core(put_type: str, message: Message, **kwargs):
@@ -48,11 +82,11 @@ async def select_export(msg: Message, backmsg: Message, put_type: str, info: dic
                 ex = export.ExportSpeed(name=None, info=info)
                 with ThreadPoolExecutor() as pool:
                     loop = asyncio.get_running_loop()
-                    stime = await loop.run_in_executor(
+                    stime, img_size = await loop.run_in_executor(
                         pool, ex.exportImage)
                 # 发送回TG
                 await msg.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
-                await check.check_photo(msg, backmsg, stime, wtime)
+                await check.check_photo(msg, backmsg, stime, wtime, img_size)
         elif put_type.startswith("analyze") or put_type.startswith("topo") or put_type.startswith("inbound") \
                 or put_type.startswith("outbound") or kwargs.get('coreindex', -1) == 2:
             info1 = info.get('inbound', {})
@@ -64,9 +98,9 @@ async def select_export(msg: Message, backmsg: Message, put_type: str, info: dic
                     ex = export.ExportTopo(name=None, info=info1)
                     with ThreadPoolExecutor() as pool:
                         loop = asyncio.get_running_loop()
-                        stime = await loop.run_in_executor(
+                        stime, img_size = await loop.run_in_executor(
                             pool, ex.exportTopoInbound)
-                    await check.check_photo(msg, backmsg, 'Topo' + stime, wtime)
+                    await check.check_photo(msg, backmsg, 'Topo' + stime, wtime, img_size)
                     return
                 if info2:
                     # 生成图片
@@ -80,27 +114,24 @@ async def select_export(msg: Message, backmsg: Message, put_type: str, info: dic
                         ex = export.ExportTopo(name=None, info=info2)
                         with ThreadPoolExecutor() as pool:
                             loop = asyncio.get_running_loop()
-                            stime = await loop.run_in_executor(
+                            stime, h, w = await loop.run_in_executor(
                                 pool, ex.exportTopoOutbound)
+                            img_size = (w, h)
                     else:
-                        stime = export.ExportTopo(name=None, info=info1).exportTopoInbound(info2.get('节点名称', []), info2,
-                                                                                           img2_width=image_width2)
+                        stime, img_size = export.ExportTopo(name=None, info=info1).exportTopoInbound(
+                            info2.get('节点名称', []), info2,
+                            img2_width=image_width2)
                     # 发送回TG
                     await msg.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
-                    await check.check_photo(msg, backmsg, 'Topo' + stime, wtime)
+                    await check.check_photo(msg, backmsg, 'Topo' + stime, wtime, img_size)
         elif put_type.startswith("test") or kwargs.get('coreindex', -1) == 3:
             if info:
                 wtime = info.get('wtime', "-1")
                 # 生成图片
-                file_name = export.ExportCommon(info.pop('节点名称', []), info).draw()
-                # ex = export.ExportResult(nodename=None, info=info)
-                # with ThreadPoolExecutor() as pool:
-                #     loop = asyncio.get_running_loop()
-                #     stime = await loop.run_in_executor(
-                #         pool, ex.exportUnlock)
+                file_name, img_size = export.ExportCommon(info.pop('节点名称', []), info).draw()
                 # 发送回TG
                 await msg.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
-                await check.check_photo(msg, backmsg, file_name, wtime)
+                await check.check_photo(msg, backmsg, file_name, wtime, img_size)
         else:
             raise TypeError("Unknown export type, please input again.\n未知的绘图类型，请重新输入!")
     except RPCError as r:
@@ -110,8 +141,8 @@ async def select_export(msg: Message, backmsg: Message, put_type: str, info: dic
 
 
 @logger.catch()
-async def process(_, message: Message, **kwargs):
-    back_message = await message.reply("⏳任务接收成功，测试进行中...")
+async def process(app: Client, message: Message, **kwargs):
+    back_message = await message.reply("⏳任务接收成功，测试进行中...", quote=True)
     tgtext = str(message.text)
     tgargs = cleaner.ArgCleaner().getall(tgtext)
     suburl = cleaner.geturl(tgtext) if kwargs.get('url', None) is None else kwargs.get('url', None)
@@ -147,8 +178,10 @@ async def process(_, message: Message, **kwargs):
         if await check.check_speednode(back_message, core, proxynum):
             return
         proxyinfo = pre_cl.getProxies()
-        info = await core.core(proxyinfo, **kwargs)
-        await select_export(message, back_message, put_type, info, **kwargs)
+        info = await put_slave_task(app, message, proxyinfo, core=core, backmsg=back_message, **kwargs)
+        # info = await core.core(proxyinfo, **kwargs)
+        if info:
+            await select_export(message, back_message, put_type, info, **kwargs)
     else:
         subinfo = config.get_sub(subname=tgargs[1])
         pwd = tgargs[4] if len(tgargs) > 4 else tgargs[1]
@@ -169,303 +202,104 @@ async def process(_, message: Message, **kwargs):
         if await check.check_speednode(back_message, core, proxynum):
             return
         proxyinfo = pre_cl.getProxies()
-        info = await core.core(proxyinfo, **kwargs)
-        await select_export(message, back_message, put_type, info, **kwargs)
+        info = await put_slave_task(app, message, proxyinfo, core=core, backmsg=back_message, **kwargs)
+        # info = await core.core(proxyinfo, **kwargs)
+        if isinstance(info, dict):
+            await select_export(message, back_message, put_type, info, **kwargs)
 
-# @logger.catch()
-# async def testurl(_, message: Message, **kwargs):
-#     """
-#
-#     :param _:
-#     :param message:
-#     :param kwargs:
-#     :return:
-#     """
-#     scripttext = config.config.get('bot', {}).get('scripttext', "⏳联通性测试进行中...")
-#     back_message = await message.reply(scripttext)
-#     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
-#     ma = cleaner.ConfigManager('./clash/proxy.yaml')
-#     suburl = kwargs.get('url', None)
-#     try:
-#         info = await streamingtest.core(message, back_message=back_message,
-#                                         start_time=start_time, thread=coresum, suburl=suburl, **kwargs)
-#         if info:
-#             wtime = info.get('wtime', "-1")
-#             # 生成图片
-#             ex = export.ExportResult(nodename=None, info=info)
-#             with ThreadPoolExecutor() as pool:
-#                 loop = asyncio.get_running_loop()
-#                 stime = await loop.run_in_executor(
-#                     pool, ex.exportUnlock)
-#             # 发送回TG
-#             await message.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
-#             await check.check_photo(message, back_message, stime, wtime)
-#             ma.delsub2provider(subname=start_time)
-#             ma.save(savePath='./clash/proxy.yaml')
-#     except RPCError as r:
-#         logger.error(str(r))
-#         await message.reply(str(r))
-#     except FloodWait as e:
-#         await asyncio.sleep(e.value)
-#     except Exception as e:
-#         logger.error(e)
-#
-#
-# @logger.catch()
-# async def test(_, message: Message, **kwargs):
-#     scripttext = config.config.get('bot', {}).get('scripttext', "⏳联通性测试进行中...")
-#     back_message = await message.reply(scripttext)  # 发送提示
-#     arg = cleaner.ArgCleaner().getall(str(message.text))
-#     del arg[0]
-#     try:
-#         if len(arg):
-#             subinfo = config.get_sub(subname=arg[0])
-#             # subpwd = subinfo.get('password', '')
-#             pwd = arg[3] if len(arg) > 3 else arg[0]
-#             if await check.check_subowner(message, back_message, subinfo=subinfo, admin=admin, password=pwd):
-#                 suburl = subinfo.get('url', "http://this_is_a.error")
-#             else:
-#                 return
-#             start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
-#             ma = cleaner.ConfigManager('./clash/proxy.yaml')
-#             info = await streamingtest.newcore(message, back_message=back_message,
-#                                                start_time=start_time, suburl=suburl, thread=coresum, **kwargs)
-#             if info:
-#                 wtime = info.get('wtime', "-1")
-#                 # 生成图片
-#                 ex = export.ExportResult(nodename=None, info=info)
-#                 with ThreadPoolExecutor() as pool:
-#                     loop = asyncio.get_running_loop()
-#                     stime = await loop.run_in_executor(
-#                         pool, ex.exportUnlock)
-#                 # 发送回TG
-#                 await message.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
-#                 await check.check_photo(message, back_message, stime, wtime)
-#                 ma.delsub2provider(subname=start_time)
-#                 ma.save(savePath='./clash/proxy.yaml')
-#         else:
-#             await back_message.edit_text("❌无接受参数，使用方法: /test <订阅名>")
-#             await asyncio.sleep(10)
-#             await back_message.delete()
-#             return
-#     except RPCError as r:
-#         logger.error(str(r))
-#         await message.reply(str(r))
-#     except FloodWait as e:
-#         await asyncio.sleep(e.value)
-#     except Exception as e:
-#         logger.error(e)
-#
-#
-# @logger.catch()
-# async def analyzeurl(_, message: Message, test_type="all", **kwargs):
-#     analyzetext = config.config.get('bot', {}).get('analyzetext', "⏳节点拓扑分析测试进行中...")
-#     back_message = await message.reply(analyzetext)  # 发送提示
-#     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
-#     ma = cleaner.ConfigManager('./clash/proxy.yaml')
-#     suburl = kwargs.get('url', None)
-#     try:
-#         info1, info2 = await topotest.core(message, back_message,
-#                                            start_time=start_time, suburl=suburl,
-#                                            test_type=test_type, thread=coresum, **kwargs)
-#         if info1:
-#             if test_type == "inbound":
-#                 wtime = info1.get('wtime', "未知")
-#                 # stime = export.ExportTopo(name=None, info=info1).exportTopoInbound()
-#                 ex = export.ExportTopo(name=None, info=info1)
-#                 with ThreadPoolExecutor() as pool:
-#                     loop = asyncio.get_running_loop()
-#                     stime = await loop.run_in_executor(
-#                         pool, ex.exportTopoInbound)
-#                 await check.check_photo(message, back_message, 'Topo' + stime, wtime)
-#                 ma.delsub2provider(subname=start_time)
-#                 ma.save(savePath='./clash/proxy.yaml')
-#                 return
-#             if info2:
-#                 # 生成图片
-#                 wtime = info2.get('wtime', "未知")
-#                 clone_info2 = {}
-#                 clone_info2.update(info2)
-#                 img_outbound, yug, image_width2 = export.ExportTopo().exportTopoOutbound(nodename=None,
-#                                                                                          info=clone_info2)
-#                 if test_type == "outbound":
-#                     # stime = export.ExportTopo(name=None, info=info2).exportTopoOutbound()
-#                     ex = export.ExportTopo(name=None, info=info2)
-#                     with ThreadPoolExecutor() as pool:
-#                         loop = asyncio.get_running_loop()
-#                         stime = await loop.run_in_executor(
-#                             pool, ex.exportTopoOutbound)
-#                 else:
-#                     stime = export.ExportTopo(name=None, info=info1).exportTopoInbound(info2.get('节点名称', []), info2,
-#                                                                                        img2_width=image_width2)
-#                 # 发送回TG
-#                 await message.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
-#                 await check.check_photo(message, back_message, 'Topo' + stime, wtime)
-#                 ma.delsub2provider(subname=start_time)
-#                 ma.save(savePath='./clash/proxy.yaml')
-#     except RPCError as r:
-#         logger.error(str(r))
-#         await message.reply(str(r))
-#     except FloodWait as e:
-#         await asyncio.sleep(e.value)
-#     except Exception as e:
-#         logger.error(e)
-#
-#
-# @logger.catch()
-# async def analyze(_, message: Message, test_type="all"):
-#     analyzetext = config.config.get('bot', {}).get('analyzetext', "⏳节点拓扑分析测试进行中...")
-#     back_message = await message.reply(analyzetext)  # 发送提示
-#     arg = cleaner.ArgCleaner().getall(str(message.text))
-#     del arg[0]
-#     try:
-#         if len(arg):
-#             subinfo = config.get_sub(subname=arg[0])
-#             pwd = arg[3] if len(arg) > 3 else arg[0]
-#             if await check.check_subowner(message, back_message, subinfo=subinfo, admin=admin, password=pwd):
-#                 suburl = subinfo.get('url', "http://this_is_a.error")
-#             else:
-#                 return
-#             start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
-#             ma = cleaner.ConfigManager('./clash/proxy.yaml')
-#
-#             info1, info2 = await topotest.core(message, back_message=back_message,
-#                                                start_time=start_time, suburl=suburl, test_type=test_type,
-#                                                thread=coresum)
-#             if info1:
-#                 # 生成图片
-#                 if test_type == "inbound":
-#                     wtime = info1.get('wtime', "未知")
-#                     # stime = export.ExportTopo(name=None, info=info1).exportTopoInbound()
-#                     ex = export.ExportTopo(name=None, info=info1)
-#                     with ThreadPoolExecutor() as pool:
-#                         loop = asyncio.get_running_loop()
-#                         stime = await loop.run_in_executor(
-#                             pool, ex.exportTopoInbound)
-#                     await message.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
-#                     await check.check_photo(message, back_message, 'Topo' + stime, wtime)
-#                     ma.delsub2provider(subname=start_time)
-#                     ma.save(savePath='./clash/proxy.yaml')
-#                     return
-#                 if info2:
-#                     wtime = info2.get('wtime', '未知')
-#                     clone_info2 = {}
-#                     clone_info2.update(info2)
-#                     img_outbound, yug, image_width2 = export.ExportTopo().exportTopoOutbound(nodename=None,
-#                                                                                              info=clone_info2)
-#                     if test_type == "outbound":
-#                         # stime = export.ExportTopo(name=None, info=info2).exportTopoOutbound()
-#                         ex = export.ExportTopo(name=None, info=info2)
-#                         with ThreadPoolExecutor() as pool:
-#                             loop = asyncio.get_running_loop()
-#                             stime = await loop.run_in_executor(
-#                                 pool, ex.exportTopoOutbound)
-#                     else:
-#                         stime = export.ExportTopo(name=None, info=info1).exportTopoInbound(info2.get('节点名称', []),
-#                         info2, img2_width=image_width2)
-#                     # 发送回TG
-#                     await message.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
-#                     await check.check_photo(message, back_message, 'Topo' + stime, wtime)
-#                     ma.delsub2provider(subname=start_time)
-#                     ma.save(savePath='./clash/proxy.yaml')
-#         else:
-#             await back_message.edit_text("❌无接受参数，使用方法: /analyze <订阅名>")
-#             await asyncio.sleep(10)
-#             await back_message.delete()
-#             return
-#     except FloodWait as e:
-#         await asyncio.sleep(e.value)
-#     except RPCError as r:
-#         logger.error(str(r))
-#         await message.reply(str(r))
-#     except KeyboardInterrupt:
-#         await back_message.edit_text("程序已被强行中止")
-#     except Exception as e:
-#         logger.error(e)
-#
-#
-# @logger.catch()
-# async def speedurl(_, message: Message, **kwargs):
-#     speedtext = config.config.get('bot', {}).get('speedtext', "⏳速度测试进行中...")
-#     back_message = await message.reply(speedtext, quote=True)  # 发送提示
-#     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
-#     ma = cleaner.ConfigManager('./clash/proxy.yaml')
-#     suburl = kwargs.get('url', None)
-#     if config.nospeed:
-#         await back_message.edit_text("❌已禁止测速服务")
-#         await asyncio.sleep(10)
-#         await back_message.delete(revoke=False)
-#         return
-#     try:
-#         info = await speedtest.core(message, back_message,
-#                                     start_time=start_time, suburl=suburl, **kwargs)
-#         ma.delsub2provider(subname=start_time)
-#         ma.save(savePath='./clash/proxy.yaml')
-#         if info:
-#             wtime = info.get('wtime', "-1")
-#             # stime = export.ExportSpeed(name=None, info=info).exportImage()
-#             ex = export.ExportSpeed(name=None, info=info)
-#             with ThreadPoolExecutor() as pool:
-#                 loop = asyncio.get_running_loop()
-#                 stime = await loop.run_in_executor(
-#                     pool, ex.exportImage)
-#             # 发送回TG
-#             await message.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
-#             await check.check_photo(message, back_message, stime, wtime)
-#     except RPCError as r:
-#         logger.error(str(r))
-#         await message.reply(str(r))
-#     except FloodWait as e:
-#         await asyncio.sleep(e.value)
-#     except Exception as e:
-#         logger.error(e)
-#
-#
-# @logger.catch()
-# async def speed(_, message: Message):
-#     speedtext = config.config.get('bot', {}).get('speedtext', "⏳速度测试进行中...")
-#     back_message = await message.reply(speedtext, quote=True)  # 发送提示
-#     arg = cleaner.ArgCleaner().getall(str(message.text))
-#     del arg[0]
-#     if config.nospeed:
-#         await back_message.edit_text("❌已禁止测速服务")
-#         await asyncio.sleep(10)
-#         await back_message.delete(revoke=False)
-#         return
-#     try:
-#         if len(arg):
-#             subinfo = config.get_sub(subname=arg[0])
-#             pwd = arg[3] if len(arg) > 3 else arg[0]
-#             if await check.check_subowner(message, back_message, subinfo=subinfo, admin=admin, password=pwd):
-#                 suburl = subinfo.get('url', 'http://this_is_a.error')
-#             else:
-#                 return
-#             start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
-#             ma = cleaner.ConfigManager('./clash/proxy.yaml')
-#             info = await speedtest.core(message, back_message=back_message,
-#                                         start_time=start_time, suburl=suburl)
-#             ma.delsub2provider(subname=start_time)
-#             ma.save(savePath='./clash/proxy.yaml')
-#             if info:
-#                 wtime = info.get('wtime', "-1")
-#                 # stime = export.ExportSpeed(name=None, info=info).exportImage()
-#                 ex = export.ExportSpeed(name=None, info=info)
-#                 with ThreadPoolExecutor() as pool:
-#                     loop = asyncio.get_running_loop()
-#                     stime = await loop.run_in_executor(
-#                         pool, ex.exportImage)
-#                 # 发送回TG
-#                 await message.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
-#                 await check.check_photo(message, back_message, stime, wtime)
-#         else:
-#             await back_message.edit_text("❌无接受参数，使用方法: /speed <订阅名>")
-#             await asyncio.sleep(10)
-#             await back_message.delete()
-#             return
-#     except RPCError as r:
-#         logger.error(str(r))
-#         await message.reply(str(r))
-#     except FloodWait as e:
-#         await asyncio.sleep(e.value)
-#     except Exception as e:
-#         logger.error(e)
+
+async def put_slave_task(app: Client, message: Message, proxyinfo: list, **kwargs):
+    slaveid = kwargs.pop('slaveid', 'local')
+    raw_backmsg: Message = kwargs.get('backmsg', None)
+    if raw_backmsg is None:
+        logger.warning("已丢失BOT消息！")
+        return
+    else:
+        logger.info(f"BOT进度条编辑的chat_id:{raw_backmsg.chat.id},message_id:{raw_backmsg.id}")
+        BOT_MESSAGE_LIST[str(raw_backmsg.chat.id)+':'+str(raw_backmsg.id)] = raw_backmsg
+    coreindex = kwargs.get('coreindex', 0)
+    userbot_id = config.config.get('userbot', {}).get('id', '')
+    bot_info = await app.get_me()
+    if slaveid == 'local':
+        core = kwargs.pop('core', None)
+        if core is None:
+            await message.reply("找不到测试核心")
+            return None
+        info = await core.core(proxyinfo, **kwargs)
+        return info
+    if not userbot_id:
+        backmsg = await message.reply("❌读取中继桥id错误")
+        message_delete_queue.put(backmsg)
+        return
+    slaveconfig = config.getSlaveconfig()
+    key = slaveconfig.get(slaveid, {}).get('public-key', '')
+    key = sha256_32bytes(key)
+
+    payload = {
+        'proxies': proxyinfo,
+        'master': {'id': bot_info.id},
+        'coreindex': coreindex,
+        'test-items': kwargs.get('test_items', None),
+        'edit-message-id': raw_backmsg.id,
+        'edit-chat-id': raw_backmsg.chat.id,
+        'edit-message': {'message-id': raw_backmsg.id, 'chat-id': raw_backmsg.chat.id},
+        'origin-message': {'chat-id': message.chat.id, 'message-id': message.id},
+        'slave': {
+            'id': slaveid,
+            'comment': slaveconfig.get(slaveid, {}).get('comment', '')
+        },
+        'sort': kwargs.get('sort', '订阅原序')
+    }
+    # 设置指定的后端为测速状态
+    if coreindex == 1:
+        SPEEDTEST_LIST.append(slaveid)
+    data1 = json.dumps(payload)
+    cipherdata = cipher_chacha20(data1.encode(), key)
+    bytesio = io.BytesIO(cipherdata)
+    bytesio.name = "subinfo"
+    await app.send_document(userbot_id, bytesio, caption=f'/relay {slaveid} send')
+    return None
+
+
+@logger.catch()
+async def process_slave(app: Client, message: Message, putinfo: dict, **kwargs):
+    masterconfig = config.getMasterconfig()
+    master_id = putinfo.get('master', {}).get('id', 1)
+    coreindex = putinfo.get('coreindex', None)
+    proxyinfo = putinfo.pop('proxies', [])
+    kwargs.update(putinfo)
+    core = select_core_slave(coreindex, message, putinfo)
+    info = await core.core(proxyinfo, **kwargs)
+    print("后端结果：", info)
+
+    putinfo['result'] = info
+    infostr = json.dumps(putinfo)
+    key = masterconfig.get(str(master_id), {}).get('public-key', '')
+    logger.info(f"后端加密key: {key}")
+    key = sha256_32bytes(key)
+    cipherdata = cipher_chacha20(infostr.encode(), key)
+    bytesio = io.BytesIO(cipherdata)
+    bytesio.name = "result"
+    await app.send_document(message.chat.id, bytesio, caption=f'/relay {master_id} result')
+
+
+async def stopspeed(app: Client, callback_query: CallbackQuery):
+    slaveconfig = config.getSlaveconfig()
+    bridge = config.getBridge()
+    botmsg = callback_query.message
+    commenttext = botmsg.text.split('\n', 1)[0].split(':')[1]
+    if commenttext == 'Local':
+        break_speed.append(True)
+        return
+    slaveid = 0
+    for k, v in slaveconfig.items():
+        comment = v.get('comment', '')
+        if comment == commenttext:
+            slaveid = int(k)
+            break
+    if slaveid:
+        await app.send_message(bridge, f'/relay {slaveid} stopspeed')
+        backmsg = await botmsg.edit_text("❌测速任务已取消")
+        message_delete_queue.put(backmsg)
+    logger.info("测速中止")
+    callback_query.stop_propagation()

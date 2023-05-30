@@ -3,6 +3,7 @@ import importlib
 import os
 import re
 import sys
+from typing import Union, List
 import socket
 import yaml
 from loguru import logger
@@ -145,7 +146,7 @@ class AddonCleaner:
         self._script = {}
         self.blacklist = []
 
-    def global_test_item(self):
+    def global_test_item(self, httptest: bool = False):
         """
         经过去重并支持黑名单一并去除。最后返回一个新列表
         :return:
@@ -154,6 +155,8 @@ class AddonCleaner:
                      '维基百科', '落地IP风险']
         base_item = base_item + list(self._script.keys())
         new_item = sorted(set(base_item) - set(self.blacklist), key=base_item.index)
+        if httptest:
+            new_item.insert(0, "HTTP(S)延迟")
         return new_item
 
     @property
@@ -165,6 +168,16 @@ class AddonCleaner:
         if blacklist:
             for b in blacklist:
                 self._script.pop(b, None)
+
+    def mix_script(self, alist: List[str], httptest: bool = True) -> list:
+        """
+        适配后端脚本不足的兼容测试项，返回后端支持的所有测试项。
+        """
+        newlist = list(set(alist).intersection(set(self.global_test_item())))
+        if httptest:
+            newlist.insert(0, "HTTP(S)延迟")
+        newlist = sorted(newlist, key=newlist.index)
+        return newlist
 
     def remove_addons(self, script_name: list):
         success_list = []
@@ -225,8 +238,7 @@ class AddonCleaner:
                 continue
             try:
                 script = getattr(mo1, 'SCRIPT')
-            except AttributeError as a:
-                logger.warning(str(a))
+            except AttributeError:
                 script = None
             if script is None or type(script).__name__ != "dict":
                 continue
@@ -313,7 +325,7 @@ dns:
   - 119.29.29.29
   - 223.5.5.5
   enable: false
-  enhanced-mode: redir-host
+  enhanced-mode: fake-ip
   fallback:
   - https://208.67.222.222/dns-query
   - https://public.dns.iij.jp/dns-query
@@ -372,11 +384,12 @@ class ClashCleaner:
     yaml配置清洗
     """
 
-    def __init__(self, _config, _config2: str = None):
+    def __init__(self, _config, _config2: Union[str, bytes] = None):
         """
         :param _config: 传入一个文件对象，或者一个字符串,文件对象需指向 yaml/yml 后缀文件
         """
         self.path = ''
+        self.unsupport_type = ['wireguard', 'vless', 'hysteria']
         self.yaml = {}
         if _config == ':memory:':
             try:
@@ -393,12 +406,36 @@ class ClashCleaner:
         else:
             self.yaml = yaml.safe_load(_config)
 
+        self.filter_unsupport_proxy()
+
     def setProxies(self, proxyinfo: list):
         """
         覆写里面的proxies键
         :return:
         """
         self.yaml['proxies'] = proxyinfo
+
+    def filter_unsupport_proxy(self):
+        try:
+            if self.yaml is None:
+                self.yaml = {}
+                return
+            proxies: list = self.yaml['proxies']
+            for i, proxy in enumerate(proxies):
+                if isinstance(proxy, dict):
+                    name = proxy['name']
+                    ptype = proxy['type']
+                    if not isinstance(name, str):
+                        # 将节点名称转为字符串
+                        proxy['name'] = str(name)
+                    if ptype in self.unsupport_type:
+                        logger.warning(f"出现了可能不受支持的节点：{ptype}")
+                        proxies.pop(i)
+            self.yaml['proxies'] = proxies
+        except KeyError:
+            logger.warning("读取节点信息失败！")
+        except TypeError:
+            logger.warning("读取节点信息失败！")
 
     def getProxies(self):
         """
@@ -435,6 +472,19 @@ class ClashCleaner:
             for i in self.yaml['proxies']:
                 lis.append(i['name'])
             return lis
+        except KeyError:
+            logger.warning("读取节点信息失败！")
+            return None
+        except TypeError:
+            logger.warning("读取节点信息失败！")
+            return None
+
+    def nodesAddr(self):
+        """
+        获取节点地址信息，返回（host,port）元组形式
+        """
+        try:
+            return [(i['server'], i['port']) for i in self.yaml['proxies']]
         except KeyError:
             logger.warning("读取节点信息失败！")
             return None
@@ -489,7 +539,7 @@ class ClashCleaner:
             logger.error(str(e))
             return None
 
-    def nodesAddr(self, name=None):
+    def nodesAddr_plus(self, name=None):
         """
         获取节点地址
         :return: list | str
@@ -705,12 +755,17 @@ class ConfigManager:
         except KeyError:
             return {}
 
-    # TODO(@AirportR): 三项speed配置可以合在一个母项中
     def speednodes(self):
         try:
             return self.config['speednodes']
         except KeyError:
             return int(300)
+
+    def getMasterconfig(self):
+        return self.config.get('masterconfig', {})
+
+    def getSlaveconfig(self):
+        return self.config.get('slaveconfig', {})
 
     def getBotconfig(self):
         botconfig = self.config.get('bot', {})
@@ -740,9 +795,10 @@ class ConfigManager:
 
     def getBridge(self):
         """
-        获取连接中继桥，它是一个telegram的群组id，最好是私密群组
+        获取连接中继桥，它是一个telegram的user_id
         """
-        return self.config.get('bridge', None)
+        bridge = self.config.get('userbot', {}).get('id', None)
+        return bridge
 
     def getGstatic(self):
         """
@@ -907,9 +963,11 @@ class ConfigManager:
         except TypeError:
             logger.error("删除失败")
 
-    def add_slave(self, slave_id: str, key_path: str, username: str, comment: str = '-'):
+    def add_slave(self, slave_id: str, key: str, username: str, comment: str = '-'):
         slaveconfig = self.config.get('slaveconfig', {})
-        slaveconfig[slave_id] = {'public-key': key_path, 'username': username, 'comment': comment}
+        if slaveconfig is None:
+            slaveconfig = {}
+        slaveconfig[slave_id] = {'public-key': key, 'username': username, 'comment': comment}
         self.yaml['slaveconfig'] = slaveconfig
 
     @logger.catch
@@ -1043,7 +1101,7 @@ class ConfigManager:
             self.yaml['proxy-groups'][0]['use'].append(subname)
 
 
-"""内置一个配置全局变量，后续项目开发可以统一读取这个，./botmodule/init_bot.py 中也有一个"""
+# 内置一个配置全局变量，后续项目开发可以统一读取这个，./botmodule/init_bot.py 中也有一个
 config = ConfigManager()
 media_item = config.get_media_item()
 addon = AddonCleaner()
@@ -1210,7 +1268,7 @@ class ReCleaner:
         """
         try:
             if 'disney' not in self.data:
-                logger.warning("无法读取Desney Plus解锁信息")
+                logger.warning("无法读取Disney Plus解锁信息")
                 return "N/A"
             else:
                 logger.info("Disney+ 状态：" + str(self.data['disney']))
@@ -1324,6 +1382,19 @@ class ArgCleaner:
     def __init__(self, string: str = None):
         self.string = string
 
+    @staticmethod
+    def getarg(string: str, sep: str = ' ') -> list:
+        """
+        对字符串使用特定字符进行切片
+        Args:
+            string: 要切片的字符串
+            sep: 指定用来切片的字符依据，默认为空格
+
+        Returns: 返回一个切好的字符串列表
+
+        """
+        return [x for x in string.strip().split(sep) if x != '']
+
     def getall(self, string: str = None):
         """
         分割一段字符串中的参数，返回参数列表
@@ -1343,7 +1414,7 @@ class ArgCleaner:
 def geturl(string: str):
     text = string
     pattern = re.compile(
-        r"https?://(?:[a-zA-Z]|\d|[$-_@.&+]|[!*,]|(?:%[\da-fA-F][\da-fA-F])|[\w\u4e00-\u9fa5])+")  # 匹配订阅地址
+        r"https?://(?:[a-zA-Z]|\d|[$-_@.&+]|[!*,]|[\w\u4e00-\u9fa5])+")  # 匹配订阅地址
     # 获取订阅地址
     try:
         url = pattern.findall(text)[0]  # 列表中第一个项为订阅地址
@@ -1369,6 +1440,7 @@ def domain_to_ip(host: str):
     except socket.gaierror:
         return None
 
+
 def cluster(host):
     cluip = domain_to_ip(host)
     if cluip is None:
@@ -1376,6 +1448,7 @@ def cluster(host):
     else:
         clus = len(cluip)
         return clus
+
 
 def count(host):
     ips = domain_to_ip(host)
@@ -1455,6 +1528,7 @@ def batch_domain2ip(host: list):
             else:
                 ipaddrs.append("N/A")
     return ipaddrs
+
 
 def batch_ipcu(host: list):
     """

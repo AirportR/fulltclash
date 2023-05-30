@@ -2,7 +2,7 @@ import asyncio
 import json
 import os
 import threading
-
+from typing import Union
 import async_timeout
 import yaml
 import ctypes
@@ -15,13 +15,12 @@ from utils.cleaner import config
 """
 这个模块主要是一些对clash 动态库 api的python调用
 """
-os.getcwd()
 clash_path = config.get_clash_path()
 lib = ctypes.cdll.LoadLibrary(clash_path)
 _setProxy = getattr(lib, 'setProxy')
 _setProxy.argtypes = [ctypes.c_char_p, ctypes.c_int64]
 # _setProxy.restype = ctypes.c_char_p
-_setProxy.restype = ctypes.POINTER(ctypes.c_char)
+_setProxy.restype = ctypes.c_int8
 _free_me = getattr(lib, 'freeMe')
 _free_me.argtypes = [ctypes.POINTER(ctypes.c_char)]
 _myURLTest = getattr(lib, 'myURLTest')
@@ -33,18 +32,35 @@ _urlTest.restype = ctypes.c_char_p
 
 
 class Clash(threading.Thread):  # 继承父类threading.Thread
-    def __init__(self, _port, _index: int):
+    def __init__(self, _port: Union[str, int], _index: int):
         threading.Thread.__init__(self)
         self._port = _port
         self._index = _index
 
     def run(self):  # 把要执行的代码写到run函数里面 线程在创建后会直接运行run函数
+        self.run_2()
 
+    def run_1(self):
         _myclash = lib.myclash
         _myclash.argtypes = [ctypes.c_char_p, ctypes.c_longlong]
         # create a task for myclash
         _addr = "127.0.0.1:" + str(self._port)
         _myclash(_addr.encode(), self._index)
+
+    def run_2(self):
+        _myclash2 = lib.myclash2
+        _myclash2.argtypes = [ctypes.c_char_p, ctypes.c_longlong]
+        # create a task for myclash
+        _addr = "127.0.0.1:" + str(self._port)
+        _myclash2(_addr.encode(), self._index)
+
+    def stoplisten(self, index: int = None):
+        closeclash = getattr(lib, 'closeclash')
+        closeclash.argtypes = [ctypes.c_longlong]
+        if index is None:
+            closeclash(self._index)
+        else:
+            closeclash(index)
 
 
 async def http_delay(url: str = config.getGstatic(), index: int = 0) -> int:
@@ -72,6 +88,32 @@ async def http_delay_tls(url: str = config.getGstatic(), index: int = 0, timeout
     return mean_delay
 
 
+def switchProxy(_nodeinfo: dict, _index: int) -> bool:
+    """
+    切换clash核心中的代理节点，会将数据直接发往动态链接库
+    :param _nodeinfo: 节点信息
+    :param _index: 索引
+    :return: bool
+    """
+    if type(_nodeinfo).__name__ != "dict":
+        return False
+    try:
+        _payload = yaml.dump({'proxies': _nodeinfo})
+        _status = _setProxy(_payload.encode(), _index)
+        # logger.info(f"切换结果: {_status}")
+        if not _status:
+            logger.info(f"切换节点: {_nodeinfo.get('name', 'not found')} 成功")
+            # _free_me(_status)
+            return True
+        else:
+            logger.error(str(_status))
+            # _free_me(_status)
+            return False
+    except Exception as e:
+        logger.error(str(e))
+        return False
+
+
 # 切换节点
 def switchProxy_old(proxyName, proxyGroup, clashHost: str = "127.0.0.1", clashPort: int = 11230):
     """
@@ -93,32 +135,7 @@ def switchProxy_old(proxyName, proxyGroup, clashHost: str = "127.0.0.1", clashPo
         logger.error(e)
 
 
-def switchProxy(_nodeinfo: dict, _index: int) -> bool:
-    """
-    切换clash核心中的代理节点，会将数据直接发往动态链接库
-    :param _nodeinfo: 节点信息
-    :param _index: 索引
-    :return: bool
-    """
-    if type(_nodeinfo).__name__ != "dict":
-        return False
-    try:
-        _payload = yaml.dump({'proxies': _nodeinfo})
-        _status = _setProxy(_payload.encode(), _index)
-        if not _status.contents:
-            logger.info(f"切换节点: {_nodeinfo.get('name', 'not found')} 成功")
-            _free_me(_status)
-            return True
-        else:
-            logger.error(str(_status))
-            _free_me(_status)
-            return False
-    except Exception as e:
-        logger.error(str(e))
-        return False
-
-
-def stopclash():
+def killclash():
     stop = getattr(lib, 'stop')
     stop.argtypes = [ctypes.c_int64]
     stop(1)

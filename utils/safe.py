@@ -3,7 +3,10 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms
 from cryptography.hazmat.primitives import hashes
+
+default_nonce = b'#U\x1e\xc1\xc9\xe3\xc9M\x94=\xb8\xfb\x0e\x9b5\\'
 
 
 def gen_key(key_name: str = 'fulltclash', in_memory=False):
@@ -65,7 +68,7 @@ def get_key(key_path: str, key_type: str):
         raise TypeError('Unknown key type')
 
 
-def cipher(_plaintext: bytes, _public_key_path, _in_memory=False):
+def cipher_rsa(_plaintext: bytes, _public_key_path, _in_memory=False):
     """
     数据加密
     _public_key_path: 可以是从本地获取，也可以从内存获取
@@ -83,7 +86,7 @@ def cipher(_plaintext: bytes, _public_key_path, _in_memory=False):
     return _ciphertext
 
 
-def plain(_ciphertext: bytes, _private_key_path: str = 'private_key.pem'):
+def plain_rsa(_ciphertext: bytes, _private_key_path: str = 'private_key.pem'):
     """
     数据解密
     """
@@ -99,9 +102,51 @@ def plain(_ciphertext: bytes, _private_key_path: str = 'private_key.pem'):
     return _plaintext
 
 
+def plain_chahcha20(_ciphertext: bytes, _key: bytes, _nonce: bytes = default_nonce):
+    """
+    数据解密
+    """
+    if len(_key) != 32 or len(_nonce) != 16:
+        print("长度不合法！")
+    _cipher = Cipher(algorithms.ChaCha20(_key, _nonce), mode=None, backend=default_backend())
+    _decryptor = _cipher.decryptor()
+    _plaintext = _decryptor.update(_ciphertext) + _decryptor.finalize()
+    return _plaintext
+
+
+def cipher_chacha20(_ciphertext: bytes, _key: bytes, _nonce: bytes = default_nonce):
+    """
+    数据加密
+    """
+    if len(_key) != 32 or len(_nonce) != 16:
+        print("长度不合法！")
+    _cipher = Cipher(algorithms.ChaCha20(_key, _nonce), mode=None, backend=default_backend())
+    _ecryptor = _cipher.encryptor()
+    _ciphertext = _ecryptor.update(_ciphertext) + _ecryptor.finalize()
+    return _ciphertext
+
+
+def sha256_32bytes(data="Hello world", encoding='utf-8'):
+    # 创建一个 SHA256 对象
+    SHA256 = hashes.Hash(hashes.SHA256())
+    # 将数据转换成二进制格式并传递给 update 方法
+    SHA256.update(data.encode())
+    # 调用 finalize 方法并转换成十六进制格式
+    digest = SHA256.finalize().hex()
+    # 截取前 32 个字符作为输出
+    output = digest[:32]
+    return output.encode(encoding=encoding)
+
+
 if __name__ == '__main__':
-    ciphertext = cipher(b'hello word', 'public_key.pem')
+    key = sha256_32bytes("12345678")
+    print(key.decode())
+    test_text = '你好，world☺️!。'*1000
+
+    print(test_text.encode())
+    print(test_text)
+    ciphertext = cipher_chacha20(test_text.encode(), key)
     print(ciphertext)
-    plaintext = plain(ciphertext)
+    plaintext = plain_chahcha20(ciphertext, key)
     print(plaintext)
-    print(plaintext.decode(encoding='utf-8'))
+    print(plaintext.decode())

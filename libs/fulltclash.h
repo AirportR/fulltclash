@@ -78,11 +78,13 @@ typedef struct { void *data; GoInt len; GoInt cap; } GoSlice;
 extern "C" {
 #endif
 
-extern GoUint16 myURLTest(char* URL, GoInt index);
-extern void myclash(char* addr, GoInt index);
-extern char* setProxy(char* oldstr, GoInt index);
-extern void stop(GoInt flag);
-extern void freeMe(char* data);
+extern __declspec(dllexport) GoUint16 myURLTest(char* URL, GoInt index);
+extern __declspec(dllexport) void startclashMixed(char* rawaddr, GoInt index);
+extern __declspec(dllexport) void myclash(char* addr, GoInt index);
+extern __declspec(dllexport) void myclash2(char* addr, GoInt index);
+extern __declspec(dllexport) GoInt8 setProxy(char* oldstr, GoInt index);
+extern __declspec(dllexport) void stop(GoInt flag);
+extern __declspec(dllexport) void freeMe(char* data);
 
 /* Return type for urlTest */
 struct urlTest_return {
@@ -90,8 +92,8 @@ struct urlTest_return {
 	GoUint16 r1;
 	GoInterface r2;
 };
-extern struct urlTest_return urlTest(char* rawurl, GoInt index, GoInt timeout);
-extern char* urltestJson(char* url, GoInt index, GoInt timeout);
+extern __declspec(dllexport) struct urlTest_return urlTest(char* rawurl, GoInt index, GoInt timeout);
+extern __declspec(dllexport) char* urltestJson(char* url, GoInt index, GoInt timeout);
 
 #ifdef __cplusplus
 }

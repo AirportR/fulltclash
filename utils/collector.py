@@ -241,11 +241,11 @@ class SubCollector(BaseCollector):
             async with aiohttp.ClientSession(headers=_headers) as session:
                 async with session.get(self.url, proxy=proxy, timeout=20) as response:
                     info = response.headers.get('subscription-userinfo', "")
-                    info = info.replace(';', '').split(' ')
+                    info = info.split(';')
                     info2 = {'upload': 0, 'download': 0, 'total': 0, 'expire': 0}
                     for i in info:
                         try:
-                            i1 = i.split('=')
+                            i1 = i.strip().split('=')
                             info2[i1[0]] = float(i1[1]) if i1[1] else 0
                         except IndexError:
                             pass
@@ -255,6 +255,8 @@ class SubCollector(BaseCollector):
                     traffic_use = traffic_up + traffic_download
                     traffic_total = info2.get('total', 0) / 1024 / 1024 / 1024
                     expire_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(info2.get('expire', time.time())))
+                    if expire_time.startswith('1970') and traffic_total and traffic_use:
+                        expire_time = '长期有效'
                 return [traffic_up, traffic_download, traffic_use, traffic_total, expire_time]
         except asyncio.exceptions.TimeoutError:
             logger.info("获取订阅超时")
@@ -389,7 +391,6 @@ class Collector:
     def __init__(self):
         self.session = None
         self.tasks = []
-        self.script = addon.script
         self._headers = {
             'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                           "Chrome/106.0.0.0 Safari/537.36"}
@@ -431,8 +432,8 @@ class Collector:
             if len(items):
                 for item in items:
                     i = item
-                    if i in self.script:
-                        task = self.script[i][0]
+                    if i in addon.script:
+                        task = addon.script[i][0]
                         self.tasks.append(task(self, session, proxy=proxy))
                         continue
                     if i == "Youtube":
@@ -523,6 +524,9 @@ class Collector:
             logger.warning("Youtube请求超时，正在重新发送请求......")
             if reconnection != 0:
                 await self.fetch_youtube(session=session, proxy=proxy, reconnection=reconnection - 1)
+        except ProxyConnectionError as p:
+            logger.warning("似乎目标端口未开启监听")
+            logger.warning(str(p))
 
     async def fetch_dis(self, session: aiohttp.ClientSession, proxy=None, reconnection=2):
         """
@@ -593,6 +597,9 @@ class Collector:
             logger.warning("disney+请求超时，正在重新发送请求......")
             if reconnection != 0:
                 await self.fetch_dis(session=session, proxy=proxy, reconnection=reconnection - 1)
+        except ProxyConnectionError as p:
+            logger.warning("似乎目标端口未开启监听")
+            logger.warning(str(p))
 
     async def start(self, host: str, port: int, proxy=None):
         """

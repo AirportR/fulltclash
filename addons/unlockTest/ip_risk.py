@@ -3,6 +3,7 @@ import json
 
 import aiohttp
 from aiohttp import ClientConnectorError
+
 from loguru import logger
 
 # collector section
@@ -43,6 +44,8 @@ async def fetch_ip_risk(Collector, session: aiohttp.ClientSession, proxy=None, r
         logger.warning("IP风险检测超时，正在重新发送请求......")
         if reconnection != 0:
             await fetch_ip_risk(Collector, session, proxy=proxy, reconnection=reconnection - 1)
+    except ConnectionResetError:
+        logger.warning("连接已重置")
 
 
 def task(Collector, session, proxy):

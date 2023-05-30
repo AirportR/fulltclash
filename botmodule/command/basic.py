@@ -75,6 +75,9 @@ admin_text = f"""
 /restart [管理]重启整个程序
 /reload [管理]重载部分配置(一般情况下用不到)
 /clash [管理]启动或关闭clash开放的端口服务
+/connect [管理][前后端专属]对接一个后端bot
+/sconnect [管理][前后端专属]对接一个主端bot
+/setting [管理]bot的控制面板
 killme [管理]杀死bot的自身进程(慎用！)
 如有使用问题加入频道 @FullTClash 交流
     """

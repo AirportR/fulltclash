@@ -4,6 +4,8 @@ from aiohttp import ClientConnectorError
 from loguru import logger
 
 # collector section
+from pyrogram.types import InlineKeyboardButton
+
 SUPPORT_REGION = ['AL', 'DZ', 'AD', 'AO', 'AG', 'AR', 'AM', 'AU', 'AT', 'AZ', 'BS', 'BD', 'BB', 'BE', 'BZ', 'BJ', 'BT',
                   'BA',
                   'BW', 'BR', 'BG', 'BF', 'CV', 'CA', 'CL', 'CO', 'KM', 'CR', 'HR', 'CY', 'DK', 'DJ', 'DM', 'DO', 'EC',
@@ -42,10 +44,15 @@ async def fetch_openai(Collector, session: aiohttp.ClientSession, proxy=None, re
         async with session.get(openaiurl1, headers=_headers, proxy=proxy, timeout=10) as res:
             if res.status == 403:
                 text = await res.text()
-                index = text.find("You do not have access to chat.openai.com.")
+                index = text.find("Sorry, you have been blocked")
                 if index > 0:
                     Collector.info['OpenAI'] = "失败"
                     return
+                index2 = text.find("You do not have access to chat.openai.com.")
+                if index2 > 0:
+                    Collector.info['OpenAI'] = "失败"
+                    return
+
             else:
                 Collector.info['OpenAI'] = "未知"
         async with session.get(openaiurl2, headers=_headers, proxy=proxy, timeout=10) as res2:
@@ -102,6 +109,7 @@ def get_openai_info(ReCleaner):
         return "N/A"
 
 
+button = InlineKeyboardButton("✅OpenAI", callback_data='✅OpenAI')
 SCRIPT = {
     "MYNAME": "OpenAI",
     "TASK": task,
