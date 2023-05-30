@@ -3,7 +3,7 @@
     <h1> FullTClash</h1>
     <p>🤖 A Telegram bot that operates based on the Clash core </p>
     <p><a href="https://github.com/AirportR/FullTclash/blob/dev/README_EN.md">English</a>   简体中文</p>
-    <img src="https://img.shields.io/static/v1?message=reference&color=blue&logo=micropython&label=python">
+    <a href="https://fulltclash.gitbook.io/fulltclash-doc"><img src="https://img.shields.io/static/v1?message=doc&color=blue&logo=micropython&label=FullTClash"></a> 
     <img src="https://img.shields.io/github/license/AirportR/FullTclash">
     <a href="https://app.codacy.com/gh/AirportR/FullTclash/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade"><img src="https://app.codacy.com/project/badge/Grade/389b2787eb7647dfad486ccaa70eabf4"></a>
     <a href="https://github.com/AirportR/FullTclash/issues"><img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat"></a>
@@ -17,20 +17,23 @@
 ## 最近更新(3.5.8)
 ✏️3.5.8版本更新日志：
 
-✨ 重写部分绘图代码，使之更易读。\
-✨ 支持本地geoip库。前往配置文件查看使用方法。[@mlmmlm 的pr]\
-✨ 全新的geoip-api支持：ipapi.co[@mlmmlm 的pr]\
-✨ 支持配置绘图时的颜色透明度，更自由的绘图结果。[@mlmmlm 的pr]\
-✨ 入口绘图现已支持居中显示。[@mlmmlm 的pr]\
-✨ 速度测试结果图更细颗粒度的数值显示。[@mlmmlm 的pr]\
-✨ 速度测试支持配置多个speedfile的downloadURL地址。将采用轮询机制进行测速。[@mlmmlm 的pr]\
-✨ 新增bot指令。/setantigroup 将bot设置为防拉群模式。在bot存活期间，非管理员邀请入群bot将自动退群。[@cpploveme 的pr]\
-🐛 经过测试，现如今自主实现的支持tls验证的延迟尚存bug，故暂时更换为原版clash URLTest。\
-✨ 入口测试中有“入口IP段”、和 “栈” 两种形式。默认为前者，可通过配置：entrance 选项更换为后者。具体可查看配置样例。[@mlmmlm 的pr]\
-🐛 修复防拉群的部分bug。\
-🐛 修复绘图透明度适配bug。\
-🧵 默认的测试启动端口从1122更改为11220。\
-⬆️升级pillow、aiohttp、cryptography模块的版本以支持Python3.11。\
+💥 新增前后端模式。此为实验性功能，普通使用者无需理会\
+🔍 对测试节点的类型进行审查，暂时屏蔽 Hysteria、vless、Tuic、wireguard等meta系所支持的新型协议（因为不稳定）。
+✨ 默认设置emoji源为本地源。意味着初次安装下载emoji资源包。后续考虑将会考虑移除在线emoji源。\
+✨ 支持绘图结果的渐变效果。[@mlmmlm 的pr]\
+✨ 发送测试图优化。如果图片的 宽度 < 2500 像素并且 高 < 3500像素，将发送TG的压缩图，而非原图。清晰度肉眼几乎看不出来。\
+✨ 新增英文README文档，更好看的项目预览。\
+✨ 新增 github action 的构建文件，用于自动构建运行所需的动态链接库文件。需要的可自行前往项目主页的action选项里获取，需要注意改名或者收到指定文件.\
+🚗 拓扑测试中的双栈检测将默认关闭。由于双栈检测将多消耗一倍的时间，为了加快测试速度已默认关闭，开启需要在配置中写入 ipstack: true\
+🚗 优化绘图算法。\
+🐛 修复OpenAI解锁检测脚本。\
+🐛 修复 /register 指令输出的冗余文本问题。\
+🐛 修复 /subinfo 偶现无法获取流量信息的bug。\
+🐛 修复自3.5.4以来UDP类型无法检测的问题。\
+🔥 移除 allow-caching 配置。\
+🔥 取消 /fulltest 指令。
+🧩 更疯狂的回调功能支持。稍后将会写一份文档详细说明这个功能。\
+👦 按钮设计优化。\
 
 
 
