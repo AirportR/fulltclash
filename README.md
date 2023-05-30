@@ -17,20 +17,20 @@
 
 ✏️3.5.8版本更新日志：
 
-✨ 重写部分绘图代码，使之更易读。\  
-✨ 支持本地geoip库。前往配置文件查看使用方法。[@mlmmlm 的pr]\  
-✨ 全新的geoip-api支持：ipapi.co[@mlmmlm 的pr]\  
-✨ 支持配置绘图时的颜色透明度，更自由的绘图结果。[@mlmmlm 的pr]\  
-✨ 入口绘图现已支持居中显示。[@mlmmlm 的pr]\  
-✨ 速度测试结果图更细颗粒度的数值显示。[@mlmmlm 的pr]\  
-✨ 速度测试支持配置多个speedfile的downloadURL地址。将采用轮询机制进行测速。[@mlmmlm 的pr]\  
-✨ 新增bot指令。/setantigroup 将bot设置为防拉群模式。在bot存活期间，非管理员邀请入群bot将自动退群。[@cpploveme 的pr]\  
-🐛 经过测试，现如今自主实现的支持tls验证的延迟尚存bug，故暂时更换为原版clash URLTest。\  
-✨ 入口测试中有“入口IP段”、和 “栈” 两种形式。默认为前者，可通过配置：entrance 选项更换为后者。具体可查看配置样例。[@mlmmlm 的pr]\  
-🐛 修复防拉群的部分bug。\  
-🐛 修复绘图透明度适配bug。\  
-🧵 默认的测试启动端口从1122更改为11220。\  
-⬆️升级pillow、aiohttp、cryptography模块的版本以支持Python3.11。\
+✨ 重写部分绘图代码，使之更易读。\
+✨ 支持本地geoip库。前往配置文件查看使用方法。[@mlmmlm 的pr]\
+✨ 全新的geoip-api支持：ipapi.co[@mlmmlm 的pr]\
+✨ 支持配置绘图时的颜色透明度，更自由的绘图结果。[@mlmmlm 的pr]\
+✨ 入口绘图现已支持居中显示。[@mlmmlm 的pr]\
+✨ 速度测试结果图更细颗粒度的数值显示。[@mlmmlm 的pr]\
+✨ 速度测试支持配置多个speedfile的downloadURL地址。将采用轮询机制进行测速。[@mlmmlm 的pr]\
+✨ 新增bot指令。/setantigroup 将bot设置为防拉群模式。在bot存活期间，非管理员邀请入群bot将自动退群。[@cpploveme 的pr]\
+🐛 经过测试，现如今自主实现的支持tls验证的延迟尚存bug，故暂时更换为原版clash URLTest。\
+✨ 入口测试中有“入口IP段”、和 “栈” 两种形式。默认为前者，可通过配置：entrance 选项更换为后者。具体可查看配置样例。[@mlmmlm 的pr]\
+🐛 修复防拉群的部分bug。\
+🐛 修复绘图透明度适配bug。\
+🧵 默认的测试启动端口从1122更改为11220。\
+⬆️升级pillow、aiohttp、cryptography模块的版本以支持Python3.11。
 
 历史更新请到TG频道查看:
 
