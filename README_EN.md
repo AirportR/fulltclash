@@ -3,7 +3,7 @@
 <div align="center">  
     <h1> FullTClash</h1>  
     <p>🤖 A Telegram bot that operates based on the Clash core </p>  
-    <p>English        <a href="https://github.com/AirportR/FullTclash/blob/dev/README.md">简体中文</a></p>   
+    <p>English        <a href="https://github.com/AirportR/FullTclash/blob/dev/README.md">简体中文</a></p>   
     <a href="https://fulltclash.gitbook.io/fulltclash-doc"><img src="https://img.shields.io/static/v1?message=doc&color=blue&logo=micropython&label=FullTClash"></a> 
     <img src="https://img.shields.io/github/license/AirportR/FullTclash">  
     <a href="https://app.codacy.com/gh/AirportR/FullTclash/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade"><img src="https://app.codacy.com/project/badge/Grade/389b2787eb7647dfad486ccaa70eabf4"></a>  
@@ -29,7 +29,9 @@ FullTclash bot is a Telegram bot (hereinafter referred to as "bot") that carries
 - Wikipedia
 
 As well as HTTP latency testing and network topology testing (inbound and outbound analysis).
+## Document
 
+You can read the documentation [here](https://fulltclash.gitbook.io/fulltclash-doc) (Chinese only)
 ## Preview
 
 Media streaming test:
@@ -38,18 +40,15 @@ Media streaming test:
 
 ![test picture](https://upload.cc/i1/2023/03/30/1gdtWf.png)
 
-## Document
-
-You can read the documentation [here](https://fulltclash.gitbook.io/fulltclash-doc) (Chinese only)
 ## Getting Started
 
 ### Preparation
 
 To successfully run the project code, you first need to prepare the following information:
 
-- Telegram's api_id and api_hash [Get it here](https://my.telegram.org/apps) (Google it if you don't know how to get it) (Some Telegram accounts have been blacklisted and cannot be used normally)
+- Telegram's api_id and api_hash [Get it here](https://my.telegram.org/apps) (Google it if you don't know how to get it) (Some Telegram accounts have been blacklisted and cannot be used normally)
 
-- Create a bot from [@BotFather](https://t.me/BotFather) and get the bot_token, which should look like:
+- Create a bot from [@BotFather](https://t.me/BotFather) and get the bot_token, which should look like:
   
   bot_token = "123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
 
@@ -168,7 +167,7 @@ To communicate with the bot, use the following commands:
 
 > /testurl <subscription URL> (in clash configuration format) to start testing.
 
-> /help: view all command instructions.     
+> /help: view all command instructions.     
 
 ### Compiling Dynamic Link Libraries (Advanced)
 
