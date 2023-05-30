@@ -406,7 +406,7 @@ class ClashCleaner:
         else:
             self.yaml = yaml.safe_load(_config)
 
-        self.filter_unsupprt_proxy()
+        self.filter_unsupport_proxy()
 
     def setProxies(self, proxyinfo: list):
         """
@@ -415,7 +415,7 @@ class ClashCleaner:
         """
         self.yaml['proxies'] = proxyinfo
 
-    def filter_unsupprt_proxy(self):
+    def filter_unsupport_proxy(self):
         try:
             if self.yaml is None:
                 self.yaml = {}
@@ -1101,7 +1101,7 @@ class ConfigManager:
             self.yaml['proxy-groups'][0]['use'].append(subname)
 
 
-"""内置一个配置全局变量，后续项目开发可以统一读取这个，./botmodule/init_bot.py 中也有一个"""
+# 内置一个配置全局变量，后续项目开发可以统一读取这个，./botmodule/init_bot.py 中也有一个
 config = ConfigManager()
 media_item = config.get_media_item()
 addon = AddonCleaner()
@@ -1268,7 +1268,7 @@ class ReCleaner:
         """
         try:
             if 'disney' not in self.data:
-                logger.warning("无法读取Desney Plus解锁信息")
+                logger.warning("无法读取Disney Plus解锁信息")
                 return "N/A"
             else:
                 logger.info("Disney+ 状态：" + str(self.data['disney']))
