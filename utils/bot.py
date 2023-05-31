@@ -151,25 +151,25 @@ def command_loader(app: Client):
     async def regis(client, message):
         await botmodule.register.baipiao(client, message)
 
-    @app.on_message(filters.command(["inbound"]) & allfilter(1), group=1)
-    @AccessCallback()
-    async def inbound(client, message):
-        await bot_put(client, message, "inbound", test_type='inbound')
-
-    @app.on_message(filters.command(["inboundurl"]) & allfilter(1), group=1)
-    @AccessCallback()
-    async def inboundurl(client, message):
-        await bot_put(client, message, "inboundurl", test_type='inbound')
-
-    @app.on_message(filters.command(["outbound"]) & allfilter(1), group=1)
-    @AccessCallback()
-    async def outbound(client, message):
-        await bot_put(client, message, "outbound", test_type='outbound')
-
-    @app.on_message(filters.command(["outboundurl"]) & allfilter(1), group=1)
-    @AccessCallback()
-    async def outboundurl(client, message):
-        await bot_put(client, message, "outboundurl", test_type='outbound')
+    # @app.on_message(filters.command(["inbound"]) & allfilter(1), group=1)
+    # @AccessCallback()
+    # async def inbound(client, message):
+    #     await bot_put(client, message, "inbound", test_type='inbound')
+    #
+    # @app.on_message(filters.command(["inboundurl"]) & allfilter(1), group=1)
+    # @AccessCallback()
+    # async def inboundurl(client, message):
+    #     await bot_put(client, message, "inboundurl", test_type='inbound')
+    #
+    # @app.on_message(filters.command(["outbound"]) & allfilter(1), group=1)
+    # @AccessCallback()
+    # async def outbound(client, message):
+    #     await bot_put(client, message, "outbound", test_type='outbound')
+    #
+    # @app.on_message(filters.command(["outboundurl"]) & allfilter(1), group=1)
+    # @AccessCallback()
+    # async def outboundurl(client, message):
+    #     await bot_put(client, message, "outboundurl", test_type='outbound')
 
     @app.on_message(filters.command(["speed"]) & allfilter(1), group=1)
     @AccessCallback()
@@ -246,7 +246,6 @@ def command_loader(app: Client):
         await set_anti_group(client, message)
 
     @app.on_message(filters.new_chat_members)
-    @AccessCallback(1)
     async def auto_leave(client, message):
         await leavechat(client, message)
 
