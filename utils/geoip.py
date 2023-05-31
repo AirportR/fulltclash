@@ -19,6 +19,8 @@ def geo_info(ip):
             if "." in ip or ":" in ip:
               country_info = reader.city(ip).country
               country_code = country_info.iso_code
+              if country_code == None:
+                 country_code = ''
             else:
               country_code = " "
 
@@ -33,6 +35,8 @@ def geo_info(ip):
 
             if "." in ip or ":" in ip:
               organization = reader.asn(ip).autonomous_system_organization
+              if organization == None:
+                  organization = ''
             else:
               organization = " "
               
