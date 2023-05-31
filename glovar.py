@@ -14,7 +14,7 @@ bot_token = init_bot.bot_token
 bot_config = init_bot.config
 userbot_config = bot_config.config.get('userbot', {})
 # 项目版本号
-__version__ = '3.5.8'
+__version__ = '3.5.9'
 # 客户端
 app = Client("my_bot",
              api_id=init_bot.api_id,
