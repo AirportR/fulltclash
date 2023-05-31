@@ -291,7 +291,7 @@ class ExportCommon(BaseExport):
         :param strlist:
         :return: int
         """
-        max_width = max(self.text_width(str(i)) for i in strlist)
+        max_width = max(self.text_width(str(i)) for i in strlist) if strlist else 0
         return max_width
 
     def key_width_list(self) -> list:
@@ -411,7 +411,7 @@ class ExportCommon(BaseExport):
         _filter_include = self.image['filter_include']
         _filter_exclude = self.image['filter_exclude']
         emoji_time = get_clock_emoji()
-        _export_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        _export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())
         system_timezone = datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo
         _slavename = self.allinfo.pop('slave', {}).get('comment', 'Local')
         footer = f"📊版本:{__version__}  后端: {_slavename}  排序: {_sort}   " + \
@@ -721,7 +721,7 @@ class ExportSpeed2(ExportCommon):
             key_width = self.text_width(i)  # 键的长度
             if i == '每秒速度':
                 key_width += 40
-                speedblock_count = max([len(lst) for lst in self.info[i]])
+                speedblock_count = max(len(lst) for lst in self.info[i]) if self.info[i] else 0
                 if speedblock_count > 0:
                     speedblock_total_width = speedblock_count * speedblock_width
                     if speedblock_total_width >= key_width:
@@ -1262,7 +1262,7 @@ class ExportTopo(ExportResult):
         # 绘制标题栏与结尾栏
         fail = self.info.get('地区', 0)
         entrances = self.info.get('入口')
-        max_entrance = max(entrances)
+        max_entrance = max(entrances) if entrances else 0
         cuk = len(fail)
 
         emoji_time = get_clock_emoji()
@@ -1635,7 +1635,7 @@ class ExportSpeed(ExportResult):
             if self.info[i]:
                 if i == '每秒速度':
                     key_width += 40
-                    speedblock_count = max([len(lst) for lst in self.info[i]])
+                    speedblock_count = max(len(lst) for lst in self.info[i]) if self.info[i] else 0
                     if speedblock_count > 0:
                         speedblock_total_width = speedblock_count * self.speedblock_width
                         if speedblock_total_width >= key_width:
