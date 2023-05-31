@@ -4,6 +4,7 @@ from typing import Union, Tuple
 
 import PIL
 import datetime
+
 from loguru import logger
 from PIL import Image, ImageDraw, ImageFont, ImageColor
 from pilmoji import Pilmoji
@@ -22,6 +23,14 @@ __version__ = '3.5.9'
 #     每个字典键所对应的值即为一个列表。
 # 2、何为基础数据？
 #     基础数据决定了生成图片的高度（Height），它是列表，列表里面的数据一般是一组节点名，有多少个节点就对应了info键值中的长度。
+
+_clock_emoji_list = ["🕛", "🕐", "🕑", "🕒", "🕓", "🕔", "🕕", "🕖", "🕗", "🕘", "🕙", "🕚"]
+
+
+def get_clock_emoji() -> str:
+    current_hour = time.localtime().tm_hour % 12
+    emoji_time = _clock_emoji_list[current_hour]
+    return emoji_time
 
 
 def getrgb(hexcolor: str):
@@ -344,7 +353,6 @@ class ExportCommon(BaseExport):
         xpath = mid_xpath - strname_width / 2
         return xpath
 
-
     def draw_watermark(self, original_image: Image.Image) -> Image.Image:
         """
         绘制水印
@@ -377,13 +385,13 @@ class ExportCommon(BaseExport):
                 break
 
         return Image.alpha_composite(original_image, watermarks_image)
+
     def draw_background(self) -> Image.Image:
         bkgcfg = self.image.get('background', {})
         B1_color = bkgcfg.get('backgrounds', '#ffffff')
         alphas = bkgcfg.get('alpha', 255)
         B1_rgba = getrgb(B1_color) + (alphas,)
         img = Image.new("RGBA", (self.image['widths'][0], self.image['height']), B1_rgba)
-        self.pilmoji = Pilmoji(img, source=self.emoji_source)
         titlet = bkgcfg.get('testtitle', '#EAEAEA')
         titlet_alpha = getrgb(titlet) + (alphas,)
         bkg = Image.new('RGBA', (self.image['widths'][0], self.image['linespace'] * 2), titlet_alpha)  # 首尾部填充
@@ -391,7 +399,7 @@ class ExportCommon(BaseExport):
         img.paste(bkg, (0, self.image['height'] - self.image['linespace'] * 2))
         return img
 
-    def draw_info(self, idraw) -> str:
+    def draw_info(self, idraw: Union[ImageDraw.ImageDraw, Pilmoji]) -> str:
         """
         绘制标题栏和结尾栏信息
         """
@@ -402,28 +410,23 @@ class ExportCommon(BaseExport):
         _sort = self.image['sort']
         _filter_include = self.image['filter_include']
         _filter_exclude = self.image['filter_exclude']
-        current_time = time.localtime()
-        current_hour = current_time.tm_hour
-        ui = ["🕛", "🕐", "🕑", "🕒", "🕓", "🕔", "🕕", "🕖", "🕗", "🕘", "🕙", "🕚",
-              "🕛", "🕐", "🕑", "🕒", "🕓", "🕔", "🕕", "🕖", "🕗", "🕘", "🕙", "🕚", '🕛']
-        i = current_hour
-        emjio_time = ui[i]
+        emoji_time = get_clock_emoji()
         _export_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         system_timezone = datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo
         _slavename = self.allinfo.pop('slave', {}).get('comment', 'Local')
         footer = f"📊版本:{__version__}  后端: {_slavename}  排序: {_sort}   " + \
                  f"过滤器: {_filter_include} <-> {_filter_exclude}"
-        footer2 = f"{emjio_time}测试时间: {_export_time} ({system_timezone}) 总共耗时: {_wtime}s 测试结果仅供参考,以实际情况为准"
+        footer2 = f"{emoji_time}测试时间: {_export_time} ({system_timezone}) 总共耗时: {_wtime}s 测试结果仅供参考,以实际情况为准"
 
-        idraw.text((self.get_mid(0, _width, _title), 3), _title, fill=(0, 0, 0))  # 标题
-        if self.emoji:
-            self.pilmoji.text((10, _height - (self.image['linespace'] - 4) * 2), footer, font=self._font, fill=(0, 0, 0),
-                         emoji_position_offset=(0, 6))  # 版本信息
-            self.pilmoji.text((10, _height - (self.image['linespace'] - 5)), footer2, font=self._font, fill=(0, 0, 0),
-                         emoji_position_offset=(0, 6))
+        idraw.text((self.get_mid(0, _width, _title), 3), _title, font=self._font, fill=(0, 0, 0))  # 标题
+        if isinstance(idraw, Pilmoji):
+            idraw.text((10, _height - (self.image['linespace'] - 4) * 2), footer, font=self._font, fill=(0, 0, 0),
+                       emoji_position_offset=(0, 6))  # 版本信息
+            idraw.text((10, _height - (self.image['linespace'] - 5)), footer2, font=self._font, fill=(0, 0, 0),
+                       emoji_position_offset=(0, 6))  # 测试时间
         else:
-           idraw.text((10, _height - (self.image['linespace'] - 4) * 2), footer, fill=(0, 0, 0))  # 版本信息
-           idraw.text((10, _height - (self.image['linespace'] - 5)), footer2, fill=(0, 0, 0))  # 测试时间
+            idraw.text((10, _height - (self.image['linespace'] - 4) * 2), footer, font=self._font, fill=(0, 0, 0))
+            idraw.text((10, _height - (self.image['linespace'] - 5)), footer2, font=self._font, fill=(0, 0, 0))
         return _export_time.replace(':', '-')
 
     def draw_label(self, idraw):
@@ -580,7 +583,7 @@ class ExportCommon(BaseExport):
         idraw.font = self._font  # 设置字体，之后就不用一直在参数里传入字体实例啦
         pilmoji = Pilmoji(img, source=self.emoji_source)  # emoji表情修复，emoji必须在参数手动指定字体。
 
-        _export_time = self.draw_info(idraw)  # 2.绘制标题栏与结尾栏，返回输出图片的时间,文件动态命名。
+        _export_time = self.draw_info(pilmoji)  # 2.绘制标题栏与结尾栏，返回输出图片的时间,文件动态命名。
 
         self.draw_label(idraw)  # 3.绘制标签
 
@@ -1239,16 +1242,16 @@ class ExportTopo(ExportResult):
         img.paste(bkg, (0, 0))
         img.paste(bkg, (0, image_height - 120))
         idraw = ImageDraw.Draw(img)
-        self.image = {'delay_color': self.color.get('out_color', [])}
+        image_conf = {'delay_color': self.color.get('out_color', [])}
         alphas = []
         color_topo = []
         end_color = []
-        if not self.image['delay_color']:
+        if not image_conf['delay_color']:
             color_topo = ["#FFF3F3", '#FAF3FF', '#FFF3FC', '#F3F5FF', '#FFFBF3', '#FBFFF3', '#F3FFFF', '#F3FFF4']
             end_color = ["#FFF3F3", '#FAF3FF', '#FFF3FC', '#F3F5FF', '#FFFBF3', '#FBFFF3', '#F3FFFF', '#F3FFF4']
             alphas = [255, 255, 255, 255, 255, 255, 255, 255]
         else:
-            delay_color = self.image['delay_color']
+            delay_color = image_conf['delay_color']
             for c in delay_color:
                 alphas.append(c.get('alpha', 255))
                 color_topo.append(c.get('value', '#EDF7FF'))
@@ -1261,24 +1264,20 @@ class ExportTopo(ExportResult):
         entrances = self.info.get('入口')
         max_entrance = max(entrances)
         cuk = len(fail)
-        current_time = time.localtime()
-        current_hour = current_time.tm_hour
-        ui = ["🕛", "🕐", "🕑", "🕒", "🕓", "🕔", "🕕", "🕖", "🕗", "🕘", "🕙", "🕚",
-              "🕛", "🕐", "🕑", "🕒", "🕓", "🕔", "🕕", "🕖", "🕗", "🕘", "🕙", "🕚", '🕛']
-        i = current_hour
-        emjio_time = ui[i]
+
+        emoji_time = get_clock_emoji()
         export_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
         system_timezone = datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo
         list1 = ["出口分析", "📊后端:{} 版本:{}  概要={}->{}".format(slavecomment, __version__, max_entrance, cuk),
-                 f"{emjio_time}测试时间: {export_time} ({system_timezone}) 总共耗时: {self.wtime}s 测试结果仅供参考,以实际情况为准。簇代表节点复用。"]
+                 f"{emoji_time}测试时间: {export_time} ({system_timezone}) 总共耗时: {self.wtime}s 测试结果仅供参考,以实际情况为准。簇代表节点复用。"]
         export_time = export_time.replace(':', '-')
         title = list1[0]
         idraw.text((self.get_mid(0, image_width, title), 1), title, font=fnt, fill=(0, 0, 0))  # 标题
         if self.emoji:
             pilmoji.text((10, image_height - 120), text=list1[1], font=fnt, fill=(0, 0, 0),
-                         emoji_position_offset=(0, 6))
+                         emoji_position_offset=(0, 7))
             pilmoji.text((10, image_height - 60), text=list1[2], font=fnt, fill=(0, 0, 0),
-                         emoji_position_offset=(0, 6))
+                         emoji_position_offset=(0, 8))
         else:
             idraw.text((10, image_height - 120), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
             idraw.text((10, image_height - 60), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
@@ -1381,7 +1380,7 @@ class ExportTopo(ExportResult):
                             block = c_block_grad((x1, int(y1)), color_value=color_topo[s],
                                                  end_color=end_color[s], alpha=alphas[s])
                             block_end = c_block_grad((x2, int(y1)), color_value=color_topo[s],
-                                                 end_color=end_color[s], alpha=alphas[s])
+                                                     end_color=end_color[s], alpha=alphas[s])
                             img.alpha_composite(block, (width, int(y2)))
                             img.alpha_composite(block_end, (width2, int(y2)))
                         else:
@@ -1403,7 +1402,7 @@ class ExportTopo(ExportResult):
                                    fill="#e1e1e1", width=2)
             s += 1
             if s >= len(color_topo):
-               s = 0
+                s = 0
         for t in range(self.nodenum):
             # 序号
             idraw.text((self.get_mid(0, 100, str(t + 1)), 60 * (t + 2)), text=str(t + 1), font=fnt, fill=(0, 0, 0))
@@ -1423,7 +1422,6 @@ class ExportTopo(ExportResult):
             if t < len(new_dq):
                 if min_dq[t] > 1:
                     dq_offset2 += min_dq[t] - 1
-
 
             for t1 in key_list:
 
@@ -1769,27 +1767,22 @@ class ExportSpeed(ExportResult):
         img.paste(bkg, (0, image_height - 120))
         idraw = ImageDraw.Draw(img)
         # 绘制标题栏与结尾栏
-        current_time = time.localtime()
-        current_hour = current_time.tm_hour
-        ui = ["🕛", "🕐", "🕑", "🕒", "🕓", "🕔", "🕕", "🕖", "🕗", "🕘", "🕙", "🕚",
-              "🕛", "🕐", "🕑", "🕒", "🕓", "🕔", "🕕", "🕖", "🕗", "🕘", "🕙", "🕚", '🕛']
-        i = current_hour
-        emjio_time = ui[i]
+        emoji_time = get_clock_emoji()
         export_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
         system_timezone = datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo
         slavecomment = self.slave.get('comment', 'Local')
         list1 = [f"{self.title} - 速度测试",
                  f"📊版本:{__version__}  后端: {slavecomment}  消耗流量: {self.traffic}MB   线程: {self.thread}  " +
                  f"过滤器: {self.filter_include} <-> {self.filter_exclude}",
-                 f"{emjio_time}测试时间: {export_time} ({system_timezone}) 总共耗时: {self.wtime}s 测试结果仅供参考,以实际情况为准"]
+                 f"{emoji_time}测试时间: {export_time} ({system_timezone}) 总共耗时: {self.wtime}s 测试结果仅供参考,以实际情况为准"]
         export_time = export_time.replace(':', '-')
         title = list1[0]
         idraw.text((self.get_mid(0, image_width, title), 5), title, font=fnt, fill=(0, 0, 0))  # 标题
         if self.emoji:
             pilmoji.text((10, image_height - 112), text=list1[1], font=fnt, fill=(0, 0, 0),
-                         emoji_position_offset=(0, 3))
+                         emoji_position_offset=(0, 5))
             pilmoji.text((10, image_height - 55), text=list1[2], font=fnt, fill=(0, 0, 0),
-                         emoji_position_offset=(0, 3))
+                         emoji_position_offset=(0, 5))
         else:
             idraw.text((10, image_height - 112), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
             idraw.text((10, image_height - 55), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
