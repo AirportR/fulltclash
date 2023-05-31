@@ -131,8 +131,6 @@ async def callback(_: Client, message: Message) -> bool:
     except Exception as e:
         logger.info(str(e))
         return True
-    finally:
-        return True
 
 
 def is_in_blacklist(url: str) -> bool:
