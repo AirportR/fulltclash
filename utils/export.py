@@ -1572,18 +1572,7 @@ class ExportTopo(ExportResult):
                     idraw.line(
                         [(width, (t + 3) * 60), (width + info_list_length[i], (t + 3) * 60)],
                         fill="#e1e1e1", width=2)
-                elif t1 == "入口":
-                    if t < len(min_ct):
-                        temp = min_ct[t]
-                        y = ((t + 2) * 60 + (t + 2) * 60 + (60 * (temp - 1))) / 2 + ct_offset * 60
-                        idraw.text((self.get_mid(width, width + info_list_length[i], str(self.info[t1][t])), y),
-                                   str(new_ct[t]),
-                                   font=fnt, fill=(0, 0, 0))
-                        idraw.line([(width, (t + 3 + ct_offset2) * 60),
-                                    (width + info_list_length[i], (t + 3 + ct_offset2) * 60)],
-                                   fill="#e1e1e1", width=2)
-                        if min_ct[t] > 1:
-                            ct_offset += min_ct[t] - 1
+
                 else:
                     idraw.text((self.get_mid(width, width + info_list_length[i], str(self.info[t1][t])), (t + 2) * 60),
                                str(self.info[t1][t]),
