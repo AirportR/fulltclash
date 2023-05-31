@@ -3,6 +3,7 @@ import math
 from typing import Union, Tuple
 
 import PIL
+import datetime
 from loguru import logger
 from PIL import Image, ImageDraw, ImageFont, ImageColor
 from pilmoji import Pilmoji
@@ -343,6 +344,7 @@ class ExportCommon(BaseExport):
         xpath = mid_xpath - strname_width / 2
         return xpath
 
+
     def draw_watermark(self, original_image: Image.Image) -> Image.Image:
         """
         绘制水印
@@ -375,13 +377,13 @@ class ExportCommon(BaseExport):
                 break
 
         return Image.alpha_composite(original_image, watermarks_image)
-
     def draw_background(self) -> Image.Image:
         bkgcfg = self.image.get('background', {})
         B1_color = bkgcfg.get('backgrounds', '#ffffff')
         alphas = bkgcfg.get('alpha', 255)
         B1_rgba = getrgb(B1_color) + (alphas,)
         img = Image.new("RGBA", (self.image['widths'][0], self.image['height']), B1_rgba)
+        self.pilmoji = Pilmoji(img, source=self.emoji_source)
         titlet = bkgcfg.get('testtitle', '#EAEAEA')
         titlet_alpha = getrgb(titlet) + (alphas,)
         bkg = Image.new('RGBA', (self.image['widths'][0], self.image['linespace'] * 2), titlet_alpha)  # 首尾部填充
@@ -400,15 +402,28 @@ class ExportCommon(BaseExport):
         _sort = self.image['sort']
         _filter_include = self.image['filter_include']
         _filter_exclude = self.image['filter_exclude']
-        _export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())
+        current_time = time.localtime()
+        current_hour = current_time.tm_hour
+        ui = ["🕛", "🕐", "🕑", "🕒", "🕓", "🕔", "🕕", "🕖", "🕗", "🕘", "🕙", "🕚",
+              "🕛", "🕐", "🕑", "🕒", "🕓", "🕔", "🕕", "🕖", "🕗", "🕘", "🕙", "🕚", '🕛']
+        i = current_hour
+        emjio_time = ui[i]
+        _export_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        system_timezone = datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo
         _slavename = self.allinfo.pop('slave', {}).get('comment', 'Local')
-        footer = f"后端: {_slavename}  总共耗时: {_wtime}s  排序: {_sort}   " + \
+        footer = f"📊版本:{__version__}  后端: {_slavename}  排序: {_sort}   " + \
                  f"过滤器: {_filter_include} <-> {_filter_exclude}"
-        footer2 = f"版本:{__version__}  测试时间: {_export_time}  测试结果仅供参考,以实际情况为准"
+        footer2 = f"{emjio_time}测试时间: {_export_time} ({system_timezone}) 总共耗时: {_wtime}s 测试结果仅供参考,以实际情况为准"
 
         idraw.text((self.get_mid(0, _width, _title), 3), _title, fill=(0, 0, 0))  # 标题
-        idraw.text((10, _height - (self.image['linespace'] - 4) * 2), footer, fill=(0, 0, 0))  # 版本信息
-        idraw.text((10, _height - (self.image['linespace'] - 5)), footer2, fill=(0, 0, 0))  # 测试时间
+        if self.emoji:
+            self.pilmoji.text((10, _height - (self.image['linespace'] - 4) * 2), footer, font=self._font, fill=(0, 0, 0),
+                         emoji_position_offset=(0, 6))  # 版本信息
+            self.pilmoji.text((10, _height - (self.image['linespace'] - 5)), footer2, font=self._font, fill=(0, 0, 0),
+                         emoji_position_offset=(0, 6))
+        else:
+           idraw.text((10, _height - (self.image['linespace'] - 4) * 2), footer, fill=(0, 0, 0))  # 版本信息
+           idraw.text((10, _height - (self.image['linespace'] - 5)), footer2, fill=(0, 0, 0))  # 测试时间
         return _export_time.replace(':', '-')
 
     def draw_label(self, idraw):
@@ -1224,23 +1239,49 @@ class ExportTopo(ExportResult):
         img.paste(bkg, (0, 0))
         img.paste(bkg, (0, image_height - 120))
         idraw = ImageDraw.Draw(img)
+        self.image = {'delay_color': self.color.get('out_color', [])}
+        alphas = []
+        color_topo = []
+        end_color = []
+        if not self.image['delay_color']:
+            color_topo = ["#FFF3F3", '#FAF3FF', '#FFF3FC', '#F3F5FF', '#FFFBF3', '#FBFFF3', '#F3FFFF', '#F3FFF4']
+            end_color = ["#FFF3F3", '#FAF3FF', '#FFF3FC', '#F3F5FF', '#FFFBF3', '#FBFFF3', '#F3FFFF', '#F3FFF4']
+            alphas = [255, 255, 255, 255, 255, 255, 255, 255]
+        else:
+            delay_color = self.image['delay_color']
+            for c in delay_color:
+                alphas.append(c.get('alpha', 255))
+                color_topo.append(c.get('value', '#EDF7FF'))
+                if "end_color" in c:
+                    end_color.append(c.get('end_color', '#EDF7FF'))
+                else:
+                    end_color.append(c.get('value', '#EDF7FF'))
         # 绘制标题栏与结尾栏
         fail = self.info.get('地区', 0)
         entrances = self.info.get('入口')
         max_entrance = max(entrances)
         cuk = len(fail)
-        export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
-        list1 = ["出口分析", "后端:{} 概要={}->{} 总共耗时: {}s".format(slavecomment, max_entrance, cuk, self.wtime),
-                 f"版本:{__version__}  测试时间: {export_time}  测试结果仅供参考,以实际情况为准。簇代表节点复用。"]
+        current_time = time.localtime()
+        current_hour = current_time.tm_hour
+        ui = ["🕛", "🕐", "🕑", "🕒", "🕓", "🕔", "🕕", "🕖", "🕗", "🕘", "🕙", "🕚",
+              "🕛", "🕐", "🕑", "🕒", "🕓", "🕔", "🕕", "🕖", "🕗", "🕘", "🕙", "🕚", '🕛']
+        i = current_hour
+        emjio_time = ui[i]
+        export_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
+        system_timezone = datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo
+        list1 = ["出口分析", "📊后端:{} 版本:{}  概要={}->{}".format(slavecomment, __version__, max_entrance, cuk),
+                 f"{emjio_time}测试时间: {export_time} ({system_timezone}) 总共耗时: {self.wtime}s 测试结果仅供参考,以实际情况为准。簇代表节点复用。"]
         export_time = export_time.replace(':', '-')
         title = list1[0]
         idraw.text((self.get_mid(0, image_width, title), 1), title, font=fnt, fill=(0, 0, 0))  # 标题
         if self.emoji:
             pilmoji.text((10, image_height - 120), text=list1[1], font=fnt, fill=(0, 0, 0),
                          emoji_position_offset=(0, 6))
+            pilmoji.text((10, image_height - 60), text=list1[2], font=fnt, fill=(0, 0, 0),
+                         emoji_position_offset=(0, 6))
         else:
             idraw.text((10, image_height - 120), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
-        idraw.text((10, image_height - 60), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
+            idraw.text((10, image_height - 60), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
         # 绘制标签
         idraw.text((20, 60), '序号', font=fnt, fill=(0, 0, 0))  # 序号
         start_x = 100
@@ -1315,15 +1356,61 @@ class ExportTopo(ExportResult):
                 min_dq.append(f - last_index4)
                 last_index4 = f
         min_dq.append(len(dq) - last_index4)
+
+        s = 0
+        for t in range(self.nodenum):
+            if t < len(new_ct):
+                if min_ct[t] > 1:
+                    ct_offset2 += min_ct[t] - 1
+
+            width = 100
+            i = 0
+
+            for t2 in key_list:
+                if t2 == "入口":
+                    if t < len(min_ct):
+                        temp = min_ct[t]
+                        y1 = 60 * temp
+                        x1 = info_list_length[i]
+                        x2 = info_list_length[6]
+                        width2 = sum(info_list_length) - info_list_length[6] + width
+                        y = ((t + 2) * 60 + (t + 2) * 60 + (60 * (temp - 1))) / 2 + ct_offset * 60
+                        if temp > 1:
+                            y2 = ((t + 2) * 60 + (t + 2) * 60 + (
+                                    60 * (temp - (temp - 1)))) / 2 + ct_offset * 60 - 28
+                            block = c_block_grad((x1, int(y1)), color_value=color_topo[s],
+                                                 end_color=end_color[s], alpha=alphas[s])
+                            block_end = c_block_grad((x2, int(y1)), color_value=color_topo[s],
+                                                 end_color=end_color[s], alpha=alphas[s])
+                            img.alpha_composite(block, (width, int(y2)))
+                            img.alpha_composite(block_end, (width2, int(y2)))
+                        else:
+                            y2 = ((t + 2) * 60 + (t + 2) * 60 + (60 * (temp - 1))) / 2 + ct_offset * 60 + 2
+                            block = c_block_grad((x1, int(y1)), color_value=color_topo[s],
+                                                 end_color=end_color[s], alpha=alphas[s])
+                            block_end = c_block_grad((x2, int(y1)), color_value=color_topo[s],
+                                                     end_color=end_color[s], alpha=alphas[s])
+                            img.alpha_composite(block, (width, int(y2)))
+                            img.alpha_composite(block_end, (width2, int(y2)))
+                        idraw.text((self.get_mid(width, width + info_list_length[i], str(self.info[t2][t])), y),
+                                   str(new_ct[t]),
+                                   font=fnt, fill=(0, 0, 0))
+
+                        if min_ct[t] > 1:
+                            ct_offset += min_ct[t] - 1
+                        idraw.line([(width, (t + 3 + ct_offset2) * 60),
+                                    (width + info_list_length[i], (t + 3 + ct_offset2) * 60)],
+                                   fill="#e1e1e1", width=2)
+            s += 1
+            if s >= len(color_topo):
+               s = 0
         for t in range(self.nodenum):
             # 序号
             idraw.text((self.get_mid(0, 100, str(t + 1)), 60 * (t + 2)), text=str(t + 1), font=fnt, fill=(0, 0, 0))
             idraw.line([(0, 60 * (t + 3)), (100, 60 * (t + 3))], fill="#e1e1e1", width=2)
             width = 100
             i = 0
-            if t < len(new_ct):
-                if min_ct[t] > 1:
-                    ct_offset2 += min_ct[t] - 1
+
             if t < len(cu):
                 if cu[t] > 1:
                     cu_offset2 += cu[t] - 1
@@ -1336,7 +1423,10 @@ class ExportTopo(ExportResult):
             if t < len(new_dq):
                 if min_dq[t] > 1:
                     dq_offset2 += min_dq[t] - 1
+
+
             for t1 in key_list:
+
                 if t1 == "AS编号":
                     if t < len(min_bh):
                         temp = min_bh[t]
@@ -1371,6 +1461,8 @@ class ExportTopo(ExportResult):
                                    fill="#e1e1e1", width=2)
                         if min_zz[t] > 1:
                             zz_offset += min_zz[t] - 1
+                elif t1 == "入口":
+                    pass
                 elif t1 == "栈":
                     try:
                         if t <= len(dq):
@@ -1480,18 +1572,7 @@ class ExportTopo(ExportResult):
                     idraw.line(
                         [(width, (t + 3) * 60), (width + info_list_length[i], (t + 3) * 60)],
                         fill="#e1e1e1", width=2)
-                elif t1 == "入口":
-                    if t < len(min_ct):
-                        temp = min_ct[t]
-                        y = ((t + 2) * 60 + (t + 2) * 60 + (60 * (temp - 1))) / 2 + ct_offset * 60
-                        idraw.text((self.get_mid(width, width + info_list_length[i], str(self.info[t1][t])), y),
-                                   str(new_ct[t]),
-                                   font=fnt, fill=(0, 0, 0))
-                        idraw.line([(width, (t + 3 + ct_offset2) * 60),
-                                    (width + info_list_length[i], (t + 3 + ct_offset2) * 60)],
-                                   fill="#e1e1e1", width=2)
-                        if min_ct[t] > 1:
-                            ct_offset += min_ct[t] - 1
+
                 else:
                     idraw.text((self.get_mid(width, width + info_list_length[i], str(self.info[t1][t])), (t + 2) * 60),
                                str(self.info[t1][t]),
@@ -1499,6 +1580,7 @@ class ExportTopo(ExportResult):
                 width += info_list_length[i]
                 i += 1
         idraw.line([(0, 60), (image_width, 60)], fill="#e1e1e1", width=2)
+        idraw.line([(0, 120), (image_width, 120)], fill="#e1e1e1", width=2)
         idraw.line([(0, image_height - 60), (image_width, image_height - 60)], fill="#e1e1e1", width=2)
         start_x = 100
         for i in info_list_length:
@@ -1687,21 +1769,30 @@ class ExportSpeed(ExportResult):
         img.paste(bkg, (0, image_height - 120))
         idraw = ImageDraw.Draw(img)
         # 绘制标题栏与结尾栏
-        export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
+        current_time = time.localtime()
+        current_hour = current_time.tm_hour
+        ui = ["🕛", "🕐", "🕑", "🕒", "🕓", "🕔", "🕕", "🕖", "🕗", "🕘", "🕙", "🕚",
+              "🕛", "🕐", "🕑", "🕒", "🕓", "🕔", "🕕", "🕖", "🕗", "🕘", "🕙", "🕚", '🕛']
+        i = current_hour
+        emjio_time = ui[i]
+        export_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
+        system_timezone = datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo
         slavecomment = self.slave.get('comment', 'Local')
         list1 = [f"{self.title} - 速度测试",
-                 f"后端: {slavecomment}   总共耗时: {self.wtime}s   消耗流量: {self.traffic}MB   线程: {self.thread}  " +
+                 f"📊版本:{__version__}  后端: {slavecomment}  消耗流量: {self.traffic}MB   线程: {self.thread}  " +
                  f"过滤器: {self.filter_include} <-> {self.filter_exclude}",
-                 f"版本:{__version__}  测试时间: {export_time}  测试结果仅供参考,以实际情况为准"]
+                 f"{emjio_time}测试时间: {export_time} ({system_timezone}) 总共耗时: {self.wtime}s 测试结果仅供参考,以实际情况为准"]
         export_time = export_time.replace(':', '-')
         title = list1[0]
         idraw.text((self.get_mid(0, image_width, title), 5), title, font=fnt, fill=(0, 0, 0))  # 标题
         if self.emoji:
             pilmoji.text((10, image_height - 112), text=list1[1], font=fnt, fill=(0, 0, 0),
                          emoji_position_offset=(0, 3))
+            pilmoji.text((10, image_height - 55), text=list1[2], font=fnt, fill=(0, 0, 0),
+                         emoji_position_offset=(0, 3))
         else:
             idraw.text((10, image_height - 112), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
-        idraw.text((10, image_height - 55), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
+            idraw.text((10, image_height - 55), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
 
         # 绘制标签
         idraw.text((20, 65), '序号', font=fnt, fill=(0, 0, 0))  # 序号

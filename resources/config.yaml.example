@@ -77,6 +77,14 @@ admin:
 #   - { label: 1000, name: '甸子', value: '#238BBC', alpha: 255, end_color: '#238BBC' }
 #   - { label: 2000, name: '景泰', value: '#2A73AC', alpha: 255, end_color: '#2A73AC' }
 #   - { label: 99999, name: '景泰', value: '#8d8b8e', alpha: 255 }  #第八个为超时，label无用
+#  out_color: #topo图用于分辨出口的颜色
+#   - { name: '云水', value: '#B4C3D0', alpha: 255, end_color: '#B4C3D0' }
+#   - { name: '晴山', value: '#91AEC4', alpha: 255, end_color: '#91AEC4' }
+#   - { name: '秋波', value: '#8BB8CB', alpha: 255, end_color: '#8BB8CB' }
+#   - { name: '天韵', value: '#5796B3', alpha: 255, end_color: '#5796B3' }
+#   - { name: '鸢尾', value: '#1988AE', alpha: 255, end_color: '#1988AE' }
+#   - { name: '甸子', value: '#238BBC', alpha: 255, end_color: '#238BBC' }
+#   - { name: '景泰', value: '#2A73AC', alpha: 255, end_color: '#2A73AC' }
 #  "yes": '#bee47e' #解锁色块的颜色，注意不要去掉双引号
 #  "yesalpha": 255 #解锁颜色块透明度
 #  "yesend": '#bee47e' #解锁色块的渐变结束颜色，注意不要去掉双引号
