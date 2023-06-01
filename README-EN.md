@@ -1,4 +1,4 @@
-## 
+##
 
 <div align="center">  
     <h1> FullTClash</h1>  
@@ -19,14 +19,7 @@
 
 FullTclash bot is a Telegram bot (hereinafter referred to as "bot") that carries out its testing tasks. It currently supports batch connectivity testing using Clash configuration files and supports the following test items:
 
-- Netflix
-- Youtube
-- DisneyPlus
-- Bilibili
-- Steam Currency
-- OpenAI (ChatGPT)
-- Landing IP risk (IP fraudulence)
-- Wikipedia
+- Netflix,Youtube,DisneyPlus,Bilibili,Steam Currency,OpenAI (ChatGPT),IP risk,Wikipedia
 
 As well as HTTP latency testing and network topology testing (inbound and outbound analysis).
 ## Document
@@ -46,9 +39,9 @@ Media streaming test:
 
 To successfully run the project code, you first need to prepare the following information:
 
-- Telegram's api_id and api_hash [Get it here](https://my.telegram.org/apps) (Google it if you don't know how to get it) (Some Telegram accounts have been blacklisted and cannot be used normally)
+- Telegram's api_id and api_hash [Get it here](https://my.telegram.org/apps) (Google it if you don't know how to get it) (Some Telegram accounts have been blacklisted and cannot be used normally)  
 
-- Create a bot from [@BotFather](https://t.me/BotFather) and get the bot_token, which should look like:
+- Create a bot from [@BotFather](https://t.me/BotFather) and get the bot_token, which should look like:  
   
   bot_token = "123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
 
@@ -66,8 +59,8 @@ This method may require a proxy to speed up in mainland China, please solve it y
 
 ### Preparing the environment
 
-- Python 3.9 or above.
-- And various related package dependencies.
+- Python 3.9 or above.  
+- And various related package dependencies.  
 
 You can use the following command to quickly install the environment in the current project directory:
 
@@ -97,7 +90,7 @@ admin:
 - 8765431 #this is the second line, indicating the second administrator. If there is no second administrator, delete this line.
 ```
 
-- Bot configuration
+- Bot configuration  
 
 ```yaml
 bot:
@@ -108,11 +101,11 @@ bot:
  proxy: 127.0.0.1:7890 #replace with your proxy address and port
 ```
 
-- Proxy configuration (optional)
+- Proxy configuration (optional)  
 
 If you are in mainland China, some subscription URLs may not be directly accessible. You can enter the following information in config.yaml:
 
-```
+```yaml
 # Use a proxy when obtaining subscriptions (optional)
 proxy: 127.0.0.1:7890 #replace with your proxy address and port. Note that this configuration is separate from the one above.
 ```
@@ -197,7 +190,7 @@ The general process is as follows:
   go build -buildmode=c-shared -o fulltclash.so fulltclash.go
   ```
   
-    Cross-compiling:
+Cross-compiling:
   
   ```shell
   GOOS=linux GOARCH=arm64 GOARM=7 CGO_ENABLED=1 CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ AR=aarch64-linux-gnu-ar go build -buildmode=c-shared -o fulltclash.so fulltclash.go
@@ -218,16 +211,16 @@ Due to the characteristics of the Linux system, the foreground program will be c
 
 We welcome feedback from all parties:
 
-- Raise an issue on the project page
+- Raise an issue on the project page  
 
 ## References
 
-- [Streaming Unlocking Idea](https://github.com/lmc999/RegionRestrictionCheck)
-- [Clash](https://github.com/Dreamacro/clash)
-- [aiohttp](https://github.com/aio-libs/aiohttp)
-- [pyrogram](https://github.com/pyrogram/pyrogram)
-- [async-timeout](https://github.com/aio-libs/async-timeout)
-- [Pillow](https://github.com/python-pillow/Pillow)
-- [pilmoji](https://github.com/jay3332/pilmoji)
-- [pyyaml](https://github.com/yaml/pyyaml)
-- [requests](https://github.com/psf/requests)
+- [Streaming Unlocking Idea](https://github.com/lmc999/RegionRestrictionCheck)  
+- [Clash](https://github.com/Dreamacro/clash)  
+- [aiohttp](https://github.com/aio-libs/aiohttp)  
+- [pyrogram](https://github.com/pyrogram/pyrogram)  
+- [async-timeout](https://github.com/aio-libs/async-timeout)  
+- [Pillow](https://github.com/python-pillow/Pillow)  
+- [pilmoji](https://github.com/jay3332/pilmoji)  
+- [pyyaml](https://github.com/yaml/pyyaml)  
+- [requests](https://github.com/psf/requests)  

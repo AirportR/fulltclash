@@ -2,7 +2,7 @@
 <div align="center">
     <h1> FullTClash</h1>
     <p>🤖 A Telegram bot that operates based on the Clash core </p>
-    <p><a href="https://github.com/AirportR/FullTclash/blob/dev/README_EN.md">English</a>   简体中文</p>
+    <p><a href="https://github.com/AirportR/FullTclash/blob/dev/README-EN.md">English</a>   简体中文</p>
     <a href="https://fulltclash.gitbook.io/fulltclash-doc"><img src="https://img.shields.io/static/v1?message=doc&color=blue&logo=micropython&label=FullTClash"></a> 
     <img src="https://img.shields.io/github/license/AirportR/FullTclash">
     <a href="https://app.codacy.com/gh/AirportR/FullTclash/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade"><img src="https://app.codacy.com/project/badge/Grade/389b2787eb7647dfad486ccaa70eabf4"></a>
