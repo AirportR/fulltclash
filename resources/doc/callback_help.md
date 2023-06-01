@@ -57,6 +57,38 @@ async def callback(app: Client, message: Message) -> bool:
 
 ## 使用案例
 
+### 让bot离开群组
+想使用一个新的指令让bot离开群组，比如 /leave
+首先需要在配置文件写入一个配置让bot能识别leave指令，不加该配置，无法在群组使用。
+```yaml
+bot:
+ command:
+   - leave
+```
+```python
+from pyrogram.enums import ChatType
+from pyrogram.types import Message
+from pyrogram import Client
+from loguru import logger
+from botmodule.init_bot import admin
+from utils.cleaner import ArgCleaner
+from utils.check import get_telegram_id_from_message
+
+
+async def callback(app: Client, message: Message) -> bool:
+    try:
+        tgargs = ArgCleaner().getall(str(message.text))
+        if tgargs[0].startswith('/leave'):
+            assert message.chat.type in (ChatType.GROUP, ChatType.SUPERGROUP)
+            ID = get_telegram_id_from_message(message)
+            if ID in admin:
+                await message.chat.leave()
+            logger.info(f"{app.username} 已离开 {message.chat.id}:{message.chat.title}")
+        return True
+    except Exception as e:
+        print(e)
+        return True
+```
 ### 拒绝滥用bot的坏蛋
 假设有一个坏蛋故意往你的bot丢一个节点池测速，或者你单纯讨厌TA，不想给TA使用，那么有以下例子。
 
