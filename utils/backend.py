@@ -240,7 +240,6 @@ class SpeedCore(Basecore):
         try:
             logger.info("Performing UDP NAT Type Test.")
             t, eip, eport, sip = pynat.get_ip_info(
-                source_ip="0.0.0.0",
                 source_port=_sport,
                 include_internal=True,
                 sock=mysocket,
@@ -354,7 +353,7 @@ class SpeedCore(Basecore):
             traffic_used = float("%.2f" % (res[3] / 1024 / 1024))
             info["消耗流量"] += traffic_used
             res2 = [delay, avgspeed, maxspeed, speedresult, udptype]
-            for i in range(len(test_items)):
+            for i, _ in enumerate(test_items):
                 info[test_items[i]].append(res2[i])
 
             if break_speed:
@@ -375,7 +374,7 @@ class SpeedCore(Basecore):
         # 获取可供测试的测试端口
         # 测速仅需要一个端口，因此这里不处理
         # 订阅加载
-        nodename, nodetype, nodenum, nodelist = self.getnodeinfo()
+        nodename, nodetype, _, nodelist = self.getnodeinfo()
         # 开始测试
         s1 = time.time()
         try:
@@ -467,7 +466,6 @@ class ScriptCore(Basecore):
         psize = len(port)
         nodenum = len(nodename)
         tasks = []
-        clash_list = []
 
         for item in test_items:
             info[item] = []
@@ -482,15 +480,13 @@ class ScriptCore(Basecore):
 
         if nodenum < psize:
             for i in range(len(port[:nodenum])):
-                # clash_instance = clash.Clash(GCONFIG.get_clash_path(), port[i], i, nodename[i])
-                # clash_list.append()
                 proxys.switchProxy(nodename[i], i)
                 task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i], index=i))
                 tasks.append(task)
             done = await asyncio.gather(*tasks)
             # 简单处理一下数据
             res = []
-            for j in range(len(test_items)):
+            for j, _ in enumerate(test_items):
                 res.clear()
                 for d in done:
                     res.append(d[j])
@@ -786,7 +782,7 @@ class TopoCore(Basecore):
                 'port': [startup + t * 2 for t in range(thread)]}
         # 开始测试
         s1 = time.time()
-        info1, hosts, cl = await self.topo()
+        info1, _, cl = await self.topo()
         nodelist = cl.getProxies()
         nodename = cl.nodesName()
         print("入口测试结束: ", info1)
@@ -836,7 +832,7 @@ class TopoCore(Basecore):
                 all_data = zip(d0, country_code, asn, org, ipaddr, nodename, b6)
                 sorted_data = sorted(all_data, key=itemgetter(4), reverse=True)
                 d0, d1, d2, d3, d4, d5, d6 = zip(*sorted_data)
-                for i in range(len(d6)):
+                for i, _ in enumerate(d6):
                     if d6[i] == "N/A" and d4[i]:
                         if ":" in d4[i]:
                             d6 = d6[:i] + ("6",) + d6[i + 1:]

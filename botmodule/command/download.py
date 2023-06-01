@@ -11,7 +11,7 @@ async def download_script(_: Client, message: Message):
     if message.reply_to_message is None:
         base_text = "当前共有脚本:\n\n"
         script = addon.script
-        for k in script.keys():
+        for k in script:
             base_text += f"**{str(k)}**\n"
         base_text += f"\n共{len(script)}个"
         m2 = await message.reply_text(base_text)
