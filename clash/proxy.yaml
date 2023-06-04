@@ -1,5 +1,5 @@
 allow-lan: false
-bind-address: '*'
+bind-address: '127.0.0.1'
 dns:
   default-nameserver:
   - 119.29.29.29
