@@ -1291,11 +1291,11 @@ class ExportTopo(ExportResult):
             idraw.text((self.get_mid(x, end, key_list[m]), 60), key_list[m], font=fnt, fill=(0, 0, 0))
             start_x = end
             m = m + 1
-        ct = [item for item in self.info.get('入口') if item != " "]
-        cu = [item for item in self.info.get('簇') if item != " "]
-        bh = [item for item in self.info.get('AS编号') if item != " "]
-        zz = [item for item in self.info.get('组织') if item != " "]
-        dq = [item for item in self.info.get('地区') if item != " "]
+        ct = [item for item in self.info.get('入口')]
+        cu = [item for item in self.info.get('簇')]
+        bh = [item for item in self.info.get('AS编号')]
+        zz = [item for item in self.info.get('组织')]
+        dq = [item for item in self.info.get('地区')]
 
         # 绘制横线
         # for t in range(self.nodenum + 3):
