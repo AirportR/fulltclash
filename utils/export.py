@@ -1371,8 +1371,8 @@ class ExportTopo(ExportResult):
                         temp = min_ct[t]
                         y1 = 60 * temp
                         x1 = info_list_length[i]
-                        x2 = info_list_length[6]
-                        width2 = sum(info_list_length) - info_list_length[6] + width
+                        x2 = info_list_length[-1]
+                        width2 = sum(info_list_length) - info_list_length[-1] + width
                         y = ((t + 2) * 60 + (t + 2) * 60 + (60 * (temp - 1))) / 2 + ct_offset * 60
                         if temp > 1:
                             y2 = ((t + 2) * 60 + (t + 2) * 60 + (
