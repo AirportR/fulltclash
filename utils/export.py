@@ -119,9 +119,9 @@ class ExportCommon(BaseExport):
         self.color = self.config.getColor()
 
         self.emoji = self.config.config.get('emoji', {}).get('enable', True)
-        emoji_source_name = self.config.config.get('emoji', {}).get('emoji-source', "TwitterPediaSource")
+        emoji_source_name = self.config.config.get('emoji', {}).get('emoji-source', "TwemojiLocalSource")
         self.emoji_source = getattr(emoji_source, emoji_source_name) if emoji_source_name in emoji_source.__all__ \
-            else emoji_source.TwitterPediaSource
+            else emoji_source.TwemojiLocalSource
 
         # 以下这个变量保存着大多数绘图相关的值，比如字体大小、绘图标题这些，这样看是不是更整齐美观了呢
         self.image = {
@@ -789,11 +789,11 @@ class ExportResult:
         self.config = ConfigManager()
 
         self.emoji = self.config.config.get('emoji', {}).get('enable', True)  # 是否启用emoji，若否，则在输出图片时emoji将无法正常显示
-        emoji_source_name = self.config.config.get('emoji', {}).get('emoji-source', "TwitterPediaSource")
+        emoji_source_name = self.config.config.get('emoji', {}).get('emoji-source', "TwemojiLocalSource")
         if emoji_source_name in emoji_source.__all__:
             self.emoji_source = getattr(emoji_source, emoji_source_name)
         else:
-            self.emoji_source = emoji_source.TwitterPediaSource
+            self.emoji_source = emoji_source.TwemojiLocalSource
         self.color = self.config.getColor()
         self.image_config = self.config.config.get('image', {})
         self.delay_color = self.color.get('delay', [])

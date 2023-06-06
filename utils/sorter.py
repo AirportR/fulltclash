@@ -32,7 +32,7 @@ def sort_nodename_topo(_cleaner: cleaner.ClashCleaner):
         for n in addrs2:
             list1.append(n['server'])
             dict1.setdefault(n['server'], n['ipstart'])
-            dict2.setdefault(n['server'],n['ipcu'])
+            dict2.setdefault(n['server'], n['ipcu'])
         cl.yaml['proxies'] = addrs2
         nodename = cl.nodesName()
         info = cleaner.ClashCleaner.count_elem(list1)

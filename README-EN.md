@@ -39,9 +39,9 @@ Media streaming test:
 
 To successfully run the project code, you first need to prepare the following information:
 
-- Telegram's api_id and api_hash [Get it here](https://my.telegram.org/apps) (Google it if you don't know how to get it) (Some Telegram accounts have been blacklisted and cannot be used normally)  
+* Telegram's api_id and api_hash [Get it here](https://my.telegram.org/apps) (Google it if you don't know how to get it) (Some Telegram accounts have been blacklisted and cannot be used normally)  
 
-- Create a bot from [@BotFather](https://t.me/BotFather) and get the bot_token, which should look like:  
+* Create a bot from [@BotFather](https://t.me/BotFather) and get the bot_token, which should look like:  
   
   bot_token = "123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
 
@@ -59,8 +59,8 @@ This method may require a proxy to speed up in mainland China, please solve it y
 
 ### Preparing the environment
 
-- Python 3.9 or above.  
-- And various related package dependencies.  
+* Python 3.9 or above.  
+* And various related package dependencies.  
 
 You can use the following command to quickly install the environment in the current project directory:
 
