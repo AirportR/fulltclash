@@ -1391,7 +1391,7 @@ class ExportTopo(ExportResult):
                                                      end_color=end_color[s], alpha=alphas[s])
                             img.alpha_composite(block, (width, int(y2)))
                             img.alpha_composite(block_end, (width2, int(y2)))
-                        idraw.text((self.get_mid(width, width + info_list_length[i], str(self.info[t2][t])), y),
+                        idraw.text((self.get_mid(width, width + info_list_length[i], str(new_ct[t])), y),
                                    str(new_ct[t]),
                                    font=fnt, fill=(0, 0, 0))
 
@@ -1429,8 +1429,7 @@ class ExportTopo(ExportResult):
                     if t < len(min_bh):
                         temp = min_bh[t]
                         y = ((t + 2) * 60 + (t + 2) * 60 + (60 * (temp - 1))) / 2 + bh_offset * 60
-                        x1 = width + (info_list_length[i] - info_list_length[key_list.index("AS编号")]) / 2 + 40
-                        idraw.text((x1, y), str(new_bh[t]), font=fnt, fill=(0, 0, 0))
+                        idraw.text(((self.get_mid(width, width + info_list_length[i], str(new_bh[t]))), y), str(new_bh[t]), font=fnt, fill=(0, 0, 0))
                         idraw.line([(width, (t + 3 + bh_offset2) * 60),
                                     (width + info_list_length[i], (t + 3 + bh_offset2) * 60)],
                                    fill="#e1e1e1", width=2)
@@ -1440,8 +1439,7 @@ class ExportTopo(ExportResult):
                     if t < len(min_dq):
                         temp = min_dq[t]
                         y = ((t + 2) * 60 + (t + 2) * 60 + (60 * (temp - 1))) / 2 + dq_offset * 60
-                        x1 = width + (info_list_length[i] - info_list_length[key_list.index("地区")]) / 2 + 50
-                        idraw.text((x1, y), str(new_dq[t]), font=fnt, fill=(0, 0, 0))
+                        idraw.text(((self.get_mid(width, width + info_list_length[i], str(new_dq[t]))), y), str(new_dq[t]), font=fnt, fill=(0, 0, 0))
                         idraw.line([(width, (t + 3 + dq_offset2) * 60),
                                     (width + info_list_length[i], (t + 3 + dq_offset2) * 60)],
                                    fill="#e1e1e1", width=2)
