@@ -332,9 +332,11 @@ class SpeedCore(Basecore):
 
         await self.progress(progress, nodenum)
         for name in nodelist:
-            proxys.switchProxy(name, 0)
+            # proxys.switchProxy(name, 0)
+            await proxys.FullTClash.setproxy(name, 0)
             # delay = await proxys.http_delay_tls(index=0)
-            delay = await proxys.http_delay(index=0)
+            # delay = await proxys.http_delay(index=0)
+            delay = 100
             udptype, _, _, _, _ = self.nat_type_test('127.0.0.1', proxyport=port)
             if udptype is None:
                 udptype = "Unknown"
@@ -425,12 +427,13 @@ class ScriptCore(Basecore):
         :return: list 返回test_items对应顺序的信息
         """
         info = []
-        from async_timeout import timeout
-        try:
-            async with timeout(10):
-                delay = await proxys.http_delay(index=index)
-        except asyncio.exceptions.TimeoutError:
-            delay = 0
+        # from async_timeout import timeout
+        # try:
+        #     async with timeout(10):
+        #         delay = await proxys.http_delay(index=index)
+        # except asyncio.exceptions.TimeoutError:
+        #     delay = 0
+        delay = (index+1)*10
         # delay = await proxys.http_delay_tls(index=index, timeout=5)
         if delay == 0:
             logger.warning("超时节点，跳过测试")
@@ -480,7 +483,8 @@ class ScriptCore(Basecore):
 
         if nodenum < psize:
             for i in range(len(port[:nodenum])):
-                proxys.switchProxy(nodename[i], i)
+                await proxys.FullTClash.setproxy(nodename[i], i)
+                # proxys.switchProxy(nodename[i], i)
                 task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i], index=i))
                 tasks.append(task)
             done = await asyncio.gather(*tasks)
@@ -500,7 +504,8 @@ class ScriptCore(Basecore):
                 tasks.clear()
 
                 for i in range(psize):
-                    proxys.switchProxy(nodename[s * psize + i], i)
+                    await proxys.FullTClash.setproxy(nodename[s * psize + i], i)
+                    # proxys.switchProxy(nodename[s * psize + i], i)
                     task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i], index=i))
                     tasks.append(task)
                 done = await asyncio.gather(*tasks)
@@ -524,7 +529,8 @@ class ScriptCore(Basecore):
                 tasks.clear()
                 logger.info("最后批次: " + str(subbatch + 1))
                 for i in range(nodenum % psize):
-                    proxys.switchProxy(nodename[subbatch * psize + i], i)
+                    await proxys.FullTClash.setproxy(nodename[subbatch * psize + i], i)
+                    # proxys.switchProxy(nodename[subbatch * psize + i], i)
                     task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i], index=i))
                     tasks.append(task)
                 done = await asyncio.gather(*tasks)
@@ -716,7 +722,8 @@ class TopoCore(Basecore):
         await self.progress(progress, nodenum)
         if nodenum < psize:
             for i in range(nodenum):
-                proxys.switchProxy(nodename[i], i)
+                await proxys.FullTClash.setproxy(nodename[i], i)
+                # proxys.switchProxy(nodename[i], i)
             ipcol = collector.IPCollector()
             sub_res = await ipcol.batch(proxyhost=host[:nodenum], proxyport=port[:nodenum])
             resdata.extend(sub_res)
@@ -731,7 +738,8 @@ class TopoCore(Basecore):
             for s in range(subbatch):
                 logger.info("当前批次: " + str(s + 1))
                 for i in range(psize):
-                    proxys.switchProxy(nodename[s * psize + i], i)
+                    await proxys.FullTClash.setproxy(nodename[s * psize + i], i)
+                    # proxys.switchProxy(nodename[s * psize + i], i)
                 ipcol = collector.IPCollector()
                 sub_res = await ipcol.batch(proxyhost=host, proxyport=port)
                 resdata.extend(sub_res)
@@ -751,7 +759,8 @@ class TopoCore(Basecore):
             if nodenum % psize != 0:
                 logger.info("最后批次: " + str(subbatch + 1))
                 for i in range(nodenum % psize):
-                    proxys.switchProxy(nodename[subbatch * psize + i], i)
+                    await proxys.FullTClash.setproxy(nodename[subbatch * psize + i], i)
+                    # proxys.switchProxy(nodename[subbatch * psize + i], i)
                 ipcol = collector.IPCollector()
                 sub_res = await ipcol.batch(proxyhost=host[:nodenum % psize],
                                             proxyport=port[:nodenum % psize])

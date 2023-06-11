@@ -1,16 +1,20 @@
 import asyncio
 import json
+import socket
 import os
+import subprocess
 import threading
-from typing import Union
+from typing import Union, List
 import async_timeout
 import yaml
 import ctypes
 import aiohttp
 import requests
 from aiohttp import ClientConnectorError
+from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
 from loguru import logger
 from utils.cleaner import config
+from utils.safe import sha256_32bytes, DEFAULT_NONCE
 
 """
 这个模块主要是一些对clash 动态库 api的python调用
@@ -29,6 +33,7 @@ _myURLTest.restype = ctypes.c_ushort
 _urlTest = getattr(lib, 'urltestJson')
 _urlTest.argtypes = [ctypes.c_char_p, ctypes.c_int64, ctypes.c_int64]
 _urlTest.restype = ctypes.c_char_p
+BUILD_TOKEN = config.getBuildToken()
 
 
 class Clash(threading.Thread):  # 继承父类threading.Thread
@@ -61,6 +66,53 @@ class Clash(threading.Thread):  # 继承父类threading.Thread
             closeclash(self._index)
         else:
             closeclash(index)
+
+
+class FullTClash:
+    def __init__(self, control_port: Union[str, int], proxy_portlist: List[Union[str, int]]):
+        """
+        control_port: 控制端口
+        proxy_port: 代理端口，多个端口
+        """
+        self.cport = control_port
+        self.port = proxy_portlist
+
+    def start(self):
+        """
+        启动fulltclash代理程序
+        """
+        port2 = "|".join(self.port)
+        _command = fr"{config.get_clash_path()} -c {11219} -p {port2}"
+        subprocess.Popen(_command.split(), encoding="utf-8")
+
+    @staticmethod
+    async def sock_send(message, key: str):
+        # 创建一个socket对象
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        # 设置socket为非阻塞模式
+        s.setblocking(False)
+        # 连接服务器的IP地址和端口号
+        try:
+            await asyncio.get_event_loop().sock_connect(s, ("127.0.0.1", 11219))
+        except ConnectionRefusedError:
+            logger.error("远程计算机拒绝网络连接。请检查是否在 11219 端口开启了监听")
+            return
+        newkey = sha256_32bytes(key)
+        # 使用chacha20算法加密消息，使用固定的nonce
+        chacha = ChaCha20Poly1305(newkey)
+        ciphertext = chacha.encrypt(DEFAULT_NONCE, message.encode(), None)
+        # 发送加密后的消息给服务器
+        await asyncio.get_event_loop().sock_sendall(s, ciphertext)
+
+        # 关闭socket连接
+        s.close()
+
+    @staticmethod
+    async def setproxy(proxyinfo: dict, index: int):
+        logger.info(f"设置代理: {proxyinfo.get('name', '')}, index: {index}")
+        data = yaml.dump({'proxies': proxyinfo, 'index': index})
+        await FullTClash.sock_send(data, BUILD_TOKEN)
 
 
 async def http_delay(url: str = config.getGstatic(), index: int = 0) -> int:
@@ -219,13 +271,4 @@ async def reloadConfig_batch(nodenum: int, pool: dict):
 
 
 if __name__ == "__main__":
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-
-
-    async def test():
-        pass
-        # await batch_start([1124, 1126, 1128, 1130],)
-
-
-    loop.run_until_complete(test())
+    pass

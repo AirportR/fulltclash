@@ -6,7 +6,8 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms
 from cryptography.hazmat.primitives import hashes
 
-default_nonce = b'#U\x1e\xc1\xc9\xe3\xc9M\x94=\xb8\xfb\x0e\x9b5\\'
+# 这是默认的 nonce,实际上这是不安全的做法，nonce应该是随机一次性的，但是我为了方便把它固定了。
+DEFAULT_NONCE = b'012345678912'
 
 
 def gen_key(key_name: str = 'fulltclash', in_memory=False):
@@ -102,7 +103,7 @@ def plain_rsa(_ciphertext: bytes, _private_key_path: str = 'private_key.pem'):
     return _plaintext
 
 
-def plain_chahcha20(_ciphertext: bytes, _key: bytes, _nonce: bytes = default_nonce):
+def plain_chahcha20(_ciphertext: bytes, _key: bytes, _nonce: bytes = DEFAULT_NONCE):
     """
     数据解密
     """
@@ -114,7 +115,7 @@ def plain_chahcha20(_ciphertext: bytes, _key: bytes, _nonce: bytes = default_non
     return _plaintext
 
 
-def cipher_chacha20(_ciphertext: bytes, _key: bytes, _nonce: bytes = default_nonce):
+def cipher_chacha20(_ciphertext: bytes, _key: bytes, _nonce: bytes = DEFAULT_NONCE):
     """
     数据加密
     """

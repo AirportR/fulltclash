@@ -1,6 +1,7 @@
 # 这是一个批量启动clash子进程的脚本
 import asyncio
 import ctypes
+import subprocess
 import time
 import yaml
 from time import sleep
@@ -142,6 +143,9 @@ class ConfigManager:
             return './resources/clash-windows-amd64.exe'
 
 
+config = ConfigManager()
+
+
 async def is_port_in_use(host='127.0.0.1', port=80):
     """
     检查主机端口是否被占用
@@ -184,6 +188,12 @@ def new_batch_start(portlist: list):
         clash = Clash(portlist[_i], _i)
         clash.daemon = True
         clash.start()
+
+
+def start_fulltclash(portlist: list):
+    port2 = "|".join(portlist)
+    _command = fr"{config.get_clash_path()} -c {11219} -p {port2}"
+    subprocess.Popen(_command.split(), encoding="utf-8")
 
 
 # def batch_start(portlist: list, proxy_file_path="./clash/proxy.yaml"):
@@ -329,7 +339,6 @@ rules:
 
 if __name__ == "__main__":
     check_init()
-    config = ConfigManager()
     clash_path = config.get_clash_path()  # 为clash核心运行路径, Windows系统需要加后缀名.exe
     clash_work_path = config.get_clash_work_path()  # clash工作路径
     corenum = config.config.get('clash', {}).get('core', 1)

@@ -767,6 +767,13 @@ class ConfigManager:
     def getSlaveconfig(self):
         return self.config.get('slaveconfig', {})
 
+    def getBuildToken(self):
+        token = self.config.get('buildtoken', 'c7004ded9db897e538405c67e50e0ef0c3dbad717e67a92d02f6ebcfd1022a5ad1d' +
+                                '2c4419541f538ff623051759ec000d2f426e03f9709a6608570c5b9141a6b')
+        if not isinstance(token, str):
+            raise TypeError("buildtoken的值不合法，它应该是个字符串")
+        return token
+
     def getBotconfig(self):
         botconfig = self.config.get('bot', {})
         if botconfig is None:
