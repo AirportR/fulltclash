@@ -1,12 +1,12 @@
 # 注意，yaml配置文件对缩进敏感，请不要强迫症删掉#号之间的空格。
 admin:
 - 12345678 #管理员，此处写你的账户id或用户名，必须配置该项，否则程序会自动退出
-#bot:
-# proxy: "host:端口:用户名:密码" #socks5代理，用户名和密码为可选配置，已和下面的proxy单独分离，请勿混用
+bot:
+ api_id: 123456 # Telegram的api_id
+ api_hash: ABCDEFG # Telegram的api_hash
+ bot_token: 123456:ABCDEFG #bot的token
+# proxy: host:端口:用户名:密码 #socks5代理，用户名和密码为可选配置，已和下面的proxy单独分离，请勿混用
 # strictmode: false # 严格模式，代表测试的时侯，bot内联按钮只有发起测试的主人才能按，否则所有用户用户权限都可以按。默认false，目前未适配，敬请期待。
-# api_id: "123456" # Telegram的api_id
-# api_hash: "ABCDEFG" # Telegram的api_hash
-# bot_token: "123456:ABCDEFG" #bot的token
 # scripttext: "⏳联通性测试进行中..."  # 解锁脚本测试进度条自定义文本
 # analyzetext: "⏳节点测试拓扑进行中..."  # 拓扑测试进度条自定义文本
 # speedtext: "⏳速度测试进行中..."  # 速度测试进度条自定义文本
@@ -47,11 +47,11 @@ admin:
 #speedconfig: #测速相关配置
 # interval: 10 #每个节点的测速时长
 #entrance:  #入口显示配置
-  switch: "ip" #设置为ip将显示入口ip段，设置为cluster将显示簇，默认设置为ip，PS:这里的簇为入口域名绑定的ip地址数量
+# switch: "ip" #设置为ip将显示入口ip段，设置为cluster将显示簇，默认设置为ip，PS:这里的簇为入口域名绑定的ip地址数量
 #user: 12345678 #用户列表，/grant 命令授权的目标会保存在这。推荐使用bot进行授权，而非手动配置。（可选配置）
 #emoji: #emoji可选配置
 # enable: true #是否启用,默认启用。若否，则在输出图片时emoji将无法正常显示。关闭该项可解决部分图片生成失败的问题。（可选配置）
-# emoji-source: 'TwemojiLocalSource' #emoji表情源。默认值为TwitterPediaSource。分为web源与本地源。可配置的值参考 ./libs/emoji_custom/__all__ 里面的成员变量。目前本地源仅支持: TwemojiLocalSource
+# emoji-source: 'TwemojiLocalSource' #emoji表情源。默认值为TwemojiLocalSource。分为web源与本地源。可配置的值参考 ./libs/emoji_custom/__all__ 里面的成员变量。目前本地源仅支持: TwemojiLocalSource
 #font: './resources/苹方黑体-准-简.ttf' #自定义字体，这里填字体的路径
 
 #----------------------------   以下为绘图相关配置   --------------------------------#
