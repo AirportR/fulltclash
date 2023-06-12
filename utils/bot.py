@@ -31,7 +31,7 @@ def loader(app: Client):
 def user_loder(app: Client):
     userbotconfig = config.config.get('userbot', {})
     slaveconfig = config.getSlaveconfig()
-    slaveID = [int(k) for k in slaveconfig.keys()] if slaveconfig else []
+    slaveID = [int(k) for k in slaveconfig.keys() if k != "default-slave"] if slaveconfig else []
     whitelist = userbotconfig.get('whitelist', [])
 
     @app.on_message(filters.user(whitelist + slaveID))

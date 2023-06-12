@@ -302,7 +302,7 @@ async def stopspeed(app: Client, callback_query: CallbackQuery):
     for k, v in slaveconfig.items():
         comment = v.get('comment', '')
         if comment == commenttext:
-            slaveid = int(k)
+            slaveid = int(k) if k != "default-slave" else 'local'
             break
     if slaveid:
         await app.send_message(bridge, f'/relay {slaveid} stopspeed')
