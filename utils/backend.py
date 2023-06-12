@@ -199,7 +199,7 @@ class Speedtest:
         self._delta_red = self._total_red
         self._count += 1
         print("\r[" + "=" * self._count + f"> [{speed_mb:.2f} MB/s]", end="")
-        if len(self.result) < 10:
+        if len(self.result) < self._download_interval:
             self.result.append(speed)
 
     def show_progress_full(self):
@@ -306,10 +306,14 @@ class SpeedCore(Basecore):
             ]
             await asyncio.wait(tasks)
             st.show_progress_full()
+            spmean = st.total_red / st.time_used
+            spmax = st.max_speed
+            if spmean > spmax:
+                spmean, spmax = spmax, spmean
             if st.time_used:
                 return (
-                    st.total_red / st.time_used,
-                    st.max_speed,
+                    spmean,
+                    spmax,
                     st.speed_list[1:],
                     st.total_red,
                 )
@@ -336,7 +340,7 @@ class SpeedCore(Basecore):
             await proxys.FullTClash.setproxy(name, 0)
             # delay = await proxys.http_delay_tls(index=0)
             # delay = await proxys.http_delay(index=0)
-            delay = 100
+            delay = await proxys.FullTClash.urltest(port)
             udptype, _, _, _, _ = self.nat_type_test('127.0.0.1', proxyport=port)
             if udptype is None:
                 udptype = "Unknown"
@@ -417,24 +421,17 @@ class ScriptCore(Basecore):
         message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
 
     @staticmethod
-    async def unit(test_items: list, host="127.0.0.1", port=11220, index=0):
+    async def unit(test_items: list, host="127.0.0.1", port=11220):
         """
         以一个节点的所有测试项为一个基本单元unit,返回单个节点的测试结果
         :param port: 代理端口
         :param host: 代理主机名
         :param test_items: [Netflix,disney+,etc...]
-        :param index:
         :return: list 返回test_items对应顺序的信息
         """
         info = []
-        # from async_timeout import timeout
-        # try:
-        #     async with timeout(10):
-        #         delay = await proxys.http_delay(index=index)
-        # except asyncio.exceptions.TimeoutError:
-        #     delay = 0
-        delay = (index+1)*10
-        # delay = await proxys.http_delay_tls(index=index, timeout=5)
+        delay = await proxys.FullTClash.urltest(port)
+        # delay = (index + 1) * 20
         if delay == 0:
             logger.warning("超时节点，跳过测试")
             for t in test_items:
@@ -485,7 +482,7 @@ class ScriptCore(Basecore):
             for i in range(len(port[:nodenum])):
                 await proxys.FullTClash.setproxy(nodename[i], i)
                 # proxys.switchProxy(nodename[i], i)
-                task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i], index=i))
+                task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i]))
                 tasks.append(task)
             done = await asyncio.gather(*tasks)
             # 简单处理一下数据
@@ -506,7 +503,7 @@ class ScriptCore(Basecore):
                 for i in range(psize):
                     await proxys.FullTClash.setproxy(nodename[s * psize + i], i)
                     # proxys.switchProxy(nodename[s * psize + i], i)
-                    task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i], index=i))
+                    task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i]))
                     tasks.append(task)
                 done = await asyncio.gather(*tasks)
                 # 反馈进度
@@ -531,7 +528,7 @@ class ScriptCore(Basecore):
                 for i in range(nodenum % psize):
                     await proxys.FullTClash.setproxy(nodename[subbatch * psize + i], i)
                     # proxys.switchProxy(nodename[subbatch * psize + i], i)
-                    task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i], index=i))
+                    task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i]))
                     tasks.append(task)
                 done = await asyncio.gather(*tasks)
                 res = []

@@ -129,6 +129,12 @@ apt install -y git && git clone https://github.com/AirportR/FullTclash.git && cd
   proxy: 127.0.0.1:7890 #http 替换成自己的代理地址和端口,注意，此配置与上面的独立分开。
   ```
   
+- 自定义buildtoken(可选)
+  
+  buildtoken是构建 ./bin/fulltclash(.exe) 代理客户端二进制文件的编译Token，此token为数据加密密钥，一般来说，用项目自带的编译token在本地运行不会有任何问题，但是如果以前后端模式运行，则主端需要自行编译代理后端的二进制文件，以此用到编译token，这个token需要写入到配置文件里，供主端加密信息。
+  ```yaml
+  buildtoken: 12345678ABCDEFG
+  ```
 ### 获取session文件（可选）
 
 您需要在项目文件目录下，放置一个已经登陆好的.session后缀文件，这个文件是程序生成的，形如： my_bot.session
@@ -173,32 +179,19 @@ bot:
 >/testurl <订阅地址>(clash配置格式)即可开始测试
 
 >/help 可查看所有命令说明
-### 动态链接库编译(高级)
-项目所用到的动态链接库存放在 ./libs/下。其中:
->fulltclash.so为 Linux-amd64 所支持的，fulltclash.dll 为 Windows-amd64 所支持的。
+### 代理客户端编译(高级)
+FullTclash有专用的代理客户端，存放在 ./bin/下。其中:
+
+fulltclash-linux-amd64为 Linux-amd64 所支持\
+fulltclash-windows-amd64 为 Windows-amd64 所支持的
 
 没有所用架构？
-如果没有您所用架构的动态链接库文件，比如arm64，或者您担心仓库自带的有安全隐患，那么您可以自行编译。
+如果没有您所用架构的二进制文件，比如arm64，或者您担心仓库自带的有安全隐患，那么您可以自行编译。
 
-在 ./libs/ 下有一源码文件为 fulltclash.go ，您需要将该文件自行用Golang编译器编译成 fulltclash.so动态链接库。
-大致流程为:  
-- 在您的平台安装GO编译器(版本越高越好)  
-```shell
-go mod init <路径>
-```
-```shell
-go mod tidy
-``` 
-以下是编译arm64架构的例子:
-```shell
-go build -buildmode=c-shared -o fulltclash.so fulltclash.go
-```
-交叉编译: 
-```shell
-GOOS=linux GOARCH=arm64 GOARM=7 CGO_ENABLED=1 CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ AR=aarch64-linux-gnu-ar go build -buildmode=c-shared -o fulltclash.so fulltclash.go
-```
-编译完成覆盖原文件即可
-如果操作难度太大，可以发起issue详谈。
+在 [此仓库](https://github.com/AirportR/FullTCore) 下有一源码文件为 fulltclash.go ，您需要将该文件自行用Golang编译器编译成二进制文件。
+
+
+编译完成覆盖原文件即可 ，如果操作难度太大，可以发起issue详谈。
 ### Docker启动
 教程文档待更新
 ### 为程序设置进程守护(Linux)

@@ -890,13 +890,13 @@ class ConfigManager:
         try:
             return self.config['clash']['path']
         except KeyError:
-            logger.warning("获取运行路径失败，将采用默认运行路径 ./libs/fulltclash.so(.dll)\n自动识别windows与linux。架构默认为amd64")
+            logger.warning("获取运行路径失败，将采用默认运行路径 ./bin/fulltclash(.exe)\n自动识别windows与linux。架构默认为amd64")
             if sys.platform.startswith("linux"):
-                path = './libs/fulltclash.so'
+                path = './bin/fulltclash-linux-amd64'
             elif sys.platform.startswith("win32"):
-                path = r'.\libs\fulltclash.dll'
+                path = r'.\bin\fulltclash-windows-amd64.exe'
             else:
-                path = './libs/fulltclash.so'
+                path = './bin/fulltclash-linux-amd64'
             d = {'path': path}
             try:
                 self.yaml['clash'].update(d)

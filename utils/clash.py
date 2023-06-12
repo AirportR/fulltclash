@@ -2,6 +2,7 @@
 import asyncio
 import ctypes
 import subprocess
+import sys
 import time
 import yaml
 from time import sleep
@@ -133,14 +134,20 @@ class ConfigManager:
         try:
             return self.config['clash']['path']
         except KeyError:
-            print("获取运行路径失败，将采用默认运行路径 ./resources/clash-windows-amd64.exe")
+            print("获取运行路径失败，将采用默认运行路径 ./bin/fulltclash(.exe)\n自动识别windows与linux。架构默认为amd64")
+            if sys.platform.startswith("linux"):
+                path = './bin/fulltclash-linux-amd64'
+            elif sys.platform.startswith("win32"):
+                path = r'.\bin\fulltclash-windows-amd64.exe'
+            else:
+                path = './bin/fulltclash-linux-amd64'
+            d = {'path': path}
             try:
-                d = {'path': './resources/clash-windows-amd64.exe'}
                 self.yaml['clash'].update(d)
             except KeyError:
-                di = {'clash': {'path': './resources/clash-windows-amd64.exe'}}
+                di = {'clash': d}
                 self.yaml.update(di)
-            return './resources/clash-windows-amd64.exe'
+            return path
 
 
 config = ConfigManager()
@@ -178,16 +185,16 @@ async def check_port(start: int, end: int):
 #     sleep(2)
 
 
-def new_batch_start(portlist: list):
-    from utils.proxys import lib, Clash
-    _myclash = getattr(lib, 'myclash')
-    _myclash.argtypes = [ctypes.c_char_p, ctypes.c_longlong]
-    # create a task for myclash
-    addr = ["127.0.0.1:" + str(p) for p in portlist]
-    for _i in range(len(addr)):
-        clash = Clash(portlist[_i], _i)
-        clash.daemon = True
-        clash.start()
+# def new_batch_start(portlist: list):
+#     from utils.proxys import lib, Clash
+#     _myclash = getattr(lib, 'myclash')
+#     _myclash.argtypes = [ctypes.c_char_p, ctypes.c_longlong]
+#     # create a task for myclash
+#     addr = ["127.0.0.1:" + str(p) for p in portlist]
+#     for _i in range(len(addr)):
+#         clash = Clash(portlist[_i], _i)
+#         clash.daemon = True
+#         clash.start()
 
 
 def start_fulltclash(portlist: list):
@@ -352,8 +359,9 @@ if __name__ == "__main__":
     # command = fr"{clash_path} -f {'./clash/proxy.yaml'} -d {clash_work_path}"
     # subp = subprocess.Popen(command.split(), encoding="utf-8")
 
-    sleep(2)
-    new_batch_start([start_port + i * 2 for i in range(corenum)])
+    sleep(1)
+    # new_batch_start([start_port + i * 2 for i in range(corenum)])
+    start_fulltclash([start_port + i * 2 for i in range(corenum)])
     # batch_start([start_port + i * 2 for i in range(corenum)])
     print("Clash核心进程已启动!")
     try:
