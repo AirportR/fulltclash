@@ -55,6 +55,10 @@ admin:
 # enable: true #是否启用,默认启用。若否，则在输出图片时emoji将无法正常显示。关闭该项可解决部分图片生成失败的问题。（可选配置）
 # emoji-source: 'TwemojiLocalSource' #emoji表情源。默认值为TwitterPediaSource。分为web源与本地源。可配置的值参考 ./libs/emoji_custom/__all__ 里面的成员变量。目前本地源仅支持: TwemojiLocalSource
 #font: './resources/苹方黑体-准-简.ttf' #自定义字体，这里填字体的路径
+#slaveconfig:
+#  default-slave: # 默认后端配置。
+#    comment: "本地测试后端" # 默认测试后端的备注。
+#    username: "local" # 默认测试后端的ID，此项请勿修改，会影响本地后端的运行。
 
 #----------------------------   以下为绘图相关配置   --------------------------------#
 

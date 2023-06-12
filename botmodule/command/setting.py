@@ -13,6 +13,9 @@ from glovar import __version__
 from botmodule.init_bot import latest_version_hash as v_hash
 
 IKB = InlineKeyboardButton
+slaveconfig = config.getSlaveconfig()
+dsc = default_slave_comment = slaveconfig.get('default-slave', {}).get('comment', "本地后端")
+dsi = default_slave_id = slaveconfig.get('default-slave', {}).get('username', "local")
 dbtn = default_button = {
     1: InlineKeyboardButton("✅Netflix", callback_data='✅Netflix'),
     2: InlineKeyboardButton("✅Youtube", callback_data='✅Youtube'),
@@ -33,7 +36,7 @@ dbtn = default_button = {
     'b_origin': InlineKeyboardButton("♾️订阅原序", callback_data="sort:订阅原序"),
     'b_rhttp': InlineKeyboardButton("⬇️HTTP倒序", callback_data="sort:HTTP倒序"),
     'b_http': InlineKeyboardButton("⬆️HTTP升序", callback_data="sort:HTTP升序"),
-    'b_slave': InlineKeyboardButton("本地后端", config.config.get('bot', {}).get('default-slave', 'slave:' + 'local')),
+    'b_slave': InlineKeyboardButton(dsc, dsi),
     'b_close': InlineKeyboardButton("❌关闭页面", callback_data="close"),
 }
 
