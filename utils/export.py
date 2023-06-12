@@ -1374,23 +1374,23 @@ class ExportTopo(ExportResult):
                         x2 = info_list_length[-1]
                         width2 = sum(info_list_length) - info_list_length[-1] + width
                         y = ((t + 2) * 60 + (t + 2) * 60 + (60 * (temp - 1))) / 2 + ct_offset * 60
-                        if temp > 1:
-                            y2 = ((t + 2) * 60 + (t + 2) * 60 + (
-                                    60 * (temp - (temp - 1)))) / 2 + ct_offset * 60 - 28
-                            block = c_block_grad((x1, int(y1)), color_value=color_topo[s],
-                                                 end_color=end_color[s], alpha=alphas[s])
-                            block_end = c_block_grad((x2, int(y1)), color_value=color_topo[s],
-                                                     end_color=end_color[s], alpha=alphas[s])
-                            img.alpha_composite(block, (width, int(y2)))
-                            img.alpha_composite(block_end, (width2, int(y2)))
-                        else:
-                            y2 = ((t + 2) * 60 + (t + 2) * 60 + (60 * (temp - 1))) / 2 + ct_offset * 60 + 2
-                            block = c_block_grad((x1, int(y1)), color_value=color_topo[s],
-                                                 end_color=end_color[s], alpha=alphas[s])
-                            block_end = c_block_grad((x2, int(y1)), color_value=color_topo[s],
-                                                     end_color=end_color[s], alpha=alphas[s])
-                            img.alpha_composite(block, (width, int(y2)))
-                            img.alpha_composite(block_end, (width2, int(y2)))
+                        # if temp > 1:
+                        #     y2 = ((t + 2) * 60 + (t + 2) * 60 + (
+                        #             60 * (temp - (temp - 1)))) / 2 + ct_offset * 60 - 28
+                        #     block = c_block_grad((x1, int(y1)), color_value=color_topo[s],
+                        #                          end_color=end_color[s], alpha=alphas[s])
+                        #     block_end = c_block_grad((x2, int(y1)), color_value=color_topo[s],
+                        #                              end_color=end_color[s], alpha=alphas[s])
+                        #     img.alpha_composite(block, (width, int(y2)))
+                        #     img.alpha_composite(block_end, (width2, int(y2)))
+                        # else:
+                        #     y2 = ((t + 2) * 60 + (t + 2) * 60 + (60 * (temp - 1))) / 2 + ct_offset * 60 + 2
+                        #     block = c_block_grad((x1, int(y1)), color_value=color_topo[s],
+                        #                          end_color=end_color[s], alpha=alphas[s])
+                        #     block_end = c_block_grad((x2, int(y1)), color_value=color_topo[s],
+                        #                              end_color=end_color[s], alpha=alphas[s])
+                        #     img.alpha_composite(block, (width, int(y2)))
+                        #     img.alpha_composite(block_end, (width2, int(y2)))
                         idraw.text((self.get_mid(width, width + info_list_length[i], str(new_ct[t])), y),
                                    str(new_ct[t]),
                                    font=fnt, fill=(0, 0, 0))
