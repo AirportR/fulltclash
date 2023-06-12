@@ -148,9 +148,9 @@ def start_clash():
     if res2 or res1:
         logger.warning("端口检查中发现已有其他进程占用了端口，请更换端口,否则测试可能会出现不可预知的错误。")
         return
-    if config.config.get('clash', {}).get('auto-start', False):
-        print("开始启动clash core")
-        start_fulltclash(port_list)
+    # if config.config.get('clash', {}).get('auto-start', False):
+    print("开始启动clash core")
+    start_fulltclash(port_list)
 
 
 start_clash()

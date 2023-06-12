@@ -229,7 +229,7 @@ def start_fulltclash(portlist: list):
 
 def check_init():
     import os
-    dirs = os.listdir('../clash')
+    dirs = os.listdir('./clash')
     if "proxy.yaml" in dirs and 'default.yaml' in dirs:
         return
     print("检测到关键文件不存在，正在初始化...")
