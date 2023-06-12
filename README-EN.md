@@ -162,43 +162,6 @@ To communicate with the bot, use the following commands:
 
 > /help: view all command instructions.     
 
-### Compiling Dynamic Link Libraries (Advanced)
-
-The dynamic link libraries used in the project are stored in ./libs/. Among them:
-
-> fulltclash.so is supported by Linux-amd64, and fulltclash.dll is supported by Windows-amd64.
-
-No architecture specified?
-If you don't have a dynamic link library file for your architecture, such as arm64, or if you are concerned about security issues with the repository-provided file, you can compile it yourself.
-
-There is a source code file named fulltclash.go in ./libs/. You need to compile the file into a dynamic link library fulltclash.so using the Golang compiler.
-The general process is as follows:
-
-- Install the Golang compiler on your platform (the higher the version, the better)
-  
-  ```shell
-  go mod init <path>
-  ```
-  
-  ```shell
-  go mod tidy
-  ```
-  
-  Here is an example of compiling for the arm64 architecture:
-  
-  ```shell
-  go build -buildmode=c-shared -o fulltclash.so fulltclash.go
-  ```
-  
-Cross-compiling:
-  
-  ```shell
-  GOOS=linux GOARCH=arm64 GOARM=7 CGO_ENABLED=1 CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ AR=aarch64-linux-gnu-ar go build -buildmode=c-shared -o fulltclash.so fulltclash.go
-  ```
-  
-  After the compilation is complete, overwrite the original file.
-  If the operation is too difficult, you can initiate an issue for detailed discussion.
-
 ### Docker Startup
 
 Tutorial documentation to be updated.
