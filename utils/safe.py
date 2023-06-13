@@ -7,7 +7,8 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms
 from cryptography.hazmat.primitives import hashes
 
 # 这是默认的 nonce,实际上这是不安全的做法，nonce应该是随机一次性的，但是我为了方便把它固定了。
-DEFAULT_NONCE = b'012345678912'
+DEFAULT_NONCE = b'#U\x1e\xc1\xc9\xe3\xc9M\x94=\xb8\xfb\x0e\x9b5\\'
+DEFAULT_NONCE2 = b'012345678912'
 
 
 def gen_key(key_name: str = 'fulltclash', in_memory=False):

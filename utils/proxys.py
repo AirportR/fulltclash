@@ -12,7 +12,7 @@ from aiohttp import ClientConnectorError
 from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
 from loguru import logger
 from utils.cleaner import config
-from utils.safe import sha256_32bytes, DEFAULT_NONCE
+from utils.safe import sha256_32bytes, DEFAULT_NONCE2
 
 """
 这个模块主要是一些对clash 动态库 api的python调用
@@ -112,7 +112,7 @@ class FullTClash:
             return
             # 使用chacha20算法加密消息，使用固定的nonce
         chacha = ChaCha20Poly1305(sha256_32bytes(key))
-        ciphertext = chacha.encrypt(DEFAULT_NONCE, message.encode(), None)
+        ciphertext = chacha.encrypt(DEFAULT_NONCE2, message.encode(), None)
         # 发送加密后的消息给服务器
         await _loop.sock_sendall(s, ciphertext)
         # await _loop.sock_sendall(s, ciphertext)
@@ -137,7 +137,7 @@ class FullTClash:
         newkey = sha256_32bytes(key)
         # 使用chacha20算法加密消息，使用固定的nonce
         chacha = ChaCha20Poly1305(newkey)
-        ciphertext = chacha.encrypt(DEFAULT_NONCE, message.encode(), None)
+        ciphertext = chacha.encrypt(DEFAULT_NONCE2, message.encode(), None)
         # 发送加密后的消息给服务器
         s.sendall(ciphertext)
         # await asyncio.get_event_loop().sock_sendall(s, ciphertext)
