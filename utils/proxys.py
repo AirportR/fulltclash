@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import json
 import socket
 import os
@@ -152,16 +153,17 @@ class FullTClash:
         """
         addr = f"http://127.0.0.1:{port}"
         ttfb = 0
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         try:
             async with aiohttp.ClientSession() as session:
                 start = loop.time()
-                async with session.get(pingurl, proxy=addr) as _:
-                    pass
-                async with session.get(pingurl, proxy=addr) as _:
+                with contextlib.suppress(asyncio.exceptions.TimeoutError):
+                    async with session.get(pingurl, proxy=addr, timeout=5) as _:
+                        pass
+                async with session.get(pingurl, proxy=addr, timeout=10) as _:
                     end = loop.time()
                     ttfb2 = end - start
-                    print(f"TTFB2 for {pingurl} is {ttfb2:.3f} seconds")
+                    # print(f"TTFB for {pingurl} is {ttfb2:.3f} seconds")
                 ttfb = int(ttfb2 / 2 * 1000)
         except Exception as e:
             logger.warning(str(e))

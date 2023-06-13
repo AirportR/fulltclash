@@ -431,7 +431,6 @@ class ScriptCore(Basecore):
         """
         info = []
         delay = await proxys.FullTClash.urltest(port)
-        # delay = (index + 1) * 20
         if delay == 0:
             logger.warning("超时节点，跳过测试")
             for t in test_items:
