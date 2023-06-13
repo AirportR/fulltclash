@@ -306,7 +306,7 @@ class SpeedCore(Basecore):
             ]
             await asyncio.wait(tasks)
             st.show_progress_full()
-            spmean = st.total_red / st.time_used
+            spmean = st.total_red / st.time_used if st.time_used else 0
             spmax = st.max_speed
             if spmean > spmax:
                 spmean, spmax = spmax, spmean
