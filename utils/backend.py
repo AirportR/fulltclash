@@ -176,8 +176,7 @@ class Speedtest:
 
     @property
     def max_speed(self) -> Union[int, float]:
-        tmp_speed_list = self.speed_list
-        return max(tmp_speed_list)
+        return max(self.speed_list) if self.speed_list else 0
 
     async def record(self, received: Union[int, float]):
         cur_time = time.time()
