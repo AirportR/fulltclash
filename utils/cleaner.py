@@ -176,7 +176,7 @@ class AddonCleaner:
         newlist = list(set(alist).intersection(set(self.global_test_item())))
         if httptest:
             newlist.insert(0, "HTTP(S)延迟")
-        newlist = sorted(newlist, key=newlist.index)
+        newlist = sorted(newlist, key=alist.index)
         return newlist
 
     def remove_addons(self, script_name: list):
