@@ -1250,11 +1250,11 @@ class ReCleaner:
                 return "N/A"
             else:
                 text = self.data['youtube']
+                if text.find('www.google.cn') != -1:
+                    return "送中(CN)"
                 if text.find('Premium is not available in your country') != -1 or text.find(
                         'manageSubscriptionButton') == -1:
                     return "失败"
-                if text.find('www.google.cn') != -1:
-                    return "送中(CN)"
                 elif self.data['youtube_status_code'] == 200:
                     idx = text.find('"countryCode"')
                     region = text[idx:idx + 17].replace('"countryCode":"', "")
@@ -1263,7 +1263,7 @@ class ReCleaner:
                     logger.info(f"Youtube解锁地区: {region}")
                     return f"解锁({region})"
                 else:
-                    return "N/A"
+                    return "未知"
         except Exception as e:
             logger.error(e)
             return "N/A"
