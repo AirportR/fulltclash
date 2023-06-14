@@ -495,70 +495,66 @@ class ExportCommon(BaseExport):
         c_end_color = self.c_end_color
         width = 100 + _nodename_width
         for i, t1 in enumerate(_key_list):
+            content = self.info[t1][t]
             if "RTT延迟" == t1 or "HTTP(S)延迟" == t1:
-                rtt = float(self.info[t1][t][:-2])
+                rtt = float(content[:-2])
                 # 使用了二分法（bisection）算法，它的时间复杂度是 O(log n)。j 这里是确定rtt比interval中的哪个值大
                 # bisect.bisect_right(interval, rtt) 减去1 就拿到了指定的值，最后max函数防止j为负
                 j = max(bisect.bisect_right(interval, rtt) - 1, 0)
                 block = c_block_grad((_info_list_width[i], ls), color_value=colorvalue[j], end_color=delay_end_color[j],
                                      alpha=alphas[j])
                 img.alpha_composite(block, (width, ls * (t + 2)))
-
-            elif '海外' in self.info[t1][t]:
+            elif '国创' in content or '海外' in content:
                 block = c_block_grad((_info_list_width[i], ls), color_value=c_block['海外'], end_color=c_end_color['海外'],
                                      alpha=c_alpha['海外'])
                 img.alpha_composite(block, (width, ls * (t + 2)))
-            elif '国创' in self.info[t1][t]:
-                block = c_block_grad((_info_list_width[i], ls), color_value=c_block['海外'], end_color=c_end_color['海外'],
-                                     alpha=c_alpha['海外'])
-                img.alpha_composite(block, (width, ls * (t + 2)))
-            elif ('解锁' in self.info[t1][t] or '允许' in self.info[t1][t]) and '待' not in self.info[t1][t]:
+            elif ('解锁' in content or '允许' in content) and '待' not in content:
                 block = c_block_grad((_info_list_width[i], ls), color_value=c_block['成功'], end_color=c_end_color['成功'],
                                      alpha=c_alpha['成功'])
                 img.alpha_composite(block, (width, ls * (t + 2)))
-            elif '失败' in self.info[t1][t] or '禁止' in self.info[t1][t] or '不' in self.info[t1][t]:
+            elif '失败' in content or '禁止' in content or '不' in content:
                 block = c_block_grad((_info_list_width[i], ls), color_value=c_block['失败'], end_color=c_end_color['失败'],
                                      alpha=c_alpha['失败'])
                 img.alpha_composite(block, (width, ls * (t + 2)))
-            elif '待解' in self.info[t1][t]:
+            elif '待解' in content or '送中' in content:
                 block = c_block_grad((_info_list_width[i], ls), color_value=c_block['待解锁'],
                                      end_color=c_end_color['待解锁'], alpha=c_alpha['待解锁'])
                 img.alpha_composite(block, (width, ls * (t + 2)))
-            elif 'N/A' in self.info[t1][t]:
+            elif 'N/A' in content:
                 block = c_block_grad((_info_list_width[i], ls), color_value=c_block['N/A'],
                                      end_color=c_end_color['N/A'], alpha=c_alpha['N/A'])
                 img.alpha_composite(block, (width, ls * (t + 2)))
-            elif 'Low' in self.info[t1][t]:
+            elif 'Low' in content:
                 block = c_block_grad((_info_list_width[i], ls), color_value=c_block['low'],
                                      end_color=c_end_color['low'], alpha=c_alpha['low'])
                 img.alpha_composite(block, (width, ls * (t + 2)))
-            elif 'Medium' in self.info[t1][t]:
+            elif 'Medium' in content:
                 block = c_block_grad((_info_list_width[i], ls), color_value=c_block['medium'],
                                      end_color=c_end_color['medium'],
                                      alpha=c_alpha['medium'])
                 img.alpha_composite(block, (width, ls * (t + 2)))
-            elif 'High' in self.info[t1][t] and 'Very' not in self.info[t1][t]:
+            elif 'High' in content and 'Very' not in content:
                 block = c_block_grad((_info_list_width[i], ls), color_value=c_block['high'],
                                      end_color=c_end_color['high'], alpha=c_alpha['high'])
                 img.alpha_composite(block, (width, ls * (t + 2)))
-            elif 'Very' in self.info[t1][t]:
+            elif 'Very' in content:
                 block = c_block_grad((_info_list_width[i], ls), color_value=c_block['veryhigh'],
                                      end_color=c_end_color['veryhigh'],
                                      alpha=c_alpha['veryhigh'])
                 img.alpha_composite(block, (width, ls * (t + 2)))
-            elif '超时' in self.info[t1][t] or '连接错误' in self.info[t1][t]:
+            elif '超时' in content or '连接错误' in content:
                 block = c_block_grad((_info_list_width[i], ls), color_value=c_block['警告'], end_color=c_end_color['警告'],
                                      alpha=c_alpha['警告'])
                 img.alpha_composite(block, (width, ls * (t + 2)))
-            elif '未知' in self.info[t1][t]:
+            elif '未知' in content:
                 block = c_block_grad((_info_list_width[i], ls), color_value=c_block['未知'], end_color=c_end_color['未知'],
                                      alpha=c_alpha['未知'])
                 img.alpha_composite(block, (width, ls * (t + 2)))
-            elif '自制' in self.info[t1][t]:
+            elif '自制' in content:
                 block = c_block_grad((_info_list_width[i], ls), color_value=c_block['自制'], end_color=c_end_color['自制'],
                                      alpha=c_alpha['自制'])
                 img.alpha_composite(block, (width, ls * (t + 2)))
-            elif '货币' in self.info[t1][t]:
+            elif '货币' in content:
                 block = c_block_grad((_info_list_width[i], ls), color_value=c_block['成功'], end_color=c_end_color['成功'],
                                      alpha=c_alpha['成功'])
                 img.alpha_composite(block, (width, ls * (t + 2)))
@@ -1248,8 +1244,6 @@ class ExportTopo(ExportResult):
         end_color = []
         if not image_conf['delay_color']:
             color_topo = ["#FFF3F3", '#FAF3FF', '#FFF3FC', '#F3F5FF', '#FFFBF3', '#FBFFF3', '#F3FFFF', '#F3FFF4']
-            end_color = ["#FFF3F3", '#FAF3FF', '#FFF3FC', '#F3F5FF', '#FFFBF3', '#FBFFF3', '#F3FFFF', '#F3FFF4']
-            alphas = [255, 255, 255, 255, 255, 255, 255, 255]
         else:
             delay_color = image_conf['delay_color']
             for c in delay_color:
@@ -1369,28 +1363,7 @@ class ExportTopo(ExportResult):
                 if t2 == "入口":
                     if t < len(min_ct):
                         temp = min_ct[t]
-                        y1 = 60 * temp
-                        x1 = info_list_length[i]
-                        x2 = info_list_length[-1]
-                        width2 = sum(info_list_length) - info_list_length[-1] + width
                         y = ((t + 2) * 60 + (t + 2) * 60 + (60 * (temp - 1))) / 2 + ct_offset * 60
-                        # if temp > 1:
-                        #     y2 = ((t + 2) * 60 + (t + 2) * 60 + (
-                        #             60 * (temp - (temp - 1)))) / 2 + ct_offset * 60 - 28
-                        #     block = c_block_grad((x1, int(y1)), color_value=color_topo[s],
-                        #                          end_color=end_color[s], alpha=alphas[s])
-                        #     block_end = c_block_grad((x2, int(y1)), color_value=color_topo[s],
-                        #                              end_color=end_color[s], alpha=alphas[s])
-                        #     img.alpha_composite(block, (width, int(y2)))
-                        #     img.alpha_composite(block_end, (width2, int(y2)))
-                        # else:
-                        #     y2 = ((t + 2) * 60 + (t + 2) * 60 + (60 * (temp - 1))) / 2 + ct_offset * 60 + 2
-                        #     block = c_block_grad((x1, int(y1)), color_value=color_topo[s],
-                        #                          end_color=end_color[s], alpha=alphas[s])
-                        #     block_end = c_block_grad((x2, int(y1)), color_value=color_topo[s],
-                        #                              end_color=end_color[s], alpha=alphas[s])
-                        #     img.alpha_composite(block, (width, int(y2)))
-                        #     img.alpha_composite(block_end, (width2, int(y2)))
                         idraw.text((self.get_mid(width, width + info_list_length[i], str(new_ct[t])), y),
                                    str(new_ct[t]),
                                    font=fnt, fill=(0, 0, 0))
@@ -1429,7 +1402,8 @@ class ExportTopo(ExportResult):
                     if t < len(min_bh):
                         temp = min_bh[t]
                         y = ((t + 2) * 60 + (t + 2) * 60 + (60 * (temp - 1))) / 2 + bh_offset * 60
-                        idraw.text(((self.get_mid(width, width + info_list_length[i], str(new_bh[t]))), y), str(new_bh[t]), font=fnt, fill=(0, 0, 0))
+                        idraw.text(((self.get_mid(width, width + info_list_length[i],
+                                                  str(new_bh[t]))), y), str(new_bh[t]), font=fnt, fill=(0, 0, 0))
                         idraw.line([(width, (t + 3 + bh_offset2) * 60),
                                     (width + info_list_length[i], (t + 3 + bh_offset2) * 60)],
                                    fill="#e1e1e1", width=2)
@@ -1439,7 +1413,8 @@ class ExportTopo(ExportResult):
                     if t < len(min_dq):
                         temp = min_dq[t]
                         y = ((t + 2) * 60 + (t + 2) * 60 + (60 * (temp - 1))) / 2 + dq_offset * 60
-                        idraw.text(((self.get_mid(width, width + info_list_length[i], str(new_dq[t]))), y), str(new_dq[t]), font=fnt, fill=(0, 0, 0))
+                        idraw.text(((self.get_mid(width, width + info_list_length[i],
+                                                  str(new_dq[t]))), y), str(new_dq[t]), font=fnt, fill=(0, 0, 0))
                         idraw.line([(width, (t + 3 + dq_offset2) * 60),
                                     (width + info_list_length[i], (t + 3 + dq_offset2) * 60)],
                                    fill="#e1e1e1", width=2)

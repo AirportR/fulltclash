@@ -282,7 +282,6 @@ async def process_slave(app: Client, message: Message, putinfo: dict, **kwargs):
     putinfo['result'] = info
     infostr = json.dumps(putinfo)
     key = masterconfig.get(str(master_id), {}).get('public-key', '')
-    logger.info(f"后端加密key: {key}")
     key = sha256_32bytes(key)
     cipherdata = cipher_chacha20(infostr.encode(), key)
     bytesio = io.BytesIO(cipherdata)
