@@ -413,7 +413,8 @@ class ExportCommon(BaseExport):
         emoji_time = get_clock_emoji()
         _export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())
         system_timezone = datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo
-        _slavename = self.allinfo.pop('slave', {}).get('comment', 'Local')
+        _default_slavename = self.config.getSlaveconfig().get('default-slave', {}).get('comment', 'Local')
+        _slavename = self.allinfo.pop('slave', _default_slavename)
         footer = f"📊版本:{__version__}  后端: {_slavename}  排序: {_sort}   " + \
                  f"过滤器: {_filter_include} <-> {_filter_exclude}"
         footer2 = f"{emoji_time}测试时间: {_export_time} ({system_timezone}) 总共耗时: {_wtime}s 测试结果仅供参考,以实际情况为准"
@@ -1221,7 +1222,8 @@ class ExportTopo(ExportResult):
     def exportTopoOutbound(self, nodename: list = None, info: dict = None, img2_width: int = None):
         if nodename or info:
             self.__init__(nodename, info)
-        slavecomment = self.info.pop('slave', {}).get('comment', 'Local')
+        _default_slavename = self.config.getSlaveconfig().get('default-slave', {}).get('comment', 'Local')
+        slavecomment = self.info.pop('slave', _default_slavename)
         fnt = self.__font
         image_width, info_list_length = self.get_width(compare=img2_width)
         image_height = self.get_height()
@@ -1743,7 +1745,8 @@ class ExportSpeed(ExportResult):
         emoji_time = get_clock_emoji()
         export_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
         system_timezone = datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo
-        slavecomment = self.slave.get('comment', 'Local')
+        _default_slavename = self.config.getSlaveconfig().get('default-slave', {}).get('comment', 'Local')
+        slavecomment = self.slave.get('comment', _default_slavename)
         list1 = [f"{self.title} - 速度测试",
                  f"📊版本:{__version__}  后端: {slavecomment}  消耗流量: {self.traffic}MB   线程: {self.thread}  " +
                  f"过滤器: {self.filter_include} <-> {self.filter_exclude}",
