@@ -414,7 +414,7 @@ class ExportCommon(BaseExport):
         _export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())
         system_timezone = datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo
         _default_slavename = self.config.getSlaveconfig().get('default-slave', {}).get('comment', 'Local')
-        _slavename = self.allinfo.pop('slave', _default_slavename)
+        _slavename = self.allinfo.pop('slave', {}).get('comment', _default_slavename)
         footer = f"📊版本:{__version__}  后端: {_slavename}  排序: {_sort}   " + \
                  f"过滤器: {_filter_include} <-> {_filter_exclude}"
         footer2 = f"{emoji_time}测试时间: {_export_time} ({system_timezone}) 总共耗时: {_wtime}s 测试结果仅供参考,以实际情况为准"
@@ -1223,7 +1223,7 @@ class ExportTopo(ExportResult):
         if nodename or info:
             self.__init__(nodename, info)
         _default_slavename = self.config.getSlaveconfig().get('default-slave', {}).get('comment', 'Local')
-        slavecomment = self.info.pop('slave', _default_slavename)
+        slavecomment = self.info.pop('slave', {}).get('comment', _default_slavename)
         fnt = self.__font
         image_width, info_list_length = self.get_width(compare=img2_width)
         image_height = self.get_height()
