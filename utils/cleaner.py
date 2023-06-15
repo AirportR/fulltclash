@@ -174,9 +174,9 @@ class AddonCleaner:
         适配后端脚本不足的兼容测试项，返回后端支持的所有测试项。
         """
         newlist = list(set(alist).intersection(set(self.global_test_item())))
+        newlist = sorted(newlist, key=alist.index)
         if httptest:
             newlist.insert(0, "HTTP(S)延迟")
-        newlist = sorted(newlist, key=alist.index)
         return newlist
 
     def remove_addons(self, script_name: list):
