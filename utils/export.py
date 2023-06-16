@@ -513,7 +513,7 @@ class ExportCommon(BaseExport):
                 block = c_block_grad((_info_list_width[i], ls), color_value=c_block['成功'], end_color=c_end_color['成功'],
                                      alpha=c_alpha['成功'])
                 img.alpha_composite(block, (width, ls * (t + 2)))
-            elif '失败' in content or '禁止' in content or '不' in content:
+            elif '失败' in content or '禁止' in content or '不' in content or '无' in content:
                 block = c_block_grad((_info_list_width[i], ls), color_value=c_block['失败'], end_color=c_end_color['失败'],
                                      alpha=c_alpha['失败'])
                 img.alpha_composite(block, (width, ls * (t + 2)))

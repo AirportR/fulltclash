@@ -14,3 +14,4 @@ websockets==10.3
 tzlocal==4.1
 geoip2==4.6.0
 cryptography==40.0.2
+lxml==4.9.2
