@@ -174,9 +174,9 @@ class AddonCleaner:
         适配后端脚本不足的兼容测试项，返回后端支持的所有测试项。
         """
         newlist = list(set(alist).intersection(set(self.global_test_item())))
+        newlist = sorted(newlist, key=alist.index)
         if httptest:
             newlist.insert(0, "HTTP(S)延迟")
-        newlist = sorted(newlist, key=newlist.index)
         return newlist
 
     def remove_addons(self, script_name: list):
@@ -767,6 +767,13 @@ class ConfigManager:
     def getSlaveconfig(self):
         return self.config.get('slaveconfig', {})
 
+    def getBuildToken(self):
+        token = self.config.get('buildtoken', 'c7004ded9db897e538405c67e50e0ef0c3dbad717e67a92d02f6ebcfd1022a5ad1d' +
+                                '2c4419541f538ff623051759ec000d2f426e03f9709a6608570c5b9141a6b')
+        if not isinstance(token, str):
+            raise TypeError("buildtoken的值不合法，它应该是个字符串")
+        return token
+
     def getBotconfig(self):
         botconfig = self.config.get('bot', {})
         if botconfig is None:
@@ -883,13 +890,13 @@ class ConfigManager:
         try:
             return self.config['clash']['path']
         except KeyError:
-            logger.warning("获取运行路径失败，将采用默认运行路径 ./libs/fulltclash.so(.dll)\n自动识别windows与linux。架构默认为amd64")
+            logger.warning("获取运行路径失败，将采用默认运行路径 ./bin/fulltclash(.exe)\n自动识别windows与linux。架构默认为amd64")
             if sys.platform.startswith("linux"):
-                path = './libs/fulltclash.so'
+                path = './bin/fulltclash-linux-amd64'
             elif sys.platform.startswith("win32"):
-                path = r'.\libs\fulltclash.dll'
+                path = r'.\bin\fulltclash-windows-amd64.exe'
             else:
-                path = './libs/fulltclash.so'
+                path = './bin/fulltclash-linux-amd64'
             d = {'path': path}
             try:
                 self.yaml['clash'].update(d)
@@ -1243,11 +1250,11 @@ class ReCleaner:
                 return "N/A"
             else:
                 text = self.data['youtube']
+                if text.find('www.google.cn') != -1:
+                    return "送中(CN)"
                 if text.find('Premium is not available in your country') != -1 or text.find(
                         'manageSubscriptionButton') == -1:
                     return "失败"
-                if text.find('www.google.cn') != -1:
-                    return "送中(CN)"
                 elif self.data['youtube_status_code'] == 200:
                     idx = text.find('"countryCode"')
                     region = text[idx:idx + 17].replace('"countryCode":"', "")
@@ -1256,7 +1263,7 @@ class ReCleaner:
                     logger.info(f"Youtube解锁地区: {region}")
                     return f"解锁({region})"
                 else:
-                    return "N/A"
+                    return "未知"
         except Exception as e:
             logger.error(e)
             return "N/A"

@@ -2,7 +2,7 @@ aiohttp>=3.8.1
 async_timeout==4.0.2
 Pillow==9.5.0
 pilmoji>=2.0.1
-Pyrogram>=2.0.26
+Pyrogram>=2.0.100
 PyYAML>=6.0
 requests>=2.26.0
 tgcrypto>=1.2.3
@@ -14,3 +14,4 @@ websockets==10.3
 tzlocal==4.1
 geoip2==4.6.0
 cryptography==40.0.2
+lxml==4.9.2

@@ -11,8 +11,7 @@ async def get_ip(url, session):
                 return await response.text()
             else:
                 return None
-    except (ProxyConnectionError, asyncio.TimeoutError) as e:
-        # logger.error(str(e))
+    except (ProxyConnectionError, asyncio.TimeoutError):
         return None
     except aiohttp.ServerDisconnectedError:
         return None

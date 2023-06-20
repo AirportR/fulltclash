@@ -5,6 +5,7 @@ bot:
  api_id: 123456 # Telegram的api_id
  api_hash: ABCDEFG # Telegram的api_hash
  bot_token: 123456:ABCDEFG #bot的token
+# ====================以上为必填项，否则无法启动成功========================
 # proxy: host:端口:用户名:密码 #socks5代理，用户名和密码为可选配置，已和下面的proxy单独分离，请勿混用
 # strictmode: false # 严格模式，代表测试的时侯，bot内联按钮只有发起测试的主人才能按，否则所有用户用户权限都可以按。默认false，目前未适配，敬请期待。
 # scripttext: "⏳联通性测试进行中..."  # 解锁脚本测试进度条自定义文本
@@ -15,8 +16,10 @@ bot:
 # bright: "]" #右括号自定义文本
 # bspace: "  " #空格自定义文本，默认为2个
 # command: ['mycommand1', 'mycommand2'] #自定义指令，用于适配权限回调。高级用法，不会无需配置。
+#以下是fulltclash的buildtoken，可以用默认的，但是安全性得不到保障，具体原因详见文档
+#buildtoken: c7004ded9db897e538405c67e50e0ef0c3dbad717e67a92d02f6ebcfd1022a5ad1d2c4419541f538ff623051759ec000d2f426e03f9709a6608570c5b9141a6b
 #clash:
-# path: './libs/fulltclash.so' # clash动态库的路径，默认为 ./libs/ 下。不会弄不要动这里，用默认的即可。本仓库默认仅提供win-amd64与linux-amd64两种(意味着如果为这两种架构，这里不用改。)，其他架构需要自行编译。
+# path: './bin/fulltclash-linux-amd64' # 代理客户端的路径，默认为 ./bin/ 下。不会弄不要动这里，用默认的即可。本仓库默认仅提供win-amd64与linux-amd64两种(意味着如果为这两种架构，这里不用改。)，其他架构需要自行编译。
 # allow-caching: false  #是否缓存测试过程产生的订阅，若否，则测试完成后会自动删除测试订阅，以免造成空间浪费。（此配置暂不生效）
 # core: 4 # 核心数，数量越多测试速度越快，但代价是内存会大量占用(每个核心大概10M)，自己的机子多少内存自己平衡。默认值为1.
 # auto-start: false # bot启动时顺带启动,若为false则需要在 bot上输入/clash start 手动启动，默认false
@@ -53,6 +56,10 @@ bot:
 # enable: true #是否启用,默认启用。若否，则在输出图片时emoji将无法正常显示。关闭该项可解决部分图片生成失败的问题。（可选配置）
 # emoji-source: 'TwemojiLocalSource' #emoji表情源。默认值为TwemojiLocalSource。分为web源与本地源。可配置的值参考 ./libs/emoji_custom/__all__ 里面的成员变量。目前本地源仅支持: TwemojiLocalSource
 #font: './resources/苹方黑体-准-简.ttf' #自定义字体，这里填字体的路径
+#slaveconfig:
+#  default-slave: # 默认后端配置。
+#    comment: "本地测试后端" # 默认测试后端的备注。
+#    username: "local" # 默认测试后端的ID，此项请勿修改，会影响本地后端的运行。
 
 #----------------------------   以下为绘图相关配置   --------------------------------#
 
@@ -77,6 +84,14 @@ bot:
 #   - { label: 1000, name: '甸子', value: '#238BBC', alpha: 255, end_color: '#238BBC' }
 #   - { label: 2000, name: '景泰', value: '#2A73AC', alpha: 255, end_color: '#2A73AC' }
 #   - { label: 99999, name: '景泰', value: '#8d8b8e', alpha: 255 }  #第八个为超时，label无用
+#  out_color: #topo图用于分辨出口的颜色
+#   - { name: '云水', value: '#B4C3D0', alpha: 255, end_color: '#B4C3D0' }
+#   - { name: '晴山', value: '#91AEC4', alpha: 255, end_color: '#91AEC4' }
+#   - { name: '秋波', value: '#8BB8CB', alpha: 255, end_color: '#8BB8CB' }
+#   - { name: '天韵', value: '#5796B3', alpha: 255, end_color: '#5796B3' }
+#   - { name: '鸢尾', value: '#1988AE', alpha: 255, end_color: '#1988AE' }
+#   - { name: '甸子', value: '#238BBC', alpha: 255, end_color: '#238BBC' }
+#   - { name: '景泰', value: '#2A73AC', alpha: 255, end_color: '#2A73AC' }
 #  "yes": '#bee47e' #解锁色块的颜色，注意不要去掉双引号
 #  "yesalpha": 255 #解锁颜色块透明度
 #  "yesend": '#bee47e' #解锁色块的渐变结束颜色，注意不要去掉双引号

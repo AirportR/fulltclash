@@ -7,18 +7,16 @@
 # 若为True，则通过权限校验。否则拒绝调用bot的指令。
 
 
-# async def callback(_: Client, message: Message) -> bool:
+# async def callback(app: Client, message: Message) -> bool:
 #     """
-#     这个例子是拒绝TG用户名为'telegram'的目标使用此bot。
+#     app 参数为 Bot的客户端主程序
+#     message 参数为 触发回调的消息对象
+#
+#     返回值一定为布尔值
 #     """
 #     try:
-#         username = message.from_user.username
-#         if username:
-#             if message.from_user.username == "telegram":
-#                 backmsg = await message.reply("❌你已被拉黑!")
-#                 message_delete_queue.put_nowait((backmsg.chat.id, backmsg.id, 10))
-#                 return False
-#         return True
+#         await message.reply("回调函数调用成功！")
+#         return False
 #     except Exception as e:
 #         print(e)
-#         return False
+#         return True

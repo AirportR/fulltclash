@@ -12,46 +12,46 @@ from botmodule.init_bot import config, corenum
 from botmodule import restart_or_killme, select_export
 from utils import message_delete_queue, safe
 from utils.cleaner import ArgCleaner
-from utils.clash import new_batch_start, check_port
+# from utils.clash import new_batch_start, check_port
 from utils.myqueue import bot_put_slave
 from glovar import app2
 
 
 async def startclash(app: Client, message: Message):
-    # backmsg = await message.reply("恭喜您，此命令将不再需要，可直接去测试啦，未来也许会废弃。")
-    # message_delete_queue.put_nowait((backmsg.chat.id, backmsg.id, 10))
-    # return
-    tgargs = [i for i in str(message.text).split(" ") if i != '']
-    if len(tgargs) < 2:
-        backmsg = await message.reply("使用方法: /clash start或 /clash stop")
-        message_delete_queue.put_nowait((backmsg.chat.id, backmsg.id, 10))
-        return
-    if config.config.get('clash', {}).get('auto-start', False):
-        backmsg = await message.reply("您在配置中设置了bot启动时clash核心自动启动，此命令已被禁用。\nclash:\n auto-start: true\n")
-        message_delete_queue.put_nowait((backmsg.chat.id, backmsg.id, 10))
-        return
-    start_or_stop = tgargs[1] if len(tgargs) > 1 else ''
-    if start_or_stop == "start":
-        backmsg = await message.reply("正在启动clash核心...")
-        start_port = config.config.get('clash', {}).get('startup', 11220)
-        port_list = [start_port + i * 2 for i in range(corenum)]
-        res2 = await check_port(start_port, start_port + 1 + corenum * 2)
-        if res2:
-            print("端口检查中发现已有其他进程占用了端口，请更换端口")
-            await backmsg.edit_text("端口检查中发现已有其他进程占用了端口，请更换端口")
-            return
-        new_batch_start(port_list)
-        await backmsg.edit_text("✅clash已启动\n\n注意: 目前启动clash后将无法按Ctrl+C退出，请先进行 /clash stop 操作")
-        message_delete_queue.put_nowait((backmsg.chat.id, backmsg.id, 10))
-        return
-    elif start_or_stop == "stop":
-        await message.reply("正在停止clash核心...")
-        await restart_or_killme(app, message)
-        return
-    else:
-        backmsg = await message.reply("⚠️未识别的参数，请检查参数")
-        message_delete_queue.put_nowait((backmsg.chat.id, backmsg.id, 10))
-        return
+    backmsg = await message.reply("恭喜您，此命令将不再需要，可直接去测试啦，未来也许会废弃。")
+    message_delete_queue.put_nowait((backmsg.chat.id, backmsg.id, 10))
+    return
+    # tgargs = [i for i in str(message.text).split(" ") if i != '']
+    # if len(tgargs) < 2:
+    #     backmsg = await message.reply("使用方法: /clash start或 /clash stop")
+    #     message_delete_queue.put_nowait((backmsg.chat.id, backmsg.id, 10))
+    #     return
+    # if config.config.get('clash', {}).get('auto-start', False):
+    #     backmsg = await message.reply("您在配置中设置了bot启动时clash核心自动启动，此命令已被禁用。\nclash:\n auto-start: true\n")
+    #     message_delete_queue.put_nowait((backmsg.chat.id, backmsg.id, 10))
+    #     return
+    # start_or_stop = tgargs[1] if len(tgargs) > 1 else ''
+    # if start_or_stop == "start":
+    #     backmsg = await message.reply("正在启动clash核心...")
+    #     start_port = config.config.get('clash', {}).get('startup', 11220)
+    #     port_list = [start_port + i * 2 for i in range(corenum)]
+    #     res2 = await check_port(start_port, start_port + 1 + corenum * 2)
+    #     if res2:
+    #         print("端口检查中发现已有其他进程占用了端口，请更换端口")
+    #         await backmsg.edit_text("端口检查中发现已有其他进程占用了端口，请更换端口")
+    #         return
+    #     new_batch_start(port_list)
+    #     await backmsg.edit_text("✅clash已启动\n\n注意: 目前启动clash后将无法按Ctrl+C退出，请先进行 /clash stop 操作")
+    #     message_delete_queue.put_nowait((backmsg.chat.id, backmsg.id, 10))
+    #     return
+    # elif start_or_stop == "stop":
+    #     await message.reply("正在停止clash核心...")
+    #     await restart_or_killme(app, message)
+    #     return
+    # else:
+    #     backmsg = await message.reply("⚠️未识别的参数，请检查参数")
+    #     message_delete_queue.put_nowait((backmsg.chat.id, backmsg.id, 10))
+    #     return
 
 
 async def simple_relay(app: Client, message: Message):

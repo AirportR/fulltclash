@@ -1,117 +1,230 @@
 import asyncio
+import contextlib
 import json
+import socket
 import os
-import threading
-from typing import Union
-import async_timeout
+import subprocess
+from typing import Union, List
 import yaml
-import ctypes
 import aiohttp
 import requests
 from aiohttp import ClientConnectorError
+from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
 from loguru import logger
 from utils.cleaner import config
+from utils.safe import sha256_32bytes, DEFAULT_NONCE2
 
 """
 这个模块主要是一些对clash 动态库 api的python调用
 """
 clash_path = config.get_clash_path()
-lib = ctypes.cdll.LoadLibrary(clash_path)
-_setProxy = getattr(lib, 'setProxy')
-_setProxy.argtypes = [ctypes.c_char_p, ctypes.c_int64]
-# _setProxy.restype = ctypes.c_char_p
-_setProxy.restype = ctypes.c_int8
-_free_me = getattr(lib, 'freeMe')
-_free_me.argtypes = [ctypes.POINTER(ctypes.c_char)]
-_myURLTest = getattr(lib, 'myURLTest')
-_myURLTest.argtypes = [ctypes.c_char_p, ctypes.c_int64]
-_myURLTest.restype = ctypes.c_ushort
-_urlTest = getattr(lib, 'urltestJson')
-_urlTest.argtypes = [ctypes.c_char_p, ctypes.c_int64, ctypes.c_int64]
-_urlTest.restype = ctypes.c_char_p
+# lib = ctypes.cdll.LoadLibrary(clash_path)
+# _setProxy = getattr(lib, 'setProxy')
+# _setProxy.argtypes = [ctypes.c_char_p, ctypes.c_int64]
+# # _setProxy.restype = ctypes.c_char_p
+# _setProxy.restype = ctypes.c_int8
+# _free_me = getattr(lib, 'freeMe')
+# _free_me.argtypes = [ctypes.POINTER(ctypes.c_char)]
+# _myURLTest = getattr(lib, 'myURLTest')
+# _myURLTest.argtypes = [ctypes.c_char_p, ctypes.c_int64]
+# _myURLTest.restype = ctypes.c_ushort
+# _urlTest = getattr(lib, 'urltestJson')
+# _urlTest.argtypes = [ctypes.c_char_p, ctypes.c_int64, ctypes.c_int64]
+# _urlTest.restype = ctypes.c_char_p
+BUILD_TOKEN = config.getBuildToken()
 
 
-class Clash(threading.Thread):  # 继承父类threading.Thread
-    def __init__(self, _port: Union[str, int], _index: int):
-        threading.Thread.__init__(self)
-        self._port = _port
-        self._index = _index
-
-    def run(self):  # 把要执行的代码写到run函数里面 线程在创建后会直接运行run函数
-        self.run_2()
-
-    def run_1(self):
-        _myclash = lib.myclash
-        _myclash.argtypes = [ctypes.c_char_p, ctypes.c_longlong]
-        # create a task for myclash
-        _addr = "127.0.0.1:" + str(self._port)
-        _myclash(_addr.encode(), self._index)
-
-    def run_2(self):
-        _myclash2 = lib.myclash2
-        _myclash2.argtypes = [ctypes.c_char_p, ctypes.c_longlong]
-        # create a task for myclash
-        _addr = "127.0.0.1:" + str(self._port)
-        _myclash2(_addr.encode(), self._index)
-
-    def stoplisten(self, index: int = None):
-        closeclash = getattr(lib, 'closeclash')
-        closeclash.argtypes = [ctypes.c_longlong]
-        if index is None:
-            closeclash(self._index)
-        else:
-            closeclash(index)
-
-
-async def http_delay(url: str = config.getGstatic(), index: int = 0) -> int:
-    mean_delay = await asyncio.to_thread(_myURLTest, url.encode(), index)
-    return mean_delay
+# class Clash(threading.Thread):  # 继承父类threading.Thread
+#     def __init__(self, _port: Union[str, int], _index: int):
+#         threading.Thread.__init__(self)
+#         self._port = _port
+#         self._index = _index
+#
+#     def run(self):  # 把要执行的代码写到run函数里面 线程在创建后会直接运行run函数
+#         self.run_2()
+#
+#     def run_1(self):
+#         _myclash = lib.myclash
+#         _myclash.argtypes = [ctypes.c_char_p, ctypes.c_longlong]
+#         # create a task for myclash
+#         _addr = "127.0.0.1:" + str(self._port)
+#         _myclash(_addr.encode(), self._index)
+#
+#     def run_2(self):
+#         _myclash2 = lib.myclash2
+#         _myclash2.argtypes = [ctypes.c_char_p, ctypes.c_longlong]
+#         # create a task for myclash
+#         _addr = "127.0.0.1:" + str(self._port)
+#         _myclash2(_addr.encode(), self._index)
+#
+#     def stoplisten(self, index: int = None):
+#         closeclash = getattr(lib, 'closeclash')
+#         closeclash.argtypes = [ctypes.c_longlong]
+#         if index is None:
+#             closeclash(self._index)
+#         else:
+#             closeclash(index)
 
 
-async def http_delay_tls(url: str = config.getGstatic(), index: int = 0, timeout=10):
-    mean_delay1 = None
-    try:
-        async with async_timeout.timeout(20):
-            mean_delay1 = await asyncio.to_thread(_urlTest, url.encode(), index, timeout)
-            print(mean_delay1.decode())
-            mean_delay = json.loads(mean_delay1.decode()).get('delay', 0)
-    except asyncio.TimeoutError:
-        logger.error("HTTP(S)延迟测试已超时")
-        mean_delay = 0
-    except Exception as e:
-        logger.error(repr(e))
-        mean_delay = 0
-    finally:
-        if mean_delay1 is not None:
-            pass
-            # _free_me(ctypes.pointer(mean_delay1))
-    return mean_delay
+class FullTClash:
+    def __init__(self, control_port: Union[str, int], proxy_portlist: List[Union[str, int]]):
+        """
+        control_port: 控制端口
+        proxy_port: 代理端口，多个端口
+        """
+        self.cport = control_port
+        self.port = proxy_portlist
+
+    def start(self, controlport: int = 11219):
+        """
+        启动fulltclash代理程序
+        """
+        port2 = "|".join(self.port)
+        _command = fr"{config.get_clash_path()} -c {controlport} -p {port2}"
+        subprocess.Popen(_command.split(), encoding="utf-8")
+
+    @staticmethod
+    async def connect(controlport: int = 11219):
+        # 创建一个socket对象
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # 设置socket为非阻塞模式
+        s.setblocking(False)
+        # 连接服务器的IP地址和端口号
+        try:
+            await asyncio.get_event_loop().sock_connect(s, ("127.0.0.1", controlport))
+        except ConnectionRefusedError:
+            logger.error("远程计算机拒绝网络连接。请检查是否在 11219 端口开启了监听")
+            return None
+        return s
+
+    @staticmethod
+    async def sock_send(message, key: str, controlport: int = 11219, norecv=True):
+        """
+        message: 数据报文
+        key: 加密密钥
+        controlport: 控制端口
+        norecv: 仅发送不接受数据
+        """
+        _loop = asyncio.get_running_loop()
+        s = await FullTClash.connect(controlport)
+        if s is None:
+            logger.warning("socket连接失败！")
+            return
+            # 使用chacha20算法加密消息，使用固定的nonce
+        chacha = ChaCha20Poly1305(sha256_32bytes(key))
+        ciphertext = chacha.encrypt(DEFAULT_NONCE2, message.encode(), None)
+        # 发送加密后的消息给服务器
+        await _loop.sock_sendall(s, ciphertext)
+        # await _loop.sock_sendall(s, ciphertext)
+        if not norecv:
+            print("开始接受数据")
+            recv = await _loop.sock_recv(s, 1)
+            print("数据: ", recv)
+        # 关闭socket连接
+        s.close()
+
+    @staticmethod
+    def sock_send_noasync(message, key: str, controlport: int = 11219):
+        # 创建一个socket对象
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # 设置socket为非阻塞模式
+        # 连接服务器的IP地址和端口号
+        try:
+            s.connect(("127.0.0.1", controlport))
+        except ConnectionRefusedError:
+            logger.error("远程计算机拒绝网络连接。请检查是否在 11219 端口开启了监听")
+            return
+        newkey = sha256_32bytes(key)
+        # 使用chacha20算法加密消息，使用固定的nonce
+        chacha = ChaCha20Poly1305(newkey)
+        ciphertext = chacha.encrypt(DEFAULT_NONCE2, message.encode(), None)
+        # 发送加密后的消息给服务器
+        s.sendall(ciphertext)
+        # await asyncio.get_event_loop().sock_sendall(s, ciphertext)
+        recv = s.recv(3)
+        print("延迟:", recv)
+        # 关闭socket连接
+        s.close()
+
+    @staticmethod
+    async def urltest(port: int = 11220, pingurl: str = config.getGstatic()):
+        """
+        测定指定index的代理
+        """
+        addr = f"http://127.0.0.1:{port}"
+        ttfb = 0
+        loop = asyncio.get_running_loop()
+        try:
+            async with aiohttp.ClientSession() as session:
+                start = loop.time()
+                with contextlib.suppress(asyncio.exceptions.TimeoutError):
+                    async with session.get(pingurl, proxy=addr, timeout=5) as _:
+                        pass
+                async with session.get(pingurl, proxy=addr, timeout=10) as _:
+                    end = loop.time()
+                    ttfb2 = end - start
+                    # print(f"TTFB for {pingurl} is {ttfb2:.3f} seconds")
+                ttfb = int(ttfb2 / 2 * 1000)
+        except Exception as e:
+            logger.warning(str(e))
+        return ttfb
+
+    @staticmethod
+    async def setproxy(proxyinfo: dict, index: int):
+        logger.info(f"设置代理: {proxyinfo.get('name', '')}, index: {index}")
+        data = yaml.dump({'proxies': proxyinfo, 'index': index, 'command': 'setproxy'})
+        await FullTClash.sock_send(data, BUILD_TOKEN)
 
 
-def switchProxy(_nodeinfo: dict, _index: int) -> bool:
-    """
-    切换clash核心中的代理节点，会将数据直接发往动态链接库
-    :param _nodeinfo: 节点信息
-    :param _index: 索引
-    :return: bool
-    """
-    if type(_nodeinfo).__name__ != "dict":
-        return False
-    try:
-        _payload = yaml.dump({'proxies': _nodeinfo})
-        _status = _setProxy(_payload.encode(), _index)
-        # logger.info(f"切换结果: {_status}")
-        if not _status:
-            logger.info(f"切换节点: {_nodeinfo.get('name', 'not found')} 成功")
-            # _free_me(_status)
-            return True
-        else:
-            logger.error(str(_status))
-            # _free_me(_status)
-            return False
-    except Exception as e:
-        logger.error(str(e))
-        return False
+# async def http_delay(url: str = config.getGstatic(), index: int = 0) -> int:
+#     mean_delay = await asyncio.to_thread(_myURLTest, url.encode(), index)
+#     return mean_delay
+
+
+# async def http_delay_tls(url: str = config.getGstatic(), index: int = 0, timeout=10):
+#     mean_delay1 = None
+#     try:
+#         async with async_timeout.timeout(20):
+#             mean_delay1 = await asyncio.to_thread(_urlTest, url.encode(), index, timeout)
+#             print(mean_delay1.decode())
+#             mean_delay = json.loads(mean_delay1.decode()).get('delay', 0)
+#     except asyncio.TimeoutError:
+#         logger.error("HTTP(S)延迟测试已超时")
+#         mean_delay = 0
+#     except Exception as e:
+#         logger.error(repr(e))
+#         mean_delay = 0
+#     finally:
+#         if mean_delay1 is not None:
+#             pass
+#             # _free_me(ctypes.pointer(mean_delay1))
+#     return mean_delay
+
+
+# def switchProxy(_nodeinfo: dict, _index: int) -> bool:
+#     """
+#     切换clash核心中的代理节点，会将数据直接发往动态链接库
+#     :param _nodeinfo: 节点信息
+#     :param _index: 索引
+#     :return: bool
+#     """
+#     if type(_nodeinfo).__name__ != "dict":
+#         return False
+#     try:
+#         _payload = yaml.dump({'proxies': _nodeinfo})
+#         _status = _setProxy(_payload.encode(), _index)
+#         # logger.info(f"切换结果: {_status}")
+#         if not _status:
+#             logger.info(f"切换节点: {_nodeinfo.get('name', 'not found')} 成功")
+#             # _free_me(_status)
+#             return True
+#         else:
+#             logger.error(str(_status))
+#             # _free_me(_status)
+#             return False
+#     except Exception as e:
+#         logger.error(str(e))
+#         return False
 
 
 # 切换节点
@@ -135,10 +248,10 @@ def switchProxy_old(proxyName, proxyGroup, clashHost: str = "127.0.0.1", clashPo
         logger.error(e)
 
 
-def killclash():
-    stop = getattr(lib, 'stop')
-    stop.argtypes = [ctypes.c_int64]
-    stop(1)
+# def killclash():
+#     stop = getattr(lib, 'stop')
+#     stop.argtypes = [ctypes.c_int64]
+#     stop(1)
 
 
 async def reloadConfig(filePath: str, clashHost: str = "127.0.0.1", clashPort: int = 11230):
@@ -219,13 +332,4 @@ async def reloadConfig_batch(nodenum: int, pool: dict):
 
 
 if __name__ == "__main__":
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-
-
-    async def test():
-        pass
-        # await batch_start([1124, 1126, 1128, 1130],)
-
-
-    loop.run_until_complete(test())
+    pass

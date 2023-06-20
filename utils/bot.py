@@ -15,7 +15,6 @@ from utils.check import check_callback_master
 from utils.backend import break_speed
 from utils.collector import reload_config as r1
 from utils.cleaner import reload_config as r2
-from glovar import program_run_time
 
 config = init_bot.config
 admin = init_bot.admin  # 管理员
@@ -32,7 +31,7 @@ def loader(app: Client):
 def user_loder(app: Client):
     userbotconfig = config.config.get('userbot', {})
     slaveconfig = config.getSlaveconfig()
-    slaveID = [int(k) for k in slaveconfig.keys()] if slaveconfig else []
+    slaveID = [int(k) for k in slaveconfig.keys() if k != "default-slave"] if slaveconfig else []
     whitelist = userbotconfig.get('whitelist', [])
 
     @app.on_message(filters.user(whitelist + slaveID))
@@ -152,25 +151,25 @@ def command_loader(app: Client):
     async def regis(client, message):
         await botmodule.register.baipiao(client, message)
 
-    @app.on_message(filters.command(["inbound"]) & allfilter(1), group=1)
-    @AccessCallback()
-    async def inbound(client, message):
-        await bot_put(client, message, "inbound", test_type='inbound')
-
-    @app.on_message(filters.command(["inboundurl"]) & allfilter(1), group=1)
-    @AccessCallback()
-    async def inboundurl(client, message):
-        await bot_put(client, message, "inboundurl", test_type='inbound')
-
-    @app.on_message(filters.command(["outbound"]) & allfilter(1), group=1)
-    @AccessCallback()
-    async def outbound(client, message):
-        await bot_put(client, message, "outbound", test_type='outbound')
-
-    @app.on_message(filters.command(["outboundurl"]) & allfilter(1), group=1)
-    @AccessCallback()
-    async def outboundurl(client, message):
-        await bot_put(client, message, "outboundurl", test_type='outbound')
+    # @app.on_message(filters.command(["inbound"]) & allfilter(1), group=1)
+    # @AccessCallback()
+    # async def inbound(client, message):
+    #     await bot_put(client, message, "inbound", test_type='inbound')
+    #
+    # @app.on_message(filters.command(["inboundurl"]) & allfilter(1), group=1)
+    # @AccessCallback()
+    # async def inboundurl(client, message):
+    #     await bot_put(client, message, "inboundurl", test_type='inbound')
+    #
+    # @app.on_message(filters.command(["outbound"]) & allfilter(1), group=1)
+    # @AccessCallback()
+    # async def outbound(client, message):
+    #     await bot_put(client, message, "outbound", test_type='outbound')
+    #
+    # @app.on_message(filters.command(["outboundurl"]) & allfilter(1), group=1)
+    # @AccessCallback()
+    # async def outboundurl(client, message):
+    #     await bot_put(client, message, "outboundurl", test_type='outbound')
 
     @app.on_message(filters.command(["speed"]) & allfilter(1), group=1)
     @AccessCallback()
@@ -217,13 +216,6 @@ def command_loader(app: Client):
     async def setting(client, message):
         await botmodule.setting_page(client, message)
 
-    # @app.on_message(filters.command(['fulltest']), group=1)
-    # @AccessCallback()
-    # async def fulltest(client, message):
-    #     await message.reply("请选择排序方式:", reply_markup=botmodule.IKM2, quote=True)
-    #     await bot_put(client, message, "analyze", coreindex=2)
-    #     await bot_put(client, message, "speed", coreindex=1)
-
     @app.on_message(filters.command(['restart', 'reboot']) & allfilter(2), group=2)
     async def restart(client, message):
         await botmodule.restart_or_killme(client, message)
@@ -254,7 +246,6 @@ def command_loader(app: Client):
         await set_anti_group(client, message)
 
     @app.on_message(filters.new_chat_members)
-    @AccessCallback(1)
     async def auto_leave(client, message):
         await leavechat(client, message)
 

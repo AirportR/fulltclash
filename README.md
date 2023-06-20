@@ -2,7 +2,7 @@
 <div align="center">
     <h1> FullTClash</h1>
     <p>🤖 A Telegram bot that operates based on the Clash core </p>
-    <p><a href="https://github.com/AirportR/FullTclash/blob/dev/README_EN.md">English</a>   简体中文</p>
+    <p><a href="https://github.com/AirportR/FullTclash/blob/dev/README-EN.md">English</a>   简体中文</p>
     <a href="https://fulltclash.gitbook.io/fulltclash-doc"><img src="https://img.shields.io/static/v1?message=doc&color=blue&logo=micropython&label=FullTClash"></a> 
     <img src="https://img.shields.io/github/license/AirportR/FullTclash">
     <a href="https://app.codacy.com/gh/AirportR/FullTclash/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade"><img src="https://app.codacy.com/project/badge/Grade/389b2787eb7647dfad486ccaa70eabf4"></a>
@@ -14,26 +14,23 @@
 	<br>
 </div>
 
-## 最近更新(3.5.8)
-✏️3.5.8版本更新日志：
+## 最近更新(3.5.9)
+✏️3.5.9版本更新日志：
 
-💥 新增前后端模式。此为实验性功能，普通使用者无需理会\
-🔍 对测试节点的类型进行审查，暂时屏蔽 Hysteria、vless、Tuic、wireguard等meta系所支持的新型协议（因为不稳定）。
-✨ 默认设置emoji源为本地源。意味着初次安装下载emoji资源包。后续考虑将会考虑移除在线emoji源。\
-✨ 支持绘图结果的渐变效果。[@mlmmlm 的pr]\
-✨ 发送测试图优化。如果图片的 宽度 < 2500 像素并且 高 < 3500像素，将发送TG的压缩图，而非原图。清晰度肉眼几乎看不出来。\
-✨ 新增英文README文档，更好看的项目预览。\
-✨ 新增 github action 的构建文件，用于自动构建运行所需的动态链接库文件。需要的可自行前往项目主页的action选项里获取，需要注意改名或者收到指定文件.\
-🚗 拓扑测试中的双栈检测将默认关闭。由于双栈检测将多消耗一倍的时间，为了加快测试速度已默认关闭，开启需要在配置中写入 ipstack: true\
-🚗 优化绘图算法。\
-🐛 修复OpenAI解锁检测脚本。\
-🐛 修复 /register 指令输出的冗余文本问题。\
-🐛 修复 /subinfo 偶现无法获取流量信息的bug。\
-🐛 修复自3.5.4以来UDP类型无法检测的问题。\
-🔥 移除 allow-caching 配置。\
-🔥 取消 /fulltest 指令。
-🧩 更疯狂的回调功能支持。稍后将会写一份文档详细说明这个功能。\
-👦 按钮设计优化。\
+🧵 改进测试方法。移除动态连接库调用的形式，更稳定的体验。\
+⚠️注意，如果您是在3.5.4版本后开始使用本项目，请把以下配置删除或修改(linux):
+```yaml
+clash:
+ path: ./bin/fulltclash-linux-amd64
+```
+
+
+同时动态链接库此版本已经移除，继续在方向上开发是不明智的选择。\
+🐛 修复3.5.8版本偶现拓扑图绘制失败的bug。\
+📖 新增回调功能的详细文档：https://fulltclash.gitbook.io/fulltclash-doc/hui-tiao-gong-neng-gao-ji \
+✨ 支持设置默认的后端名称展示。前往配置样例查看（文档那边暂时未更新）。\
+✨ Youtube解锁检测现已支持 送中(CN) 结果展示。\
+⬆️新增包依赖。请使用 pip install lxml==4.9.2 进行安装。
 
 
 
@@ -84,7 +81,7 @@ apt install -y git && git clone https://github.com/AirportR/FullTclash.git && cd
 此方法在中国大陆可能需要代理加速，请自行解决。
 ### 环境准备
 
-- Python 3.8 以上(3.11暂时不推荐)  
+- Python 3.9 以上  
 - 以及各种相关包依赖  
 
 您可以用以下命令，在当前项目目录下运行以快速安装环境：
@@ -129,6 +126,12 @@ apt install -y git && git clone https://github.com/AirportR/FullTclash.git && cd
   proxy: 127.0.0.1:7890 #http 替换成自己的代理地址和端口,注意，此配置与上面的独立分开。
   ```
   
+- 自定义buildtoken(可选)
+  
+  buildtoken是构建 ./bin/fulltclash(.exe) 代理客户端二进制文件的编译Token，此token为数据加密密钥，一般来说，用项目自带的编译token在本地运行不会有任何问题，但是如果以前后端模式运行，则主端需要自行编译代理后端的二进制文件，以此用到编译token，这个token需要写入到配置文件里，供主端加密信息。
+  ```yaml
+  buildtoken: 12345678ABCDEFG
+  ```
 ### 获取session文件（可选）
 
 您需要在项目文件目录下，放置一个已经登陆好的.session后缀文件，这个文件是程序生成的，形如： my_bot.session
@@ -173,32 +176,19 @@ bot:
 >/testurl <订阅地址>(clash配置格式)即可开始测试
 
 >/help 可查看所有命令说明
-### 动态链接库编译(高级)
-项目所用到的动态链接库存放在 ./libs/下。其中:
->fulltclash.so为 Linux-amd64 所支持的，fulltclash.dll 为 Windows-amd64 所支持的。
+### 代理客户端编译(高级)
+FullTclash有专用的代理客户端，存放在 ./bin/下。其中:
+
+fulltclash-linux-amd64为 Linux-amd64 所支持\
+fulltclash-windows-amd64 为 Windows-amd64 所支持的
 
 没有所用架构？
-如果没有您所用架构的动态链接库文件，比如arm64，或者您担心仓库自带的有安全隐患，那么您可以自行编译。
+如果没有您所用架构的二进制文件，比如arm64，或者您担心仓库自带的有安全隐患，那么您可以自行编译。
 
-在 ./libs/ 下有一源码文件为 fulltclash.go ，您需要将该文件自行用Golang编译器编译成 fulltclash.so动态链接库。
-大致流程为:  
-- 在您的平台安装GO编译器(版本越高越好)  
-```shell
-go mod init <路径>
-```
-```shell
-go mod tidy
-``` 
-以下是编译arm64架构的例子:
-```shell
-go build -buildmode=c-shared -o fulltclash.so fulltclash.go
-```
-交叉编译: 
-```shell
-GOOS=linux GOARCH=arm64 GOARM=7 CGO_ENABLED=1 CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ AR=aarch64-linux-gnu-ar go build -buildmode=c-shared -o fulltclash.so fulltclash.go
-```
-编译完成覆盖原文件即可
-如果操作难度太大，可以发起issue详谈。
+在 [此仓库](https://github.com/AirportR/FullTCore) 下有一源码文件为 fulltclash.go ，您需要将该文件自行用Golang编译器编译成二进制文件。
+
+
+编译完成覆盖原文件即可 ，如果操作难度太大，可以发起issue详谈。
 ### Docker启动
 教程文档待更新
 ### 为程序设置进程守护(Linux)
