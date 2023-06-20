@@ -1,14 +1,13 @@
 # 注意，yaml配置文件对缩进敏感，请不要强迫症删掉#号之间的空格。
 admin:
 - 12345678 #管理员，此处写你的账户id或用户名，必须配置该项，否则程序会自动退出
-#以下是fulltclash的buildtoken，可以用默认的，但是安全性得不到保障，具体原因详见文档
-#buildtoken: c7004ded9db897e538405c67e50e0ef0c3dbad717e67a92d02f6ebcfd1022a5ad1d2c4419541f538ff623051759ec000d2f426e03f9709a6608570c5b9141a6b
-#bot:
-# proxy: "host:端口:用户名:密码" #socks5代理，用户名和密码为可选配置，已和下面的proxy单独分离，请勿混用
+bot:
+ api_id: 123456 # Telegram的api_id
+ api_hash: ABCDEFG # Telegram的api_hash
+ bot_token: 123456:ABCDEFG #bot的token
+# ====================以上为必填项，否则无法启动成功========================
+# proxy: host:端口:用户名:密码 #socks5代理，用户名和密码为可选配置，已和下面的proxy单独分离，请勿混用
 # strictmode: false # 严格模式，代表测试的时侯，bot内联按钮只有发起测试的主人才能按，否则所有用户用户权限都可以按。默认false，目前未适配，敬请期待。
-# api_id: "123456" # Telegram的api_id
-# api_hash: "ABCDEFG" # Telegram的api_hash
-# bot_token: "123456:ABCDEFG" #bot的token
 # scripttext: "⏳联通性测试进行中..."  # 解锁脚本测试进度条自定义文本
 # analyzetext: "⏳节点测试拓扑进行中..."  # 拓扑测试进度条自定义文本
 # speedtext: "⏳速度测试进行中..."  # 速度测试进度条自定义文本
@@ -17,6 +16,8 @@ admin:
 # bright: "]" #右括号自定义文本
 # bspace: "  " #空格自定义文本，默认为2个
 # command: ['mycommand1', 'mycommand2'] #自定义指令，用于适配权限回调。高级用法，不会无需配置。
+#以下是fulltclash的buildtoken，可以用默认的，但是安全性得不到保障，具体原因详见文档
+#buildtoken: c7004ded9db897e538405c67e50e0ef0c3dbad717e67a92d02f6ebcfd1022a5ad1d2c4419541f538ff623051759ec000d2f426e03f9709a6608570c5b9141a6b
 #clash:
 # path: './bin/fulltclash-linux-amd64' # 代理客户端的路径，默认为 ./bin/ 下。不会弄不要动这里，用默认的即可。本仓库默认仅提供win-amd64与linux-amd64两种(意味着如果为这两种架构，这里不用改。)，其他架构需要自行编译。
 # allow-caching: false  #是否缓存测试过程产生的订阅，若否，则测试完成后会自动删除测试订阅，以免造成空间浪费。（此配置暂不生效）
@@ -49,11 +50,11 @@ admin:
 #speedconfig: #测速相关配置
 # interval: 10 #每个节点的测速时长
 #entrance:  #入口显示配置
-  switch: "ip" #设置为ip将显示入口ip段，设置为cluster将显示簇，默认设置为ip，PS:这里的簇为入口域名绑定的ip地址数量
+# switch: "ip" #设置为ip将显示入口ip段，设置为cluster将显示簇，默认设置为ip，PS:这里的簇为入口域名绑定的ip地址数量
 #user: 12345678 #用户列表，/grant 命令授权的目标会保存在这。推荐使用bot进行授权，而非手动配置。（可选配置）
 #emoji: #emoji可选配置
 # enable: true #是否启用,默认启用。若否，则在输出图片时emoji将无法正常显示。关闭该项可解决部分图片生成失败的问题。（可选配置）
-# emoji-source: 'TwemojiLocalSource' #emoji表情源。默认值为TwitterPediaSource。分为web源与本地源。可配置的值参考 ./libs/emoji_custom/__all__ 里面的成员变量。目前本地源仅支持: TwemojiLocalSource
+# emoji-source: 'TwemojiLocalSource' #emoji表情源。默认值为TwemojiLocalSource。分为web源与本地源。可配置的值参考 ./libs/emoji_custom/__all__ 里面的成员变量。目前本地源仅支持: TwemojiLocalSource
 #font: './resources/苹方黑体-准-简.ttf' #自定义字体，这里填字体的路径
 #slaveconfig:
 #  default-slave: # 默认后端配置。
