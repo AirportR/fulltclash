@@ -16,7 +16,7 @@ bot_config = init_bot.config
 BUILD_TOKEN = init_bot.config.getBuildToken()
 userbot_config = bot_config.config.get('userbot', {})
 # 项目版本号
-__version__ = '3.5.9'
+__version__ = '3.5.10'
 # 客户端
 app = Client("my_bot",
              api_id=init_bot.api_id,
