@@ -143,9 +143,8 @@ def start_clash():
     loop = asyncio.get_event_loop()
     start_port = config.config.get('clash', {}).get('startup', 11220)
     port_list = [str(start_port + i * 2) for i in range(corenum)]
-    res1 = loop.run_until_complete(check_port(11219, 11219))
     res2 = loop.run_until_complete(check_port(start_port, start_port + 1 + corenum * 2))
-    if res2 or res1:
+    if res2:
         logger.warning("端口检查中发现已有其他进程占用了端口，请更换端口,否则测试可能会出现不可预知的错误。")
         return
     # if config.config.get('clash', {}).get('auto-start', False):
