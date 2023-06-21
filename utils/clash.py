@@ -198,8 +198,11 @@ async def check_port(start: int, end: int):
 
 
 def start_fulltclash(portlist: list):
+    if not portlist:
+        raise ValueError("空的端口列表")
     port2 = "|".join(portlist)
-    _command = fr"{config.get_clash_path()} -c {11219} -p {port2}"
+    control_port = int(port2[0])-1
+    _command = fr"{config.get_clash_path()} -c {control_port} -p {port2}"
     subprocess.Popen(_command.split(), encoding="utf-8")
 
 
