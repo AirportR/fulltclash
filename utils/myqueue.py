@@ -4,7 +4,7 @@ from pyrogram import Client
 from pyrogram.types import Message
 from utils.collector import reload_config as r1
 from utils.cleaner import reload_config as r2, addon
-from utils import message_edit_queue
+# from utils import message_edit_queue
 
 import botmodule
 
@@ -93,8 +93,8 @@ async def bot_put_slave(client: Client, message: Message, putinfo: dict, **kwarg
         r1(test_items)
         r2(test_items)
         await bot_task_queue_slave(client, botmsg, putinfo, q, **kwargs)
-        bot_edit_text = f"/relay {master_id} edit {edit_chat_id} {edit_message_id} 测试结束啦。"
-        message_edit_queue.put((botmsg.chat.id, botmsg.id, bot_edit_text, 2))
+        # bot_edit_text = f"/relay {master_id} edit {edit_chat_id} {edit_message_id} 测试结束啦。"
+        # message_edit_queue.put((botmsg.chat.id, botmsg.id, bot_edit_text, 2))
         # await bot_task_queue_master(client, message, put_type, q, **kwargs)
         task_num -= 1
 
