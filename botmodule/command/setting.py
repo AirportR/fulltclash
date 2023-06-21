@@ -35,7 +35,7 @@ dbtn = default_button = {
     'b_origin': InlineKeyboardButton("♾️订阅原序", callback_data="sort:订阅原序"),
     'b_rhttp': InlineKeyboardButton("⬇️HTTP倒序", callback_data="sort:HTTP倒序"),
     'b_http': InlineKeyboardButton("⬆️HTTP升序", callback_data="sort:HTTP升序"),
-    'b_slave': InlineKeyboardButton(dsc, "slave:"+dsi),
+    'b_slave': InlineKeyboardButton(dsc, "slave:" + dsi),
     'b_close': InlineKeyboardButton("❌关闭页面", callback_data="close"),
 }
 
@@ -53,10 +53,17 @@ IKM2 = InlineKeyboardMarkup(
         [dbtn['b_cancel']]
     ]
 )
-select_item_cache = {}
-page_is_locked = {}
-sort_cache = {}
-slaveid_cache = {}
+# select_item_cache = {}
+# page_is_locked = {}
+# sort_cache = {}
+# slaveid_cache = {}
+sc = select_cache = {
+    # 所有的记录都以 "{chat_id}:{message_id}"作为键
+    'script': {},  # 脚本选择
+    'lpage': {},  # 记录当前页面是否已锁定
+    'sort': {},  # 记录排序选择
+    'slaveid': {},  # 记录后端id选择
+}
 
 
 def reload_button():
@@ -170,7 +177,8 @@ async def test_setting(client: Client, callback_query: CallbackQuery, row=3, **k
             message = await edit_mess.edit_text("⌛正在提交任务~")
             return test_items, origin_message, message, test_type
         elif 'ok_p' == callback_data:
-            test_items = select_item_cache.get(str(chat_id) + ':' + str(mess_id), ['HTTP(S)延迟'])
+            test_items = sc['script'].get(str(chat_id) + ':' + str(mess_id), ['HTTP(S)延迟'])
+            # test_items = select_item_cache.get(str(chat_id) + ':' + str(mess_id), ['HTTP(S)延迟'])
             for b_1 in inline_keyboard:
                 for b in b_1:
                     if "✅" in b.text:
@@ -190,17 +198,21 @@ async def test_setting(client: Client, callback_query: CallbackQuery, row=3, **k
                         page = str(b.text)[0]
             new_ikm = InlineKeyboardMarkup([[blank1], [pre_page, blank, next_page], [dbtn['b_cancel'], dbtn['ok_b']], ])
             # 设置状态
-            select_item_cache[str(chat_id) + ':' + str(mess_id)] = test_items
+            sc['script'][str(chat_id) + ':' + str(mess_id)] = test_items
+            # select_item_cache[str(chat_id) + ':' + str(mess_id)] = test_items
             key = str(chat_id) + ':' + str(mess_id) + ':' + str(page)
-            page_is_locked[key] = True
+            sc['lpage'][key] = True
+            # page_is_locked[key] = True
             await client.edit_message_text(chat_id, mess_id, "请选择想要启用的测试项: ", reply_markup=new_ikm)
             return test_items, origin_message, message, test_type
         elif "👌完成设置" in callback_data:
-            test_items = select_item_cache.pop(str(chat_id) + ':' + str(mess_id), ['HTTP(S)延迟'])
+            test_items = sc['script'].pop(str(chat_id) + ':' + str(mess_id), ['HTTP(S)延迟'])
+            # test_items = select_item_cache.pop(str(chat_id) + ':' + str(mess_id), ['HTTP(S)延迟'])
             message = await client.edit_message_text(chat_id, mess_id, "⌛正在提交任务~")
             issuc = []
             for i in range(max_page):
-                res1 = page_is_locked.pop(str(chat_id) + ':' + str(mess_id) + ':' + str(i), '')
+                res1 = sc['lpage'].pop(str(chat_id) + ':' + str(mess_id) + ':' + str(i), '')
+                # res1 = page_is_locked.pop(str(chat_id) + ':' + str(mess_id) + ':' + str(i), '')
                 if res1:
                     issuc.append(res1)
             if not issuc:
@@ -224,6 +236,7 @@ async def select_page(client: Client, call: CallbackQuery, **kwargs):
     row = kwargs.get('row', 3)
     chat_id = call.message.chat.id
     mess_id = call.message.id
+    msgkey = str(chat_id) + ':' + str(mess_id) + ':' + str(page)
     max_page = int(len(buttons) / (row * 3)) + 1
     pre_page = InlineKeyboardButton('⬅️上一页', callback_data=f'page{page - 1}')
     next_page = InlineKeyboardButton('下一页➡️', callback_data=f'page{page + 1}')
@@ -231,7 +244,9 @@ async def select_page(client: Client, call: CallbackQuery, **kwargs):
     blank_button = InlineKeyboardButton('        ', callback_data='blank')
     blank = InlineKeyboardButton(f'{page}/{max_page}', callback_data='blank')
     if page == 1:
-        if page_is_locked.get(str(chat_id) + ':' + str(mess_id) + ':' + str(page), False):
+        sc['lpage'].get(msgkey, False)
+        # if page_is_locked.get(msgkey, False):
+        if sc['lpage'].get(msgkey, False):
             if max_page == 1:
                 new_ikm = InlineKeyboardMarkup([[blank1],
                                                 [blank_button, blank, blank_button],
@@ -258,7 +273,8 @@ async def select_page(client: Client, call: CallbackQuery, **kwargs):
             keyboard.append([dbtn['ok_b']])
             new_ikm = InlineKeyboardMarkup(keyboard)
     elif page == max_page:
-        if page_is_locked.get(str(chat_id) + ':' + str(mess_id) + ':' + str(page), False):
+        # if page_is_locked.get(str(chat_id) + ':' + str(mess_id) + ':' + str(page), False):
+        if sc['lpage'].get(msgkey, False):
             new_ikm = InlineKeyboardMarkup([[blank1],
                                             [pre_page, blank, blank_button],
                                             [dbtn['b_cancel'], dbtn['ok_b']]])
@@ -276,7 +292,8 @@ async def select_page(client: Client, call: CallbackQuery, **kwargs):
             keyboard.append([dbtn['ok_b']])
             new_ikm = InlineKeyboardMarkup(keyboard)
     else:
-        if page_is_locked.get(str(chat_id) + ':' + str(mess_id) + ':' + str(page), False):
+        # if page_is_locked.get(str(chat_id) + ':' + str(mess_id) + ':' + str(page), False):
+        if sc['lpage'].get(msgkey, False):
             new_ikm = InlineKeyboardMarkup([[blank1], [pre_page, blank, next_page], [dbtn['b_cancel'], dbtn['ok_b']]])
         else:
             keyboard = [[dbtn['b_okpage']]]
@@ -294,14 +311,26 @@ async def select_page(client: Client, call: CallbackQuery, **kwargs):
     await client.edit_message_text(chat_id, mess_id, "请选择想要启用的测试项: ", reply_markup=new_ikm)
 
 
-def get_sort_str(message: Message):
-    k = str(message.chat.id) + ":" + str(message.id)
-    return sort_cache.pop(k, "订阅原序")
+def gen_msg_key(message: Message) -> str:
+    """
+    生成针对此消息对象的唯一键
+    """
+    return str(message.chat.id) + ":" + str(message.id)
 
 
-def get_slave_id(chat_id: int, message_id: int):
-    k = str(chat_id) + ":" + str(message_id)
-    return slaveid_cache.pop(k, "local")
+def get_sort_str(message: Message) -> str:
+    k = gen_msg_key(message)
+    return sc['sort'].pop(k, "订阅原序")
+
+
+# def get_slave_id(chat_id: int, message_id: int) -> str:
+#     k = str(chat_id) + ":" + str(message_id)
+#     return sc['slaveid'].pop(k, "local")
+
+
+def get_slave_id(message: Message) -> str:
+    k = gen_msg_key(message)
+    return sc['slaveid'].pop(k, "local")
 
 
 def page_frame(pageprefix: str, contentprefix, content: List[str], **kwargs) -> list:
@@ -402,18 +431,19 @@ async def select_slave(app: Client, call: CallbackQuery):
         await botmsg.edit_text("❌未知的后端id")
         mdq.put(botmsg)
         return
-    slaveid_cache[str(botmsg.chat.id) + ":" + str(botmsg.id)] = slaveid
+    sc['slaveid'][str(botmsg.chat.id) + ":" + str(botmsg.id)] = slaveid
+    # slaveid_cache[str(botmsg.chat.id) + ":" + str(botmsg.id)] = slaveid
     if originmsg.text.startswith('/test'):
         await botmsg.edit_text("请选择排序方式：", reply_markup=IKM2)
     elif originmsg.text.startswith('/topo') or originmsg.text.startswith('/analyze'):
         sort_str = get_sort_str(botmsg)
-        slaveid = get_slave_id(botmsg.chat.id, botmsg.id)
+        slaveid = get_slave_id(botmsg)
         put_type = "analyzeurl" if originmsg.text.split(' ', 1)[0].split('@', 1)[0].endswith('url') else "analyze"
         await botmsg.delete()
         await bot_put(app, originmsg, put_type, None, sort=sort_str, coreindex=2, slaveid=slaveid)
     elif originmsg.text.startswith('/speed'):
         sort_str = get_sort_str(botmsg)
-        slaveid = get_slave_id(botmsg.chat.id, botmsg.id)
+        slaveid = get_slave_id(botmsg)
         put_type = "speedurl" if originmsg.text.split(' ', 1)[0].split('@', 1)[0].endswith('url') else "speed"
         await botmsg.delete()
         await bot_put(app, originmsg, put_type, None, sort=sort_str, coreindex=1, slaveid=slaveid)
@@ -440,7 +470,8 @@ async def select_sort(app: Client, call: CallbackQuery):
     sort_str = str(call.data)[5:]
     chat_id = call.message.chat.id
     mess_id = call.message.id
-    sort_cache[str(chat_id) + ":" + str(mess_id)] = sort_str
+    # sort_cache[str(chat_id) + ":" + str(mess_id)] = sort_str
+    sc['sort'][str(chat_id) + ":" + str(mess_id)] = sort_str
     await app.edit_message_text(chat_id, mess_id, "请选择想要启用的测试项: ", reply_markup=IKM)
 
 
