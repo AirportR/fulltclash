@@ -294,7 +294,7 @@ def callback_loader(app: Client):
         # logger.info(str(test_items))
         if message:
             sort_str = botmodule.get_sort_str(message)
-            slaveid = botmodule.get_slave_id(message.chat.id, message.id)
+            slaveid = botmodule.get_slave_id(message)
             await asyncio.sleep(2)
             await message.delete()
             await bot_put(client, origin_message, test_type, test_items, sort=sort_str, coreindex=3, slaveid=slaveid)

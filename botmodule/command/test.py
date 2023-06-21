@@ -36,6 +36,11 @@ def select_core_slave(coreindex: str, botmsg: Message, putinfo: dict):
     masterid = putinfo.get('master', {}).get('id', 1)
     slavename = putinfo.get('slave', {}).get('comment', '未知')
     if coreindex == 1:
+        if config.nospeed:
+            msgtext = f"/relay {masterid} edit {edit_chat_id} {edit_msg_id} ❌此后端禁止测速服务"
+            botmsg.edit_text(msgtext)
+            logger.info("由于此后端禁止测速服务，已取消任务")
+            return None
         return SpeedCore(botmsg.chat.id, botmsg.id, SPEEDTESTIKM,
                          (sp, (botmsg, 1, masterid, edit_chat_id, edit_msg_id, slavename)))
     elif coreindex == 2:
@@ -276,6 +281,8 @@ async def process_slave(app: Client, message: Message, putinfo: dict, **kwargs):
     proxyinfo = putinfo.pop('proxies', [])
     kwargs.update(putinfo)
     core = select_core_slave(coreindex, message, putinfo)
+    if core is None:
+        return
     info = await core.core(proxyinfo, **kwargs)
     print("后端结果：", info)
 

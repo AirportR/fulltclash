@@ -76,7 +76,7 @@ api_hash = botconfig.get('api_hash', None)
 bot_token = botconfig.get('bot_token', None)
 clash_path = config.get_clash_path()  # 为clash核心运行路径, Windows系统需要加后缀名.exe
 clash_work_path = config.get_clash_work_path()  # clash工作路径
-corenum = min(config.config.get('clash', {}).get('core', 1), 64)
+corenum = min(config.config.get('clash', {}).get('core', 1), 127)
 admin = config.getAdmin()  # 管理员
 config.add_user(admin)
 config.reload()
