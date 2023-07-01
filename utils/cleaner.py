@@ -406,7 +406,13 @@ class ClashCleaner:
         else:
             self.yaml = yaml.safe_load(_config)
 
-        self.filter_unsupport_proxy()
+        self.check_type()
+
+    def check_type(self):
+        """
+        检查反序列化后的对象是否符合clash配置格式
+        """
+        self.check_unsupport_proxy()
 
     def setProxies(self, proxyinfo: list):
         """
@@ -415,7 +421,7 @@ class ClashCleaner:
         """
         self.yaml['proxies'] = proxyinfo
 
-    def filter_unsupport_proxy(self):
+    def check_unsupport_proxy(self):
         try:
             if self.yaml is None:
                 self.yaml = {}
@@ -470,7 +476,7 @@ class ClashCleaner:
         lis = []
         try:
             for i in self.yaml['proxies']:
-                lis.append(i['name'])
+                lis.append(str(i['name']))
             return lis
         except KeyError:
             logger.warning("读取节点信息失败！")
@@ -484,7 +490,7 @@ class ClashCleaner:
         获取节点地址信息，返回（host,port）元组形式
         """
         try:
-            return [(i['server'], i['port']) for i in self.yaml['proxies']]
+            return [(str(i['server']), i['port']) for i in self.yaml['proxies']]
         except KeyError:
             logger.warning("读取节点信息失败！")
             return None
@@ -500,7 +506,7 @@ class ClashCleaner:
         t = []
         try:
             for i in self.yaml['proxies']:
-                t.append(i['type'])
+                t.append(str(i['type']))
             return t
         except TypeError:
             logger.warning("读取节点信息失败！")
@@ -514,7 +520,7 @@ class ClashCleaner:
         y = []
         try:
             for i in self.yaml['proxies']:
-                y.append(i['server'])
+                y.append(str(i['server']))
             return y
         except TypeError:
             logger.warning("读取节点信息失败！")
@@ -537,37 +543,6 @@ class ClashCleaner:
             return dip
         except Exception as e:
             logger.error(str(e))
-            return None
-
-    def nodesAddr_plus(self, name=None):
-        """
-        获取节点地址
-        :return: list | str
-        """
-        if name:
-            try:
-                for i in self.yaml['proxies']:
-                    if name == i['name']:
-                        return i['server']
-                    else:
-                        pass
-                return None
-            except TypeError:
-                logger.warning("读取节点信息失败")
-                return None
-            except KeyError:
-                logger.warning("读取节点信息失败！")
-                return None
-        addrs = []
-        try:
-            for i in self.yaml['proxies']:
-                addrs.append(i['server'])
-            return addrs
-        except TypeError:
-            logger.warning("读取节点信息失败")
-            return None
-        except KeyError:
-            logger.warning("读取节点信息失败！")
             return None
 
     @staticmethod
