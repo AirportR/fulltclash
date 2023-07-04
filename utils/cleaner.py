@@ -427,6 +427,7 @@ class ClashCleaner:
                 self.yaml = {}
                 return
             proxies: list = self.yaml['proxies']
+            newproxies = []
             for i, proxy in enumerate(proxies):
                 if isinstance(proxy, dict):
                     name = proxy['name']
@@ -434,10 +435,9 @@ class ClashCleaner:
                     if not isinstance(name, str):
                         # 将节点名称转为字符串
                         proxy['name'] = str(name)
-                    if ptype in self.unsupport_type:
-                        logger.warning(f"出现了可能不受支持的节点：{ptype}")
-                        proxies.pop(i)
-            self.yaml['proxies'] = proxies
+                    if ptype not in self.unsupport_type:
+                        newproxies.append(proxy)
+            self.yaml['proxies'] = newproxies
         except KeyError:
             logger.warning("读取节点信息失败！")
         except TypeError:
