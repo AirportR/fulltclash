@@ -86,7 +86,7 @@ logger.info("管理员名单加载:" + str(admin))
 # 你的机器人的用户名
 USERNAME = "@FullTclashBot"
 port = config.get_proxy_port()
-proxy_subprocess: subprocess.Popen
+proxy_subprocess = None
 try:
     _proxy = config.get_bot_proxy(isjoint=False).split(':')
     proxy_host = _proxy[0]

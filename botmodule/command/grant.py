@@ -1,5 +1,6 @@
 import os
 import signal
+import subprocess
 import sys
 import pyrogram.types
 from loguru import logger
@@ -109,9 +110,10 @@ async def user(_, message):
 
 async def restart_or_killme(_, message, kill=False):
     try:
+        if isinstance(proxy_subprocess, subprocess.Popen):
+            proxy_subprocess.kill()
         if kill:
             await message.reply("再见~")
-            proxy_subprocess.kill()
             os.kill(os.getpid(), signal.SIGINT)
         else:
             await message.reply("开始重启(大约等待五秒)")
