@@ -388,25 +388,28 @@ class ClashCleaner:
         """
         :param _config: 传入一个文件对象，或者一个字符串,文件对象需指向 yaml/yml 后缀文件
         """
+        logger.info("开始进行")
         self.path = ''
         self.unsupport_type = ['wireguard', 'vless', 'hysteria']
         self.yaml = {}
-        if _config == ':memory:':
-            try:
-                self.yaml = yaml.safe_load(preTemplate()) if _config2 is None else yaml.safe_load(_config2)
-                return
-            except Exception as e:
-                logger.error(str(e))
-                self.yaml = {}
-                return
+
         if type(_config).__name__ == 'str':
-            with open(_config, 'r', encoding="UTF-8") as fp:
-                self.yaml = yaml.safe_load(fp)
-            self.path = _config
+            if _config == ':memory:':
+                try:
+                    self.yaml = yaml.safe_load(preTemplate()) if _config2 is None else yaml.safe_load(_config2)
+                    self.check_type()
+                    print(self.yaml['proxies'])
+                    return
+                except Exception as e:
+                    logger.error(str(e))
+                    self.yaml = {}
+                    return
+            else:
+                with open(_config, 'r', encoding="UTF-8") as fp:
+                    self.yaml = yaml.safe_load(fp)
+                self.path = _config
         else:
             self.yaml = yaml.safe_load(_config)
-
-        self.check_type()
 
     def check_type(self):
         """
