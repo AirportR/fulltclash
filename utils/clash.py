@@ -203,7 +203,8 @@ def start_fulltclash(portlist: list):
     port2 = "|".join(portlist)
     control_port = int(portlist[0])-1
     _command = fr"{config.get_clash_path()} -c {control_port} -p {port2}"
-    subprocess.Popen(_command.split(), encoding="utf-8")
+    p = subprocess.Popen(_command.split(), encoding="utf-8")
+    return p
 
 
 # def batch_start(portlist: list, proxy_file_path="./clash/proxy.yaml"):

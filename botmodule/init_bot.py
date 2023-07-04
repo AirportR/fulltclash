@@ -1,5 +1,6 @@
 import asyncio
 import os
+import subprocess
 import sys
 import time
 # subprocess 模块用于启动子进程，并与其通信
@@ -85,6 +86,7 @@ logger.info("管理员名单加载:" + str(admin))
 # 你的机器人的用户名
 USERNAME = "@FullTclashBot"
 port = config.get_proxy_port()
+proxy_subprocess: subprocess.Popen
 try:
     _proxy = config.get_bot_proxy(isjoint=False).split(':')
     proxy_host = _proxy[0]
@@ -140,6 +142,7 @@ logger.info("配置已加载, Telegram bot程序开始运行...")
 
 def start_clash():
     # 端口检查
+    global proxy_subprocess
     loop = asyncio.get_event_loop()
     start_port = config.config.get('clash', {}).get('startup', 11220)
     port_list = [str(start_port + i * 2) for i in range(corenum)]
@@ -149,7 +152,7 @@ def start_clash():
         return
     # if config.config.get('clash', {}).get('auto-start', False):
     print("开始启动clash core")
-    start_fulltclash(port_list)
+    proxy_subprocess = start_fulltclash(port_list)
 
 
 start_clash()
