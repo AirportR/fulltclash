@@ -303,6 +303,7 @@ async def stopspeed(app: Client, callback_query: CallbackQuery):
     commenttext = botmsg.text.split('\n', 1)[0].split(':')[1]
     if commenttext == 'Local':
         break_speed.append(True)
+        await botmsg.edit_text("❌测速任务已取消")
         return
     slaveid = 0
     for k, v in slaveconfig.items():
