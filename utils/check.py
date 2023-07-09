@@ -106,19 +106,22 @@ async def check_callback_master(callback_query, USER_TARGET=None, strict: bool =
         return True
 
 
-async def check_speednode(backmsg: Message, core, nodenum: int) -> bool:
+async def check_node(backmsg: Message, core, nodenum: int) -> bool:
     """
     检查节点数量是否超出限制
     """
+    flag = False
+    if nodenum == 0:
+        await backmsg.edit_text("❌节点数量为空，请检查你的过滤器或者订阅格式是否正确")
+        flag = True
     if type(core).__name__ == 'SpeedCore':
         if config.speednodes() < nodenum:
-            await backmsg.edit_text("节点数量超出限制，已取消测试")
-            message_delete_queue.put_nowait((backmsg.chat.id, backmsg.id, 10))
-            return True
-        else:
-            return False
-    else:
-        return False
+            await backmsg.edit_text("⚠️节点数量超出限制，已取消测试。")
+            flag = True
+    if flag:
+        message_delete_queue.put_nowait((backmsg.chat.id, backmsg.id, 10))
+        return True
+    return False
 
 
 async def check_subowner(message, back_message, subinfo: dict, admin: list, password: str):

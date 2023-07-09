@@ -188,7 +188,7 @@ async def process(app: Client, message: Message, **kwargs):
     pre_cl = cleaner.ClashCleaner(':memory:', subconfig)
     pre_cl.node_filter(include_text, exclude_text)
     proxynum = pre_cl.nodesCount()
-    if await check.check_speednode(back_message, core, proxynum):
+    if await check.check_node(back_message, core, proxynum):
         return
     proxyinfo = pre_cl.getProxies()
     info = await put_slave_task(app, message, proxyinfo, core=core, backmsg=back_message, **kwargs)
@@ -259,7 +259,7 @@ async def process_slave(app: Client, message: Message, putinfo: dict, **kwargs):
     core = await select_core_slave(coreindex, message, putinfo)
     if core is None:
         return
-    info = await core.core(proxyinfo, **kwargs)
+    info = await core.core(proxyinfo, **kwargs) if proxyinfo else {}
     print("后端结果：", info)
 
     putinfo['result'] = info

@@ -389,8 +389,13 @@ class ClashCleaner:
         :param _config: 传入一个文件对象，或者一个字符串,文件对象需指向 yaml/yml 后缀文件
         """
         self.path = ''
-        self.unsupport_type = ['wireguard', 'vless', 'hysteria']
+        self.unsupport_type = ['wireguard', 'vless', 'hysteria', 'tuic']
         self.yaml = {}
+        self.load(_config, _config2)
+        if not isinstance(self.yaml, dict):
+            self.yaml = {}
+
+    def load(self, _config, _config2: Union[str, bytes]):
         if type(_config).__name__ == 'str':
             if _config == ':memory:':
                 try:
