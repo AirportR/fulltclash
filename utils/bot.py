@@ -260,14 +260,11 @@ def callback_loader(app: Client):
         if callback_query.data.startswith('cpage'):
             await botmodule.select_config_page(client, callback_query, page=int(callback_query.data[5:]), column=2)
             return
-        elif callback_query.data.startswith('config'):
-            await botmodule.setting_config(client, callback_query, column=2)
-            return
+        # elif callback_query.data.startswith('config'):
+        #     await botmodule.setting_config(client, callback_query, column=2)
+        #     return
         elif callback_query.data == 'setconfig':
             await botmodule.select_config_page(client, callback_query, page=1, column=2)
-            return
-        elif callback_query.data == 'preconfig':
-            await botmodule.get_preconfig_page(client, callback_query)
             return
 
     @app.on_callback_query(group=2)

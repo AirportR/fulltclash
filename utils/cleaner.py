@@ -1146,9 +1146,9 @@ class ReCleaner:
                 elif i == "Netflix":
                     from addons.unlockTest import netflix
                     info['Netflix'] = netflix.get_netflix_info_new(self)
-                elif i == "Spotify":
-                    from addons.unlockTest import spotify
-                    info['Spotify'] = spotify.get_spotify_info(self)
+                elif i == "TVB":
+                    from addons.unlockTest import tvb
+                    info['TVB'] = tvb.get_TVBAnywhere_info(self)
                 elif i == "Viu":
                     from addons.unlockTest import viu
                     info['Viu'] = viu.get_viu_info(self)
