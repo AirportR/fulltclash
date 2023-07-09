@@ -833,6 +833,9 @@ class ConfigManager:
         except KeyError:
             return None
 
+    def get_default_slave(self):
+        return self.getSlaveconfig().get('default-slave', {})
+
     def get_media_item(self):
         try:
             return self.config['item']

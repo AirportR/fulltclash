@@ -1,6 +1,5 @@
 import asyncio
 import os
-import subprocess
 import sys
 import time
 # subprocess 模块用于启动子进程，并与其通信

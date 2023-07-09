@@ -194,30 +194,6 @@ async def process(app: Client, message: Message, **kwargs):
     info = await put_slave_task(app, message, proxyinfo, core=core, backmsg=back_message, **kwargs)
     if isinstance(info, dict):
         await select_export(message, back_message, put_type, info, **kwargs)
-    # else:
-    #     subinfo = config.get_sub(subname=tgargs[1])
-    #     pwd = tgargs[4] if len(tgargs) > 4 else tgargs[1]
-    #     if await check.check_subowner(message, back_message, subinfo=subinfo, admin=admin, password=pwd):
-    #         suburl = subinfo.get('url', "http://this_is_a.error")
-    #     else:
-    #         return
-    #     sub = collector.SubCollector(suburl=suburl, include=include_text, exclude=exclude_text)
-    #     subconfig = await sub.getSubConfig(inmemory=True)
-    #     if isinstance(subconfig, bool):
-    #         logger.warning("获取订阅失败!")
-    #         await back_message.edit_text("❌获取订阅失败！")
-    #         message_delete_queue.put_nowait((back_message.chat.id, back_message.id, 10))
-    #         return
-    #     pre_cl = cleaner.ClashCleaner(':memory:', subconfig)
-    #     pre_cl.node_filter(include_text, exclude_text)
-    #     proxynum = pre_cl.nodesCount()
-    #     if await check.check_speednode(back_message, core, proxynum):
-    #         return
-    #     proxyinfo = pre_cl.getProxies()
-    #     info = await put_slave_task(app, message, proxyinfo, core=core, backmsg=back_message, **kwargs)
-    #     # info = await core.core(proxyinfo, **kwargs)
-    #     if isinstance(info, dict):
-    #         await select_export(message, back_message, put_type, info, **kwargs)
 
 
 async def put_slave_task(app: Client, message: Message, proxyinfo: list, **kwargs):
