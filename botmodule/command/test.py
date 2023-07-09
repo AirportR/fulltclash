@@ -277,7 +277,8 @@ async def stopspeed(app: Client, callback_query: CallbackQuery):
     bridge = config.getBridge()
     botmsg = callback_query.message
     commenttext = botmsg.text.split('\n', 1)[0].split(':')[1]
-    if commenttext == 'Local':
+    default_comment = config.get_default_slave().get('comment', 'Local')
+    if commenttext == default_comment:
         break_speed.append(True)
         await botmsg.edit_text("❌测速任务已取消")
         return
