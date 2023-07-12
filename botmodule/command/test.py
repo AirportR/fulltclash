@@ -2,6 +2,7 @@ import asyncio
 import io
 import json
 from concurrent.futures import ThreadPoolExecutor
+from typing import Union
 
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from pyrogram import enums, Client
@@ -30,7 +31,20 @@ async def slave_progress(progress, nodenum, botmsg: Message, corenum, master_id,
 sp = slave_progress
 
 
-async def select_core_slave(coreindex: str, botmsg: Message, putinfo: dict):
+def convert_core_index(corestr: str) -> int:
+    if isinstance(corestr, str):
+        if corestr.startswith("speed"):
+            return 1
+        elif corestr.startswith("analyze") or corestr.startswith("topo"):
+            return 2
+        elif corestr.startswith("test"):
+            return 3
+        else:
+            return 0
+    return 0
+
+
+async def select_core_slave(coreindex: Union[str, int], botmsg: Message, putinfo: dict):
     edit_chat_id = putinfo.get('edit-chat-id', None)
     edit_msg_id = putinfo.get('edit-message-id', None)
     masterid = putinfo.get('master', {}).get('id', 1)
@@ -204,7 +218,7 @@ async def put_slave_task(app: Client, message: Message, proxyinfo: list, **kwarg
         return
     else:
         logger.info(f"BOT进度条编辑的chat_id:{raw_backmsg.chat.id},message_id:{raw_backmsg.id}")
-        BOT_MESSAGE_LIST[str(raw_backmsg.chat.id)+':'+str(raw_backmsg.id)] = raw_backmsg
+        BOT_MESSAGE_LIST[str(raw_backmsg.chat.id) + ':' + str(raw_backmsg.id)] = raw_backmsg
     coreindex = kwargs.get('coreindex', 0)
     userbot_id = config.config.get('userbot', {}).get('id', '')
     bot_info = await app.get_me()

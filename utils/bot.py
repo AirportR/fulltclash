@@ -75,18 +75,16 @@ def command_loader(app: Client):
     @AccessCallback()
     async def testurl(client: Client, message: Message):
         await botmodule.select_slave_page(client, message, page=1)
-        # await message.reply("请选择排序方式:", reply_markup=botmodule.IKM2, quote=True)
 
     @app.on_message(filters.command(["test"]) & allfilter(1), group=1)
     @AccessCallback()
     async def test(client: Client, message: Message):
         await botmodule.select_slave_page(client, message, page=1)
-        # await message.reply("请选择排序方式:", reply_markup=botmodule.IKM2, quote=True)
 
     @app.on_message(filters.command(["invite"]), group=1)
     @AccessCallback()
     async def invite(client, message):
-        await botmodule.invite(client, message)
+        await botmodule.select_slave_page(client, message, page=1)
 
     @app.on_message(filters.command(["grant"]) & allfilter(2), group=2)
     async def grant(client, message):
@@ -182,7 +180,7 @@ def command_loader(app: Client):
 
     @app.on_message(filters.command(["start"]), group=0)
     async def start(client, message):
-        await botmodule.invite_pass(client, message)
+        await botmodule.invite_pass2(client, message)
 
     @app.on_message(filters.private, group=3)
     @AccessCallback(1)

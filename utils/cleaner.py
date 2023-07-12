@@ -151,7 +151,7 @@ class AddonCleaner:
         经过去重并支持黑名单一并去除。最后返回一个新列表
         :return:
         """
-        base_item = ['Netflix', 'Youtube', 'Disney+', 'OpenAI', 'Viu', 'steam货币', 'Spotify',
+        base_item = ['Netflix', 'Youtube', 'Disney+', 'OpenAI', 'Viu', 'steam货币', 'TVB',
                      '维基百科', '落地IP风险']
         base_item = base_item + list(self._script.keys())
         new_item = sorted(set(base_item) - set(self.blacklist), key=base_item.index)
@@ -399,8 +399,11 @@ class ClashCleaner:
         if type(_config).__name__ == 'str':
             if _config == ':memory:':
                 try:
-                    self.yaml = yaml.safe_load(preTemplate()) if _config2 is None else yaml.safe_load(_config2)
-                    self.check_type()
+                    if _config2 is None:
+                        self.yaml = yaml.safe_load(preTemplate())
+                    else:
+                        self.yaml = yaml.safe_load(_config2)
+                        self.check_type()
                     return
                 except Exception as e:
                     logger.error(str(e))
@@ -1373,7 +1376,7 @@ class ArgCleaner:
         self.string = string
 
     @staticmethod
-    def getarg(string: str, sep: str = ' ') -> list:
+    def getarg(string: str, sep: str = ' ') -> list[str]:
         """
         对字符串使用特定字符进行切片
         Args:

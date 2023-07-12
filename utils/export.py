@@ -1,5 +1,6 @@
 import bisect
 import math
+import time
 from typing import Union, Tuple
 
 import PIL
@@ -9,12 +10,11 @@ from loguru import logger
 from PIL import Image, ImageDraw, ImageFont, ImageColor
 from pilmoji import Pilmoji
 from pilmoji.source import Twemoji
-import time
+
 from utils.cleaner import ConfigManager
-import utils.emoji_custom as emoji_source
+import utils.emoji as emoji_source
 
-__version__ = '3.5.10'
-
+__version__ = '3.6.0'
 
 # 这是将测试的结果输出为图片的模块。
 # 设计思路:

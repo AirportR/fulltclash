@@ -11,6 +11,8 @@ from utils.myqueue import bot_put
 from utils import message_delete_queue as mdq
 from glovar import __version__
 from botmodule.init_bot import latest_version_hash as v_hash
+from botmodule.command.authority import (Invite, INVITE_SELECT_CACHE as ISC,
+                                         BOT_MESSAGE_CACHE, generate_random_string as genkey)
 
 dsc = default_slave_comment = config.getSlaveconfig().get('default-slave', {}).get('comment', "本地后端")
 dsi = default_slave_id = config.getSlaveconfig().get('default-slave', {}).get('username', "local")
@@ -433,7 +435,10 @@ async def select_slave(app: Client, call: CallbackQuery):
         return
     sc['slaveid'][str(botmsg.chat.id) + ":" + str(botmsg.id)] = slaveid
     # slaveid_cache[str(botmsg.chat.id) + ":" + str(botmsg.id)] = slaveid
-    if originmsg.text.startswith('/test'):
+    if originmsg.text.startswith('/invite'):
+        ISC['slaveid'][gen_msg_key(originmsg)] = slaveid
+        await botmsg.edit_text("请选择排序方式：", reply_markup=IKM2)
+    elif originmsg.text.startswith('/test'):
         await botmsg.edit_text("请选择排序方式：", reply_markup=IKM2)
     elif originmsg.text.startswith('/topo') or originmsg.text.startswith('/analyze'):
         sort_str = get_sort_str(botmsg)
@@ -453,6 +458,14 @@ async def select_slave(app: Client, call: CallbackQuery):
 
 
 async def select_sort(app: Client, call: CallbackQuery):
+    originmsg = call.message.reply_to_message
+    sort_str = str(call.data)[5:]
+    if originmsg.text.startswith('/invite'):
+        ISC['sort'][gen_msg_key(originmsg)] = sort_str
+        key = genkey(8)
+        BOT_MESSAGE_CACHE[key] = call.message
+        await Invite(key=key).invite(app, originmsg)
+        return
     IKM = InlineKeyboardMarkup(
         [
             # 第一行
@@ -467,7 +480,6 @@ async def select_sort(app: Client, call: CallbackQuery):
             [dbtn['ok_b']]
         ]
     )
-    sort_str = str(call.data)[5:]
     chat_id = call.message.chat.id
     mess_id = call.message.id
     # sort_cache[str(chat_id) + ":" + str(mess_id)] = sort_str

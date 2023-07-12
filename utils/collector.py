@@ -513,7 +513,6 @@ class Collector:
             if youtube.status is not None:
                 self.info['youtube'] = await youtube.text()
                 self.info['youtube_status_code'] = youtube.status
-                logger.info("Youtube 成功访问")
             else:
                 self.info['youtube'] = None
         except ClientConnectorError as c:
@@ -554,7 +553,6 @@ class Collector:
                             self.info['disney'] = "未知"
                     else:
                         self.info['disney'] = "解锁({})".format(region)
-                    logger.info("disney+ 成功访问(轻检测，检测结果准确率下降)")
                 elif 399 < dis1.status:
                     self.info['disney'] = "N/A"
                     logger.info(f"disney+ 访问错误 {dis1.status}")
@@ -580,7 +578,6 @@ class Collector:
                         self.info['disney'] = "解锁({})".format(region)
                 else:
                     self.info['disney'] = "失败"
-                logger.info("disney+ 成功访问")
                 dis2.close()
         except ssl.SSLError:
             if reconnection != 0:

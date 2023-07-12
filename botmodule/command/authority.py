@@ -1,14 +1,19 @@
 import asyncio
-# import random
+from contextlib import suppress
 import string
 import secrets
-import pyrogram
+from dataclasses import dataclass
+from typing import List
+
 from async_timeout import timeout
 from loguru import logger
 from pyrogram.errors import RPCError
+from pyrogram import Client
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
+
 from utils.check import get_telegram_id_from_message as get_id
-from utils.cleaner import geturl, addon
+from utils.cleaner import geturl, addon, ArgCleaner
+from botmodule.command.test import convert_core_index
 
 b1 = InlineKeyboardMarkup(
     [
@@ -28,21 +33,26 @@ invite_list = {}  # 被邀请人ID列表
 message_list = {}  # 原消息
 bot_message_list = {}  # bot回复消息
 success_message_list = {}
+INVITE_CACHE = {}  # {"<ID>:<key>": msg1} 被邀请人原消息
+BOT_MESSAGE_CACHE = {}
+INVITE_SELECT_CACHE = {
+    # 所有的记录都以 "{chat_id}:{message_id}"作为键
+    'script': {},  # 脚本选择
+    'sort': {},  # 记录排序选择
+    'slaveid': {},  # 记录后端id选择
+}
 task_type = ['testurl', 'analyzeurl', 'speedurl']
 temp_queue = asyncio.Queue(maxsize=1)
 
 
 def generate_random_string(length: int):
     # 生成随机字符串
-    # letters_and_digits = string.ascii_letters + string.digits
-    # result_str = ''.join((random.choice(letters_and_digits) for _ in range(length)))
-    # return result_str
     letters_and_digits = string.ascii_letters + string.digits
     result_str = ''.join(secrets.choice(letters_and_digits) for _ in range(length))
     return result_str
 
 
-async def invite(client: pyrogram.Client, message):
+async def invite(client: Client, message):
     bot_info = await client.get_me()
     text = str(message.text)
     texts = text.split(' ')
@@ -118,7 +128,7 @@ async def get_url_from_invite(_, message2):
                 await message2.reply("无效的URL")
 
 
-async def invite_pass(client: pyrogram.Client, message: Message):
+async def invite_pass(client: Client, message: Message):
     # temp_queue = asyncio.Queue(maxsize=1)
     ID = str(get_id(message))
     text = str(message.text)
@@ -179,3 +189,142 @@ async def invite_pass(client: pyrogram.Client, message: Message):
             s_text = "❌未知任务类型，请重试"
             await message.reply(s_text)
             return
+
+
+async def invite_pass2(client: Client, message: Message):
+    print(message.text)
+    tgargs = ArgCleaner.getarg(message.text)
+    start_uid = str(get_id(message))
+    timeout_value = 60
+    # https://t.me/AirportRoster_bot?start=8GImRgzY_testurl_default /start sE8ic4MA_testurl_default
+    parsertext = tgargs[1] if len(tgargs) > 1 else ''
+    if not parsertext:
+        await message.reply("输入 /help 查看使用说明。")
+        return
+    subtext = ArgCleaner.getarg(parsertext, '_')
+    if len(subtext) < 3:
+        logger.info(f"参数不全: {tgargs}")
+    if subtext[1] not in task_type:
+        logger.info("未找到测试类型，取消验证")
+        return
+    key = f"{start_uid}:{subtext[0]}"
+    if key not in INVITE_CACHE:
+        await message.reply("❌ID验证失败，请不要乱用别人的测试哦！")
+
+    # 验证成功
+    test_items = get_invite_item(parsertext)
+    s_text = f"✅身份验证成功\n🚗任务项: {subtext[1]} \n\n**接下来请在{timeout_value}s内发送订阅链接** <过滤器> \n否则任务取消"
+    success_mes = await message.reply(s_text)
+    success_message_list[start_uid] = success_mes
+    mes = INVITE_CACHE.pop(key, None)
+    if mes is None:
+        return
+
+    # bot_mes = bot_message_list.pop(key2 + ID, None)
+    bot_mes = BOT_MESSAGE_CACHE.pop(subtext[0], None)
+    if bot_mes is None:
+        logger.warning("未找到bot消息")
+        return
+    await bot_mes.edit_text(f"✅身份验证成功\n🚗任务项: {subtext[1]}\n\n⏳正在等待上传订阅链接~~~")
+    suburl = ''
+    in_text = ''
+    ex_text = ''
+    sort_str = INVITE_SELECT_CACHE['sort'].pop(str(mes.chat.id) + ":" + str(mes.id), "订阅原序")
+    slaveid = INVITE_SELECT_CACHE['slaveid'].pop(str(mes.chat.id) + ":" + str(mes.id), "local")
+    coreindex = convert_core_index(subtext[1])
+    if not coreindex:
+        logger.info("未知的测试类型，任务取消")
+        return
+    try:
+        async with timeout(timeout_value):
+            suburl, in_text, ex_text = await temp_queue.get()
+    except asyncio.TimeoutError:
+        logger.info(f"验证过期: {key}")
+        await bot_mes.edit_text("❌任务已取消\n\n原因: 接收订阅链接超时")
+    if suburl:
+        from utils.bot import bot_put
+        await message.reply("✨提交成功，请返回群组查看测试结果。")
+        await asyncio.sleep(3)
+        await bot_mes.delete()
+        # await bot_put(app, originmsg, put_type, None, sort=sort_str, coreindex=1, slaveid=slaveid)
+        print("invite提交的任务项:", test_items)
+        await bot_put(client, mes, subtext[1], test_items=test_items,
+                      include_text=in_text, exclude_text=ex_text, url=suburl,
+                      sort=sort_str, coreindex=coreindex, slaveid=slaveid)
+    else:
+        INVITE_CACHE.pop(key, '')
+    success_message_list.pop(start_uid, None)
+
+
+def get_invite_item(text: str):
+    """
+    获取邀请测试里面的参数，然后得到测试项的值。
+    """
+    subtext = ArgCleaner.getarg(text, '_')
+    if len(subtext) < 3:
+        return None
+    if subtext[2] == "default":
+        return addon.global_test_item(httptest=True)
+    if not subtext[1].startswith('test'):
+        return None
+
+    return None
+
+
+@dataclass
+class Invite:
+    username: str = ''
+    key: str = generate_random_string(8)
+
+    def set_username(self, username: str):
+        self.username = username
+
+    def gen_keyboard(self, additional_option: List):
+        if not self.username:
+            raise ValueError("无法找到BOT的用户名，邀请测试无法进行。")
+        inline_keyboard = b1.inline_keyboard
+        if len(inline_keyboard) > len(task_type):
+            raise ValueError("无法填充更多的的测试按钮。")
+        for n, row in enumerate(inline_keyboard):
+            for buttun in row:
+                buttun.callback_data = None
+
+                if additional_option:
+                    url_text = f"https://t.me/{self.username}?start={self.key}_{task_type[n]}"
+                    for t in additional_option:
+                        url_text = url_text + "_" + t
+                else:
+                    url_text = f"https://t.me/{self.username}?start={self.key}_{task_type[n]}_default"
+
+                buttun.url = url_text
+        return inline_keyboard
+
+    async def invite(self, app: Client, message: Message):
+        # 获取bot的用户名
+        bot_info = await app.get_me()
+
+        with suppress(AttributeError):
+            username = bot_info.username
+            self.set_username(username)
+        print("bot用户名", username)
+        # 获取invite的发起者名称
+        try:
+            sender = message.from_user.first_name
+        except AttributeError:
+            sender = message.sender_chat.title
+        invite_text = f"🎯您好, **{sender}** 为您创建了一个测试任务，请选择测试的类型:"
+        texts = message.text.split(" ")
+        del texts[0]
+
+        if username:
+            inline_keyboard = self.gen_keyboard(texts)
+            IKM2 = InlineKeyboardMarkup(inline_keyboard)
+            target = message if message.reply_to_message is None else message.reply_to_message
+            target_id = str(get_id(target))
+            logger.info(f"被邀请人id: {target_id}")
+            try:
+                cache_key = target_id + ":" + self.key
+                INVITE_CACHE[cache_key] = target
+                await target.reply(invite_text, quote=True, reply_markup=IKM2)
+            except RPCError as r:
+                print(r)
