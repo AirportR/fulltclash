@@ -12,7 +12,7 @@ from pilmoji import Pilmoji
 from pilmoji.source import Twemoji
 
 from utils.cleaner import ConfigManager
-import utils.emoji as emoji_source
+import utils.emoji_custom as emoji_source
 
 __version__ = '3.6.0'
 

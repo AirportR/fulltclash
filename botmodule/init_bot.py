@@ -18,7 +18,7 @@ config = ConfigManager()
 def check_init():
     emoji_source = config.config.get('emoji', {}).get('emoji-source', 'TwemojiLocalSource')
     if config.config.get('emoji', {}).get('enable', True) and emoji_source == 'TwemojiLocalSource':
-        from utils.emoji import TwemojiLocalSource
+        from utils.emoji_custom import TwemojiLocalSource
         if not os.path.isdir('./resources/emoji/twemoji'):
             twemoji = TwemojiLocalSource()
             logger.info("检测到未安装emoji资源包，正在初始化本地emoji...")
