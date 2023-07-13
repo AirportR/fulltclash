@@ -210,6 +210,7 @@ async def invite_pass2(client: Client, message: Message):
     key = f"{start_uid}:{subtext[0]}"
     if key not in INVITE_CACHE:
         await message.reply("❌ID验证失败，请不要乱用别人的测试哦！")
+        return
 
     # 验证成功
     test_items = get_invite_item(parsertext)
@@ -306,7 +307,6 @@ class Invite:
         with suppress(AttributeError):
             username = bot_info.username
             self.set_username(username)
-        print("bot用户名", username)
         # 获取invite的发起者名称
         try:
             sender = message.from_user.first_name
@@ -325,6 +325,11 @@ class Invite:
             try:
                 cache_key = target_id + ":" + self.key
                 INVITE_CACHE[cache_key] = target
-                await target.reply(invite_text, quote=True, reply_markup=IKM2)
+                bot_mes = BOT_MESSAGE_CACHE.get(self.key, None)
+                if bot_mes is None:
+                    await target.reply("⚠️bot消息已被删除，任务取消", quote=True)
+                    return
+                await bot_mes.edit_text(invite_text, reply_markup=IKM2)
+
             except RPCError as r:
                 print(r)
