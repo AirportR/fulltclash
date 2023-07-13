@@ -8,6 +8,7 @@ from botmodule import init_bot
 from botmodule.cfilter import dynamic_data_filter, allfilter, AccessCallback
 from botmodule.command.authority import get_url_from_invite
 from botmodule.command.leave import leavechat, set_anti_group
+from botmodule.command.logs import export_logs
 # from utils.cron.utils import message_delete_queue
 # from utils.myqueue import q, bot_task_queue
 from utils.myqueue import bot_put
@@ -224,6 +225,10 @@ def command_loader(app: Client):
     @app.on_message(filters.command(['connect']) & allfilter(2), group=2)
     async def conn(client, message):
         await botmodule.conn_simple(client, message)
+
+    @app.on_message(filters.command(['logs']) & allfilter(2), group=2)
+    async def _(client, message):
+        await export_logs(client, message)
 
     @app.on_message(filters.command(['edit']) & filters.user(bridge), group=2)
     async def _(client: Client, message: Message):

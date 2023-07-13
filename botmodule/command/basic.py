@@ -78,6 +78,7 @@ admin_text = f"""
 /connect [管理][前后端专属]对接一个后端bot
 /sconnect [管理][前后端专属]对接一个主端bot
 /setting [管理]bot的控制面板
+/logs [管理]输出本次运行的日志文件
 killme [管理]杀死bot的自身进程(慎用！)
 如有使用问题加入频道 @FullTClash 交流
     """
