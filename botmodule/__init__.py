@@ -13,7 +13,7 @@ from botmodule.command.edit import *
 
 __all__ = ['grant', 'ungrant', 'user', 'restart_or_killme',
            'sub_invite', 'sub', 'new', 'remove',
-           'process', 'invite', 'invite_pass',
+           'process', 'invite', 'invite_pass2',
            'version', 'helps',
            'test_setting', 'select_page', 'get_sort_str', 'select_sort', 'setting_page',
            'download_script', 'reload_addon_from_telegram', 'uninstall_script',

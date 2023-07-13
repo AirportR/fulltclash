@@ -436,7 +436,9 @@ async def select_slave(app: Client, call: CallbackQuery):
     sc['slaveid'][str(botmsg.chat.id) + ":" + str(botmsg.id)] = slaveid
     # slaveid_cache[str(botmsg.chat.id) + ":" + str(botmsg.id)] = slaveid
     if originmsg.text.startswith('/invite'):
-        ISC['slaveid'][gen_msg_key(originmsg)] = slaveid
+        target = originmsg if originmsg.reply_to_message is None else originmsg.reply_to_message
+        ISC['slaveid'][gen_msg_key(target)] = slaveid
+        print("发起邀请前: ", str(ISC))
         await botmsg.edit_text("请选择排序方式：", reply_markup=IKM2)
     elif originmsg.text.startswith('/test'):
         await botmsg.edit_text("请选择排序方式：", reply_markup=IKM2)
