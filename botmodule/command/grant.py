@@ -1,11 +1,12 @@
 import os
 import signal
+import subprocess
 import sys
 import pyrogram.types
 from loguru import logger
 from pyrogram import Client
 from pyrogram.errors import RPCError
-from botmodule.init_bot import admin, config, reloadUser
+from botmodule.init_bot import admin, config, reloadUser, proxy_subprocess
 from utils.cron.utils import message_delete_queue
 # from utils.proxys import killclash
 
@@ -109,9 +110,10 @@ async def user(_, message):
 
 async def restart_or_killme(_, message, kill=False):
     try:
+        if isinstance(proxy_subprocess, subprocess.Popen):
+            proxy_subprocess.kill()
         if kill:
             await message.reply("再见~")
-            # killclash()
             os.kill(os.getpid(), signal.SIGINT)
         else:
             await message.reply("开始重启(大约等待五秒)")

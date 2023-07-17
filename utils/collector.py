@@ -445,9 +445,9 @@ class Collector:
                     elif i == "Netflix":
                         from addons.unlockTest import netflix
                         self.tasks.append(netflix.task(self, session, proxy=proxy))
-                    elif i == "Spotify":
-                        from addons.unlockTest import spotify
-                        self.tasks.append(spotify.task(self, session, proxy=proxy))
+                    elif i == "TVB":
+                        from addons.unlockTest import tvb
+                        self.tasks.append(tvb.task(self, session, proxy=proxy))
                     elif i == "Viu":
                         from addons.unlockTest import viu
                         self.tasks.append(viu.task(self, session, proxy=proxy))

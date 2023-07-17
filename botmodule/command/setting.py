@@ -5,45 +5,48 @@ from loguru import logger
 from pyrogram import types, Client
 from pyrogram.errors import RPCError
 from pyrogram.types import BotCommand, CallbackQuery, Message
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton as IKB
 from utils.cleaner import addon, config
 from utils.myqueue import bot_put
 from utils import message_delete_queue as mdq
 from glovar import __version__
 from botmodule.init_bot import latest_version_hash as v_hash
 
-IKB = InlineKeyboardButton
 dsc = default_slave_comment = config.getSlaveconfig().get('default-slave', {}).get('comment', "本地后端")
 dsi = default_slave_id = config.getSlaveconfig().get('default-slave', {}).get('username', "local")
 dbtn = default_button = {
-    1: InlineKeyboardButton("✅Netflix", callback_data='✅Netflix'),
-    2: InlineKeyboardButton("✅Youtube", callback_data='✅Youtube'),
-    3: InlineKeyboardButton("✅Disney+", callback_data='✅Disney+'),
-    15: InlineKeyboardButton("✅Spotify", callback_data="✅Spotify"),
-    18: InlineKeyboardButton("✅Viu", callback_data="✅Viu"),
-    19: InlineKeyboardButton("✅落地IP风险", callback_data="✅落地IP风险"),
-    20: InlineKeyboardButton("✅steam货币", callback_data="✅steam货币"),
-    21: InlineKeyboardButton("✅维基百科", callback_data="✅维基百科"),
-    25: InlineKeyboardButton("✅OpenAI", callback_data="✅OpenAI"),
-    'ok_b': InlineKeyboardButton("👌完成设置", callback_data='👌完成设置'),
-    'b_reverse': InlineKeyboardButton("🪞选项翻转", callback_data='🪞选项翻转'),
-    'yusanjia': InlineKeyboardButton("御三家(N-Y-D)", callback_data='御三家(N-Y-D)'),
-    'b_cancel': InlineKeyboardButton("👋点错了，给我取消", callback_data='👋点错了，给我取消'),
-    'b_alive': InlineKeyboardButton("节点存活率", callback_data="节点存活率"),
-    'b_okpage': InlineKeyboardButton("🔒锁定本页设置", callback_data="ok_p"),
-    'b_all': InlineKeyboardButton("全测", callback_data="全测"),
-    'b_origin': InlineKeyboardButton("♾️订阅原序", callback_data="sort:订阅原序"),
-    'b_rhttp': InlineKeyboardButton("⬇️HTTP倒序", callback_data="sort:HTTP倒序"),
-    'b_http': InlineKeyboardButton("⬆️HTTP升序", callback_data="sort:HTTP升序"),
-    'b_slave': InlineKeyboardButton(dsc, "slave:"+dsi),
-    'b_close': InlineKeyboardButton("❌关闭页面", callback_data="close"),
+    1: IKB("✅Netflix", callback_data='✅Netflix'),
+    2: IKB("✅Youtube", callback_data='✅Youtube'),
+    3: IKB("✅Disney+", callback_data='✅Disney+'),
+    15: IKB("✅TVB", callback_data="✅TVB"),
+    18: IKB("✅Viu", callback_data="✅Viu"),
+    19: IKB("✅落地IP风险", callback_data="✅落地IP风险"),
+    20: IKB("✅steam货币", callback_data="✅steam货币"),
+    21: IKB("✅维基百科", callback_data="✅维基百科"),
+    25: IKB("✅OpenAI", callback_data="✅OpenAI"),
+    'ok_b': IKB("👌完成设置", callback_data='👌完成设置'),
+    'b_reverse': IKB("🪞选项翻转", callback_data='🪞选项翻转'),
+    'yusanjia': IKB("御三家(N-Y-D)", callback_data='御三家(N-Y-D)'),
+    'b_cancel': IKB("👋点错了，给我取消", callback_data='👋点错了，给我取消'),
+    'b_alive': IKB("节点存活率", callback_data="节点存活率"),
+    'b_okpage': IKB("🔒锁定本页设置", callback_data="ok_p"),
+    'b_all': IKB("全测", callback_data="全测"),
+    'b_origin': IKB("♾️订阅原序", callback_data="sort:订阅原序"),
+    'b_rhttp': IKB("⬇️HTTP倒序", callback_data="sort:HTTP倒序"),
+    'b_http': IKB("⬆️HTTP升序", callback_data="sort:HTTP升序"),
+    'b_slave': IKB(dsc, "slave:" + dsi),
+    'b_close': IKB("❌关闭页面", callback_data="close"),
+    'upper': IKB("⬆️返回上一层", callback_data="preconfig"),
+    'b_del_conf': IKB("删除配置", callback_data="del_config"),
+    'b_edit_conf': IKB("修改配置", callback_data="edit_config"),
+    'b_add_conf': IKB("新增配置", callback_data="add_config"),
 }
 
 buttons = [dbtn[1], dbtn[2], dbtn[3], dbtn[25], dbtn[15], dbtn[18], dbtn[20], dbtn[21], dbtn[19]]
 buttons.extend(addon.init_button(isreload=True))
 max_page_g = int(len(buttons) / 9) + 1
-blank_g = InlineKeyboardButton(f"{1}/{max_page_g}", callback_data="blank")
-next_page_g = InlineKeyboardButton("下一页➡️", callback_data=f"page{2}")
+blank_g = IKB(f"{1}/{max_page_g}", callback_data="blank")
+next_page_g = IKB("下一页➡️", callback_data=f"page{2}")
 
 IKM2 = InlineKeyboardMarkup(
     [
@@ -53,10 +56,14 @@ IKM2 = InlineKeyboardMarkup(
         [dbtn['b_cancel']]
     ]
 )
-select_item_cache = {}
-page_is_locked = {}
-sort_cache = {}
-slaveid_cache = {}
+
+sc = select_cache = {
+    # 所有的记录都以 "{chat_id}:{message_id}"作为键
+    'script': {},  # 脚本选择
+    'lpage': {},  # 记录当前页面是否已锁定
+    'sort': {},  # 记录排序选择
+    'slaveid': {},  # 记录后端id选择
+}
 
 
 def reload_button():
@@ -170,37 +177,42 @@ async def test_setting(client: Client, callback_query: CallbackQuery, row=3, **k
             message = await edit_mess.edit_text("⌛正在提交任务~")
             return test_items, origin_message, message, test_type
         elif 'ok_p' == callback_data:
-            test_items = select_item_cache.get(str(chat_id) + ':' + str(mess_id), ['HTTP(S)延迟'])
+            test_items = sc['script'].get(str(chat_id) + ':' + str(mess_id), ['HTTP(S)延迟'])
+            # test_items = select_item_cache.get(str(chat_id) + ':' + str(mess_id), ['HTTP(S)延迟'])
             for b_1 in inline_keyboard:
                 for b in b_1:
                     if "✅" in b.text:
                         test_items.append(str(b.text)[1:])
-            blank1 = InlineKeyboardButton("已完成本页提交", callback_data="blank")
-            pre_page = InlineKeyboardButton("        ", callback_data="blank")
-            next_page = InlineKeyboardButton("        ", callback_data="blank")
-            blank = InlineKeyboardButton(f'{page}/{max_page}', callback_data='blank')
+            blank1 = IKB("已完成本页提交", callback_data="blank")
+            pre_page = IKB("        ", callback_data="blank")
+            next_page = IKB("        ", callback_data="blank")
+            blank = IKB(f'{page}/{max_page}', callback_data='blank')
             for b_1 in inline_keyboard:
                 for b in b_1:
                     if "⬅️上一页" == b.text:
-                        pre_page = InlineKeyboardButton("⬅️上一页", callback_data=b.callback_data)
+                        pre_page = IKB("⬅️上一页", callback_data=b.callback_data)
                     elif "下一页➡️" == b.text:
-                        next_page = InlineKeyboardButton("下一页➡️", callback_data=b.callback_data)
+                        next_page = IKB("下一页➡️", callback_data=b.callback_data)
                     elif f"/{max_page}" in b.text:
-                        blank = InlineKeyboardButton(b.text, callback_data='blank')
+                        blank = IKB(b.text, callback_data='blank')
                         page = str(b.text)[0]
             new_ikm = InlineKeyboardMarkup([[blank1], [pre_page, blank, next_page], [dbtn['b_cancel'], dbtn['ok_b']], ])
             # 设置状态
-            select_item_cache[str(chat_id) + ':' + str(mess_id)] = test_items
+            sc['script'][str(chat_id) + ':' + str(mess_id)] = test_items
+            # select_item_cache[str(chat_id) + ':' + str(mess_id)] = test_items
             key = str(chat_id) + ':' + str(mess_id) + ':' + str(page)
-            page_is_locked[key] = True
+            sc['lpage'][key] = True
+            # page_is_locked[key] = True
             await client.edit_message_text(chat_id, mess_id, "请选择想要启用的测试项: ", reply_markup=new_ikm)
             return test_items, origin_message, message, test_type
         elif "👌完成设置" in callback_data:
-            test_items = select_item_cache.pop(str(chat_id) + ':' + str(mess_id), ['HTTP(S)延迟'])
+            test_items = sc['script'].pop(str(chat_id) + ':' + str(mess_id), ['HTTP(S)延迟'])
+            # test_items = select_item_cache.pop(str(chat_id) + ':' + str(mess_id), ['HTTP(S)延迟'])
             message = await client.edit_message_text(chat_id, mess_id, "⌛正在提交任务~")
             issuc = []
             for i in range(max_page):
-                res1 = page_is_locked.pop(str(chat_id) + ':' + str(mess_id) + ':' + str(i), '')
+                res1 = sc['lpage'].pop(str(chat_id) + ':' + str(mess_id) + ':' + str(i), '')
+                # res1 = page_is_locked.pop(str(chat_id) + ':' + str(mess_id) + ':' + str(i), '')
                 if res1:
                     issuc.append(res1)
             if not issuc:
@@ -224,14 +236,17 @@ async def select_page(client: Client, call: CallbackQuery, **kwargs):
     row = kwargs.get('row', 3)
     chat_id = call.message.chat.id
     mess_id = call.message.id
+    msgkey = str(chat_id) + ':' + str(mess_id) + ':' + str(page)
     max_page = int(len(buttons) / (row * 3)) + 1
-    pre_page = InlineKeyboardButton('⬅️上一页', callback_data=f'page{page - 1}')
-    next_page = InlineKeyboardButton('下一页➡️', callback_data=f'page{page + 1}')
-    blank1 = InlineKeyboardButton("已完成本页提交", callback_data="blank")
-    blank_button = InlineKeyboardButton('        ', callback_data='blank')
-    blank = InlineKeyboardButton(f'{page}/{max_page}', callback_data='blank')
+    pre_page = IKB('⬅️上一页', callback_data=f'page{page - 1}')
+    next_page = IKB('下一页➡️', callback_data=f'page{page + 1}')
+    blank1 = IKB("已完成本页提交", callback_data="blank")
+    blank_button = IKB('        ', callback_data='blank')
+    blank = IKB(f'{page}/{max_page}', callback_data='blank')
     if page == 1:
-        if page_is_locked.get(str(chat_id) + ':' + str(mess_id) + ':' + str(page), False):
+        sc['lpage'].get(msgkey, False)
+        # if page_is_locked.get(msgkey, False):
+        if sc['lpage'].get(msgkey, False):
             if max_page == 1:
                 new_ikm = InlineKeyboardMarkup([[blank1],
                                                 [blank_button, blank, blank_button],
@@ -258,7 +273,8 @@ async def select_page(client: Client, call: CallbackQuery, **kwargs):
             keyboard.append([dbtn['ok_b']])
             new_ikm = InlineKeyboardMarkup(keyboard)
     elif page == max_page:
-        if page_is_locked.get(str(chat_id) + ':' + str(mess_id) + ':' + str(page), False):
+        # if page_is_locked.get(str(chat_id) + ':' + str(mess_id) + ':' + str(page), False):
+        if sc['lpage'].get(msgkey, False):
             new_ikm = InlineKeyboardMarkup([[blank1],
                                             [pre_page, blank, blank_button],
                                             [dbtn['b_cancel'], dbtn['ok_b']]])
@@ -276,7 +292,8 @@ async def select_page(client: Client, call: CallbackQuery, **kwargs):
             keyboard.append([dbtn['ok_b']])
             new_ikm = InlineKeyboardMarkup(keyboard)
     else:
-        if page_is_locked.get(str(chat_id) + ':' + str(mess_id) + ':' + str(page), False):
+        # if page_is_locked.get(str(chat_id) + ':' + str(mess_id) + ':' + str(page), False):
+        if sc['lpage'].get(msgkey, False):
             new_ikm = InlineKeyboardMarkup([[blank1], [pre_page, blank, next_page], [dbtn['b_cancel'], dbtn['ok_b']]])
         else:
             keyboard = [[dbtn['b_okpage']]]
@@ -294,14 +311,26 @@ async def select_page(client: Client, call: CallbackQuery, **kwargs):
     await client.edit_message_text(chat_id, mess_id, "请选择想要启用的测试项: ", reply_markup=new_ikm)
 
 
-def get_sort_str(message: Message):
-    k = str(message.chat.id) + ":" + str(message.id)
-    return sort_cache.pop(k, "订阅原序")
+def gen_msg_key(message: Message) -> str:
+    """
+    生成针对此消息对象的唯一键
+    """
+    return str(message.chat.id) + ":" + str(message.id)
 
 
-def get_slave_id(chat_id: int, message_id: int):
-    k = str(chat_id) + ":" + str(message_id)
-    return slaveid_cache.pop(k, "local")
+def get_sort_str(message: Message) -> str:
+    k = gen_msg_key(message)
+    return sc['sort'].pop(k, "订阅原序")
+
+
+# def get_slave_id(chat_id: int, message_id: int) -> str:
+#     k = str(chat_id) + ":" + str(message_id)
+#     return sc['slaveid'].pop(k, "local")
+
+
+def get_slave_id(message: Message) -> str:
+    k = gen_msg_key(message)
+    return sc['slaveid'].pop(k, "local")
 
 
 def page_frame(pageprefix: str, contentprefix, content: List[str], **kwargs) -> list:
@@ -316,9 +345,9 @@ def page_frame(pageprefix: str, contentprefix, content: List[str], **kwargs) -> 
     max_page = int(len(content) / (row * column)) + 1
     pre_page_text = page - 1 if page - 1 > 0 else 1
     next_page_text = page + 1 if page < max_page else max_page
-    pre_page = InlineKeyboardButton('⬅️上一页', callback_data=f'{pageprefix}{pre_page_text}')
-    next_page = InlineKeyboardButton('下一页➡️', callback_data=f'{pageprefix}{next_page_text}')
-    preview = InlineKeyboardButton(f'{page}/{max_page}', callback_data='blank')
+    pre_page = IKB('⬅️上一页', callback_data=f'{pageprefix}{pre_page_text}')
+    next_page = IKB('下一页➡️', callback_data=f'{pageprefix}{next_page_text}')
+    preview = IKB(f'{page}/{max_page}', callback_data='blank')
 
     if page > max_page:
         logger.error("页数错误")
@@ -361,9 +390,9 @@ async def select_slave_page(_: Client, call: Union[CallbackQuery, Message], **kw
     max_page = int(len(comment) / row) + 1
     pre_page_text = page - 1 if page - 1 > 0 else 1
     next_page_text = page + 1 if page < max_page else max_page
-    pre_page = InlineKeyboardButton('⬅️上一页', callback_data=f'spage{pre_page_text}')
-    next_page = InlineKeyboardButton('下一页➡️', callback_data=f'spage{next_page_text}')
-    blank = InlineKeyboardButton(f'{page}/{max_page}', callback_data='blank')
+    pre_page = IKB('⬅️上一页', callback_data=f'spage{pre_page_text}')
+    next_page = IKB('下一页➡️', callback_data=f'spage{next_page_text}')
+    blank = IKB(f'{page}/{max_page}', callback_data='blank')
 
     if page > max_page:
         logger.error("页数错误")
@@ -402,18 +431,19 @@ async def select_slave(app: Client, call: CallbackQuery):
         await botmsg.edit_text("❌未知的后端id")
         mdq.put(botmsg)
         return
-    slaveid_cache[str(botmsg.chat.id) + ":" + str(botmsg.id)] = slaveid
+    sc['slaveid'][str(botmsg.chat.id) + ":" + str(botmsg.id)] = slaveid
+    # slaveid_cache[str(botmsg.chat.id) + ":" + str(botmsg.id)] = slaveid
     if originmsg.text.startswith('/test'):
         await botmsg.edit_text("请选择排序方式：", reply_markup=IKM2)
     elif originmsg.text.startswith('/topo') or originmsg.text.startswith('/analyze'):
         sort_str = get_sort_str(botmsg)
-        slaveid = get_slave_id(botmsg.chat.id, botmsg.id)
+        slaveid = get_slave_id(botmsg)
         put_type = "analyzeurl" if originmsg.text.split(' ', 1)[0].split('@', 1)[0].endswith('url') else "analyze"
         await botmsg.delete()
         await bot_put(app, originmsg, put_type, None, sort=sort_str, coreindex=2, slaveid=slaveid)
     elif originmsg.text.startswith('/speed'):
         sort_str = get_sort_str(botmsg)
-        slaveid = get_slave_id(botmsg.chat.id, botmsg.id)
+        slaveid = get_slave_id(botmsg)
         put_type = "speedurl" if originmsg.text.split(' ', 1)[0].split('@', 1)[0].endswith('url') else "speed"
         await botmsg.delete()
         await bot_put(app, originmsg, put_type, None, sort=sort_str, coreindex=1, slaveid=slaveid)
@@ -440,16 +470,17 @@ async def select_sort(app: Client, call: CallbackQuery):
     sort_str = str(call.data)[5:]
     chat_id = call.message.chat.id
     mess_id = call.message.id
-    sort_cache[str(chat_id) + ":" + str(mess_id)] = sort_str
+    # sort_cache[str(chat_id) + ":" + str(mess_id)] = sort_str
+    sc['sort'][str(chat_id) + ":" + str(mess_id)] = sort_str
     await app.edit_message_text(chat_id, mess_id, "请选择想要启用的测试项: ", reply_markup=IKM)
 
 
 async def setting_page(_: Client, message: Message):
     text = config.config.get('bot', {}).get('description', f"🛠️FullTclash bot管理总枢🛠️\n\n版本: {__version__}({v_hash})")
-    addon_button = InlineKeyboardButton("🧩插件管理(开发中)", callback_data="blank")
-    config_button = InlineKeyboardButton("⚙️配置管理", callback_data="setconfig")
-    sub_button = InlineKeyboardButton("🌐订阅管理(开发中)", callback_data="blank")
-    slave_button = InlineKeyboardButton("🧰后端管理(开发中)", callback_data="blank")
+    addon_button = IKB("🧩插件管理(开发中)", callback_data="blank")
+    config_button = IKB("⚙️配置管理", callback_data="setconfig")
+    sub_button = IKB("🌐订阅管理(开发中)", callback_data="blank")
+    slave_button = IKB("🧰后端管理(开发中)", callback_data="blank")
     IKM = InlineKeyboardMarkup([[addon_button], [config_button], [sub_button], [slave_button]])
     await message.reply_text(text, reply_markup=IKM, quote=True)
 
@@ -468,8 +499,3 @@ async def select_config_page(_: Client, callback: Union[CallbackQuery, Message],
         await botmsg.edit_text(f"⚙️以下是配置项预览: \n\n共找到{len(configkeys)}条配置项", reply_markup=IKM)
     else:
         await callback.reply("请选择测试后端:", reply_markup=IKM, quote=True)
-
-
-async def setting_config(_: Client, __: Message):
-    list(config.config.keys())
-    # text = f"当前配置路径: {}\n值: {}"

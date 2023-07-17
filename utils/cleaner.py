@@ -389,24 +389,35 @@ class ClashCleaner:
         :param _config: 传入一个文件对象，或者一个字符串,文件对象需指向 yaml/yml 后缀文件
         """
         self.path = ''
-        self.unsupport_type = ['wireguard', 'vless', 'hysteria']
+        self.unsupport_type = ['wireguard', 'vless', 'hysteria', 'tuic']
         self.yaml = {}
-        if _config == ':memory:':
-            try:
-                self.yaml = yaml.safe_load(preTemplate()) if _config2 is None else yaml.safe_load(_config2)
-                return
-            except Exception as e:
-                logger.error(str(e))
-                self.yaml = {}
-                return
+        self.load(_config, _config2)
+        if not isinstance(self.yaml, dict):
+            self.yaml = {}
+
+    def load(self, _config, _config2: Union[str, bytes]):
         if type(_config).__name__ == 'str':
-            with open(_config, 'r', encoding="UTF-8") as fp:
-                self.yaml = yaml.safe_load(fp)
-            self.path = _config
+            if _config == ':memory:':
+                try:
+                    self.yaml = yaml.safe_load(preTemplate()) if _config2 is None else yaml.safe_load(_config2)
+                    self.check_type()
+                    return
+                except Exception as e:
+                    logger.error(str(e))
+                    self.yaml = {}
+                    return
+            else:
+                with open(_config, 'r', encoding="UTF-8") as fp:
+                    self.yaml = yaml.safe_load(fp)
+                self.path = _config
         else:
             self.yaml = yaml.safe_load(_config)
 
-        self.filter_unsupport_proxy()
+    def check_type(self):
+        """
+        检查反序列化后的对象是否符合clash配置格式
+        """
+        self.check_unsupport_proxy()
 
     def setProxies(self, proxyinfo: list):
         """
@@ -415,12 +426,13 @@ class ClashCleaner:
         """
         self.yaml['proxies'] = proxyinfo
 
-    def filter_unsupport_proxy(self):
+    def check_unsupport_proxy(self):
         try:
             if self.yaml is None:
                 self.yaml = {}
                 return
             proxies: list = self.yaml['proxies']
+            newproxies = []
             for i, proxy in enumerate(proxies):
                 if isinstance(proxy, dict):
                     name = proxy['name']
@@ -428,10 +440,9 @@ class ClashCleaner:
                     if not isinstance(name, str):
                         # 将节点名称转为字符串
                         proxy['name'] = str(name)
-                    if ptype in self.unsupport_type:
-                        logger.warning(f"出现了可能不受支持的节点：{ptype}")
-                        proxies.pop(i)
-            self.yaml['proxies'] = proxies
+                    if ptype not in self.unsupport_type:
+                        newproxies.append(proxy)
+            self.yaml['proxies'] = newproxies
         except KeyError:
             logger.warning("读取节点信息失败！")
         except TypeError:
@@ -470,7 +481,7 @@ class ClashCleaner:
         lis = []
         try:
             for i in self.yaml['proxies']:
-                lis.append(i['name'])
+                lis.append(str(i['name']))
             return lis
         except KeyError:
             logger.warning("读取节点信息失败！")
@@ -484,7 +495,7 @@ class ClashCleaner:
         获取节点地址信息，返回（host,port）元组形式
         """
         try:
-            return [(i['server'], i['port']) for i in self.yaml['proxies']]
+            return [(str(i['server']), i['port']) for i in self.yaml['proxies']]
         except KeyError:
             logger.warning("读取节点信息失败！")
             return None
@@ -500,7 +511,7 @@ class ClashCleaner:
         t = []
         try:
             for i in self.yaml['proxies']:
-                t.append(i['type'])
+                t.append(str(i['type']))
             return t
         except TypeError:
             logger.warning("读取节点信息失败！")
@@ -514,7 +525,7 @@ class ClashCleaner:
         y = []
         try:
             for i in self.yaml['proxies']:
-                y.append(i['server'])
+                y.append(str(i['server']))
             return y
         except TypeError:
             logger.warning("读取节点信息失败！")
@@ -537,37 +548,6 @@ class ClashCleaner:
             return dip
         except Exception as e:
             logger.error(str(e))
-            return None
-
-    def nodesAddr_plus(self, name=None):
-        """
-        获取节点地址
-        :return: list | str
-        """
-        if name:
-            try:
-                for i in self.yaml['proxies']:
-                    if name == i['name']:
-                        return i['server']
-                    else:
-                        pass
-                return None
-            except TypeError:
-                logger.warning("读取节点信息失败")
-                return None
-            except KeyError:
-                logger.warning("读取节点信息失败！")
-                return None
-        addrs = []
-        try:
-            for i in self.yaml['proxies']:
-                addrs.append(i['server'])
-            return addrs
-        except TypeError:
-            logger.warning("读取节点信息失败")
-            return None
-        except KeyError:
-            logger.warning("读取节点信息失败！")
             return None
 
     @staticmethod
@@ -857,6 +837,9 @@ class ConfigManager:
                 return str(self.config['proxy'])
         except KeyError:
             return None
+
+    def get_default_slave(self):
+        return self.getSlaveconfig().get('default-slave', {})
 
     def get_media_item(self):
         try:
@@ -1163,9 +1146,9 @@ class ReCleaner:
                 elif i == "Netflix":
                     from addons.unlockTest import netflix
                     info['Netflix'] = netflix.get_netflix_info_new(self)
-                elif i == "Spotify":
-                    from addons.unlockTest import spotify
-                    info['Spotify'] = spotify.get_spotify_info(self)
+                elif i == "TVB":
+                    from addons.unlockTest import tvb
+                    info['TVB'] = tvb.get_TVBAnywhere_info(self)
                 elif i == "Viu":
                     from addons.unlockTest import viu
                     info['Viu'] = viu.get_viu_info(self)

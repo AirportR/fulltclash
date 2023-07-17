@@ -876,6 +876,8 @@ def default_progress_text(corelabel: Union[int, str], progress: int, nodenum: in
         testtext = GCONFIG.config.get('bot', {}).get('scripttext', "⏳连通性测试进行中...")
     else:
         testtext = "未知测试进行中"
+    if slavecomment == "Local":
+        slavecomment = GCONFIG.get_default_slave().get('comment', 'Local')
     progress_bars = GCONFIG.config.get('bot', {}).get('bar', "=")
     bracketsleft = GCONFIG.config.get('bot', {}).get('bleft', "[")
     bracketsright = GCONFIG.config.get('bot', {}).get('bright', "]")

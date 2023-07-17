@@ -17,53 +17,10 @@ from utils.safe import sha256_32bytes, DEFAULT_NONCE2
 """
 这个模块主要是一些对clash 动态库 api的python调用
 """
-clash_path = config.get_clash_path()
-# lib = ctypes.cdll.LoadLibrary(clash_path)
-# _setProxy = getattr(lib, 'setProxy')
-# _setProxy.argtypes = [ctypes.c_char_p, ctypes.c_int64]
-# # _setProxy.restype = ctypes.c_char_p
-# _setProxy.restype = ctypes.c_int8
-# _free_me = getattr(lib, 'freeMe')
-# _free_me.argtypes = [ctypes.POINTER(ctypes.c_char)]
-# _myURLTest = getattr(lib, 'myURLTest')
-# _myURLTest.argtypes = [ctypes.c_char_p, ctypes.c_int64]
-# _myURLTest.restype = ctypes.c_ushort
-# _urlTest = getattr(lib, 'urltestJson')
-# _urlTest.argtypes = [ctypes.c_char_p, ctypes.c_int64, ctypes.c_int64]
-# _urlTest.restype = ctypes.c_char_p
+CLASH_PATH = config.get_clash_path()
+START_PORT = config.config.get('clash', {}).get('startup', 11220)
+CONTROL_PORT = START_PORT - 1
 BUILD_TOKEN = config.getBuildToken()
-
-
-# class Clash(threading.Thread):  # 继承父类threading.Thread
-#     def __init__(self, _port: Union[str, int], _index: int):
-#         threading.Thread.__init__(self)
-#         self._port = _port
-#         self._index = _index
-#
-#     def run(self):  # 把要执行的代码写到run函数里面 线程在创建后会直接运行run函数
-#         self.run_2()
-#
-#     def run_1(self):
-#         _myclash = lib.myclash
-#         _myclash.argtypes = [ctypes.c_char_p, ctypes.c_longlong]
-#         # create a task for myclash
-#         _addr = "127.0.0.1:" + str(self._port)
-#         _myclash(_addr.encode(), self._index)
-#
-#     def run_2(self):
-#         _myclash2 = lib.myclash2
-#         _myclash2.argtypes = [ctypes.c_char_p, ctypes.c_longlong]
-#         # create a task for myclash
-#         _addr = "127.0.0.1:" + str(self._port)
-#         _myclash2(_addr.encode(), self._index)
-#
-#     def stoplisten(self, index: int = None):
-#         closeclash = getattr(lib, 'closeclash')
-#         closeclash.argtypes = [ctypes.c_longlong]
-#         if index is None:
-#             closeclash(self._index)
-#         else:
-#             closeclash(index)
 
 
 class FullTClash:
@@ -75,7 +32,7 @@ class FullTClash:
         self.cport = control_port
         self.port = proxy_portlist
 
-    def start(self, controlport: int = 11219):
+    def start(self, controlport: int = CONTROL_PORT):
         """
         启动fulltclash代理程序
         """
@@ -84,7 +41,7 @@ class FullTClash:
         subprocess.Popen(_command.split(), encoding="utf-8")
 
     @staticmethod
-    async def connect(controlport: int = 11219):
+    async def connect(controlport: int = CONTROL_PORT):
         # 创建一个socket对象
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # 设置socket为非阻塞模式
@@ -93,12 +50,12 @@ class FullTClash:
         try:
             await asyncio.get_event_loop().sock_connect(s, ("127.0.0.1", controlport))
         except ConnectionRefusedError:
-            logger.error("远程计算机拒绝网络连接。请检查是否在 11219 端口开启了监听")
+            logger.error(f"远程计算机拒绝网络连接。请检查是否在 {CONTROL_PORT} 端口开启了监听")
             return None
         return s
 
     @staticmethod
-    async def sock_send(message, key: str, controlport: int = 11219, norecv=True):
+    async def sock_send(message, key: str, controlport: int = CONTROL_PORT, norecv=True):
         """
         message: 数据报文
         key: 加密密钥
@@ -124,7 +81,7 @@ class FullTClash:
         s.close()
 
     @staticmethod
-    def sock_send_noasync(message, key: str, controlport: int = 11219):
+    def sock_send_noasync(message, key: str, controlport: int = CONTROL_PORT):
         # 创建一个socket对象
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # 设置socket为非阻塞模式
@@ -132,7 +89,7 @@ class FullTClash:
         try:
             s.connect(("127.0.0.1", controlport))
         except ConnectionRefusedError:
-            logger.error("远程计算机拒绝网络连接。请检查是否在 11219 端口开启了监听")
+            logger.error(f"远程计算机拒绝网络连接。请检查是否在 {CONTROL_PORT} 端口开启了监听")
             return
         newkey = sha256_32bytes(key)
         # 使用chacha20算法加密消息，使用固定的nonce
@@ -147,7 +104,7 @@ class FullTClash:
         s.close()
 
     @staticmethod
-    async def urltest(port: int = 11220, pingurl: str = config.getGstatic()):
+    async def urltest(port: int = START_PORT, pingurl: str = config.getGstatic()):
         """
         测定指定index的代理
         """

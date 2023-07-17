@@ -42,11 +42,6 @@ def user_loder(app: Client):
     async def _(client: Client, message: Message):
         await botmodule.simple_relay(client, message)
 
-    @app.on_message(filters.command(config.config.get('bot', {}).get('command', [])))
-    @AccessCallback(1)
-    async def common_command(client: Client, message: Message):
-        await botmodule.common_command(client, message)
-
 
 def command_loader2(app: Client):
     """
@@ -265,6 +260,9 @@ def callback_loader(app: Client):
         if callback_query.data.startswith('cpage'):
             await botmodule.select_config_page(client, callback_query, page=int(callback_query.data[5:]), column=2)
             return
+        # elif callback_query.data.startswith('config'):
+        #     await botmodule.setting_config(client, callback_query, column=2)
+        #     return
         elif callback_query.data == 'setconfig':
             await botmodule.select_config_page(client, callback_query, page=1, column=2)
             return
@@ -294,7 +292,7 @@ def callback_loader(app: Client):
         # logger.info(str(test_items))
         if message:
             sort_str = botmodule.get_sort_str(message)
-            slaveid = botmodule.get_slave_id(message.chat.id, message.id)
+            slaveid = botmodule.get_slave_id(message)
             await asyncio.sleep(2)
             await message.delete()
             await bot_put(client, origin_message, test_type, test_items, sort=sort_str, coreindex=3, slaveid=slaveid)
