@@ -747,6 +747,12 @@ class ConfigManager:
     def getMasterconfig(self):
         return self.config.get('masterconfig', {})
 
+    def getUserconfig(self):
+        userconfig = self.config.get('userconfig', {})
+        if not isinstance(userconfig, dict):
+            raise TypeError("userconfig的类型应为字典")
+        return userconfig
+
     def getSlaveconfig(self):
         return self.config.get('slaveconfig', {})
 

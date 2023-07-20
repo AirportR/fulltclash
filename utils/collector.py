@@ -28,6 +28,7 @@ config = cleaner.ConfigManager()
 addon = cleaner.addon
 media_items = config.get_media_item()
 proxies = config.get_proxy()  # 代理
+netflix_url = config.config.get('netflixurl', "https://www.netflix.com/title/70143836")
 
 
 def reload_config(media: list = None):
@@ -444,7 +445,7 @@ class Collector:
                         self.tasks.append(task5)
                     elif i == "Netflix":
                         from addons.unlockTest import netflix
-                        self.tasks.append(netflix.task(self, session, proxy=proxy))
+                        self.tasks.append(netflix.task(self, session, proxy=proxy, netflixurl=netflix_url))
                     elif i == "TVB":
                         from addons.unlockTest import tvb
                         self.tasks.append(tvb.task(self, session, proxy=proxy))

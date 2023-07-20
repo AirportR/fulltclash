@@ -104,7 +104,7 @@ class FullTClash:
         s.close()
 
     @staticmethod
-    async def urltest(port: int = START_PORT, pingurl: str = config.getGstatic()):
+    async def urltest(port: int = START_PORT, pingurl: str = config.getGstatic(), timeout: int = 5):
         """
         测定指定index的代理
         """
@@ -117,7 +117,7 @@ class FullTClash:
                 with contextlib.suppress(asyncio.exceptions.TimeoutError):
                     async with session.get(pingurl, proxy=addr, timeout=5) as _:
                         pass
-                async with session.get(pingurl, proxy=addr, timeout=10) as _:
+                async with session.get(pingurl, proxy=addr, timeout=timeout) as _:
                     end = loop.time()
                     ttfb2 = end - start
                     # print(f"TTFB for {pingurl} is {ttfb2:.3f} seconds")

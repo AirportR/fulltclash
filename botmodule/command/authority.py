@@ -128,71 +128,70 @@ async def get_url_from_invite(_, message2):
                 await message2.reply("无效的URL")
 
 
-# async def invite_pass(client: Client, message: Message):
-#     # temp_queue = asyncio.Queue(maxsize=1)
-#     ID = str(get_id(message))
-#     text = str(message.text)
-#     timeout_value = 60
-#     if 'testurl' in text or 'analyzeurl' in text or 'speedurl' in text:
-#         texts = text.split(' ')
-#         pre_key = texts[1] if len(texts) > 1 else ''
-#         if not pre_key:
-#             return
-#         k = pre_key.split('_')
-#         key2 = k[0] if k else ''
-#         A_ID = invite_list.get(key2, '')
-#         if key2 not in invite_list or A_ID != ID:
-#             await message.reply("ID验证失败，请不要乱用别人的测试哦！")
-#             return
-#         task_type_select = k[1] if len(k) > 1 else ''
-#         test_type_select = ['HTTP(S)延迟']
-#         if len(k) > 2:
-#             if k[2] == 'default':
-#                 test_type_select += addon.global_test_item()
-#             else:
-#                 for i in k[2:]:
-#                     if i == 'HTTP(S)延迟':
-#                         continue
-#                     test_type_select.append(i)
-#
-#         if task_type_select in task_type:
-#
-#             s_text = f"✅身份验证成功\n🚗任务项: {task_type_select} \n\n**接下来请在{timeout_value}s内发送订阅链接** <过滤器> 否则任务取消"
-#             success_mes = await message.reply(s_text)
-#             success_message_list.update({ID: success_mes})
-#             mes = message_list.pop(key2 + ID, None)
-#             if mes is None:
-#                 return
-#             bot_mes = bot_message_list.pop(key2 + ID, None)
-#             if bot_mes:
-#                 await bot_mes.edit_text(f"✅身份验证成功\n🚗任务项: {task_type_select}\n\n⏳正在等待上传订阅链接~~~")
-#             suburl = ''
-#             in_text = ''
-#             ex_text = ''
-#             try:
-#                 async with timeout(timeout_value):
-#                     suburl, in_text, ex_text = await temp_queue.get()
-#             except asyncio.TimeoutError:
-#                 logger.info(f"验证过期: {key2}:{ID}")
-#                 await bot_mes.edit_text("❌任务已取消\n\n原因: 接收订阅链接超时")
-#             if suburl:
-#                 from utils.bot import bot_put
-#                 await message.reply("✨提交成功，请返回群组查看测试结果。")
-#                 await asyncio.sleep(3)
-#                 await bot_mes.delete()
-#                 test_item = test_type_select
-#                 await bot_put(client, mes, task_type_select, test_items=test_item,
-#                               include_text=in_text, exclude_text=ex_text, url=suburl)
-#             else:
-#                 invite_list.pop(key2, '')
-#         else:
-#             s_text = "❌未知任务类型，请重试"
-#             await message.reply(s_text)
-#             return
+async def invite_pass(client: Client, message: Message):
+    # temp_queue = asyncio.Queue(maxsize=1)
+    ID = str(get_id(message))
+    text = str(message.text)
+    timeout_value = 60
+    if 'testurl' in text or 'analyzeurl' in text or 'speedurl' in text:
+        texts = text.split(' ')
+        pre_key = texts[1] if len(texts) > 1 else ''
+        if not pre_key:
+            return
+        k = pre_key.split('_')
+        key2 = k[0] if k else ''
+        A_ID = invite_list.get(key2, '')
+        if key2 not in invite_list or A_ID != ID:
+            await message.reply("ID验证失败，请不要乱用别人的测试哦！")
+            return
+        task_type_select = k[1] if len(k) > 1 else ''
+        test_type_select = ['HTTP(S)延迟']
+        if len(k) > 2:
+            if k[2] == 'default':
+                test_type_select += addon.global_test_item()
+            else:
+                for i in k[2:]:
+                    if i == 'HTTP(S)延迟':
+                        continue
+                    test_type_select.append(i)
+
+        if task_type_select in task_type:
+
+            s_text = f"✅身份验证成功\n🚗任务项: {task_type_select} \n\n**接下来请在{timeout_value}s内发送订阅链接** <过滤器> 否则任务取消"
+            success_mes = await message.reply(s_text)
+            success_message_list.update({ID: success_mes})
+            mes = message_list.pop(key2 + ID, None)
+            if mes is None:
+                return
+            bot_mes = bot_message_list.pop(key2 + ID, None)
+            if bot_mes:
+                await bot_mes.edit_text(f"✅身份验证成功\n🚗任务项: {task_type_select}\n\n⏳正在等待上传订阅链接~~~")
+            suburl = ''
+            in_text = ''
+            ex_text = ''
+            try:
+                async with timeout(timeout_value):
+                    suburl, in_text, ex_text = await temp_queue.get()
+            except asyncio.TimeoutError:
+                logger.info(f"验证过期: {key2}:{ID}")
+                await bot_mes.edit_text("❌任务已取消\n\n原因: 接收订阅链接超时")
+            if suburl:
+                from utils.bot import bot_put
+                await message.reply("✨提交成功，请返回群组查看测试结果。")
+                await asyncio.sleep(3)
+                await bot_mes.delete()
+                test_item = test_type_select
+                await bot_put(client, mes, task_type_select, test_items=test_item,
+                              include_text=in_text, exclude_text=ex_text, url=suburl)
+            else:
+                invite_list.pop(key2, '')
+        else:
+            s_text = "❌未知任务类型，请重试"
+            await message.reply(s_text)
+            return
 
 
 async def invite_pass2(client: Client, message: Message):
-    print(message.text)
     tgargs = ArgCleaner.getarg(message.text)
     start_uid = str(get_id(message))
     timeout_value = 60
@@ -231,9 +230,7 @@ async def invite_pass2(client: Client, message: Message):
     in_text = ''
     ex_text = ''
     sort_str = INVITE_SELECT_CACHE['sort'].pop(str(mes.chat.id) + ":" + str(mes.id), "订阅原序")
-    print("发起邀请后: ", str(INVITE_SELECT_CACHE))
     slaveid = INVITE_SELECT_CACHE['slaveid'].pop(str(mes.chat.id) + ":" + str(mes.id), "local")
-    print("后端id：", slaveid)
     coreindex = convert_core_index(subtext[1])
     if not coreindex:
         logger.info("未知的测试类型，任务取消")
@@ -250,7 +247,8 @@ async def invite_pass2(client: Client, message: Message):
         await asyncio.sleep(3)
         await bot_mes.delete()
         # await bot_put(app, originmsg, put_type, None, sort=sort_str, coreindex=1, slaveid=slaveid)
-        print("invite提交的任务项:", test_items)
+        print(f"invite提交的任务项: {subtext[1]}\n测试项:{test_items}\n过滤器: {in_text}<->{ex_text}\n排序: {sort_str}\n"
+              f"coreindex: {coreindex}\n后端id: {slaveid}")
         await bot_put(client, mes, subtext[1], test_items=test_items,
                       include_text=in_text, exclude_text=ex_text, url=suburl,
                       sort=sort_str, coreindex=coreindex, slaveid=slaveid)

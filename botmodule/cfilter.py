@@ -1,5 +1,7 @@
+from typing import Union
+
 from pyrogram import filters
-from pyrogram.types import Message
+from pyrogram.types import Message, CallbackQuery
 from loguru import logger
 from utils.cleaner import addon
 from utils.cron.utils import message_delete_queue
@@ -21,6 +23,13 @@ def dynamic_data_filter(data):
 
     # "data" kwarg is accessed with "flt.data" above
     return filters.create(func, data=data)
+
+
+def prefix_filter(prefix: str):
+    async def func(flt, _, update: Union[Message, CallbackQuery]):
+        return update.text.startswith(flt.prefix) if isinstance(update, Message) else update.data.startswith(flt.prefix)
+
+    return filters.create(func, prefix=prefix)
 
 
 def admin_filter():
@@ -123,7 +132,7 @@ def command_argnum_filter(argnum: int = 1):
     return filters.create(func)
 
 
-def allfilter(group: int, *args, **kwargs):
+def allfilter(group: int):
     """
     所有自定义filter
     """

@@ -2,23 +2,110 @@ import asyncio
 import aiohttp
 from aiohttp import ClientConnectorError, ServerDisconnectedError
 from loguru import logger
-from pyrogram.types import InlineKeyboardButton
 from aiohttp_socks import ProxyConnectionError
+import requests
 
-from utils.collector import config
+# from utils.collector import config
 
 # collector section
-netflix_url1 = config.config.get('netflixurl', "https://www.netflix.com/title/70143836")  # 非自制
+netflix_url1 = "https://www.netflix.com/title/70143836"  # 非自制
 netflix_url2 = "https://www.netflix.com/title/81280792"  # 自制
 
 
-async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, proxy=None, reconnection=30):
+def fetch_netflix_old(Collector, proxy=None, flag=1, reconnection=3):
+    """
+    新版Netflix检测
+    """
+    headers = {
+        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8," +
+                  "application/signed-exchange;v=b3;q=0.9",
+        "accept-language": "zh-CN,zh;q=0.9",
+        "upgrade-insecure-requests": "1",
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.63 Safari/537.36'
+    }
+
+    try:
+        if flag == 1:
+            res = requests.get(netflix_url1, proxies=proxy, timeout=5, headers=headers)
+            if res.status_code == 200:
+                text = res.text
+                try:
+                    locate = text.find("preferredLocale")
+                    if locate > 0:
+                        region = text[locate + 29:locate + 31]
+                        Collector.info['netflix_new'] = f"解锁({region})"
+                    else:
+                        region = "未知"
+                        Collector.info['netflix_new'] = f"解锁({region})"
+                except IndexError as e:
+                    print(e)
+                    Collector.info['netflix_new'] = "N/A"
+            elif res.status_code == 403:
+                if reconnection == 0:
+                    print("不支持非自制剧,正在检测自制剧...")
+                    fetch_netflix_new(Collector, proxy, flag=flag + 1, reconnection=5)
+                    return
+                fetch_netflix_new(Collector, proxy, flag=flag, reconnection=reconnection - 1)
+
+            elif res.status_code == 503:
+                print("非自制剧服务不可用(被banIP),正在检测自制剧...")
+                fetch_netflix_new(Collector, proxy, flag=flag + 1, reconnection=5)
+                return
+            else:
+                print("不支持非自制剧,正在检测自制剧...")
+                fetch_netflix_new(Collector, proxy, flag=flag + 1, reconnection=reconnection)
+
+        elif flag == 2:
+            res = requests.get(netflix_url2, proxies=proxy, timeout=5)
+            if res.status_code == 200:
+                Collector.info['netflix_new'] = "自制"
+            elif res.status_code == 403:
+                if reconnection == 0:
+                    Collector.info['netflix_new'] = "失败"
+                    return
+                fetch_netflix_new(Collector, proxy, flag=flag, reconnection=reconnection - 1)
+            elif res.status_code == 503:
+                Collector.info['netflix_new'] = "不可用"
+                return
+            else:
+                Collector.info['netflix_new'] = "失败"
+
+    except requests.exceptions.RequestException as e:
+        print("Netflix请求发生错误:" + str(e))
+        if reconnection != 0 and reconnection > 27:
+            fetch_netflix_new(Collector, proxy, flag=flag, reconnection=reconnection - 1)
+        else:
+            Collector.info['netflix_new'] = "连接错误"
+
+
+async def fetch_netflix(Collector, session: aiohttp.ClientSession, flag=1, proxy=None, reconnection=2):
+    """
+    requests版本实现，若发现aiohttp的版本检测异常，可尝试此版本
+    """
+    headers = {
+        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8," +
+                  "application/signed-exchange;v=b3;q=0.9",
+        "accept-language": "zh-CN,zh;q=0.9",
+        "upgrade-insecure-requests": "1",
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ' +
+                      'Chrome/102.0.5005.63 Safari/537.36'
+    }
+    import requests
+    seesion = requests.session()
+    resp = seesion.get(netflix_url1, proxies=proxy)
+    print(resp.status_code)
+    print(resp.text[:1000])
+
+
+async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, proxy=None, reconnection=30,
+                            netflixurl: str = None):
     """
     新版Netflix检测
     :param flag
     :param Collector: 采集器
     :param session:
     :param proxy:
+    :param netflixurl: 自定义非自制剧url
     :param reconnection: 重连次数
     :return:
     """
@@ -37,9 +124,10 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ' +
                       'Chrome/102.0.5005.63 Safari/537.36'
     }
+    netflix_url = netflix_url1 if netflixurl is None else netflixurl
     try:
         if flag == 1:
-            async with session.get(netflix_url1, proxy=proxy, timeout=5, headers=headers) as res:
+            async with session.get(netflix_url, proxy=proxy, timeout=5, headers=headers) as res:
                 if res.status == 200:  # 解锁非自制
                     text = await res.text()
                     try:
@@ -115,8 +203,8 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
 #                     break
 
 
-def task(Collector, session, proxy):
-    return asyncio.create_task(fetch_netflix_new(Collector, session, proxy=proxy))
+def task(Collector, session, proxy, netflixurl: str = None):
+    return asyncio.create_task(fetch_netflix_new(Collector, session, proxy=proxy, netflixurl=netflixurl))
 
 
 # cleaner section
@@ -138,9 +226,19 @@ def get_netflix_info_new(ReCleaner):
         return "N/A"
 
 
-button = InlineKeyboardButton("✅Netflix", callback_data='✅Netflix')
 SCRIPT = {
     "MYNAME": "Netflix",
     "TASK": task,
     "GET": get_netflix_info_new
 }
+
+if __name__ == '__main__':
+    class FakeColl:
+        def __init__(self):
+            self.info = {}
+
+
+    coll = FakeColl()
+    proxies = {'http': 'http://localhost:1112', 'https': 'http://localhost:1112'}
+    fetch_netflix_old(coll, proxy=proxies)
+    print(coll.info)
