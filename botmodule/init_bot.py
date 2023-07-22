@@ -54,19 +54,80 @@ def check_init():
 
 check_init()
 
+
+def check_version() -> str:
+    _latest_version_hash = ""
+    try:
+        output = check_output(['git', 'log'], shell=False, encoding="utf-8").strip()
+        # 解析输出，提取最新提交的哈希值
+        for line in output.split("\n"):
+            if "commit" in line:
+                _latest_version_hash = line.split()[1][:7]
+                break
+    except Exception as e0:
+        logger.info("可能不是通过git拉取源码，因此version将无法查看提交哈希。")
+        logger.warning(str(e0))
+        _latest_version_hash = "Unavailable"
+    return _latest_version_hash
+
+
 # 获取远程仓库的最新提交哈希
-latest_version_hash = ""
-try:
-    output = check_output(['git', 'log'], shell=False, encoding="utf-8").strip()
-    # 解析输出，提取最新提交的哈希值
-    for line in output.split("\n"):
-        if "commit" in line:
-            latest_version_hash = line.split()[1][:7]
-            break
-except Exception as e:
-    logger.info("可能不是通过git拉取源码，因此version将无法查看提交哈希。")
-    logger.warning(str(e))
-    latest_version_hash = "Unavailable"
+latest_version_hash = check_version()
+
+
+def check_args():
+    import argparse
+    help_text_socks5 = "设置sock5代理，bot代理使用的这个\n格式--> host:端口:用户名:密码\t用户名和密码可省略"
+    help_text_http = "设置HTTP代理,拉取订阅用的。\n格式--> 用户名:密码@host:端口\t@符号前面的用户名和密码如果不设置可省略"
+    help_f = "强制覆盖原先的mybot.session文件，重新生成"
+    parser = argparse.ArgumentParser(description="FullTClash命令行快速启动，其中api_id,api_hash,bot_token要么不填，要么全部填完")
+    parser.add_argument("-r", action='store_true', help=help_f)
+    parser.add_argument("-ah", "--api-hash", required=False, type=str, help="自定义api-hash")
+    parser.add_argument("-ai", "--api-id", required=False, type=int, help="自定义api-id")
+    parser.add_argument("-b", "--bot-token", required=False, type=str, help="自定义bot-token")
+    parser.add_argument("-ps5", "--proxy-socks5", required=False, type=str, help=help_text_socks5)
+    parser.add_argument("-http", "--proxy-http", required=False, type=str, help=help_text_http)
+    parser.add_argument("-su", "--admin", required=False, help="设置bot的管理员，多个管理员以 , 分隔")
+
+    args = parser.parse_args()
+    if args.r:
+        if os.path.exists("./my_bot.session"):
+            logger.info("检测到启用session文件覆写选项")
+            try:
+                os.remove("my_bot.session")
+                logger.info("已移除my_bot.session")
+            except Exception as e2:
+                logger.error(f"session文件移除失败：{e2}")
+
+    if args.admin:
+        adminlist = str(args.admin).split(",")
+        logger.info(f"即将添加管理员：{adminlist}")
+        config.add_admin(adminlist)
+        config.reload()
+    if args.proxy_http:
+        config.yaml['proxy'] = str(args.proxy_http)
+        logger.info("从命令行参数中设置HTTP代理")
+    if args.api_hash and args.api_id and args.bot_token:
+        tempconf = {
+            "api_hash": args.api_hash,
+            "api_id": args.api_id,
+            "bot_token": args.bot_token,
+            "proxy": args.proxy_socks5,
+        }
+        bot_conf = config.getBotconfig()
+        bot_conf.update(tempconf)
+        config.yaml['bot'] = bot_conf
+        logger.info("从命令行参数中设置api_hash,api_id,bot_token")
+        if args.proxy_socks5:
+            logger.info("从命令行参数中设置bot的socks5代理")
+        i = config.reload()
+        if i:
+            logger.info("已覆写配置文件。")
+        else:
+            logger.warning("覆写配置失败！")
+
+
+check_args()
 
 logger.add("./logs/fulltclash_{time}.log", rotation='7 days')
 
@@ -130,11 +191,6 @@ elif proxy_host and proxy_port:
     }
 else:
     proxies = None
-# 如果找不到管理员，程序会被强制退出。
-if admin is None:
-    logger.error("获取管理员失败，将在5s后退出")
-    time.sleep(5)
-    sys.exit(1)
 
 logger.info("配置已加载, Telegram bot程序开始运行...")
 
@@ -151,6 +207,13 @@ def start_clash():
         return
     # if config.config.get('clash', {}).get('auto-start', False):
     print("开始启动clash core")
+    if sys.platform != "win32":
+        try:
+            status = os.system(f"chmod +x {clash_path}")
+            if status != 0:
+                raise OSError(f"Failed to execute command: chmod +x {clash_path}")
+        except OSError as o:
+            print(o)
     proxy_subprocess = start_fulltclash(port_list)
 
 

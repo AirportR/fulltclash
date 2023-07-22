@@ -188,7 +188,7 @@ def command_loader(app: Client):
     async def temp(client, message):
         await get_url_from_invite(client, message)
 
-    @app.on_message(filters.command(config.config.get('bot', {}).get('command', [])), group=3)
+    @app.on_message(filters.command(config.getBotconfig().get('command', [])), group=3)
     @AccessCallback(1)
     async def common_command(client: Client, message: Message):
         await botmodule.common_command(client, message)

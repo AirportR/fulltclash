@@ -766,6 +766,7 @@ class ConfigManager:
     def getBotconfig(self):
         botconfig = self.config.get('bot', {})
         if botconfig is None:
+            print("bot_config为None")
             return {}
         if not botconfig:
             return botconfig
@@ -882,11 +883,13 @@ class ConfigManager:
         try:
             return self.config['clash']['path']
         except KeyError:
-            logger.warning("获取运行路径失败，将采用默认运行路径 ./bin/fulltclash(.exe)\n自动识别windows与linux。架构默认为amd64")
+            logger.warning("获取运行路径失败，将采用默认运行路径: ./bin\n自动识别windows,linux,macos系统。架构默认为amd64")
             if sys.platform.startswith("linux"):
                 path = './bin/fulltclash-linux-amd64'
             elif sys.platform.startswith("win32"):
                 path = r'.\bin\fulltclash-windows-amd64.exe'
+            elif 'darwin' in sys.platform:
+                path = './bin/fulltclash-macos-amd64'
             else:
                 path = './bin/fulltclash-linux-amd64'
             d = {'path': path}
@@ -922,13 +925,12 @@ class ConfigManager:
             print(e)
 
     @logger.catch
-    def add_admin(self, admin: list or str or int):
+    def add_admin(self, admin: Union[list, str, int]):
         """
         添加管理员
         """
         adminlist = []
-
-        if admin is list:
+        if isinstance(admin, list):
             for li in admin:
                 adminlist.append(li)
         else:
