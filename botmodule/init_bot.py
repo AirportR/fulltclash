@@ -77,7 +77,7 @@ latest_version_hash = check_version()
 
 def check_args():
     import argparse
-    help_text_socks5 = "设置sock5代理，bot代理使用的这个\n格式--> host:端口:用户名:密码\t用户名和密码可省略"
+    help_text_socks5 = "设置socks5代理，bot代理使用的这个\n格式--> host:端口:用户名:密码\t用户名和密码可省略"
     help_text_http = "设置HTTP代理,拉取订阅用的。\n格式--> 用户名:密码@host:端口\t@符号前面的用户名和密码如果不设置可省略"
     help_f = "强制覆盖原先的mybot.session文件，重新生成"
     parser = argparse.ArgumentParser(description="FullTClash命令行快速启动，其中api_id,api_hash,bot_token要么不填，要么全部填完")
