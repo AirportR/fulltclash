@@ -404,6 +404,7 @@ def checkIPv4(ip):
     return False
 
 
+# 已废弃
 async def progress(message, prog, *args):
     """
     进度反馈，bot负责发送给TG前端

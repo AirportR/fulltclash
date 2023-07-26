@@ -750,11 +750,29 @@ class ConfigManager:
     def getUserconfig(self):
         userconfig = self.config.get('userconfig', {})
         if not isinstance(userconfig, dict):
-            raise TypeError("userconfig的类型应为字典")
+            logger.warning("userconfig的类型应为字典")
+            return {}
         return userconfig
 
+    def getSlavecomment(self, slaveid: str) -> str:
+        """
+        转换slaveid-->comment
+        return comment
+        """
+        try:
+            if slaveid == 'local':
+                return self.get_default_slave().get('comment', 'Local')
+            else:
+                return self.getSlaveconfig().get(slaveid, {}).get('comment', self.getSlavecomment('local'))
+        except Exception as e:
+            logger.error(str(e))
+            return 'Local'
+
     def getSlaveconfig(self):
-        return self.config.get('slaveconfig', {})
+        a = self.config.get('slaveconfig', {})
+        if isinstance(a, dict):
+            return a
+        return {}
 
     def getBuildToken(self):
         token = self.config.get('buildtoken', 'c7004ded9db897e538405c67e50e0ef0c3dbad717e67a92d02f6ebcfd1022a5ad1d' +

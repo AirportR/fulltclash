@@ -274,7 +274,6 @@ async def process_slave(app: Client, message: Message, putinfo: dict, **kwargs):
     if core is None:
         return
     info = await core.core(proxyinfo, **kwargs) if proxyinfo else {}
-    print("后端结果：", info)
 
     putinfo['result'] = info
     infostr = json.dumps(putinfo)
