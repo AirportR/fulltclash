@@ -1161,7 +1161,8 @@ class ReCleaner:
                     info[i] = task(self)
                     continue
                 if i == "Youtube":
-                    you = self.getyoutubeinfo()
+                    from addons.unlockTest import youtube
+                    you = youtube.get_youtube_info(self)
                     info['Youtube'] = you
                 elif i == "Disney":
                     dis = self.getDisneyinfo()

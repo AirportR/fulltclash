@@ -438,8 +438,8 @@ class Collector:
                         self.tasks.append(task(self, session, proxy=proxy))
                         continue
                     if i == "Youtube":
-                        task4 = asyncio.create_task(self.fetch_youtube(session, proxy=proxy))
-                        self.tasks.append(task4)
+                        from addons.unlockTest import youtube
+                        self.tasks.append(youtube.task(self, session, proxy=proxy))
                     elif i == "Disney" or i == "Disney+":
                         task5 = asyncio.create_task(self.fetch_dis(session, proxy=proxy))
                         self.tasks.append(task5)
