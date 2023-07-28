@@ -1,7 +1,6 @@
 import asyncio
 import os
 import sys
-import time
 # subprocess 模块用于启动子进程，并与其通信
 # 注意：使用 subprocess 时要小心不要执行不可信的输入
 from subprocess import check_output
@@ -16,6 +15,8 @@ config = ConfigManager()
 
 
 def check_init():
+    if config.getClashBranch() == 'meta':
+        logger.info('✅检测到启用clash.meta系内核，代理协议类型支持有所增加。')
     emoji_source = config.config.get('emoji', {}).get('emoji-source', 'TwemojiLocalSource')
     if config.config.get('emoji', {}).get('enable', True) and emoji_source == 'TwemojiLocalSource':
         from utils.emoji_custom import TwemojiLocalSource
