@@ -16,7 +16,7 @@ config = ConfigManager()
 
 def check_init():
     if config.getClashBranch() == 'meta':
-        logger.info('✅检测到启用clash.meta系内核，代理协议类型支持有所增加。')
+        logger.info('✅检测到启用clash.meta系内核配置，请自行配置更换成fulltclash-meta代理客户端（默认为原生clash内核）。')
     emoji_source = config.config.get('emoji', {}).get('emoji-source', 'TwemojiLocalSource')
     if config.config.get('emoji', {}).get('enable', True) and emoji_source == 'TwemojiLocalSource':
         from utils.emoji_custom import TwemojiLocalSource
