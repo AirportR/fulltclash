@@ -65,7 +65,7 @@ def fetch_netflix_old(Collector, proxy=None, flag=1, reconnection=3):
                     return
                 fetch_netflix_new(Collector, proxy, flag=flag, reconnection=reconnection - 1)
             elif res.status_code == 503:
-                Collector.info['netflix_new'] = "不可用"
+                Collector.info['netflix_new'] = "-"
                 return
             else:
                 Collector.info['netflix_new'] = "失败"

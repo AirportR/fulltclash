@@ -24,6 +24,7 @@ bot:
 # core: 4 # 核心数，数量越多测试速度越快，但代价是内存会大量占用(每个核心大概10M)，自己的机子多少内存自己平衡。默认值为1.
 # auto-start: false # bot启动时顺带启动,若为false则需要在 bot上输入/clash start 手动启动，默认false
 # startup: 1124 #起始端口。表示从此端口开始往下数占用数量，比如核心数为4，就会占用[1124,1126,1128,1130]共4个端口，遇到端口占用时可配置此项。推荐10000以上作为初始端口
+# branch: origin #clash内核上游分支，仅有两个有效值: [origin, meta], meta分支支持更多协议，比如vless、tuic等，但是使用上较为不可控，默认为origin原生内核。
 #proxy: "host:端口" # http配置代理(非socks5)，括号内可选用于下载获取订阅链接，订阅链接国内打不开可尝试开启（可选配置）,本机提供的代理可以这样填: '127.0.0.1:7890'
 #如果要http代理要验证，配置格式为: proxy: "用户名:密码@host:端口" 比如: user1:112233@127.0.0.1:7890
 #geoip-api: "ip-api.com" # GEOIP 测试api，取二级域名,目前支持 ip-api.com ip.sb ipleak.net ipdata.co ipapi.co 五种，其中 ipdata 需要配置下面的geoip-key

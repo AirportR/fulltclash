@@ -389,7 +389,7 @@ class ClashCleaner:
         :param _config: 传入一个文件对象，或者一个字符串,文件对象需指向 yaml/yml 后缀文件
         """
         self.path = ''
-        self.unsupport_type = ['wireguard', 'vless', 'hysteria', 'tuic']
+        self.unsupport_type = [] if config.getClashBranch() == 'meta' else ['wireguard', 'hysteria', 'tuic', 'vless']
         self.yaml = {}
         self.load(_config, _config2)
         if not isinstance(self.yaml, dict):
@@ -743,6 +743,18 @@ class ConfigManager:
             return self.config['speednodes']
         except KeyError:
             return int(300)
+
+    def getClashBranch(self):
+        """
+        确定clash内核分支版本
+        """
+        branch = self.config.get('clash', {}).get('branch', 'origin')
+        if branch == 'meta':
+            return 'meta'
+        elif isinstance(branch, str):
+            return 'origin'
+        else:
+            raise TypeError("clash.branch配置的值不合法，请检查！")
 
     def getMasterconfig(self):
         return self.config.get('masterconfig', {})
