@@ -28,6 +28,9 @@ def get_rule(userid: str):
     script = subuconf.get('script', None)
     if isinstance(script, list):
         script = addon.mix_script(script)
+    elif isinstance(script, str):
+        if script == "全测" or script == "all":
+            script = addon.global_test_item(True)
     else:
         script = None
     return slaveid, sort, script
