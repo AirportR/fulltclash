@@ -34,6 +34,9 @@ def get_telegram_id_from_message(message: Message):
         logger.error(str(e))
 
 
+get_id = get_telegram_id_from_message  # 别名
+
+
 async def is_port_in_use(host='127.0.0.1', port=80):
     """
     检查主机端口是否被占用

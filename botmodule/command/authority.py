@@ -212,7 +212,6 @@ async def invite_pass2(client: Client, message: Message):
         return
 
     # 验证成功
-    test_items = get_invite_item(parsertext)
     s_text = f"✅身份验证成功\n🚗任务项: {subtext[1]} \n\n**接下来请在{timeout_value}s内发送订阅链接** <过滤器> \n否则任务取消"
     success_mes = await message.reply(s_text)
     success_message_list[start_uid] = success_mes
@@ -229,8 +228,11 @@ async def invite_pass2(client: Client, message: Message):
     suburl = ''
     in_text = ''
     ex_text = ''
-    sort_str = INVITE_SELECT_CACHE['sort'].pop(str(mes.chat.id) + ":" + str(mes.id), "订阅原序")
-    slaveid = INVITE_SELECT_CACHE['slaveid'].pop(str(mes.chat.id) + ":" + str(mes.id), "local")
+    slaveid, sort_str, test_items = get_invite_item(parsertext)
+    if sort_str is None:
+        sort_str = INVITE_SELECT_CACHE['sort'].pop(str(mes.chat.id) + ":" + str(mes.id), "订阅原序")
+    if slaveid is None:
+        slaveid = INVITE_SELECT_CACHE['slaveid'].pop(str(mes.chat.id) + ":" + str(mes.id), "local")
     coreindex = convert_core_index(subtext[1])
     if not coreindex:
         logger.info("未知的测试类型，任务取消")
@@ -259,17 +261,22 @@ async def invite_pass2(client: Client, message: Message):
 
 def get_invite_item(text: str):
     """
-    获取邀请测试里面的参数，然后得到测试项的值。
+    获取邀请测试里面的参数，然后得到测试项的值,[slaveid,sort,script]。
     """
     subtext = ArgCleaner.getarg(text, '_')
     if len(subtext) < 3:
         return None
-    if subtext[2] == "default":
-        return addon.global_test_item(httptest=True)
-    if not subtext[1].startswith('test'):
-        return None
+    if subtext[2]:
+        from botmodule.rule import get_rule
+        slaveid, sort, script = get_rule(subtext[2])
+        if slaveid is None:
+            slaveid = 'local'
+        if sort is None:
+            sort = '订阅原序'
+        # script 允许为None
+        return slaveid, sort, script
 
-    return None
+    return None, None, None
 
 
 @dataclass
@@ -329,6 +336,7 @@ class Invite:
                 if bot_mes is None:
                     await target.reply("⚠️bot消息已被删除，任务取消", quote=True)
                     return
+                invite_text = bot_mes.text + "\n\n" + invite_text
                 await bot_mes.edit_text(invite_text, reply_markup=IKM2)
 
             except RPCError as r:

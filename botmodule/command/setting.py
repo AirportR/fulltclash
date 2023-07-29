@@ -1,3 +1,4 @@
+import asyncio
 import contextlib
 from copy import deepcopy
 from typing import Union, List
@@ -6,10 +7,12 @@ from pyrogram import types, Client
 from pyrogram.errors import RPCError
 from pyrogram.types import BotCommand, CallbackQuery, Message
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton as IKB
-from utils.cleaner import addon, config
+from utils.cleaner import addon, config, ArgCleaner
 from utils.myqueue import bot_put
+from utils.check import get_telegram_id_from_message as getID
 from utils import message_delete_queue as mdq
 from glovar import __version__
+from botmodule.rule import get_rule
 from botmodule.init_bot import latest_version_hash as v_hash
 from botmodule.command.authority import (Invite, INVITE_SELECT_CACHE as ISC,
                                          BOT_MESSAGE_CACHE, generate_random_string as genkey)
@@ -382,8 +385,33 @@ def page_frame(pageprefix: str, contentprefix, content: List[str], **kwargs) -> 
     return content_keyboard
 
 
+async def task_handler(app: Client, message: Message, **kwargs):
+    userconfig = config.getUserconfig()
+    ruleconfig = userconfig.get('rule', {})
+    ID = str(getID(message))
+    tgargs = ArgCleaner.getarg(message.text)
+    rulename = ''
+    if tgargs[0].startswith("/invite"):
+        rulename = tgargs[1] if len(tgargs) > 1 else ''
+    if rulename and rulename in ruleconfig:
+        slaveid, sort, script = get_rule(rulename)
+        if slaveid is None and sort is None and script is None:
+            await select_slave_page(app, message, **kwargs)
+            return
+        await select_task(app, message, slaveid, sort, script)
+    elif ID in ruleconfig:
+        slaveid, sort, script = get_rule(ID)
+        if slaveid is None and sort is None and script is None:
+            await select_slave_page(app, message, **kwargs)
+            return
+        await select_task(app, message, slaveid, sort, script)
+    else:
+        await select_slave_page(app, message, **kwargs)
+
+
 async def select_slave_page(_: Client, call: Union[CallbackQuery, Message], **kwargs):
     slaveconfig = config.getSlaveconfig()
+
     comment = [i.get('comment', None) for k, i in slaveconfig.items() if
                i.get('comment', None) and k != "default-slave"]
 
@@ -419,6 +447,30 @@ async def select_slave_page(_: Client, call: Union[CallbackQuery, Message], **kw
         await call.reply("请选择测试后端:", reply_markup=IKM, quote=True)
 
 
+async def select_task(app: Client, originmsg: Message, slaveid: str, sort: str, script: list = None):
+    if originmsg.text.startswith('/invite'):
+        comment = config.getSlavecomment(slaveid)
+        scripttext = ",".join(script) if script is not None else ""
+        invite_help_text = f"🍀选中后端: {comment}\n⛓️选中排序: {sort}\n🧵选中脚本: {scripttext}\n\n"
+        botmsg = await originmsg.reply(invite_help_text)
+        await asyncio.sleep(2)
+        key = genkey(8)
+        BOT_MESSAGE_CACHE[key] = botmsg
+        await Invite(key=key).invite(app, originmsg)
+    elif originmsg.text.startswith('/test'):
+        put_type = "testurl" if originmsg.text.split(' ', 1)[0].split('@', 1)[0].endswith('url') else "test"
+        await bot_put(app, originmsg, put_type, script, sort=sort, coreindex=3, slaveid=slaveid)
+    elif originmsg.text.startswith('/topo') or originmsg.text.startswith('/analyze'):
+        put_type = "analyzeurl" if originmsg.text.split(' ', 1)[0].split('@', 1)[0].endswith('url') else "analyze"
+        await bot_put(app, originmsg, put_type, None, sort=sort, coreindex=2, slaveid=slaveid)
+    elif originmsg.text.startswith('/speed'):
+        put_type = "speedurl" if originmsg.text.split(' ', 1)[0].split('@', 1)[0].endswith('url') else "speed"
+        await bot_put(app, originmsg, put_type, None, sort=sort, coreindex=1, slaveid=slaveid)
+    else:
+        await originmsg.reply("🐛暂时未适配")
+        return
+
+
 async def select_slave(app: Client, call: CallbackQuery):
     botmsg = call.message
     originmsg = call.message.reply_to_message
@@ -438,7 +490,6 @@ async def select_slave(app: Client, call: CallbackQuery):
     if originmsg.text.startswith('/invite'):
         target = originmsg if originmsg.reply_to_message is None else originmsg.reply_to_message
         ISC['slaveid'][gen_msg_key(target)] = slaveid
-        print("发起邀请前: ", str(ISC))
         await botmsg.edit_text("请选择排序方式：", reply_markup=IKM2)
     elif originmsg.text.startswith('/test'):
         await botmsg.edit_text("请选择排序方式：", reply_markup=IKM2)

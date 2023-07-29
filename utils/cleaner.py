@@ -1001,7 +1001,23 @@ class ConfigManager:
         slaveconfig[slave_id] = {'public-key': key, 'username': username, 'comment': comment}
         self.yaml['slaveconfig'] = slaveconfig
 
-    @logger.catch
+    def add_rule(self, userid: str, enable: bool = False, slaveid: str = "local", sort: str = "订阅原序",
+                 script: list = None):
+        """
+        设定用户默认规则，后端部分
+        """
+        script_list = []
+        if script is None:
+            script_list = ['HTTP(S)延迟']
+        self.get_default_slave().get('comment', 'Local')
+        conf = {'enable': enable, 'slaveid': slaveid, 'sort': sort, 'script': script_list}
+        uconf = self.getUserconfig()
+        rconf = uconf.get('rule', {})
+        rconf[userid] = conf
+        self.yaml['userconfig']['rule'] = rconf
+        if not self.reload():
+            logger.error("重载失败")
+
     def add_user(self, user: list or str or int):
         """
         添加授权用户

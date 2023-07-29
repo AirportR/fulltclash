@@ -75,17 +75,20 @@ def command_loader(app: Client):
     @app.on_message(filters.command(["testurl"]) & allfilter(1), group=1)
     @AccessCallback()
     async def testurl(client: Client, message: Message):
-        await botmodule.select_slave_page(client, message, page=1)
+        # await botmodule.select_slave_page(client, message, page=1)
+        await botmodule.task_handler(client, message, page=1)
 
     @app.on_message(filters.command(["test"]) & allfilter(1), group=1)
     @AccessCallback()
     async def test(client: Client, message: Message):
-        await botmodule.select_slave_page(client, message, page=1)
+        await botmodule.task_handler(client, message, page=1)
+        # await botmodule.select_slave_page(client, message, page=1)
 
     @app.on_message(filters.command(["invite"]), group=1)
     @AccessCallback()
     async def invite(client, message):
-        await botmodule.select_slave_page(client, message, page=1)
+        await botmodule.task_handler(client, message, page=1)
+        # await botmodule.select_slave_page(client, message, page=1)
 
     @app.on_message(filters.command(["grant"]) & allfilter(2), group=2)
     async def grant(client, message):
@@ -125,14 +128,14 @@ def command_loader(app: Client):
     @app.on_message(filters.command(["analyzeurl", "topourl"]) & allfilter(1), group=1)
     @AccessCallback()
     async def analyzeurl(client, message):
-        await botmodule.select_slave_page(client, message, page=1)
-        # await bot_put(client, message, "analyzeurl")
+        # await botmodule.select_slave_page(client, message, page=1)
+        await botmodule.task_handler(client, message, page=1)
 
     @app.on_message(filters.command(["analyze", "topo"]) & allfilter(1), group=1)
     @AccessCallback()
     async def analyze(client, message):
-        await botmodule.select_slave_page(client, message, page=1)
-        # await bot_put(client, message, "analyze")
+        # await botmodule.select_slave_page(client, message, page=1)
+        await botmodule.task_handler(client, message, page=1)
 
     @app.on_message(filters.command(["reload"]) & allfilter(2), group=2)
     async def reload_testmember(_, message):
@@ -168,12 +171,14 @@ def command_loader(app: Client):
     @app.on_message(filters.command(["speed"]) & allfilter(1), group=1)
     @AccessCallback()
     async def speed(client, message):
-        await botmodule.select_slave_page(client, message, page=1)
+        await botmodule.task_handler(client, message, page=1)
+        # await botmodule.select_slave_page(client, message, page=1)
 
     @app.on_message(filters.command(["speedurl"]) & allfilter(1), group=1)
     @AccessCallback()
     async def speedurl(client, message):
-        await botmodule.select_slave_page(client, message, page=1)
+        await botmodule.task_handler(client, message, page=1)
+        # await botmodule.select_slave_page(client, message, page=1)
 
     @app.on_message(filters.command(["subinfo", "traffic", "流量", "流量信息", "流量查询"]), group=0)
     async def subinfo(client, message):
@@ -197,6 +202,10 @@ def command_loader(app: Client):
     @AccessCallback()
     async def share(client, message):
         await botmodule.sub_invite(client, message)
+
+    @app.on_message(filters.command(['rule']) & allfilter(1), group=1)
+    async def _(_: Client, message: Message):
+        await message.reply("🚧开发中~🚧")
 
     @app.on_message(filters.command(['install', 'list']) & allfilter(2), group=2)
     async def install_script(client, message):

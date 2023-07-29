@@ -61,6 +61,14 @@ bot:
 #  default-slave: # 默认后端配置。
 #    comment: "本地测试后端" # 默认测试后端的备注。
 #    username: "local" # 默认测试后端的ID，此项请勿修改，会影响本地后端的运行。
+#userconfig: #用户权限组相关配置
+#  rule: #测试时的默认规则,3.6.0加入
+#    "规则名":
+#      enable: true
+#      slaveid: local
+#      script: ["Netflix", "Youtube", "Disney+", "维基百科"]
+#      sort: "HTTP升序"
+
 
 #----------------------------   以下为绘图相关配置   --------------------------------#
 
