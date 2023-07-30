@@ -31,7 +31,7 @@ async def edit(app: Client, message: Message):
         p1 = int(p[0])
         p2 = int(p[1])
         p3 = int(p[2])
-        slavecomment = tgargs[5].strip('"') if len(tgargs) > 5 else ''
+        slavecomment = ArgCleaner().getarg(message.text, '"')[1]
         edittext = default_progress_text(p1, p2, p3, slavecomment)
         with suppress(RPCError):
             if p1 == 1:
@@ -49,4 +49,3 @@ async def edit(app: Client, message: Message):
     except Exception as e:
         logger.warning(str(e))
         return
-
