@@ -2,7 +2,7 @@
 <div align="center">
     <h1> FullTClash</h1>
     <p>🤖 A Telegram bot that operates based on the Clash core </p>
-    <p><a href="https://github.com/AirportR/FullTclash/blob/dev/README-EN.md">English</a>   简体中文</p>
+    <p><a href="https://github.com/AirportR/FullTclash/blob/dev/README-EN.md">English</a>&nbsp &nbsp 简体中文</p>
     <a href="https://fulltclash.gitbook.io/fulltclash-doc"><img src="https://img.shields.io/static/v1?message=doc&color=blue&logo=micropython&label=FullTClash"></a> 
     <img src="https://img.shields.io/github/license/AirportR/FullTclash">
     <a href="https://app.codacy.com/gh/AirportR/FullTclash/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade"><img src="https://app.codacy.com/project/badge/Grade/389b2787eb7647dfad486ccaa70eabf4"></a>
@@ -14,38 +14,26 @@
 	<br>
 </div>
 
-## 最近更新(3.5.9)
-✏️3.5.9版本更新日志：
-
-🧵 改进测试方法。移除动态连接库调用的形式，更稳定的体验。\
-⚠️注意，如果您是在3.5.4版本后开始使用本项目，请把以下配置删除或修改(linux):
-```yaml
-clash:
- path: ./bin/fulltclash-linux-amd64
-```
-
-
-同时动态链接库此版本已经移除，继续在方向上开发是不明智的选择。\
-🐛 修复3.5.8版本偶现拓扑图绘制失败的bug。\
-📖 新增回调功能的详细文档：https://fulltclash.gitbook.io/fulltclash-doc/hui-tiao-gong-neng-gao-ji \
-✨ 支持设置默认的后端名称展示。前往配置样例查看（文档那边暂时未更新）。\
-✨ Youtube解锁检测现已支持 送中(CN) 结果展示。\
-⬆️新增包依赖。请使用 pip install lxml==4.9.2 进行安装。
-
-
-
-
-
-历史更新请到TG频道查看: 
-
-https://t.me/FullTClash
 
 ## 基本介绍
 
-FullTclash bot 是承载其测试任务的Telegram 机器人（以下简称bot）,目前支持以clash配置文件为载体的**批量**联通性测试,支持以下测试条目:
->- Netflix  Youtube DisneyPlus Bilibili steam货币 OpenAI(ChatGPT) 落地ip风险(IP欺诈度) 维基百科  
+FullTClash bot 是承载其测试任务的Telegram 机器人（以下简称bot）。\
+目前支持以Clash配置文件为载体的**批量**连通性测试，支持以下测试条目:
+1. Netflix  
+2. Youtube 
+3. DisneyPlus 
+4. steam货币 
+5. OpenAI(ChatGPT) 
+6. 落地ip风险(IP欺诈度) 
+7. 维基百科
+8. TVBAnyware
+9. Viu
 
-以及HTTP延迟测试和链路拓扑测试（节点出入口分析）。  
+此外还有：
+
+1. HTTP延迟测试
+2. 链路拓扑测试（节点出入口分析）。
+3. 下行速度测试
 ## 使用文档
 
 可以在 [这里](https://fulltclash.gitbook.io/fulltclash-doc) 找到FullTclash的使用文档。
@@ -61,7 +49,7 @@ FullTclash bot 是承载其测试任务的Telegram 机器人（以下简称bot�
 
 ### 基础准备
 
-要成功运行该项目代码，首先需要准备以下信息：
+要成功运行该Telegram 机器人，首先需要准备以下信息：
 
 - Telegram 的api_id 、api_hash [获取地址](https://my.telegram.org/apps) 不会请Google。(部分TG账号已被拉黑，无法正常使用)  
 

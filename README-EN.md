@@ -15,6 +15,9 @@
    <br>  
 </div>
 
+## Attention !
+
+This project English documents are machine translated, if you like this project, you can try to translate the English documents!
 ## Introduction
 
 FullTclash bot is a Telegram bot (hereinafter referred to as "bot") that carries out its testing tasks. It currently supports batch connectivity testing using Clash configuration files and supports the following test items:
