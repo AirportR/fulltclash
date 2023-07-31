@@ -336,7 +336,8 @@ class Invite:
                 if bot_mes is None:
                     await target.reply("⚠️bot消息已被删除，任务取消", quote=True)
                     return
-                invite_text = bot_mes.text + "\n\n" + invite_text
+                if "请选择排序方式" not in bot_mes.text:
+                    invite_text = bot_mes.text + "\n\n" + invite_text
                 await bot_mes.edit_text(invite_text, reply_markup=IKM2)
 
             except RPCError as r:
