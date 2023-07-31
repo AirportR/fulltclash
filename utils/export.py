@@ -1264,7 +1264,7 @@ class ExportTopo(ExportResult):
         emoji_time = get_clock_emoji()
         export_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
         system_timezone = datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo
-        list1 = ["出口分析", "📊后端:{} 版本:{}  概要={}->{}".format(slavecomment, __version__, max_entrance, cuk),
+        list1 = ["出口分析", f"📊后端:{slavecomment} 版本:{__version__}  概要={max_entrance}->{cuk}",
                  f"{emoji_time}测试时间: {export_time} ({system_timezone}) 总共耗时: {self.wtime}s 测试结果仅供参考,以实际情况为准。簇代表节点复用。"]
         export_time = export_time.replace(':', '-')
         title = list1[0]
@@ -1273,7 +1273,7 @@ class ExportTopo(ExportResult):
             pilmoji.text((10, image_height - 120), text=list1[1], font=fnt, fill=(0, 0, 0),
                          emoji_position_offset=(0, 7))
             pilmoji.text((10, image_height - 60), text=list1[2], font=fnt, fill=(0, 0, 0),
-                         emoji_position_offset=(0, 8))
+                         emoji_position_offset=(0, 10))
         else:
             idraw.text((10, image_height - 120), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
             idraw.text((10, image_height - 60), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间

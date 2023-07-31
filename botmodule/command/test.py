@@ -110,6 +110,7 @@ async def select_export(msg: Message, backmsg: Message, put_type: str, info: dic
                 or put_type.startswith("outbound") or kwargs.get('coreindex', -1) == 2:
             info1 = info.get('inbound', {})
             info2 = info.get('outbound', {})
+            info2['slave'] = info.get('slave', {})
             if info1:
                 if put_type.startswith("inbound"):
                     wtime = info1.get('wtime', "未知")
