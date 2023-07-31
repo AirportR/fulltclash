@@ -1441,7 +1441,7 @@ class ArgCleaner:
         Returns: 返回一个切好的字符串列表
 
         """
-        return [x for x in string.strip().split(sep) if x != '']
+        return [x for x in string.strip().split(sep) if x != ''] if string is not None else []
 
     def getall(self, string: str = None):
         """

@@ -229,9 +229,9 @@ async def invite_pass2(client: Client, message: Message):
     in_text = ''
     ex_text = ''
     slaveid, sort_str, test_items = get_invite_item(parsertext)
-    if sort_str is None:
+    if sort_str == "订阅原序":
         sort_str = INVITE_SELECT_CACHE['sort'].pop(str(mes.chat.id) + ":" + str(mes.id), "订阅原序")
-    if slaveid is None:
+    if slaveid == "local":
         slaveid = INVITE_SELECT_CACHE['slaveid'].pop(str(mes.chat.id) + ":" + str(mes.id), "local")
     coreindex = convert_core_index(subtext[1])
     if not coreindex:

@@ -393,7 +393,7 @@ async def task_handler(app: Client, message: Message, **kwargs):
     rulename = ''
     if tgargs[0].startswith("/invite"):
         rulename = tgargs[1] if len(tgargs) > 1 else ''
-    if rulename and rulename in ruleconfig:
+    if rulename and (rulename in ruleconfig):
         slaveid, sort, script = get_rule(rulename)
         if slaveid is None and sort is None and script is None:
             await select_slave_page(app, message, **kwargs)
