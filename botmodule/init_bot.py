@@ -11,69 +11,10 @@ from utils.clash import check_port, start_fulltclash
 from utils.cleaner import ConfigManager
 from utils.safe import gen_key
 
-config = ConfigManager()
-
-
-def check_init():
-    if config.getClashBranch() == 'meta':
-        logger.info('✅检测到启用clash.meta系内核配置，请自行配置更换成fulltclash-meta代理客户端（默认为原生clash内核）。')
-    emoji_source = config.config.get('emoji', {}).get('emoji-source', 'TwemojiLocalSource')
-    if config.config.get('emoji', {}).get('enable', True) and emoji_source == 'TwemojiLocalSource':
-        from utils.emoji_custom import TwemojiLocalSource
-        if not os.path.isdir('./resources/emoji/twemoji'):
-            twemoji = TwemojiLocalSource()
-            logger.info("检测到未安装emoji资源包，正在初始化本地emoji...")
-            asyncio.get_event_loop().run_until_complete(twemoji.download_emoji(proxy=config.get_proxy()))
-            if twemoji.init_emoji(twemoji.savepath):
-                logger.info("初始化emoji成功")
-            else:
-                logger.warning("初始化emoji失败")
-    dirs = os.listdir()
-    if "clash" in dirs and "logs" in dirs and "results" in dirs and 'key' in dirs:
-        return
-    logger.info("检测到初次使用，正在初始化...")
-    if not os.path.isdir('clash'):
-        os.mkdir("clash")
-        logger.info("创建文件夹: clash 用于保存订阅")
-    if not os.path.isdir('logs'):
-        os.mkdir("logs")
-        logger.info("创建文件夹: logs 用于保存日志")
-    if not os.path.isdir('results'):
-        os.mkdir("results")
-        logger.info("创建文件夹: results 用于保存测试结果")
-    if not os.path.isdir('key'):
-        os.mkdir("key")
-        logger.info("创建文件夹: key 用于保存公钥")
-    dirs = os.listdir('./key')
-    if "fulltclash-public.pem" in dirs:
-        return
-    if "fulltclash-private.pem" in dirs:
-        return
-    logger.info("正在初始化公私钥")
-    gen_key()
-
-
-check_init()
-
-
-def check_version() -> str:
-    _latest_version_hash = ""
-    try:
-        output = check_output(['git', 'log'], shell=False, encoding="utf-8").strip()
-        # 解析输出，提取最新提交的哈希值
-        for line in output.split("\n"):
-            if "commit" in line:
-                _latest_version_hash = line.split()[1][:7]
-                break
-    except Exception as e0:
-        logger.info("可能不是通过git拉取源码，因此version将无法查看提交哈希。")
-        logger.warning(str(e0))
-        _latest_version_hash = "Unavailable"
-    return _latest_version_hash
-
-
-# 获取远程仓库的最新提交哈希
-latest_version_hash = check_version()
+config = ConfigManager()  # 配置加载
+admin = config.getAdmin()  # 管理员
+config.add_user(admin)  # 管理员同时也是用户
+config.reload()
 
 
 def check_args():
@@ -128,7 +69,65 @@ def check_args():
             logger.warning("覆写配置失败！")
 
 
+def check_init():
+    if config.getClashBranch() == 'meta':
+        logger.info('✅检测到启用clash.meta系内核配置，请自行配置更换成fulltclash-meta代理客户端（默认为原生clash内核）。')
+    emoji_source = config.config.get('emoji', {}).get('emoji-source', 'TwemojiLocalSource')
+    if config.config.get('emoji', {}).get('enable', True) and emoji_source == 'TwemojiLocalSource':
+        from utils.emoji_custom import TwemojiLocalSource
+        if not os.path.isdir('./resources/emoji/twemoji'):
+            twemoji = TwemojiLocalSource()
+            logger.info("检测到未安装emoji资源包，正在初始化本地emoji...")
+            asyncio.get_event_loop().run_until_complete(twemoji.download_emoji(proxy=config.get_proxy()))
+            if twemoji.init_emoji(twemoji.savepath):
+                logger.info("初始化emoji成功")
+            else:
+                logger.warning("初始化emoji失败")
+    dirs = os.listdir()
+    if "clash" in dirs and "logs" in dirs and "results" in dirs and 'key' in dirs:
+        return
+    logger.info("检测到初次使用，正在初始化...")
+    if not os.path.isdir('clash'):
+        os.mkdir("clash")
+        logger.info("创建文件夹: clash 用于保存订阅")
+    if not os.path.isdir('logs'):
+        os.mkdir("logs")
+        logger.info("创建文件夹: logs 用于保存日志")
+    if not os.path.isdir('results'):
+        os.mkdir("results")
+        logger.info("创建文件夹: results 用于保存测试结果")
+    if not os.path.isdir('key'):
+        os.mkdir("key")
+        logger.info("创建文件夹: key 用于保存公钥")
+    dirs = os.listdir('./key')
+    if "fulltclash-public.pem" in dirs:
+        return
+    if "fulltclash-private.pem" in dirs:
+        return
+    logger.info("正在初始化公私钥")
+    gen_key()
+
+
+def check_version() -> str:
+    _latest_version_hash = ""
+    try:
+        output = check_output(['git', 'log'], shell=False, encoding="utf-8").strip()
+        # 解析输出，提取最新提交的哈希值
+        for line in output.split("\n"):
+            if "commit" in line:
+                _latest_version_hash = line.split()[1][:7]
+                break
+    except Exception as e0:
+        logger.info("可能不是通过git拉取源码，因此version将无法查看提交哈希。")
+        logger.warning(str(e0))
+        _latest_version_hash = "Unavailable"
+    return _latest_version_hash
+
+
 check_args()
+check_init()
+# 获取远程仓库的最新提交哈希
+latest_version_hash = check_version()
 
 logger.add("./logs/fulltclash_{time}.log", rotation='7 days')
 
@@ -139,9 +138,7 @@ bot_token = botconfig.get('bot_token', None)
 clash_path = config.get_clash_path()  # 为clash核心运行路径, Windows系统需要加后缀名.exe
 clash_work_path = config.get_clash_work_path()  # clash工作路径
 corenum = min(config.config.get('clash', {}).get('core', 1), 128)
-admin = config.getAdmin()  # 管理员
-config.add_user(admin)
-config.reload()
+
 USER_TARGET = config.getuser()  # 这是用户列表，从配置文件读取
 logger.info("管理员名单加载:" + str(admin))
 # 你的机器人的用户名

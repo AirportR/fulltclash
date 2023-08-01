@@ -876,7 +876,8 @@ class ExportResult:
         """
         font = self.__font
         draw = ImageDraw.Draw(Image.new("RGBA", (1, 1), (255, 255, 255, 255)))
-        textSize = draw.textsize(text, font=font)[0]
+        textSize = int(draw.textlength(text, font=font))
+        # textSize = draw.textsize(text, font=font)[0]
         return textSize
 
     def text_maxwidth(self, strlist: list):
@@ -1021,7 +1022,8 @@ class ExportTopo(ExportResult):
         """
         font = self.__font
         draw = ImageDraw.Draw(Image.new("RGBA", (1, 1), (255, 255, 255, 255)))
-        textSize = draw.textsize(text, font=font)[0]
+        textSize = int(draw.textlength(text, font=font))
+        # textSize = draw.textsize(text, font=font)[0]
         return textSize
 
     def get_mid(self, start, end, str_name: str):
@@ -1265,7 +1267,7 @@ class ExportTopo(ExportResult):
         export_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
         system_timezone = datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo
         tips = "测试结果仅供参考，以实际情况为准，簇代表落地复用。"
-        list1 = ["出口分析", f"📊版本:{__version__}   后端:{slavecomment}   概要:{max_entrance}->{cuk}",
+        list1 = ["出口分析", f"📊版本:{__version__}  后端:{slavecomment}  概要:{max_entrance}->{cuk}",
                  f"{emoji_time}测试时间: {export_time}({system_timezone}) 总共耗时: {self.wtime}s {tips}"]
         export_time = export_time.replace(':', '-')
         title = list1[0]
