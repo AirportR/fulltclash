@@ -259,6 +259,10 @@ def command_loader(app: Client):
 
 
 def callback_loader(app: Client):
+    @app.on_callback_query(botmodule.cfilter.prefix_filter("/api/slave/page/"), 1)
+    async def _(client: Client, call: CallbackQuery):
+        await botmodule.select_slave_only_pre(client, call)
+
     @app.on_callback_query(filters=dynamic_data_filter('stop') & filters.user(botmodule.init_bot.reloadUser()), group=1)
     async def invite_test(client: Client, callback_query: CallbackQuery):
         await botmodule.stopspeed(client, callback_query)
