@@ -350,9 +350,9 @@ def page_frame(pageprefix: str, contentprefix: str, content: List[str], split: s
     pageprefix: 页面回调数据的前缀字符串
     contentprefix: 具体翻页内容的回调数据的前缀字符串
     """
-    page = kwargs.get('page', 1)
-    row = kwargs.get('row', 5)
-    column = kwargs.get('column', 1)
+    page = int(kwargs.get('page', 1))
+    row = int(kwargs.get('row', 5))
+    column = int(kwargs.get('column', 1))
     max_page = int(len(content) / (row * column)) + 1
     pre_page_text = page - 1 if page - 1 > 0 else 1
     next_page_text = page + 1 if page < max_page else max_page
@@ -486,15 +486,20 @@ async def select_slave_only_pre(_: Client, call: Union[CallbackQuery, Message], 
     """
     receiver: 指定一个列表变量，它将作为slaveid的接收者。
     """
+    page_prefix = '/api/slave/page/'
+    page = 1 if isinstance(call, Message) else call.data[len(page_prefix)]
     slaveconfig = config.getSlaveconfig()
     comment = [i.get('comment', None) for k, i in slaveconfig.items() if
                i.get('comment', None) and k != "default-slave"]
-    content_keyboard = page_frame('spage', api_route, comment, split='?comment=', **kwargs)
+    content_keyboard = page_frame(page_prefix, api_route, comment, split='?comment=', page=page, **kwargs)
     content_keyboard.append([dbtn['b_close']])
 
     IKM = InlineKeyboardMarkup(content_keyboard)
     target = call.message if isinstance(call, CallbackQuery) else call
-    return await target.reply(f"请选择测试后端, 你有{kwargs.get('timeout', 60)}s的时间选择:\n", quote=True, reply_markup=IKM)
+    if isinstance(call, CallbackQuery):
+        await target.edit_text(target.text, reply_markup=IKM)
+    else:
+        return await target.reply(f"请选择测试后端, 你有{kwargs.get('timeout', 60)}s的时间选择:\n", quote=True, reply_markup=IKM)
 
 
 async def get_s_id(_: Client, c: CallbackQuery):
@@ -524,6 +529,7 @@ async def select_slave_only(app: Client, call: Union[CallbackQuery, Message], **
         async def debug_s(_: Client, cal: CallbackQuery):
             print("回调数据: ", cal.data)
 
+        app.add_handler(CallbackQueryHandler(select_slave_only_pre, prefix_filter('/api/slave/page/')), 4)
         cqhandler = CallbackQueryHandler(debug_s, prefix_filter(api_route))
         app.add_handler(cqhandler, 4)
     botmsg = await select_slave_only_pre(app, call, timeout=timeout, **kwargs)
