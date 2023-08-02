@@ -524,12 +524,6 @@ async def select_slave_only(app: Client, call: Union[CallbackQuery, Message], **
     """
     timeout = 60
     from botmodule.cfilter import prefix_filter
-
-    if app.dispatcher.groups.get(4, None) is None:
-        async def debug_s(_: Client, cal: CallbackQuery):
-            print("回调数据: ", cal.data)
-        cqhandler = CallbackQueryHandler(debug_s, prefix_filter(api_route))
-        app.add_handler(cqhandler, 4)
     botmsg = await select_slave_only_pre(app, call, timeout=timeout, **kwargs)
 
     recvkey = gen_msg_key(botmsg)
