@@ -523,7 +523,6 @@ async def select_slave_only(app: Client, call: Union[CallbackQuery, Message], **
     return: (slaveid, comment)
     """
     timeout = 60
-    from botmodule.cfilter import prefix_filter
     botmsg = await select_slave_only_pre(app, call, timeout=timeout, **kwargs)
 
     recvkey = gen_msg_key(botmsg)
@@ -540,14 +539,17 @@ async def select_slave_only(app: Client, call: Union[CallbackQuery, Message], **
                     slaveid = str(k)
                     break
             if slaveid and comment:
+                await botmsg.delete()
                 return str(slaveid), comment
             else:
+                await botmsg.delete()
                 return '', comment
+
     except asyncio.exceptions.TimeoutError:
-        await botmsg.reply("选择超时")
+        print("获取超时")
         return '', ''
     finally:
-        await botmsg.delete()
+        receiver.pop(recvkey, None)
 
 
 async def select_slave(app: Client, call: CallbackQuery):
