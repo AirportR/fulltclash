@@ -139,7 +139,7 @@ def command_loader(app: Client):
         await botmodule.task_handler(client, message, page=1)
 
     @app.on_message(filters.command(["reload"]) & allfilter(2), group=2)
-    async def reload_testmember(_, message):
+    async def reload_test_items(_, message):
         r1()
         r2()
         await message.reply("已重载配置")
@@ -169,17 +169,17 @@ def command_loader(app: Client):
     # async def outboundurl(client, message):
     #     await bot_put(client, message, "outboundurl", test_type='outbound')
 
-    @app.on_message(filters.command(["speed"]) & allfilter(1), group=1)
+    @app.on_message(filters.command(["speed", "speedurl"]) & allfilter(1), group=1)
     @AccessCallback()
     async def speed(client, message):
         await botmodule.task_handler(client, message, page=1)
         # await botmodule.select_slave_page(client, message, page=1)
 
-    @app.on_message(filters.command(["speedurl"]) & allfilter(1), group=1)
-    @AccessCallback()
-    async def speedurl(client, message):
-        await botmodule.task_handler(client, message, page=1)
-        # await botmodule.select_slave_page(client, message, page=1)
+    # @app.on_message(filters.command(["speedurl"]) & allfilter(1), group=1)
+    # @AccessCallback()
+    # async def speedurl(client, message):
+    #     await botmodule.task_handler(client, message, page=1)
+    #     # await botmodule.select_slave_page(client, message, page=1)
 
     @app.on_message(filters.command(["subinfo", "traffic", "流量", "流量信息", "流量查询"]), group=0)
     async def subinfo(client, message):
@@ -298,6 +298,8 @@ def callback_loader(app: Client):
         elif callback_query.data.startswith('slave'):
             await botmodule.select_slave(client, callback_query)
             return
+        elif callback_query.data.startswith('/api/getSlaveId'):
+            await botmodule.get_s_id(client, callback_query)
         elif "sort" in callback_query.data:
             await botmodule.select_sort(client, callback_query)
             return

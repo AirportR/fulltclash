@@ -26,10 +26,24 @@ def dynamic_data_filter(data):
 
 
 def prefix_filter(prefix: str):
+    """
+    特定文本前缀过滤器，支持回调数据过滤。
+    """
+
     async def func(flt, _, update: Union[Message, CallbackQuery]):
         return update.text.startswith(flt.prefix) if isinstance(update, Message) else update.data.startswith(flt.prefix)
 
     return filters.create(func, prefix=prefix)
+
+
+def next_filter(message: Message):
+    """
+    特定消息下一条过滤器，比如bot想获取发送完这条消息后读取下一条消息。
+    """
+    async def func(_, __, update: Message):
+        return (message.chat.id == update.chat.id) and message.id == update.id - 1
+
+    return filters.create(func)
 
 
 def admin_filter():
@@ -73,6 +87,7 @@ def AccessCallback(default=0):
     检查用户是否在配置文件所加载的的列表中，这是一个装饰器.
     default: 默认的回调函数值，如果不为0，则不会调用默认的回调函数
     """
+
     def wrapper(func):
         async def inner(client, message):
             for call in callbackfunc:
@@ -90,6 +105,7 @@ def AccessCallback(default=0):
                     return
             else:
                 await func(client, message)
+
         return inner
 
     return wrapper
