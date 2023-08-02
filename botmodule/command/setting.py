@@ -513,7 +513,7 @@ async def get_s_id(_: Client, c: CallbackQuery):
 
 async def select_slave_only(app: Client, call: Union[CallbackQuery, Message], **kwargs) -> tuple[str, str]:
     """
-    receiver: 指定一个列表变量，它将作为slaveid的接收者。
+    高层级的选择后端api
 
     return: (slaveid, comment)
     """
