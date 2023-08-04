@@ -164,7 +164,7 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
                         return
                     await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection - 1)
                 elif res.status == 503:
-                    Collector.info['netflix_new'] = "不可用"
+                    Collector.info['netflix_new'] = "-"
                     return
                 else:
                     Collector.info['netflix_new'] = "失败"
@@ -181,7 +181,7 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
         if reconnection != 0 and reconnection > 27:
             await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection - 1)
         else:
-            Collector.info['netflix_new'] = "不可用"
+            Collector.info['netflix_new'] = "-"
 
     except asyncio.exceptions.TimeoutError:
         logger.warning("Netflix请求超时，正在重新发送请求......")
