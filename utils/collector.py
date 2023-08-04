@@ -612,6 +612,8 @@ class Collector:
         try:
             conn = ProxyConnector(host=host, port=port, limit=0)
             session = aiohttp.ClientSession(connector=conn, headers=self._headers)
+            if proxy is None:
+                proxy = f"http://{host}:{port}"
             tasks = self.create_tasks(session, proxy=proxy)
             if tasks:
                 await asyncio.wait(tasks)
