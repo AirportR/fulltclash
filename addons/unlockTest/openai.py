@@ -6,8 +6,10 @@ from loguru import logger
 # collector section
 from pyrogram.types import InlineKeyboardButton
 
+openaiurl = "https://chat.openai.com/favicon.ico"
+openaiurl2 = "https://chat.openai.com/cdn-cgi/trace"
 SUPPORT_REGION = ['AL', 'DZ', 'AD', 'AO', 'AG', 'AR', 'AM', 'AU', 'AT', 'AZ', 'BS', 'BD', 'BB', 'BE', 'BZ', 'BJ', 'BT',
-                  'BA',
+                  'BA', 'UA',
                   'BW', 'BR', 'BG', 'BF', 'CV', 'CA', 'CL', 'CO', 'KM', 'CR', 'HR', 'CY', 'DK', 'DJ', 'DM', 'DO', 'EC',
                   'SV',
                   'EE', 'FJ', 'FI', 'FR', 'GA', 'GM', 'GE', 'DE', 'GH', 'GR', 'GD', 'GT', 'GN', 'GW', 'GY', 'HT', 'HN',
@@ -34,18 +36,24 @@ async def fetch_openai(Collector, session: aiohttp.ClientSession, proxy=None, re
     :param reconnection: 重连次数
     :return:
     """
-    openaiurl1 = "https://chat.openai.com"  # openaiurl
-    openaiurl2 = "https://chat.openai.com/cdn-cgi/trace"
+    # openaiurl1 = "https://chat.openai.com"  # openaiurl
+    # openaiurl2 = "https://chat.openai.com/cdn-cgi/trace"
     try:
         _headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ' +
                           'Chrome/102.0.5005.63 Safari/537.36',
         }
-        async with session.get(openaiurl1, headers=_headers, proxy=proxy, timeout=10) as res:
+        async with session.get(openaiurl, headers=_headers, proxy=proxy, timeout=10) as res:
+            res1_status = res.status
             if res.status == 403:
+                ct = res.headers.get('Content-Type', 'None')
+                if 'text/html' in ct:
+                    Collector.info['OpenAI'] = "失败"
+                    return
                 text = await res.text()
                 index = text.find("Sorry, you have been blocked")
-                if index > 0:
+                index2 = text.find("Unable to load site")
+                if index > 0 or index2 > 0:
                     Collector.info['OpenAI'] = "失败"
                     return
                 index2 = text.find("You do not have access to chat.openai.com.")
@@ -56,7 +64,7 @@ async def fetch_openai(Collector, session: aiohttp.ClientSession, proxy=None, re
             else:
                 Collector.info['OpenAI'] = "未知"
         async with session.get(openaiurl2, headers=_headers, proxy=proxy, timeout=10) as res2:
-            if res2.status == 200:
+            if res2.status == 200 and res1_status == 200:
                 text2 = await res2.text()
                 index2 = text2.find("loc=")
                 if index2 > 0:
@@ -115,3 +123,22 @@ SCRIPT = {
     "TASK": task,
     "GET": get_openai_info
 }
+
+
+async def demo():
+    class FakeColl:
+        def __init__(self):
+            self.info = {}
+            self.data = self.info
+
+    fakecl = FakeColl()
+
+    session = aiohttp.ClientSession()
+    await fetch_openai(fakecl, session, proxy='http://127.0.0.1:1112')
+    print(get_openai_info(fakecl))
+    await session.close()
+
+
+if __name__ == "__main__":
+    loop = asyncio.new_event_loop()
+    loop.run_until_complete(demo())
