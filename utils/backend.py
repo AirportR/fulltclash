@@ -608,7 +608,6 @@ class ScriptCore(Basecore):
         info['filter'] = flt if flt else {'include': self._include_text, 'exclude': self._exclude_text}
         # 保存结果
         self.saveresult(info)
-        logger.info(str(info))
         return info
 
 

@@ -138,6 +138,7 @@ def check_args():
 
 
 async def main():
+    check_init()
     check_args()
     wsconf = GCONFIG.config.get('websocket', {})
     bindaddr = wsconf.get('bindAddress', '0.0.0.0:8765')
@@ -157,6 +158,19 @@ async def main():
         port = 8765
     task = asyncio.create_task(server(host, port))
     await task
+
+
+def check_init():
+    dirs = os.listdir()
+    if "logs" in dirs and "results" in dirs:
+        return
+    logger.info("检测到初次使用，正在初始化...")
+    if not os.path.isdir('logs'):
+        os.mkdir("logs")
+        logger.info("创建文件夹: logs 用于保存日志")
+    if not os.path.isdir('results'):
+        os.mkdir("results")
+        logger.info("创建文件夹: results 用于保存测试结果")
 
 
 if __name__ == '__main__':
