@@ -61,6 +61,9 @@ bot:
 #  default-slave: # 默认后端配置。
 #    comment: "本地测试后端" # 默认测试后端的备注。
 #    username: "local" # 默认测试后端的ID，此项请勿修改，会影响本地后端的运行。
+#    type: websocket  #此项指明后端连接类型。仅有两个有效值: ["websocket", "bot"]
+#    address: "127.0.0.1:8765" # 此项配置为websocket后端专属配置，当type为websocket时才有效，这里填 host:port 格式。
+
 #userconfig: #用户权限组相关配置
 #  rule: #测试时的默认规则,3.6.0加入
 #    "规则名":
@@ -68,6 +71,9 @@ bot:
 #      slaveid: local
 #      script: ["Netflix", "Youtube", "Disney+", "维基百科"]
 #      sort: "HTTP升序"
+#websocket: #websocket纯后端(4.0.0)专属配置
+#  bindAddress: "0.0.0.0:8765" #外部绑定地址，不填默认为 0.0.0.0:8765
+#  token: "123"  # websocket通讯密码，请勿设置弱密码，防止暴力破解。
 
 
 #----------------------------   以下为绘图相关配置   --------------------------------#
