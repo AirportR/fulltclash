@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import sys
 
 from aiohttp import web
 from loguru import logger
@@ -50,10 +51,14 @@ async def router(plaindata: dict, ws: web.WebSocketResponse, **kwargs):
 async def websocket_handler(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
-
+    KEY = GCONFIG.config.get('websocket', {}).get('token', '')
+    logger.debug(f'当前数据加密密钥: {KEY}')
+    if not KEY and not isinstance(KEY, str):
+        logger.error("websocket通信token值读取错误，程序退出")
+        sys.exit()
     async for msg in ws:
         try:
-            plaindata = plain_chahcha20(msg.data, sha256_32bytes("12345678"))
+            plaindata = plain_chahcha20(msg.data, sha256_32bytes(KEY))
         except Exception as e:
             logger.warning(str(e))
             wjson = websocket.WebSocketJson(websocket.PayloadStatus.ERROR, 'Data decryption failed.', '')
@@ -134,7 +139,23 @@ def check_args():
 
 async def main():
     check_args()
-    task = asyncio.create_task(server())
+    wsconf = GCONFIG.config.get('websocket', {})
+    bindaddr = wsconf.get('bindAddress', '0.0.0.0:8765')
+    if not isinstance(bindaddr, str):
+        logger.error("绑定地址解析错误，请重试!")
+        sys.exit()
+    ba = bindaddr.lstrip('http:').strip('/').split(':')
+    try:
+        if len(ba) != 2:
+            logger.error("绑定地址解析错误，请重试!")
+            sys.exit()
+        port = int(ba[1])
+        host = ba[0]
+    except Exception as e:
+        logger.error(str(e))
+        host = '0.0.0.0'
+        port = 8765
+    task = asyncio.create_task(server(host, port))
     await task
 
 
