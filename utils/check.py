@@ -55,6 +55,8 @@ async def is_port_in_use(host='127.0.0.1', port=80):
 
 
 async def check_port(start: int, end: int):
+    if start > end:
+        start, end = end, start
     tasks = []
     for i in range(start, end):
         tasks.append(asyncio.create_task(is_port_in_use(port=i)))

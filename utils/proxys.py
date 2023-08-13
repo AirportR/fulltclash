@@ -4,6 +4,7 @@ import json
 import socket
 import os
 import subprocess
+from random import random, seed
 from typing import Union, List
 import yaml
 import aiohttp
@@ -23,22 +24,85 @@ CONTROL_PORT = START_PORT - 1
 BUILD_TOKEN = config.getBuildToken()
 
 
+async def is_port_in_use(host='127.0.0.1', port=80):
+    """
+    检查主机端口是否被占用
+    :param host: 主机名
+    :param port: 端口
+    :return: 如果占用返回True否则为False
+    """
+    try:
+        reader, writer = await asyncio.open_connection(host, port)
+        writer.close()
+        await writer.wait_closed()
+        return True
+    except ConnectionRefusedError:
+        return False
+
+
+async def get_available_port(portnum: int, retry: int = 10, startup: int = 10000):
+    """
+    获取随机可用端口，无可以端口抛出 OSError 异常
+    portnum: 要获取的端口数
+    retry: 重试
+    startup: 起始选定端口范围，范围是 startup ~ startup+10000
+
+    return: 可用端口列表, 已使用的重试次数
+    """
+    seed(21)
+    for n in range(retry):
+        random_nums = [int(random() * 10001) + startup for _ in range(portnum)]
+        tasks = [asyncio.create_task(is_port_in_use(port=rnum)) for rnum in random_nums]
+        results = await asyncio.gather(*tasks)
+        if True not in results:
+            return random_nums
+    raise OSError("No free ports are available")
+
+
 class FullTClash:
-    def __init__(self, control_port: Union[str, int], proxy_portlist: List[Union[str, int]]):
+    def __init__(self, control_port: Union[str, int] = None, proxy_portlist: List[Union[str, int]] = None):
         """
         control_port: 控制端口
         proxy_port: 代理端口，多个端口
         """
         self.cport = control_port
-        self.port = proxy_portlist
+        self.port = [str(pro) for pro in proxy_portlist]
+        self._p = None
 
-    def start(self, controlport: int = CONTROL_PORT):
+    async def start(self):
         """
         启动fulltclash代理程序
         """
+        if self.cport is None:
+            port0 = await get_available_port(1)
+            if port0:
+                self.cport = port0[0]
+            logger.info(f"未找到预先设置好的端口，将随机分配控制端口: {self.cport}")
+        if self.port is None:
+            port1 = await get_available_port(1)
+            if port1:
+                self.port = [str(po) for po in port1]
+            logger.info(f"未找到预先设置好的端口，将随机分配代理端口: {str(self.port)}")
         port2 = "|".join(self.port)
-        _command = fr"{config.get_clash_path()} -c {controlport} -p {port2}"
-        subprocess.Popen(_command.split(), encoding="utf-8")
+        _command = fr"{config.get_clash_path()} -c {self.cport} -p {port2}"
+        p = subprocess.Popen(_command.split(), encoding="utf-8")
+        self._p = p
+        c = 0
+        while True:
+            c += 1
+            if c >= 10:
+                raise TimeoutError("某种原因导致启动进程失败！")
+            if await is_port_in_use(port=self.cport):
+                break
+            else:
+                await asyncio.sleep(1)
+        return self.cport, self.port
+
+    def close(self):
+        if self._p is not None and isinstance(self._p, subprocess.Popen):
+            self._p.kill()
+        else:
+            logger.warning("没有进程可供停止!")
 
     @staticmethod
     async def connect(controlport: int = CONTROL_PORT):
@@ -55,7 +119,7 @@ class FullTClash:
         return s
 
     @staticmethod
-    async def sock_send(message, key: str, controlport: int = CONTROL_PORT, norecv=True):
+    async def sock_send(message, key: str, controlport: int, norecv=True):
         """
         message: 数据报文
         key: 加密密钥
@@ -127,10 +191,10 @@ class FullTClash:
         return ttfb
 
     @staticmethod
-    async def setproxy(proxyinfo: dict, index: int):
+    async def setproxy(proxyinfo: dict, index: int, controlport: int):
         logger.info(f"设置代理: {proxyinfo.get('name', '')}, index: {index}")
         data = yaml.dump({'proxies': proxyinfo, 'index': index, 'command': 'setproxy'})
-        await FullTClash.sock_send(data, BUILD_TOKEN)
+        await FullTClash.sock_send(data, BUILD_TOKEN, controlport)
 
 
 # async def http_delay(url: str = config.getGstatic(), index: int = 0) -> int:

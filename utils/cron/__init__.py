@@ -7,6 +7,29 @@ import pyrogram.errors.exceptions.forbidden_403
 import pyrogram.errors.exceptions.bad_request_400
 
 from utils.cron.utils import message_delete_queue, message_edit_queue
+# from ..websocket import wsqueue, ws_client
+
+
+# async def cron_websocket_task():
+#     payloads = []
+#     while True:
+#         try:
+#             payloads.append(wsqueue.get_nowait())
+#         except asyncio.queues.QueueEmpty:
+#             break
+#     if not payloads:
+#         return
+#     tasks = []
+#     for i, payload in enumerate(payloads):
+#         addr = payload.pop('address', '')
+#         key = payload.pop('key', '')
+#         if not addr:
+#             continue
+#         task = asyncio.create_task(ws_client.websocket_client(addr, payload, key=key), name=f"websocket-task{i+1}")
+#         tasks.append(task)
+#
+#     if tasks:
+#         await asyncio.gather(*tasks)
 
 
 async def cron_edit_message(app: Client):

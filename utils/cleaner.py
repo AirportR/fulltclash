@@ -1168,11 +1168,13 @@ class ReCleaner:
     预测试结果清洗类
     """
 
-    def __init__(self, data: dict):
+    def __init__(self, data: dict, script_list: List[str] = None):
         self.data = data
+        self.info = data
         self._sum = 0
         self._netflix_info = []
         self._script = addon.script
+        self._script_list = media_item if script_list is None else script_list
 
     @property
     def script(self):
@@ -1180,7 +1182,7 @@ class ReCleaner:
 
     def get_all(self):
         info = {}
-        items = media_item
+        items = self._script_list
         try:
             for item in items:
                 i = item
@@ -1361,29 +1363,28 @@ class ResultCleaner:
                 new_list.append(0)
         return new_list
 
+    def convert_proxy_typename(self):
+        if '类型' in self.data:
+            new_type = []
+            type1 = self.data['类型']
+            if not isinstance(type1, list):
+                return
+            for t in type1:
+                if t == 'ss':
+                    new_type.append("Shadowsocks")
+                elif t == "ssr":
+                    new_type.append("ShadowsocksR")
+                else:
+                    new_type.append(t.capitalize())
+            self.data['类型'] = new_type
+
     def start(self, sort="订阅原序"):
         try:
-            if '类型' in self.data:
-                type1 = self.data['类型']
-                new_type = []
-                for t in type1:
-                    if t == 'ss':
-                        new_type.append("Shadowsocks")
-                    elif t == "ssr":
-                        new_type.append("ShadowsocksR")
-                    else:
-                        new_type.append(t.capitalize())
-                self.data['类型'] = new_type
+            self.convert_proxy_typename()
             if sort == "HTTP倒序":
                 self.sort_by_ping(reverse=True)
             elif sort == "HTTP升序":
                 self.sort_by_ping()
-            if 'HTTP延迟(内核)' in self.data:
-                rtt = self.data['HTTP延迟(内核)']
-                new_rtt = []
-                for r in rtt:
-                    new_rtt.append(str(r) + 'ms')
-                self.data['HTTP延迟(内核)'] = new_rtt
             if 'HTTP(S)延迟' in self.data:
                 rtt = self.data['HTTP(S)延迟']
                 new_rtt = []
@@ -1391,10 +1392,13 @@ class ResultCleaner:
                     new_rtt.append(str(r) + 'ms')
                 self.data['HTTP(S)延迟'] = new_rtt
             return self.data
-        except TypeError:
+        except TypeError as t:
+            logger.error(str(t))
             return {}
 
     def sort_by_ping(self, reverse=False):
+        if 'HTTP(S)延迟' not in self.data:
+            return
         http_l = self.data.get('HTTP(S)延迟')
         if not reverse:
             for i in range(len(http_l)):

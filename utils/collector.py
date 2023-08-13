@@ -2,6 +2,8 @@ import asyncio
 import json
 import ssl
 import time
+from typing import List
+
 import aiohttp
 import async_timeout
 import websockets
@@ -199,20 +201,20 @@ class SubCollector(BaseCollector):
         super().__init__()
         self.text = None
         self._headers = {'User-Agent': 'clash'}  # 这个请求头是获取流量信息的关键
-        self.subconvertor = config.config.get('subconvertor', {})
-        self.cvt_enable = self.subconvertor.get('enable', False)
+        self.subconverter = config.config.get('subconverter', {})
+        self.cvt_enable = self.subconverter.get('enable', False)
         self.url = suburl
         self.include = include
         self.exclude = exclude
         self.codeurl = quote(suburl, encoding='utf-8')
         self.code_include = quote(include, encoding='utf-8')
         self.code_exclude = quote(exclude, encoding='utf-8')
-        self.cvt_host = str(self.subconvertor.get('host', '127.0.0.1:25500'))
+        self.cvt_host = str(self.subconverter.get('host', '127.0.0.1:25500'))
         self.cvt_url = f"http://{self.cvt_host}/sub?target=clash&new_name=true&url={self.codeurl}" \
                        + f"&include={self.code_include}&exclude={self.code_exclude}"
-        self.sub_remote_config = self.subconvertor.get('remoteconfig', '')
-        self.config_include = quote(self.subconvertor.get('include', ''), encoding='utf-8')  # 这两个
-        self.config_exclude = quote(self.subconvertor.get('exclude', ''), encoding='utf-8')
+        self.sub_remote_config = self.subconverter.get('remoteconfig', '')
+        self.config_include = quote(self.subconverter.get('include', ''), encoding='utf-8')  # 这两个
+        self.config_exclude = quote(self.subconverter.get('exclude', ''), encoding='utf-8')
         # print(f"配置文件过滤,包含：{self.config_include} 排除：{self.config_exclude}")
         if self.config_include or self.config_exclude:
             self.cvt_url = f"http://{self.cvt_host}/sub?target=clash&new_name=true&url={self.cvt_url}" \
@@ -274,10 +276,10 @@ class SubCollector(BaseCollector):
         :param inmemory: 直接返回数据到内存，不保存到本地
         :return: 获得一个文件: sub.yaml, bool : True or False
         """
-        _headers = {'User-Agent': 'clash-verge'}
+        _headers = {'User-Agent': 'clash-meta'}
         # suburl = self.url
         suburl = self.cvt_url if self.cvt_enable else self.url
-        cvt_text = r"subconvertor状态: {}".format("已启用" if self.cvt_enable else "未启用")
+        cvt_text = "subconverter状态: {}".format("已启用" if self.cvt_enable else "未启用")
         logger.info(cvt_text)
         try:
             async with aiohttp.ClientSession(headers=_headers) as session:
@@ -389,17 +391,16 @@ class Miaospeed:
 
 
 class Collector:
-    def __init__(self):
+    def __init__(self, script: List[str] = None):
         self.session = None
         self.tasks = []
+        self._script = script
         self._headers = {
             'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                           "Chrome/106.0.0.0 Safari/537.36"}
         self._headers_json = {
             'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                           "Chrome/106.0.0.0 Safari/537.36", "Content-Type": 'application/json'}
-        self.netflixurl1 = "https://www.netflix.com/title/70242311"
-        self.netflixurl2 = "https://www.netflix.com/title/70143836"
         self.ipurl = "https://api.ip.sb/geoip"
         self.youtubeurl = "https://www.youtube.com/premium"
         self.youtubeHeaders = {
@@ -428,9 +429,9 @@ class Collector:
         :param proxy: 代理
         :return: tasks: []
         """
-        items = media_items
+        items = media_items if self._script is None else self._script
         try:
-            if len(items):
+            if len(items) and isinstance(items, list):
                 for item in items:
                     i = item
                     if i in addon.script:
@@ -498,35 +499,6 @@ class Collector:
             return self.info
         except Exception as e:
             logger.error(str(e))
-
-    async def fetch_youtube(self, session: aiohttp.ClientSession, proxy=None, reconnection=2):
-        """
-        Youtube解锁检测
-        :param reconnection:
-        :param session:
-        :param proxy:
-        :return:
-        """
-
-        try:
-            youtube = await session.get(self.youtubeurl, proxy=proxy, timeout=5, headers=self.youtubeHeaders,
-                                        cookies=self.youtubeCookie)
-            if youtube.status is not None:
-                self.info['youtube'] = await youtube.text()
-                self.info['youtube_status_code'] = youtube.status
-            else:
-                self.info['youtube'] = None
-        except ClientConnectorError as c:
-            logger.warning("Youtube请求发生错误:" + str(c))
-            if reconnection != 0:
-                await self.fetch_youtube(session=session, proxy=proxy, reconnection=reconnection - 1)
-        except asyncio.exceptions.TimeoutError:
-            logger.warning("Youtube请求超时，正在重新发送请求......")
-            if reconnection != 0:
-                await self.fetch_youtube(session=session, proxy=proxy, reconnection=reconnection - 1)
-        except ProxyConnectionError as p:
-            logger.warning("似乎目标端口未开启监听")
-            logger.warning(str(p))
 
     async def fetch_dis(self, session: aiohttp.ClientSession, proxy=None, reconnection=2):
         """
@@ -616,19 +588,15 @@ class Collector:
             #     proxy = f"http://{host}:{port}"
             tasks = self.create_tasks(session, proxy=proxy)
             if tasks:
-                await asyncio.wait(tasks)
-            await session.close()
-            return self.info
-        except ConnectionRefusedError as e:
-            logger.error(str(e))
-            return self.info
-        except ProxyConnectionError as e:
-            logger.error(str(e))
+                try:
+                    await asyncio.wait(tasks)
+                except (ConnectionRefusedError, ProxyConnectionError, ssl.SSLError) as e:
+                    logger.error(str(e))
+                    return self.info
+                finally:
+                    await session.close()
             return self.info
         except Exception as e:
-            logger.error(str(e))
-            return self.info
-        except ssl.SSLError as e:
             logger.error(str(e))
             return self.info
 
