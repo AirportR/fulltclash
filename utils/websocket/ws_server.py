@@ -156,6 +156,9 @@ async def main():
         logger.error(str(e))
         host = '0.0.0.0'
         port = 8765
+
+    from utils.cleaner import addon
+    addon.init_addons('./addons')
     task = asyncio.create_task(server(host, port))
     await task
 
@@ -171,9 +174,6 @@ def check_init():
     if not os.path.isdir('results'):
         os.mkdir("results")
         logger.info("创建文件夹: results 用于保存测试结果")
-
-    from utils.cleaner import addon
-    addon.init_addons()
 
 
 if __name__ == '__main__':
