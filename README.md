@@ -22,6 +22,11 @@
 
 ## 使用
 
+请先进行安装 [requirements.txt](https://raw.githubusercontent.com/AirportR/FullTclash/backend/requirements.txt) 里的第三方库:
+
+```shell
+pip3 install -r requirements.txt
+```
 ```text
 usage: python3 main.py [-h] [-b BIND] -t TOKEN [-f BUILDTOKEN]
 
@@ -35,4 +40,10 @@ options:
   -f BUILDTOKEN, --buildtoken BUILDTOKEN
                         FullTCore代理客户端的buildtoken，不填则为默认值
 
+```
+
+## 启动示例:
+
+```shell
+python3 main.py -t fulltclash -b 0.0.0.0:8765
 ```
