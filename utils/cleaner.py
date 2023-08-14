@@ -175,7 +175,7 @@ class AddonCleaner:
         """
         newlist = list(set(alist).intersection(set(self.global_test_item())))
         newlist = sorted(newlist, key=alist.index)
-        if httptest:
+        if httptest or "HTTP(S)延迟" in alist:
             newlist.insert(0, "HTTP(S)延迟")
         return newlist
 

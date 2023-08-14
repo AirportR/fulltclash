@@ -5,7 +5,6 @@ import socket
 import time
 
 from collections import Counter
-from enum import Enum
 from operator import itemgetter
 from typing import Union, Callable, Coroutine, Tuple
 
@@ -22,11 +21,6 @@ from utils import message_edit_queue, cleaner, collector, ipstack, proxys, sorte
 
 break_speed = []
 GCONFIG = cleaner.config  # 全局配置
-
-
-class BACKEND_TYPE(Enum):
-    BOT = 1
-    WEBSOCKET = 2
 
 
 class Basecore:
