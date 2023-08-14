@@ -294,23 +294,23 @@ class AddonCleaner:
         logger.info(f"权限回调脚本导入数量: {len(callbackfunc_list)}")
         return callbackfunc_list
 
-    def init_button(self, isreload=False):
-        """
-        初始化bot内联按钮
-        """
-        try:
-            if isreload:
-                self.init_addons(self.path)
-            from pyrogram.types import InlineKeyboardButton
-            script = addon.script
-            button = []
-            for k in script.keys():
-                b = InlineKeyboardButton(f"✅{str(k)}", callback_data=f"✅{str(k)}")
-                button.append(b)
-            return button
-        except Exception as e:
-            logger.error(str(e))
-            return []
+    # def init_button(self, isreload=False):
+    #     """
+    #     初始化bot内联按钮
+    #     """
+    #     try:
+    #         if isreload:
+    #             self.init_addons(self.path)
+    #         from pyrogram.types import InlineKeyboardButton
+    #         script = addon.script
+    #         button = []
+    #         for k in script.keys():
+    #             b = InlineKeyboardButton(f"✅{str(k)}", callback_data=f"✅{str(k)}")
+    #             button.append(b)
+    #         return button
+    #     except Exception as e:
+    #         logger.error(str(e))
+    #         return []
 
 
 def preTemplate():
@@ -808,9 +808,6 @@ class ConfigManager:
             logger.info("从配置中获取到了bot_token")
         return botconfig
 
-    def getFont(self):
-        return self.config.get('font', "./resources/alibaba-Regular.ttf")
-
     def getColor(self):
         return self.config.get('image', {}).get('color', {})
 
@@ -887,23 +884,6 @@ class ConfigManager:
         except KeyError:
             # logger.error("获取测试项失败，将采用默认测试项：[Netflix,Youtube,Disney,Bilibili,Dazn]")
             return ['Netflix', 'Youtube', 'Disney', 'Bilibili', 'Dazn']
-
-    def get_clash_work_path(self):
-        """
-        clash工作路径
-        :return:
-        """
-        try:
-            return self.config['clash']['workpath']
-        except KeyError:
-            logger.warning("获取工作路径失败，将采用默认工作路径 ./clash")
-            try:
-                d = {'workpath': './clash'}
-                self.yaml['clash'].update(d)
-            except KeyError:
-                di = {'clash': {'workpath': './clash'}}
-                self.yaml.update(di)
-            return './clash'
 
     def get_clash_path(self):
         """

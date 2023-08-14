@@ -1,12 +1,10 @@
 import asyncio
-import json
 import ssl
 import time
 from typing import List
 
 import aiohttp
 import async_timeout
-import websockets
 from urllib.parse import quote
 from aiohttp.client_exceptions import ClientConnectorError, ContentTypeError
 from aiohttp_socks import ProxyConnector, ProxyConnectionError
@@ -363,31 +361,31 @@ class Miaospeed:
         self.slaveRequestNode = [{'Name': 'test01', 'Payload': str(i)} for i in self.nodes]
         self.SlaveRequest['Nodes'] = self.slaveRequestNode
 
-    async def start(self):
-        start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
-        info = []
-        resdata = {start_time: {}}
-        from async_timeout import timeout
-        try:
-            async with timeout(len(self.nodes) * 10 + 1):
-                async with websockets.connect(f'ws://{self.host}:{self.port}') as websocket:
-                    payload = json.dumps(self.SlaveRequest)
-                    await websocket.send(payload)
-                    num = 0
-                    while True:
-                        response_str = await websocket.recv()
-                        num += 1
-                        logger.info(f"已接收第{num}次结果")
-                        res1 = json.loads(response_str)
-                        info.append(res1)
-
-        except asyncio.TimeoutError:
-            logger.info("本次测试已完成")
-        except KeyboardInterrupt:
-            pass
-        finally:
-            resdata.update({start_time: info})
-            return resdata, start_time
+    # async def start(self):
+    #     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
+    #     info = []
+    #     resdata = {start_time: {}}
+    #     from async_timeout import timeout
+    #     try:
+    #         async with timeout(len(self.nodes) * 10 + 1):
+    #             async with websockets.connect(f'ws://{self.host}:{self.port}') as websocket:
+    #                 payload = json.dumps(self.SlaveRequest)
+    #                 await websocket.send(payload)
+    #                 num = 0
+    #                 while True:
+    #                     response_str = await websocket.recv()
+    #                     num += 1
+    #                     logger.info(f"已接收第{num}次结果")
+    #                     res1 = json.loads(response_str)
+    #                     info.append(res1)
+    #
+    #     except asyncio.TimeoutError:
+    #         logger.info("本次测试已完成")
+    #     except KeyboardInterrupt:
+    #         pass
+    #     finally:
+    #         resdata.update({start_time: info})
+    #         return resdata, start_time
 
 
 class Collector:
@@ -733,18 +731,4 @@ async def delay_https_task(session: aiohttp.ClientSession = None, collector=None
 
 
 if __name__ == "__main__":
-    "this is a test demo"
-    import sys
-    import os
-
-    os.chdir(os.path.abspath(os.path.join(os.getcwd(), os.pardir)))
-    sys.path.append(os.path.abspath(os.path.join(os.getcwd(), os.pardir)))
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    ccnr = cleaner.ClashCleaner(r"在这里填入你的订阅路径")
-    miaospeed = Miaospeed(ccnr.getProxies())
-    resd, _start_time = loop.run_until_complete(miaospeed.start())
-    cl1 = cleaner.ConfigManager(configpath=r"./results/miaospeed{}.yaml".format(_start_time.replace(':', '-')),
-                                data=resd)
-    cl1.save(r"./results/miaospeed{}.yaml".format(_start_time.replace(':', '-')))
-    print(resd)
+    pass

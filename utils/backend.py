@@ -14,7 +14,7 @@ from aiohttp_socks import ProxyConnector
 from loguru import logger
 from utils.collector import proxies
 from libs import pynat
-from utils import message_edit_queue, cleaner, collector, ipstack, proxys, sorter, geoip
+from utils import cleaner, collector, ipstack, proxys, sorter, geoip
 
 # 重写整个测试核心，技术栈分离。
 
@@ -227,7 +227,6 @@ class SpeedCore(Basecore):
         """
         edit_text = default_progress_text(self.__class__.__name__, progress, nodenum)
         print(edit_text)
-        message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1, self.IKM))
 
     @staticmethod
     def nat_type_test(proxyaddr=None, proxyport=None):
@@ -425,7 +424,6 @@ class ScriptCore(Basecore):
         """
         edit_text = default_progress_text(self.__class__.__name__, progress, nodenum)
         print(edit_text)
-        message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
 
     @staticmethod
     async def unit(test_items: list, host="127.0.0.1", port=11220):
@@ -622,7 +620,6 @@ class TopoCore(Basecore):
         """
         edit_text = default_progress_text(self.__class__.__name__, progress, nodenum)
         print(edit_text)
-        message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
 
     async def topo(self):
         if self.ip_choose == "ip":
@@ -934,12 +931,9 @@ def default_progress_text(corelabel: Union[int, str], progress: int, nodenum: in
 def check_init():
     import os
     dirs = os.listdir()
-    if "clash" in dirs and "logs" in dirs and "results" in dirs:
+    if "logs" in dirs and "results" in dirs:
         return
     logger.info("检测到初次使用，正在初始化...")
-    if not os.path.isdir('../clash'):
-        os.mkdir("../clash")
-        logger.info("创建文件夹: clash 用于保存订阅")
     if not os.path.isdir('../logs'):
         os.mkdir("../logs")
         logger.info("创建文件夹: logs 用于保存日志")
