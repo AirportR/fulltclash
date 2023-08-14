@@ -172,6 +172,9 @@ def check_init():
         os.mkdir("results")
         logger.info("创建文件夹: results 用于保存测试结果")
 
+    from utils.cleaner import addon
+    addon.init_addons()
+
 
 if __name__ == '__main__':
     os.chdir('../..')
