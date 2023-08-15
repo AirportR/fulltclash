@@ -384,6 +384,7 @@ class SpeedCore(Basecore):
             control_port = port_list.pop(0)
             fulltclash = proxys.FullTClash(control_port, port_list)
             await fulltclash.start()
+            await asyncio.sleep(1)
             # 预填充
             info['节点名称'] = nodename
             info['类型'] = nodetype

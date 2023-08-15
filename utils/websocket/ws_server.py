@@ -10,6 +10,11 @@ from utils import websocket
 from utils.backend import select_core, GCONFIG
 from utils.safe import cipher_chacha20, sha256_32bytes, plain_chahcha20
 
+SPEED_Q = asyncio.Queue(1)  # 速度测试队列。确保同一时间只有一个测速任务在占用带宽
+CONN_Q = asyncio.Queue(3)  # 连通性、拓扑测试队列，最大同时测试数量为10个任务，设置太高会影响到测速的带宽，进而影响结果。
+QUEUE_NUM_SPEED = 0  # 测速队列被阻塞的任务计数
+QUEUE_NUM_CONN = 0  # 连通性、拓扑测试队列阻塞任务计数
+
 
 async def ws_progress(progress, nodenum, ws: web.WebSocketResponse, corenum: int, payload: dict):
     progresstext = f"${corenum}:{progress}:{nodenum}"
@@ -23,27 +28,62 @@ async def ws_progress(progress, nodenum, ws: web.WebSocketResponse, corenum: int
                        'comment': payload.get('slave', {}).get('comment', None),
                        'edit-message': payload.get('edit-message', {}),
                        'origin-message': payload.get('origin-message', {})}
-
+        key = GCONFIG.config.get('websocket', {}).get('token', '')
         wjson = websocket.WebSocketJson(websocket.PayloadStatus.OK, 'edit', new_payload)
-        await ws.send_str(str(wjson))
+        c = cipher_chacha20(str(wjson).encode(), sha256_32bytes(key))
+        await ws.send_bytes(c)
 
 
 async def router(plaindata: dict, ws: web.WebSocketResponse, **kwargs):
+    global QUEUE_NUM_SPEED
+    global QUEUE_NUM_CONN
     do = plaindata.pop('do', '')
     if do == 'run':
-        key = sha256_32bytes("12345678")
+        key = GCONFIG.config.get('websocket', {}).get('token', '')
         coreindex = plaindata.get('coreindex', None)
+        coreindex = int(coreindex) if coreindex else None
         proxyinfo = plaindata.pop('proxies', [])
         core = select_core(coreindex, (ws_progress, (ws, coreindex, plaindata)))
         if core is None:
             return
         kwargs.update(plaindata)
         logger.info("开始测试")
-        info = await core.core(proxyinfo, **kwargs) if proxyinfo else {}
+        botmsg = plaindata.get('edit-message', {})
+        if coreindex == 1:
+            new_payload = {'text': f"排队中，前方测速队列任务数量为: {QUEUE_NUM_SPEED}",
+                           'edit-message': botmsg}
+            wjson = websocket.WebSocketJson(websocket.PayloadStatus.OK, 'edit', new_payload)
+            cipherdata = cipher_chacha20(str(wjson).encode(), sha256_32bytes(key))
+            await ws.send_bytes(cipherdata)
+            logger.info(f"排队中，前方测速队列任务数量为: {QUEUE_NUM_SPEED}")
+            QUEUE_NUM_SPEED += 1
+            await SPEED_Q.put(1)
+        else:
+            logger.info(f"排队中，前方队列任务数量为: {QUEUE_NUM_CONN}")
+            new_payload = {'text': f"排队中，前方队列任务数量为: {QUEUE_NUM_CONN}",
+                           'edit-message': botmsg}
+            wjson = websocket.WebSocketJson(websocket.PayloadStatus.OK, 'edit', new_payload)
+            cipherdata2 = cipher_chacha20(str(wjson).encode(), sha256_32bytes(key))
+            await ws.send_bytes(cipherdata2)
+            QUEUE_NUM_CONN += 1
+            await CONN_Q.put(1)
+        try:
+            info = await core.core(proxyinfo, **kwargs) if proxyinfo else {}
+        except Exception as e:
+            logger.error(str(e))
+            info = {}
+        finally:
+            if coreindex == 1:
+                await SPEED_Q.get()
+                QUEUE_NUM_SPEED -= 1
+            else:
+                await CONN_Q.get()
+                QUEUE_NUM_CONN -= 1
+
         plaindata['result'] = info
         print("测试结果: ", info)
         infostr = json.dumps(plaindata)
-        cipherdata = cipher_chacha20(infostr.encode(), key)
+        cipherdata = cipher_chacha20(infostr.encode(), sha256_32bytes(key))
         await ws.send_bytes(cipherdata)
     await ws.close()
 
