@@ -52,9 +52,14 @@ async def router(plaindata: dict, ws: web.WebSocketResponse, **kwargs):
         if coreindex == 1:
             new_payload = {'text': f"排队中，前方测速队列任务数量为: {QUEUE_NUM_SPEED}",
                            'edit-message': botmsg}
+            nospeed = GCONFIG.config.get('nospeed', False)
+            if nospeed:
+                new_payload['text'] = "❌此后端禁止测速服务"
             wjson = websocket.WebSocketJson(websocket.PayloadStatus.OK, 'edit', new_payload)
             cipherdata = cipher_chacha20(str(wjson).encode(), sha256_32bytes(key))
             await ws.send_bytes(cipherdata)
+            if nospeed:
+                return
             logger.info(f"排队中，前方测速队列任务数量为: {QUEUE_NUM_SPEED}")
             QUEUE_NUM_SPEED += 1
             await SPEED_Q.put(1)
