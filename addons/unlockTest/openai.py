@@ -4,7 +4,6 @@ from aiohttp import ClientConnectorError
 from loguru import logger
 
 # collector section
-from pyrogram.types import InlineKeyboardButton
 
 openaiurl = "https://chat.openai.com/favicon.ico"
 openaiurl2 = "https://chat.openai.com/cdn-cgi/trace"
@@ -117,7 +116,6 @@ def get_openai_info(ReCleaner):
         return "N/A"
 
 
-button = InlineKeyboardButton("✅OpenAI", callback_data='✅OpenAI')
 SCRIPT = {
     "MYNAME": "OpenAI",
     "TASK": task,
