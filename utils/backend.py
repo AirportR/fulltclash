@@ -45,8 +45,8 @@ class Basecore:
         """
         self.prs = progress_func
         self._info = {}
-        self._pre_include_text = GCONFIG.config.get('subconvertor', {}).get('include', '')  # 从配置文件里预定义过滤规则
-        self._pre_exclude_text = GCONFIG.config.get('subconvertor', {}).get('exclude', '')
+        self._pre_include_text = GCONFIG.config.get('subconverter', {}).get('include', '')  # 从配置文件里预定义过滤规则
+        self._pre_exclude_text = GCONFIG.config.get('subconverter', {}).get('exclude', '')
         self._node_issave = GCONFIG.config.get('clash', {}).get('allow-caching', False)
         self._include_text = ''
         self._exclude_text = ''
@@ -54,27 +54,25 @@ class Basecore:
         self._config = cleaner.ClashCleaner(":memory:")
 
     @property
-    def start_time(self):
+    def start_time(self) -> str:
         return self._start_time
 
     @staticmethod
-    def core(*args, **kwargs):
+    def core(*args, **kwargs) -> dict:
         """
         您必须自主实现这里的方法，因为Basecore是一个基类
         :return:
         """
+        raise NotImplementedError
 
     @staticmethod
-    def check_rtt(rtt, nodenum: int):
-        if rtt == 0:
-            new_rtt = [0 for _ in range(nodenum)]
-            return new_rtt
-        else:
-            return rtt
+    def check_rtt(rtt, nodenum: int) -> list:
+        return [0 for _ in range(nodenum)] if rtt == 0 else rtt
 
-    def join_proxy(self, proxyinfo: list):
+    def join_proxy(self, proxyinfo: list, filters: bool = False):
         self._config.setProxies(proxyinfo)
-        self._config.node_filter(self._pre_include_text, self._pre_exclude_text, issave=False)  # 从配置文件过滤文件
+        if filters:
+            self._config.node_filter(self._pre_include_text, self._pre_exclude_text, issave=False)  # 从配置文件过滤文件
 
     def setfilter(self, include_text: str = '', exclude_text: str = ''):
         self._include_text = include_text
@@ -93,13 +91,13 @@ class Basecore:
         nodelist = self._config.getProxies()
         return nodename, nodetype, nodenum, nodelist
 
-    def saveresult(self, info: dict):
+    def saveresult(self, info: dict) -> bool:
         """
         保存测试结果
         :return:
         """
         cl1 = cleaner.ConfigManager(configpath=fr"./results/{self.start_time}.yaml", data=info)
-        cl1.save(fr"./results/{self.start_time}.yaml")
+        return cl1.save(fr"./results/{self.start_time}.yaml")
 
     async def progress(self, *args):
         """
@@ -151,7 +149,7 @@ class Speedtest:
         self._download_interval = self._download_intervals + 1
 
     @property
-    def thread(self):
+    def thread(self) -> int:
         return self._thread
 
     @property
@@ -320,12 +318,12 @@ class SpeedCore(Basecore):
             return 0, 0, [], 0
 
     # 以下为 另一部分
-    async def batch_speed(self, nodelist: list, port: int = 11220):
+    async def batch_speed(self, nodelist: list, port: int = 11220, proxy_obj: Union[proxys.FullTClash] = None):
         info = {}
         progress = 0
         sending_time = 0
         nodenum = len(nodelist)
-
+        control_port = proxys.CONTROL_PORT if proxy_obj is None else proxy_obj.cport
         test_items = ["HTTP(S)延迟", "平均速度", "最大速度", "每秒速度", "UDP类型"]
         for item in test_items:
             info[item] = []
@@ -336,7 +334,7 @@ class SpeedCore(Basecore):
         await self.progress(progress, nodenum)
         for name in nodelist:
             # proxys.switchProxy(name, 0)
-            await proxys.FullTClash.setproxy(name, 0)
+            await proxys.FullTClash.setproxy(name, 0, control_port)
             # delay = await proxys.http_delay_tls(index=0)
             # delay = await proxys.http_delay(index=0)
             delay = await proxys.FullTClash.urltest(port)
@@ -375,25 +373,37 @@ class SpeedCore(Basecore):
     async def core(self, proxyinfo: list, **kwargs):
         info = {}  # 存放测速结果
         self.join_proxy(proxyinfo)
-        start_port = GCONFIG.config.get('clash', {}).get('startup', 11220)
-        # 获取可供测试的测试端口
-        # 测速仅需要一个端口，因此这里不处理
+        # start_port = GCONFIG.config.get('clash', {}).get('startup', 11220)
         # 订阅加载
         nodename, nodetype, _, nodelist = self.getnodeinfo()
         # 开始测试
         s1 = time.time()
         try:
             break_speed.clear()
-            speedinfo = await self.batch_speed(nodelist, port=start_port)
+            # 创建代理实例
+            port_list = await proxys.get_available_port(2)
+            control_port = port_list.pop(0)
+            fulltclash = proxys.FullTClash(control_port, port_list)
+            await fulltclash.start()
+            await asyncio.sleep(1)
+            # 预填充
             info['节点名称'] = nodename
             info['类型'] = nodetype
-            # info['HTTP(S)延迟'] = rtt
-            info.update(speedinfo)
+            try:
+                speedinfo = await self.batch_speed(nodelist, port_list[0], fulltclash)
+                info.update(speedinfo)
+            except Exception as e:
+                logger.error(str(e))
+            finally:
+                fulltclash.close()
+                logger.info("子进程已关闭，回收资源。")
             info = cleaner.ResultCleaner(info).start()
             # 计算测试消耗时间
             wtime = "%.1f" % float(time.time() - s1)
             info['wtime'] = wtime
-            info['filter'] = {'include': self._include_text, 'exclude': self._exclude_text}
+            # 过滤器
+            flt = kwargs.get('filter', None)
+            info['filter'] = flt if flt else {'include': self._include_text, 'exclude': self._exclude_text}
             info['线程'] = collector.config.config.get('speedthread', 4)
             if break_speed:
                 info.clear()
@@ -429,40 +439,45 @@ class ScriptCore(Basecore):
         :return: list 返回test_items对应顺序的信息
         """
         info = []
-        delay = await proxys.FullTClash.urltest(port)
-        if delay == 0:
-            logger.warning("超时节点，跳过测试")
-            for t in test_items:
-                if t == "HTTP(S)延迟":
-                    info.append(0)
-                else:
-                    info.append("N/A")
-            return info
-        else:
+        if "HTTP(S)延迟" in test_items:
+            delay = await proxys.FullTClash.urltest(port)
+            if delay == 0:
+                logger.warning("超时节点，跳过测试")
+                for t in test_items:
+                    if t == "HTTP(S)延迟":
+                        info.append(0)
+                    else:
+                        info.append("N/A")
+                return info
             info.append(delay)
-            cl = collector.Collector()
-            re1 = await cl.start(host, port)
-            cnr = cleaner.ReCleaner(re1)
-            old_info = cnr.get_all()
-            for item in test_items:
-                i = item
-                if i == 'HTTP(S)延迟':
-                    continue
-                try:
-                    info.append(old_info[i])
-                except KeyError:
-                    info.append("N/A")
-                    logger.error("KeyError: 无法找到 " + item + " 测试项")
-            return info
+        cl = collector.Collector(script=test_items)
+        re1 = await cl.start(host, port)
+        cnr = cleaner.ReCleaner(re1, script_list=test_items)
+        old_info = cnr.get_all()
+        for item in test_items:
+            i = item
+            if i == 'HTTP(S)延迟':
+                continue
+            try:
+                info.append(old_info[i])
+            except KeyError:
+                info.append("N/A")
+                logger.error("KeyError: 无法找到 " + item + " 测试项")
+        return info
 
-    async def batch_test_pro(self, nodename: list, test_items: list, pool: dict):
+    async def batch_test_pro(self, proxyinfo: list, test_items: list, pool: dict,
+                             proxy_obj: Union[proxys.FullTClash] = None):
+        """
+        nodename:
+        """
         info = {}
         progress = 0
         sending_time = 0
         host = pool.get('host', [])
         port = pool.get('port', [])
         psize = len(port)
-        nodenum = len(nodename)
+        nodenum = len(proxyinfo)
+        control_port = proxys.CONTROL_PORT if proxy_obj is None else proxy_obj.cport
         tasks = []
 
         for item in test_items:
@@ -478,7 +493,7 @@ class ScriptCore(Basecore):
 
         if nodenum < psize:
             for i in range(len(port[:nodenum])):
-                await proxys.FullTClash.setproxy(nodename[i], i)
+                await proxys.FullTClash.setproxy(proxyinfo[i], i, control_port)
                 # proxys.switchProxy(nodename[i], i)
                 task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i]))
                 tasks.append(task)
@@ -499,7 +514,7 @@ class ScriptCore(Basecore):
                 tasks.clear()
 
                 for i in range(psize):
-                    await proxys.FullTClash.setproxy(nodename[s * psize + i], i)
+                    await proxys.FullTClash.setproxy(proxyinfo[s * psize + i], i, control_port)
                     # proxys.switchProxy(nodename[s * psize + i], i)
                     task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i]))
                     tasks.append(task)
@@ -524,7 +539,7 @@ class ScriptCore(Basecore):
                 tasks.clear()
                 logger.info("最后批次: " + str(subbatch + 1))
                 for i in range(nodenum % psize):
-                    await proxys.FullTClash.setproxy(nodename[subbatch * psize + i], i)
+                    await proxys.FullTClash.setproxy(proxyinfo[subbatch * psize + i], i, control_port)
                     # proxys.switchProxy(nodename[subbatch * psize + i], i)
                     task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i]))
                     tasks.append(task)
@@ -540,37 +555,53 @@ class ScriptCore(Basecore):
             progress += nodenum % psize
             await self.progress(progress, nodenum)
 
-        logger.info(str(info))
         return info
 
     async def core(self, proxyinfo: list, **kwargs):
-        info = {}  # 存放测速结果
-        media_items = kwargs.get('media_items', None)
+        info = {}  # 存放测试结果
+        media_items = kwargs.get('script', None) or kwargs.get('test_items', None) or kwargs.get('media_items', None)
         test_items = collector.media_items if media_items is None else media_items
+        test_items = cleaner.addon.mix_script(test_items, False)
         # 先把节点信息写入文件
         self.join_proxy(proxyinfo)
         # 获取可供测试的测试端口
         thread = GCONFIG.config.get('clash', {}).get('core', 1)
-        startup = GCONFIG.config.get('clash', {}).get('startup', 11220)
-        pool = {'host': ['127.0.0.1' for _ in range(thread)],
-                'port': [startup + t * 2 for t in range(thread)]}
+        # startup = GCONFIG.config.get('clash', {}).get('startup', 11220)
+        port_list = await proxys.get_available_port(thread + 1)
+        control_port = port_list.pop(0)
+        # 设置代理端口
+        fulltclash = proxys.FullTClash(control_port, port_list)
+        await fulltclash.start()
+        pool = {'host': ['127.0.0.1' for _ in range(len(port_list))],
+                'port': port_list}
         # 订阅加载
         nodename, nodetype, nodenum, nodelist = self.getnodeinfo()
         # 开始测试
         s1 = time.time()
         info['节点名称'] = nodename
         info['类型'] = nodetype
-        test_info = await self.batch_test_pro(nodelist, test_items, pool)
-        info['HTTP(S)延迟'] = test_info.pop('HTTP(S)延迟')
+        try:
+            test_info = await self.batch_test_pro(nodelist, test_items, pool, fulltclash)
+        except Exception as e:
+            print(e)
+            logger.error(f"{str(e.__class__)}:{str(e)}")
+            return {}
+        finally:
+            fulltclash.close()
+            logger.info("子进程已关闭，回收资源。")
+        if 'HTTP(S)延迟' in test_info:
+            info['HTTP(S)延迟'] = test_info.pop('HTTP(S)延迟')
         info.update(test_info)
+        # 排序
         sort = kwargs.get('sort', "订阅原序")
         logger.info("排序：" + sort)
         info = cleaner.ResultCleaner(info).start(sort=sort)
-        # 计算测试消耗时间
-        wtime = "%.1f" % float(time.time() - s1)
-        info['wtime'] = wtime
-        info['filter'] = {'include': self._include_text, 'exclude': self._exclude_text}
         info['sort'] = sort
+        # 计算测试消耗时间
+        info['wtime'] = "%.1f" % float(time.time() - s1)
+        # 过滤器
+        flt = kwargs.get('filter', None)
+        info['filter'] = flt if flt else {'include': self._include_text, 'exclude': self._exclude_text}
         # 保存结果
         self.saveresult(info)
         return info
@@ -695,7 +726,7 @@ class TopoCore(Basecore):
                         info.update({'簇': ipclus})
                 return info, hosts, cl
 
-    async def batch_topo(self, nodename: list, pool: dict):
+    async def batch_topo(self, nodename: list, pool: dict, proxy_obj: Union[proxys.FullTClash] = None):
         resdata = []
         ipstackes = []
         progress = 0
@@ -705,7 +736,7 @@ class TopoCore(Basecore):
         psize = len(port)
         nodenum = len(nodename)
         ipstack_enable = GCONFIG.config.get('ipstack', False)
-
+        control_port = proxys.CONTROL_PORT if proxy_obj is None else proxy_obj.cport
         if psize <= 0:
             logger.error("无可用的代理程序接口")
             return [], []
@@ -717,7 +748,7 @@ class TopoCore(Basecore):
         await self.progress(progress, nodenum)
         if nodenum < psize:
             for i in range(nodenum):
-                await proxys.FullTClash.setproxy(nodename[i], i)
+                await proxys.FullTClash.setproxy(nodename[i], i, control_port)
                 # proxys.switchProxy(nodename[i], i)
             ipcol = collector.IPCollector()
             sub_res = await ipcol.batch(proxyhost=host[:nodenum], proxyport=port[:nodenum])
@@ -733,7 +764,7 @@ class TopoCore(Basecore):
             for s in range(subbatch):
                 logger.info("当前批次: " + str(s + 1))
                 for i in range(psize):
-                    await proxys.FullTClash.setproxy(nodename[s * psize + i], i)
+                    await proxys.FullTClash.setproxy(nodename[s * psize + i], i, control_port)
                     # proxys.switchProxy(nodename[s * psize + i], i)
                 ipcol = collector.IPCollector()
                 sub_res = await ipcol.batch(proxyhost=host, proxyport=port)
@@ -754,7 +785,7 @@ class TopoCore(Basecore):
             if nodenum % psize != 0:
                 logger.info("最后批次: " + str(subbatch + 1))
                 for i in range(nodenum % psize):
-                    await proxys.FullTClash.setproxy(nodename[subbatch * psize + i], i)
+                    await proxys.FullTClash.setproxy(nodename[subbatch * psize + i], i, control_port)
                     # proxys.switchProxy(nodename[subbatch * psize + i], i)
                 ipcol = collector.IPCollector()
                 sub_res = await ipcol.batch(proxyhost=host[:nodenum % psize],
@@ -781,9 +812,14 @@ class TopoCore(Basecore):
         self.join_proxy(proxyinfo)
         # 获取可供测试的测试端口
         thread = GCONFIG.config.get('clash', {}).get('core', 1)
-        startup = GCONFIG.config.get('clash', {}).get('startup', 11220)
-        pool = {'host': ['127.0.0.1' for _ in range(thread)],
-                'port': [startup + t * 2 for t in range(thread)]}
+        port_list = await proxys.get_available_port(thread + 1)
+        control_port = port_list.pop(0)
+        # startup = GCONFIG.config.get('clash', {}).get('startup', 11220)
+        # 创建代理实例
+        fulltclash = proxys.FullTClash(control_port, port_list)
+        await fulltclash.start()
+        pool = {'host': ['127.0.0.1' for _ in range(len(port_list))],
+                'port': port_list}
         # 开始测试
         s1 = time.time()
         info1, _, cl = await self.topo()
@@ -797,7 +833,7 @@ class TopoCore(Basecore):
         # 启动链路拓扑测试
         try:
             info2.update({'入口': [], '地区': [], 'AS编号': [], '组织': [], '栈': [], '簇': [], '节点名称': []})
-            res, ras = await self.batch_topo(nodelist, pool)
+            res, ras = await self.batch_topo(nodelist, pool, fulltclash)
 
             if res:
                 country_code = []
@@ -862,6 +898,9 @@ class TopoCore(Basecore):
             # info2['filter'] = {'include': self._include_text, 'exclude': self._exclude_text} #这里注释了，不然绘图会出错
         except Exception as e:
             logger.error(str(e))
+        finally:
+            fulltclash.close()
+            logger.info("子进程已关闭，回收资源。")
         # 保存结果
         self.saveresult({'inbound': info1, 'outbound': info2})
         return {'inbound': info1, 'outbound': info2}
@@ -898,12 +937,9 @@ def default_progress_text(corelabel: Union[int, str], progress: int, nodenum: in
 def check_init():
     import os
     dirs = os.listdir()
-    if "clash" in dirs and "logs" in dirs and "results" in dirs:
+    if "logs" in dirs and "results" in dirs:
         return
     logger.info("检测到初次使用，正在初始化...")
-    if not os.path.isdir('../clash'):
-        os.mkdir("../clash")
-        logger.info("创建文件夹: clash 用于保存订阅")
     if not os.path.isdir('../logs'):
         os.mkdir("../logs")
         logger.info("创建文件夹: logs 用于保存日志")
@@ -912,16 +948,17 @@ def check_init():
         logger.info("创建文件夹: results 用于保存测试结果")
 
 
-def select_core(index: int):
+def select_core(index: Union[int, str], progress_func: Tuple[Union[Callable, Coroutine], Tuple] = None):
     """
     1 为速度核心， 2为拓扑核心， 3为解锁脚本测试核心
     """
+    progress = None if progress_func is None else (progress_func[0], progress_func[1])
     if index == 1 or index == 'speed':
-        return SpeedCore()
+        return SpeedCore(prs=progress)
     elif index == 2 or index == 'analyze' or index == 'topo':
-        return TopoCore()
+        return TopoCore(progress_func=progress)
     elif index == 3 or index == 'script':
-        return ScriptCore()
+        return ScriptCore(progress_func=progress)
     else:
         raise TypeError("Unknown test type, please input again.\n未知的测试类型，请重新输入!")
 
