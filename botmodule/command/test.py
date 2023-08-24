@@ -10,7 +10,7 @@ from pyrogram.errors import RPCError
 from loguru import logger
 
 from botmodule.init_bot import config, admin
-from utils.backend import SpeedCore, ScriptCore, TopoCore, break_speed, default_progress_text
+from utils.backend import SpeedCore, ScriptCore, TopoCore, break_speed
 from utils.safe import cipher_chacha20, sha256_32bytes
 from utils import message_delete_queue, check, cleaner, collector, export
 
@@ -32,6 +32,9 @@ sp = slave_progress
 
 
 def convert_core_index(corestr: str) -> int:
+    """
+    转换任务类型为测试核心编号
+    """
     if isinstance(corestr, str):
         if corestr.startswith("speed"):
             return 1

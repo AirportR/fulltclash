@@ -7,9 +7,14 @@ from utils.cleaner import reload_config as r2, addon
 # from utils import message_edit_queue
 
 import botmodule
+from botmodule.command.test import convert_core_index
 
-q = asyncio.Queue(maxsize=1)
-task_num = 0
+# q = asyncio.Queue(maxsize=1)
+# task_num = 0
+SPEED_Q = asyncio.Queue(1)  # 速度测试队列。确保同一时间只有一个测速任务在占用带宽
+CONN_Q = asyncio.Queue(3)  # 连通性、拓扑测试队列，最大同时测试数量为10个任务，设置太高会影响到测速的带宽，进而影响结果。
+QUEUE_NUM_SPEED = 0  # 测速队列被阻塞的任务计数
+QUEUE_NUM_CONN = 0  # 连通性、拓扑测试队列阻塞任务计数
 
 
 async def bot_task_queue(client: Client, message, task_type: str, qu: asyncio.Queue, **kwargs):
@@ -45,8 +50,7 @@ async def bot_put(client: Client, message: Message, put_type: str, test_items: l
     :param put_type:
     :return:
     """
-    global task_num
-    task_num += 1
+    global QUEUE_NUM_CONN, QUEUE_NUM_SPEED
     try:
         if test_items is None:
             test_items = []
@@ -54,16 +58,35 @@ async def bot_put(client: Client, message: Message, put_type: str, test_items: l
         slaveid = kwargs.get('slaveid', 'local')
         if slaveid != 'local':
             await botmodule.process(client, message, put_type=put_type, test_items=test_items, **kwargs)
-            task_num -= 1
             return
-        mes = await message.reply("排队中,前方队列任务数量为: " + str(task_num - 1))
-        await q.put(message)
-        r1(test_items)
-        r2(test_items)
-        await mes.delete()
+        coreindex = convert_core_index(put_type)
+        if coreindex == 1:
+            logger.info(f"排队中，前方测速队列任务数量为: {QUEUE_NUM_SPEED}")
+            mes = await message.reply(f"排队中，前方测速队列任务数量为: {QUEUE_NUM_SPEED}")
+            QUEUE_NUM_SPEED += 1
+            await SPEED_Q.put(1)
+            await mes.delete()
+            await bot_task_queue(client, message, put_type, SPEED_Q, test_items=test_items, **kwargs)
+            QUEUE_NUM_SPEED -= 1
+        else:
+            logger.info(f"排队中，前方队列任务数量为: {QUEUE_NUM_CONN}")
+            mes = await message.reply(f"排队中，前方连通测试队列任务数量为: {QUEUE_NUM_CONN}")
+            QUEUE_NUM_CONN += 1
+            await CONN_Q.put(1)
+            r1(test_items)
+            r2(test_items)
+            await mes.delete()
+            await bot_task_queue(client, message, put_type, CONN_Q, test_items=test_items, **kwargs)
+            QUEUE_NUM_CONN -= 1
 
-        await bot_task_queue(client, message, put_type, q, test_items=test_items, **kwargs)
-        task_num -= 1
+        # mes = await message.reply("排队中,前方队列任务数量为: " + str(task_num - 1))
+        # await q.put(message)
+        # r1(test_items)
+        # r2(test_items)
+        # await mes.delete()
+        #
+        # await bot_task_queue(client, message, put_type, q, test_items=test_items, **kwargs)
+        # task_num -= 1
 
     except AttributeError as a:
         logger.error(str(a))
@@ -72,31 +95,40 @@ async def bot_put(client: Client, message: Message, put_type: str, test_items: l
 
 
 async def bot_put_slave(client: Client, message: Message, putinfo: dict, **kwargs):
-    global task_num
-    task_num += 1
+    global QUEUE_NUM_CONN, QUEUE_NUM_SPEED
     try:
         test_items = putinfo.get('test-items', None)
         edit_chat_id = putinfo.get('edit-chat-id', None)
         edit_message_id = putinfo.get('edit-message-id', None)
         master_id = kwargs.get('master_id', None)
+        coreindex = putinfo.get('coreindex', None)
         if master_id is None and edit_chat_id is None and edit_message_id is None:
-            task_num -= 1
             return
         if test_items is None:
             test_items = []
-        print("检查前测试项:", test_items)
         test_items = addon.mix_script(test_items)
-        logger.info("任务测试项为: " + str(test_items))
-        botmsg = await message.reply(f"/relay {master_id} edit {edit_chat_id} {edit_message_id} 排队中,前方队列任务数量为:"
-                                     + str(task_num - 1))
-        await q.put(message)
-        r1(test_items)
-        r2(test_items)
-        await bot_task_queue_slave(client, botmsg, putinfo, q, **kwargs)
-        # bot_edit_text = f"/relay {master_id} edit {edit_chat_id} {edit_message_id} 测试结束啦。"
-        # message_edit_queue.put((botmsg.chat.id, botmsg.id, bot_edit_text, 2))
-        # await bot_task_queue_master(client, message, put_type, q, **kwargs)
-        task_num -= 1
+        logger.info("经过过滤后的任务测试项为: " + str(test_items))
+        if coreindex is None or not isinstance(coreindex, int):
+            logger.error("coreindex值错误，请检查。")
+            return
+        if coreindex == 1:
+            logger.info(f"排队中，前方测速队列任务数量为: {QUEUE_NUM_SPEED}")
+            t = f"/relay {master_id} edit {edit_chat_id} {edit_message_id} 排队中，前方测速队列任务数量为: {QUEUE_NUM_SPEED}"
+            botmsg = await message.reply(t)
+            QUEUE_NUM_SPEED += 1
+            await SPEED_Q.put(1)
+            await bot_task_queue_slave(client, botmsg, putinfo, SPEED_Q, **kwargs)
+            QUEUE_NUM_SPEED -= 1
+        else:
+            logger.info(f"排队中，前方队列任务数量为: {QUEUE_NUM_CONN}")
+            t = f"/relay {master_id} edit {edit_chat_id} {edit_message_id} 排队中，前方连通测试队列任务数量为: {QUEUE_NUM_CONN}"
+            botmsg = await message.reply(t)
+            QUEUE_NUM_CONN += 1
+            await CONN_Q.put(1)
+            r1(test_items)
+            r2(test_items)
+            await bot_task_queue_slave(client, botmsg, putinfo, CONN_Q, **kwargs)
+            QUEUE_NUM_CONN -= 1
 
     except AttributeError as a:
         logger.error(str(a))
