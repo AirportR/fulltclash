@@ -14,7 +14,7 @@ from aiohttp_socks import ProxyConnector
 from loguru import logger
 from utils.collector import proxies
 from libs import pynat
-from utils import message_edit_queue, cleaner, collector, ipstack, proxys, sorter, geoip
+from utils import message_edit_queue, cleaner, collector, ipstack, proxy, sorter, geoip
 
 # 重写整个测试核心，技术栈分离。
 
@@ -318,12 +318,12 @@ class SpeedCore(Basecore):
             return 0, 0, [], 0
 
     # 以下为 另一部分
-    async def batch_speed(self, nodelist: list, port: int = 11220, proxy_obj: Union[proxys.FullTClash] = None):
+    async def batch_speed(self, nodelist: list, port: int = 11220, proxy_obj: Union[proxy.FullTClash] = None):
         info = {}
         progress = 0
         sending_time = 0
         nodenum = len(nodelist)
-        control_port = proxys.CONTROL_PORT if proxy_obj is None else proxy_obj.cport
+        control_port = proxy.CONTROL_PORT if proxy_obj is None else proxy_obj.cport
         test_items = ["HTTP(S)延迟", "平均速度", "最大速度", "每秒速度", "UDP类型"]
         for item in test_items:
             info[item] = []
@@ -334,10 +334,10 @@ class SpeedCore(Basecore):
         await self.progress(progress, nodenum)
         for name in nodelist:
             # proxys.switchProxy(name, 0)
-            await proxys.FullTClash.setproxy(name, 0, control_port)
+            await proxy.FullTClash.setproxy(name, 0, control_port)
             # delay = await proxys.http_delay_tls(index=0)
             # delay = await proxys.http_delay(index=0)
-            delay = await proxys.FullTClash.urltest(port)
+            delay = await proxy.FullTClash.urltest(port)
             udptype, _, _, _, _ = self.nat_type_test('127.0.0.1', proxyport=port)
             if udptype is None:
                 udptype = "Unknown"
@@ -381,9 +381,9 @@ class SpeedCore(Basecore):
         try:
             break_speed.clear()
             # 创建代理实例
-            port_list = await proxys.get_available_port(2)
+            port_list = await proxy.get_available_port(2)
             control_port = port_list.pop(0)
-            fulltclash = proxys.FullTClash(control_port, port_list)
+            fulltclash = proxy.FullTClash(control_port, port_list)
             await fulltclash.start()
             await asyncio.sleep(1)
             # 预填充
@@ -440,7 +440,7 @@ class ScriptCore(Basecore):
         """
         info = []
         if "HTTP(S)延迟" in test_items:
-            delay = await proxys.FullTClash.urltest(port)
+            delay = await proxy.FullTClash.urltest(port)
             if delay == 0:
                 logger.warning("超时节点，跳过测试")
                 for t in test_items:
@@ -466,7 +466,7 @@ class ScriptCore(Basecore):
         return info
 
     async def batch_test_pro(self, proxyinfo: list, test_items: list, pool: dict,
-                             proxy_obj: Union[proxys.FullTClash] = None):
+                             proxy_obj: Union[proxy.FullTClash] = None):
         """
         nodename:
         """
@@ -477,7 +477,7 @@ class ScriptCore(Basecore):
         port = pool.get('port', [])
         psize = len(port)
         nodenum = len(proxyinfo)
-        control_port = proxys.CONTROL_PORT if proxy_obj is None else proxy_obj.cport
+        control_port = proxy.CONTROL_PORT if proxy_obj is None else proxy_obj.cport
         tasks = []
 
         for item in test_items:
@@ -493,7 +493,7 @@ class ScriptCore(Basecore):
 
         if nodenum < psize:
             for i in range(len(port[:nodenum])):
-                await proxys.FullTClash.setproxy(proxyinfo[i], i, control_port)
+                await proxy.FullTClash.setproxy(proxyinfo[i], i, control_port)
                 # proxys.switchProxy(nodename[i], i)
                 task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i]))
                 tasks.append(task)
@@ -514,7 +514,7 @@ class ScriptCore(Basecore):
                 tasks.clear()
 
                 for i in range(psize):
-                    await proxys.FullTClash.setproxy(proxyinfo[s * psize + i], i, control_port)
+                    await proxy.FullTClash.setproxy(proxyinfo[s * psize + i], i, control_port)
                     # proxys.switchProxy(nodename[s * psize + i], i)
                     task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i]))
                     tasks.append(task)
@@ -539,7 +539,7 @@ class ScriptCore(Basecore):
                 tasks.clear()
                 logger.info("最后批次: " + str(subbatch + 1))
                 for i in range(nodenum % psize):
-                    await proxys.FullTClash.setproxy(proxyinfo[subbatch * psize + i], i, control_port)
+                    await proxy.FullTClash.setproxy(proxyinfo[subbatch * psize + i], i, control_port)
                     # proxys.switchProxy(nodename[subbatch * psize + i], i)
                     task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i]))
                     tasks.append(task)
@@ -567,10 +567,10 @@ class ScriptCore(Basecore):
         # 获取可供测试的测试端口
         thread = GCONFIG.config.get('clash', {}).get('core', 1)
         # startup = GCONFIG.config.get('clash', {}).get('startup', 11220)
-        port_list = await proxys.get_available_port(thread + 1)
+        port_list = await proxy.get_available_port(thread + 1)
         control_port = port_list.pop(0)
         # 设置代理端口
-        fulltclash = proxys.FullTClash(control_port, port_list)
+        fulltclash = proxy.FullTClash(control_port, port_list)
         await fulltclash.start()
         pool = {'host': ['127.0.0.1' for _ in range(len(port_list))],
                 'port': port_list}
@@ -726,7 +726,7 @@ class TopoCore(Basecore):
                         info.update({'簇': ipclus})
                 return info, hosts, cl
 
-    async def batch_topo(self, nodename: list, pool: dict, proxy_obj: Union[proxys.FullTClash] = None):
+    async def batch_topo(self, nodename: list, pool: dict, proxy_obj: Union[proxy.FullTClash] = None):
         resdata = []
         ipstackes = []
         progress = 0
@@ -736,7 +736,7 @@ class TopoCore(Basecore):
         psize = len(port)
         nodenum = len(nodename)
         ipstack_enable = GCONFIG.config.get('ipstack', False)
-        control_port = proxys.CONTROL_PORT if proxy_obj is None else proxy_obj.cport
+        control_port = proxy.CONTROL_PORT if proxy_obj is None else proxy_obj.cport
         if psize <= 0:
             logger.error("无可用的代理程序接口")
             return [], []
@@ -748,7 +748,7 @@ class TopoCore(Basecore):
         await self.progress(progress, nodenum)
         if nodenum < psize:
             for i in range(nodenum):
-                await proxys.FullTClash.setproxy(nodename[i], i, control_port)
+                await proxy.FullTClash.setproxy(nodename[i], i, control_port)
                 # proxys.switchProxy(nodename[i], i)
             ipcol = collector.IPCollector()
             sub_res = await ipcol.batch(proxyhost=host[:nodenum], proxyport=port[:nodenum])
@@ -764,7 +764,7 @@ class TopoCore(Basecore):
             for s in range(subbatch):
                 logger.info("当前批次: " + str(s + 1))
                 for i in range(psize):
-                    await proxys.FullTClash.setproxy(nodename[s * psize + i], i, control_port)
+                    await proxy.FullTClash.setproxy(nodename[s * psize + i], i, control_port)
                     # proxys.switchProxy(nodename[s * psize + i], i)
                 ipcol = collector.IPCollector()
                 sub_res = await ipcol.batch(proxyhost=host, proxyport=port)
@@ -785,7 +785,7 @@ class TopoCore(Basecore):
             if nodenum % psize != 0:
                 logger.info("最后批次: " + str(subbatch + 1))
                 for i in range(nodenum % psize):
-                    await proxys.FullTClash.setproxy(nodename[subbatch * psize + i], i, control_port)
+                    await proxy.FullTClash.setproxy(nodename[subbatch * psize + i], i, control_port)
                     # proxys.switchProxy(nodename[subbatch * psize + i], i)
                 ipcol = collector.IPCollector()
                 sub_res = await ipcol.batch(proxyhost=host[:nodenum % psize],
@@ -812,11 +812,11 @@ class TopoCore(Basecore):
         self.join_proxy(proxyinfo)
         # 获取可供测试的测试端口
         thread = GCONFIG.config.get('clash', {}).get('core', 1)
-        port_list = await proxys.get_available_port(thread + 1)
+        port_list = await proxy.get_available_port(thread + 1)
         control_port = port_list.pop(0)
         # startup = GCONFIG.config.get('clash', {}).get('startup', 11220)
         # 创建代理实例
-        fulltclash = proxys.FullTClash(control_port, port_list)
+        fulltclash = proxy.FullTClash(control_port, port_list)
         await fulltclash.start()
         pool = {'host': ['127.0.0.1' for _ in range(len(port_list))],
                 'port': port_list}
