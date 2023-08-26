@@ -79,23 +79,12 @@ def command_loader2(app: Client):
 
 
 def command_loader(app: Client):
-    @app.on_message(filters.command(["testurl"]) & allfilter(1), group=1)
-    @AccessCallback()
-    async def testurl(client: Client, message: Message):
-        # await botmodule.select_slave_page(client, message, page=1)
-        await botmodule.task_handler(client, message, page=1)
+    task_list = ["test", "testurl", "analyze", "topo", "analyzeurl", "topourl", "speed", "speedurl", "invite"]
 
-    @app.on_message(filters.command(["test"]) & allfilter(1), group=1)
+    @app.on_message(filters.command(task_list) & allfilter(1), group=1)
     @AccessCallback()
-    async def test(client: Client, message: Message):
+    async def task(client: Client, message: Message):
         await botmodule.task_handler(client, message, page=1)
-        # await botmodule.select_slave_page(client, message, page=1)
-
-    @app.on_message(filters.command(["invite"]), group=1)
-    @AccessCallback()
-    async def invite(client, message):
-        await botmodule.task_handler(client, message, page=1)
-        # await botmodule.select_slave_page(client, message, page=1)
 
     @app.on_message(filters.command(["grant"]) & allfilter(2), group=2)
     async def grant(client, message):
@@ -132,18 +121,6 @@ def command_loader(app: Client):
     async def print_version(client, message):
         await botmodule.version(client, message)
 
-    @app.on_message(filters.command(["analyzeurl", "topourl"]) & allfilter(1), group=1)
-    @AccessCallback()
-    async def analyzeurl(client, message):
-        # await botmodule.select_slave_page(client, message, page=1)
-        await botmodule.task_handler(client, message, page=1)
-
-    @app.on_message(filters.command(["analyze", "topo"]) & allfilter(1), group=1)
-    @AccessCallback()
-    async def analyze(client, message):
-        # await botmodule.select_slave_page(client, message, page=1)
-        await botmodule.task_handler(client, message, page=1)
-
     @app.on_message(filters.command(["reload"]) & allfilter(2), group=2)
     async def reload_test_items(_, message):
         r1()
@@ -154,38 +131,6 @@ def command_loader(app: Client):
     @AccessCallback()
     async def regis(client, message):
         await botmodule.register.baipiao(client, message)
-
-    # @app.on_message(filters.command(["inbound"]) & allfilter(1), group=1)
-    # @AccessCallback()
-    # async def inbound(client, message):
-    #     await bot_put(client, message, "inbound", test_type='inbound')
-    #
-    # @app.on_message(filters.command(["inboundurl"]) & allfilter(1), group=1)
-    # @AccessCallback()
-    # async def inboundurl(client, message):
-    #     await bot_put(client, message, "inboundurl", test_type='inbound')
-    #
-    # @app.on_message(filters.command(["outbound"]) & allfilter(1), group=1)
-    # @AccessCallback()
-    # async def outbound(client, message):
-    #     await bot_put(client, message, "outbound", test_type='outbound')
-    #
-    # @app.on_message(filters.command(["outboundurl"]) & allfilter(1), group=1)
-    # @AccessCallback()
-    # async def outboundurl(client, message):
-    #     await bot_put(client, message, "outboundurl", test_type='outbound')
-
-    @app.on_message(filters.command(["speed", "speedurl"]) & allfilter(1), group=1)
-    @AccessCallback()
-    async def speed(client, message):
-        await botmodule.task_handler(client, message, page=1)
-        # await botmodule.select_slave_page(client, message, page=1)
-
-    # @app.on_message(filters.command(["speedurl"]) & allfilter(1), group=1)
-    # @AccessCallback()
-    # async def speedurl(client, message):
-    #     await botmodule.task_handler(client, message, page=1)
-    #     # await botmodule.select_slave_page(client, message, page=1)
 
     @app.on_message(filters.command(["subinfo", "traffic", "流量", "流量信息", "流量查询"]), group=0)
     async def subinfo(client, message):
@@ -230,10 +175,6 @@ def command_loader(app: Client):
     async def restart(client, message):
         await botmodule.restart_or_killme(client, message)
 
-    @app.on_message(filters.command(['clash']) & allfilter(2), group=2)
-    async def clash(client, message):
-        await botmodule.startclash(client, message)
-
     @app.on_message(filters.command(['exit', 'killme']) & allfilter(2), group=2)
     async def killme(client, message):
         await botmodule.restart_or_killme(client, message, kill=True)
@@ -268,6 +209,10 @@ def callback_loader(app: Client):
     @app.on_callback_query(botmodule.cfilter.prefix_filter("/api/slave/page/"), 1)
     async def _(client: Client, call: CallbackQuery):
         await botmodule.select_slave_only_pre(client, call)
+
+    @app.on_callback_query(botmodule.cfilter.prefix_filter("/api/sort/"), 1)
+    async def _(client: Client, call: CallbackQuery):
+        await botmodule.select_sort_only(client, call)
 
     @app.on_callback_query(filters=dynamic_data_filter('stop') & filters.user(botmodule.init_bot.reloadUser()), group=1)
     async def invite_test(client: Client, callback_query: CallbackQuery):
@@ -310,7 +255,7 @@ def callback_loader(app: Client):
             return
         elif callback_query.data.startswith('/api/getSlaveId'):
             await botmodule.get_s_id(client, callback_query)
-        elif "sort" in callback_query.data:
+        elif callback_query.data.startswith('sort:'):
             await botmodule.select_sort(client, callback_query)
             return
         test_items, origin_message, message, test_type = await botmodule.test_setting(client, callback_query)

@@ -1,6 +1,6 @@
 from typing import Union
 
-from pyrogram import filters
+from pyrogram import filters, StopPropagation
 from pyrogram.types import Message, CallbackQuery
 from loguru import logger
 from utils.cleaner import addon
@@ -91,7 +91,10 @@ def AccessCallback(default=0):
     def wrapper(func):
         async def inner(client, message):
             for call in callbackfunc:
-                callres = await call(client, message)
+                try:
+                    callres = await call(client, message)
+                except StopPropagation:  # 停止回调传播
+                    callres = False
                 if not isinstance(callres, bool):
                     logger.warning("未返回布尔值，可能会出现意料之外的结果！")
                 if not callres:
@@ -113,14 +116,12 @@ def AccessCallback(default=0):
 
 def getErrorText(text: str):
     if text.endswith("url"):
-        return f"❌ 格式错误哦 QAQ，正确的食用方式为： {text} <订阅链接> <包含过滤器> <排除过滤器>"
+        return f"❌ 格式错误哦 QAQ，正确的食用方式为： \n{text} <订阅链接> <包含过滤器> <排除过滤器>"
     elif text.startswith("/test") or text.startswith("/topo") or text.startswith("/analyze") or text.startswith(
             "/speed"):
-        return f"❌ 格式错误哦 QAQ，正确的食用方式为： {text} <任务名称> <包含过滤器> <排除过滤器>"
-    elif text.startswith("/invite"):
-        return f"❌ 使用方式: {text} <回复一个目标> <...若干检测项>"
+        return f"❌ 格式错误哦 QAQ，正确的食用方式为： \n{text} <任务名称> <包含过滤器> <排除过滤器>"
     else:
-        return f"❌ 使用方式: {text} <参数1> <参数2>"
+        return f"❌ 使用方式: \n{text} <参数1> <参数2>"
 
 
 def command_argnum_filter(argnum: int = 1):
@@ -138,6 +139,8 @@ def command_argnum_filter(argnum: int = 1):
         arg = string.strip().split(' ')
         arg = [x for x in arg if x != '']
         if len(arg) > argnum:
+            return True
+        elif arg[0] == '/invite':
             return True
         else:
             back_message = await message.reply(getErrorText(arg[0]))

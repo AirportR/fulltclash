@@ -9,7 +9,6 @@ from pyrogram import types, Client
 from pyrogram.errors import RPCError
 from pyrogram.types import BotCommand, CallbackQuery, Message
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton as IKB
-from pyrogram.handlers import CallbackQueryHandler
 from utils.cleaner import addon, config, ArgCleaner
 from utils.myqueue import bot_put
 from utils.check import get_telegram_id_from_message as getID
@@ -43,6 +42,10 @@ dbtn = default_button = {
     'b_origin': IKB("♾️订阅原序", callback_data="sort:订阅原序"),
     'b_rhttp': IKB("⬇️HTTP倒序", callback_data="sort:HTTP倒序"),
     'b_http': IKB("⬆️HTTP升序", callback_data="sort:HTTP升序"),
+    'b_aspeed': IKB("⬆️平均速度升序", callback_data="sort:平均速度升序"),
+    'b_arspeed': IKB("⬇️平均速度降序", callback_data="sort:平均速度降序"),
+    'b_mspeed': IKB("⬆️最大速度升序", callback_data="sort:最大速度升序"),
+    'b_mrspeed': IKB("⬇️最大速度降序", callback_data="sort:最大速度降序"),
     'b_slave': IKB(dsc, "slave:" + dsi),
     'b_close': IKB("❌关闭页面", callback_data="close"),
     'upper': IKB("⬆️返回上一层", callback_data="preconfig"),
@@ -50,7 +53,15 @@ dbtn = default_button = {
     'b_edit_conf': IKB("修改配置", callback_data="edit_config"),
     'b_add_conf': IKB("新增配置", callback_data="add_config"),
 }
-
+sort_str_parser = {
+    "origin": "订阅原序",
+    "rhttp": "HTTP降序",
+    "http": "HTTP升序",
+    "aspeed": "平均速度升序",
+    "arspeed": "平均速度降序",
+    "mspeed": "最大速度升序",
+    "mrspeed": "最大速度降序",
+}
 buttons = [dbtn[1], dbtn[2], dbtn[3], dbtn[25], dbtn[15], dbtn[18], dbtn[20], dbtn[21], dbtn[19]]
 buttons.extend(addon.init_button(isreload=True))
 max_page_g = int(len(buttons) / 9) + 1
@@ -463,7 +474,6 @@ async def select_task(app: Client, originmsg: Message, slaveid: str, sort: str, 
         scripttext = ",".join(script) if script is not None else ""
         invite_help_text = f"🍀选中后端: {comment}\n⛓️选中排序: {sort}\n🧵选中脚本: {scripttext}\n\n"
         botmsg = await originmsg.reply(invite_help_text)
-        await asyncio.sleep(2)
         key = genkey(8)
         BOT_MESSAGE_CACHE[key] = botmsg
         await Invite(key=key).invite(app, originmsg)
@@ -487,7 +497,7 @@ async def select_slave_only_pre(_: Client, call: Union[CallbackQuery, Message], 
     receiver: 指定一个列表变量，它将作为slaveid的接收者。
     """
     page_prefix = '/api/slave/page/'
-    page = 1 if isinstance(call, Message) else call.data[len(page_prefix)]
+    page = 1 if isinstance(call, Message) else call.data[len(page_prefix):]
     slaveconfig = config.getSlaveconfig()
     comment = [i.get('comment', None) for k, i in slaveconfig.items() if
                i.get('comment', None) and k != "default-slave"]
@@ -514,6 +524,60 @@ async def get_s_id(_: Client, c: CallbackQuery):
             return
     else:
         await c.message.reply("❌无法找到该消息与之对应的队列")
+
+
+async def select_sort_only(_: "Client", call: Union["CallbackQuery", "Message"],
+                           timeout: int = 6, speed: bool = False) -> str:
+    """
+    高层级的选择排序api
+    timeout: 获取的超时时间，超时返回订阅原序
+    speed: 是否是speed的排序
+
+    return: 排序字符串: ["订阅原序", "HTTP升序", "HTTP降序", ...]
+    """
+    if isinstance(call, Message):
+
+        content_keyboard = [
+            [IKB("♾️订阅原序", "/api/sort/origin")],
+            [IKB("⬇️HTTP降序", "/api/sort/rhttp"), IKB("⬆️HTTP升序", "/api/sort/http")],
+        ]
+        if speed:
+            content_keyboard.append([IKB("⬆️平均速度升序", "/api/sort/aspeed"),
+                                     IKB("⬇️平均速度降序", "/api/sort/arspeed")])
+            content_keyboard.append([IKB("⬆️最大速度升序", "/api/sort/mspeed"),
+                                     IKB("⬇️最大速度降序", "/api/sort/mrspeed")])
+        content_keyboard.append([dbtn['b_cancel']])
+        botmsg = await call.reply(f"请选择排序方式(你有{timeout}s的时间选择): ",
+                                  reply_markup=InlineKeyboardMarkup(content_keyboard), quote=True)
+        recvkey = gen_msg_key(botmsg)
+        q = asyncio.Queue(1)
+        receiver[recvkey] = q
+
+        try:
+            async with async_timeout.timeout(timeout):
+                sort_str = await q.get()
+                sort_str = sort_str_parser.get(sort_str, "订阅原序")
+                await botmsg.delete(revoke=True)
+                return sort_str
+
+        except asyncio.exceptions.TimeoutError:
+            print("获取超时")
+            return "订阅原序"
+        finally:
+            receiver.pop(recvkey, None)
+
+    elif isinstance(call, CallbackQuery):
+        key = gen_msg_key(call.message)
+        le = len("/api/sort/")
+        if key in receiver:
+            q = receiver[key]
+            try:
+                if isinstance(q, asyncio.Queue):
+                    q.put_nowait(call.data[le:])
+            except asyncio.queues.QueueFull:
+                pass
+        else:
+            await call.message.reply("❌无法找到该消息与之对应的队列")
 
 
 async def select_slave_only(app: Client, call: Union[CallbackQuery, Message], **kwargs) -> tuple[str, str]:
