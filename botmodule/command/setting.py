@@ -84,7 +84,6 @@ sc = select_cache = {
     'sort': {},  # 记录排序选择
     'slaveid': {},  # 记录后端id选择
 }
-api_route = '/api/getSlaveId'
 receiver = {}
 
 
@@ -497,6 +496,7 @@ async def select_slave_only_pre(_: Client, call: Union[CallbackQuery, Message], 
     receiver: 指定一个列表变量，它将作为slaveid的接收者。
     """
     page_prefix = '/api/slave/page/'
+    api_route = '/api/getSlaveId'
     page = 1 if isinstance(call, Message) else call.data[len(page_prefix):]
     slaveconfig = config.getSlaveconfig()
     comment = [i.get('comment', None) for k, i in slaveconfig.items() if
@@ -513,6 +513,7 @@ async def select_slave_only_pre(_: Client, call: Union[CallbackQuery, Message], 
 
 
 async def get_s_id(_: Client, c: CallbackQuery):
+    api_route = '/api/getSlaveId'
     le = len(api_route) + len("?comment=")
     key = gen_msg_key(c.message)
     if key in receiver:
@@ -526,6 +527,17 @@ async def get_s_id(_: Client, c: CallbackQuery):
         await c.message.reply("❌无法找到该消息与之对应的队列")
 
 
+async def select_script_only(_: "Client", call: Union["CallbackQuery", "Message"],
+                             timeout: int = 6) -> str:
+    """
+    高层级的选择测试脚本api
+    timeout: 获取的超时时间，超时返回订阅原序
+    speed: 是否是speed的排序
+
+    return: 排序字符串: ["订阅原序", "HTTP升序", "HTTP降序", ...]
+    """
+
+
 async def select_sort_only(_: "Client", call: Union["CallbackQuery", "Message"],
                            timeout: int = 6, speed: bool = False) -> str:
     """
@@ -535,17 +547,18 @@ async def select_sort_only(_: "Client", call: Union["CallbackQuery", "Message"],
 
     return: 排序字符串: ["订阅原序", "HTTP升序", "HTTP降序", ...]
     """
+    api_route = "/api/sort/"
     if isinstance(call, Message):
 
         content_keyboard = [
-            [IKB("♾️订阅原序", "/api/sort/origin")],
-            [IKB("⬇️HTTP降序", "/api/sort/rhttp"), IKB("⬆️HTTP升序", "/api/sort/http")],
+            [IKB("♾️订阅原序", f"{api_route}origin")],
+            [IKB("⬇️HTTP降序", f"{api_route}rhttp"), IKB("⬆️HTTP升序", f"{api_route}http")],
         ]
         if speed:
-            content_keyboard.append([IKB("⬆️平均速度升序", "/api/sort/aspeed"),
-                                     IKB("⬇️平均速度降序", "/api/sort/arspeed")])
-            content_keyboard.append([IKB("⬆️最大速度升序", "/api/sort/mspeed"),
-                                     IKB("⬇️最大速度降序", "/api/sort/mrspeed")])
+            content_keyboard.append([IKB("⬆️平均速度升序", f"{api_route}aspeed"),
+                                     IKB("⬇️平均速度降序", f"{api_route}arspeed")])
+            content_keyboard.append([IKB("⬆️最大速度升序", f"{api_route}mspeed"),
+                                     IKB("⬇️最大速度降序", f"{api_route}mrspeed")])
         content_keyboard.append([dbtn['b_cancel']])
         botmsg = await call.reply(f"请选择排序方式(你有{timeout}s的时间选择): ",
                                   reply_markup=InlineKeyboardMarkup(content_keyboard), quote=True)
@@ -568,7 +581,7 @@ async def select_sort_only(_: "Client", call: Union["CallbackQuery", "Message"],
 
     elif isinstance(call, CallbackQuery):
         key = gen_msg_key(call.message)
-        le = len("/api/sort/")
+        le = len(api_route)
         if key in receiver:
             q = receiver[key]
             try:
