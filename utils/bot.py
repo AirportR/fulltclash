@@ -214,6 +214,14 @@ def callback_loader(app: Client):
     async def _(client: Client, call: CallbackQuery):
         await botmodule.select_sort_only(client, call)
 
+    @app.on_callback_query(botmodule.cfilter.prefix_filter("/api/getSlaveId"))
+    async def _(client: Client, call: CallbackQuery):
+        await botmodule.select_slave_only(client, call)
+
+    @app.on_callback_query(dynamic_data_filter("/api/script/ok"))
+    async def _(client: Client, call: CallbackQuery):
+        await botmodule.select_script_only(client, call)
+
     @app.on_callback_query(filters=dynamic_data_filter('stop') & filters.user(botmodule.init_bot.reloadUser()), group=1)
     async def invite_test(client: Client, callback_query: CallbackQuery):
         await botmodule.stopspeed(client, callback_query)
@@ -253,8 +261,6 @@ def callback_loader(app: Client):
         elif callback_query.data.startswith('slave'):
             await botmodule.select_slave(client, callback_query)
             return
-        elif callback_query.data.startswith('/api/getSlaveId'):
-            await botmodule.get_s_id(client, callback_query)
         elif callback_query.data.startswith('sort:'):
             await botmodule.select_sort(client, callback_query)
             return

@@ -37,7 +37,7 @@ dbtn = default_button = {
     'yusanjia': IKB("御三家(N-Y-D)", callback_data='御三家(N-Y-D)'),
     'b_cancel': IKB("👋点错了，给我取消", callback_data='👋点错了，给我取消'),
     'b_alive': IKB("节点存活率", callback_data="节点存活率"),
-    'b_okpage': IKB("🔒锁定本页设置", callback_data="ok_p"),
+    'b_okpage': IKB("🔒完成本页选择", callback_data="ok_p"),
     'b_all': IKB("全测", callback_data="全测"),
     'b_origin': IKB("♾️订阅原序", callback_data="sort:订阅原序"),
     'b_rhttp': IKB("⬇️HTTP倒序", callback_data="sort:HTTP倒序"),
@@ -52,6 +52,7 @@ dbtn = default_button = {
     'b_del_conf': IKB("删除配置", callback_data="del_config"),
     'b_edit_conf': IKB("修改配置", callback_data="edit_config"),
     'b_add_conf': IKB("新增配置", callback_data="add_config"),
+    8: IKB("👌完成选择", "/api/script/ok")
 }
 sort_str_parser = {
     "origin": "订阅原序",
@@ -193,17 +194,35 @@ async def test_setting(client: Client, callback_query: CallbackQuery, row=3, **k
             message = None
             return test_items, origin_message, message, test_type
         elif "全测" == callback_data:
-            test_items = ['HTTP(S)延迟']
-            test_items += addon.global_test_item()
+            test_items += addon.global_test_item(httptest=True)
+            if callback_query.message.reply_markup and callback_query.message.reply_markup.inline_keyboard:
+                if callback_query.message.reply_markup.inline_keyboard[-1][-1].callback_data == "/api/script/ok":
+                    bot_key = gen_msg_key(edit_mess)
+                    if bot_key in receiver:
+                        q = receiver[bot_key]
+                        try:
+                            if isinstance(q, asyncio.Queue):
+                                q.put_nowait(test_items)
+                            else:
+                                await edit_mess.reply("运行发现逻辑错误，请联系管理员~")
+                        except asyncio.queues.QueueFull:
+                            pass
+                    else:
+                        await edit_mess.reply("❌无法找到该消息与之对应的队列")
+                    return [], None, None, None
             message = await edit_mess.edit_text("⌛正在提交任务~")
             return test_items, origin_message, message, test_type
         elif 'ok_p' == callback_data:
             test_items = sc['script'].get(str(chat_id) + ':' + str(mess_id), ['HTTP(S)延迟'])
+            ok_button = dbtn['ok_b']
+            if callback_query.message.reply_markup and callback_query.message.reply_markup.inline_keyboard:
+                if callback_query.message.reply_markup.inline_keyboard[-1][-1].callback_data == "/api/script/ok":
+                    ok_button = dbtn[8]
             # test_items = select_item_cache.get(str(chat_id) + ':' + str(mess_id), ['HTTP(S)延迟'])
             for b_1 in inline_keyboard:
                 for b in b_1:
                     if "✅" in b.text:
-                        test_items.append(str(b.text)[1:])
+                        test_items.append(str(b.callback_data)[1:])
             blank1 = IKB("已完成本页提交", callback_data="blank")
             pre_page = IKB("        ", callback_data="blank")
             next_page = IKB("        ", callback_data="blank")
@@ -217,7 +236,7 @@ async def test_setting(client: Client, callback_query: CallbackQuery, row=3, **k
                     elif f"/{max_page}" in b.text:
                         blank = IKB(b.text, callback_data='blank')
                         page = str(b.text)[0]
-            new_ikm = InlineKeyboardMarkup([[blank1], [pre_page, blank, next_page], [dbtn['b_cancel'], dbtn['ok_b']], ])
+            new_ikm = InlineKeyboardMarkup([[blank1], [pre_page, blank, next_page], [dbtn['b_cancel'], ok_button], ])
             # 设置状态
             sc['script'][str(chat_id) + ':' + str(mess_id)] = test_items
             # select_item_cache[str(chat_id) + ':' + str(mess_id)] = test_items
@@ -255,6 +274,10 @@ def get_keyboard(call: CallbackQuery):
 async def select_page(client: Client, call: CallbackQuery, **kwargs):
     page = kwargs.get('page', 1)
     row = kwargs.get('row', 3)
+    ok_button = dbtn['ok_b']
+    if call.message.reply_markup and call.message.reply_markup.inline_keyboard:
+        if call.message.reply_markup.inline_keyboard[-1][-1].callback_data == "/api/script/ok":
+            ok_button = dbtn[8]
     chat_id = call.message.chat.id
     mess_id = call.message.id
     msgkey = str(chat_id) + ':' + str(mess_id) + ':' + str(page)
@@ -271,11 +294,11 @@ async def select_page(client: Client, call: CallbackQuery, **kwargs):
             if max_page == 1:
                 new_ikm = InlineKeyboardMarkup([[blank1],
                                                 [blank_button, blank, blank_button],
-                                                [dbtn['b_cancel'], dbtn['b_reverse']], dbtn['ok_b']])
+                                                [dbtn['b_cancel'], dbtn['b_reverse']], ok_button])
             else:
                 new_ikm = InlineKeyboardMarkup([[blank1],
                                                 [dbtn['b_all'], blank, next_page],
-                                                [dbtn['b_cancel'], dbtn['ok_b']]])
+                                                [dbtn['b_cancel'], ok_button]])
         else:
             keyboard = [[dbtn['b_okpage']]]
             if len(buttons) > 8:
@@ -291,14 +314,14 @@ async def select_page(client: Client, call: CallbackQuery, **kwargs):
                 keyboard.append([dbtn['b_all'], blank, next_page])
             keyboard.append([dbtn['yusanjia'], dbtn['b_alive']])
             keyboard.append([dbtn['b_cancel'], dbtn['b_reverse']])
-            keyboard.append([dbtn['ok_b']])
+            keyboard.append([ok_button])
             new_ikm = InlineKeyboardMarkup(keyboard)
     elif page == max_page:
         # if page_is_locked.get(str(chat_id) + ':' + str(mess_id) + ':' + str(page), False):
         if sc['lpage'].get(msgkey, False):
             new_ikm = InlineKeyboardMarkup([[blank1],
                                             [pre_page, blank, blank_button],
-                                            [dbtn['b_cancel'], dbtn['ok_b']]])
+                                            [dbtn['b_cancel'], ok_button]])
         else:
             keyboard = [[dbtn['b_okpage']]]
             sindex = (page - 1) * row * 3
@@ -310,12 +333,12 @@ async def select_page(client: Client, call: CallbackQuery, **kwargs):
             keyboard.append(third_row)
             keyboard.append([pre_page, blank, blank_button])
             keyboard.append([dbtn['b_cancel'], dbtn['b_reverse']])
-            keyboard.append([dbtn['ok_b']])
+            keyboard.append([ok_button])
             new_ikm = InlineKeyboardMarkup(keyboard)
     else:
         # if page_is_locked.get(str(chat_id) + ':' + str(mess_id) + ':' + str(page), False):
         if sc['lpage'].get(msgkey, False):
-            new_ikm = InlineKeyboardMarkup([[blank1], [pre_page, blank, next_page], [dbtn['b_cancel'], dbtn['ok_b']]])
+            new_ikm = InlineKeyboardMarkup([[blank1], [pre_page, blank, next_page], [dbtn['b_cancel'], ok_button]])
         else:
             keyboard = [[dbtn['b_okpage']]]
             sindex = (page - 1) * row * 3
@@ -327,7 +350,7 @@ async def select_page(client: Client, call: CallbackQuery, **kwargs):
             keyboard.append(third_row)
             keyboard.append([pre_page, blank, next_page])
             keyboard.append([dbtn['b_cancel'], dbtn['b_reverse']])
-            keyboard.append([dbtn['ok_b']])
+            keyboard.append([ok_button])
             new_ikm = InlineKeyboardMarkup(keyboard)
     await client.edit_message_text(chat_id, mess_id, "请选择想要启用的测试项: ", reply_markup=new_ikm)
 
@@ -512,23 +535,8 @@ async def select_slave_only_pre(_: Client, call: Union[CallbackQuery, Message], 
         return await target.reply(f"请选择测试后端, 你有{kwargs.get('timeout', 60)}s的时间选择:\n", quote=True, reply_markup=IKM)
 
 
-async def get_s_id(_: Client, c: CallbackQuery):
-    api_route = '/api/getSlaveId'
-    le = len(api_route) + len("?comment=")
-    key = gen_msg_key(c.message)
-    if key in receiver:
-        q = receiver[key]
-        try:
-            if isinstance(q, asyncio.Queue):
-                q.put_nowait(str(c.data)[le:])
-        except asyncio.queues.QueueFull:
-            return
-    else:
-        await c.message.reply("❌无法找到该消息与之对应的队列")
-
-
 async def select_script_only(_: "Client", call: Union["CallbackQuery", "Message"],
-                             timeout: int = 6) -> str:
+                             timeout: int = 6) -> Union[List[str], None]:
     """
     高层级的选择测试脚本api
     timeout: 获取的超时时间，超时返回订阅原序
@@ -536,6 +544,70 @@ async def select_script_only(_: "Client", call: Union["CallbackQuery", "Message"
 
     return: 排序字符串: ["订阅原序", "HTTP升序", "HTTP降序", ...]
     """
+    api_route = "/api/script/ok"
+    if isinstance(call, Message):
+        IKM = InlineKeyboardMarkup(
+            [
+                # 第一行
+                [dbtn['b_okpage']],
+                [dbtn[1], dbtn[2], dbtn[3]],
+                # 第二行
+                [dbtn[20], dbtn[25], dbtn[18]],
+                [dbtn[15], dbtn[21], dbtn[19]],
+                [dbtn['b_all'], blank_g, next_page_g],
+                [dbtn['b_cancel'], dbtn['b_reverse']],
+                [IKB("👌完成选择", api_route)]
+            ]
+        )
+        botmsg = await call.reply(f"请选择想要启用的测试项(你有{timeout}s的时间选择): ", reply_markup=IKM, quote=True)
+        recvkey = gen_msg_key(botmsg)
+        q = asyncio.Queue(1)
+        receiver[recvkey] = q
+
+        try:
+            async with async_timeout.timeout(timeout):
+                script_list = await q.get()
+                if isinstance(script_list, list):
+                    await botmsg.delete(revoke=True)
+                    return script_list
+                else:
+                    await botmsg.reply("❌数据类型接收错误")
+                    return None
+
+        except asyncio.exceptions.TimeoutError:
+            print("获取超时")
+            return None
+        finally:
+            receiver.pop(recvkey, None)
+
+    else:
+        bot_key = gen_msg_key(call.message)
+        test_items = sc['script'].pop(bot_key, ['HTTP(S)延迟'])
+        # test_items = select_item_cache.pop(str(chat_id) + ':' + str(mess_id), ['HTTP(S)延迟'])
+        # message = await client.edit_message_text(chat_id, mess_id, "⌛正在提交任务~")
+        issuc = []
+        row = 3
+        max_page = int(len(buttons) / (row * 3)) + 1
+        for i in range(max_page):
+            res1 = sc['lpage'].pop(bot_key + ':' + str(i), '')
+            # res1 = page_is_locked.pop(str(chat_id) + ':' + str(mess_id) + ':' + str(i), '')
+            if res1:
+                issuc.append(res1)
+        if not issuc:
+            if test_items[0] != 'HTTP(S)延迟':
+                logger.warning("资源回收失败")
+
+        if bot_key in receiver:
+            q = receiver[bot_key]
+            try:
+                if isinstance(q, asyncio.Queue):
+                    q.put_nowait(test_items)
+                else:
+                    await call.message.reply("运行发现逻辑错误，请联系管理员~")
+            except asyncio.queues.QueueFull:
+                pass
+        else:
+            await call.message.reply("❌无法找到该消息与之对应的队列")
 
 
 async def select_sort_only(_: "Client", call: Union["CallbackQuery", "Message"],
@@ -569,13 +641,13 @@ async def select_sort_only(_: "Client", call: Union["CallbackQuery", "Message"],
         try:
             async with async_timeout.timeout(timeout):
                 sort_str = await q.get()
-                sort_str = sort_str_parser.get(sort_str, "订阅原序")
+                sort_str = sort_str_parser.get(sort_str, "")
                 await botmsg.delete(revoke=True)
                 return sort_str
 
         except asyncio.exceptions.TimeoutError:
             print("获取超时")
-            return "订阅原序"
+            return ""
         finally:
             receiver.pop(recvkey, None)
 
@@ -599,34 +671,48 @@ async def select_slave_only(app: Client, call: Union[CallbackQuery, Message], **
 
     return: (slaveid, comment)
     """
-    timeout = 60
-    botmsg = await select_slave_only_pre(app, call, timeout=timeout, **kwargs)
+    if isinstance(call, Message):
+        timeout = 60
+        botmsg = await select_slave_only_pre(app, call, timeout=timeout, **kwargs)
 
-    recvkey = gen_msg_key(botmsg)
-    q = asyncio.Queue(1)
-    receiver[recvkey] = q
+        recvkey = gen_msg_key(botmsg)
+        q = asyncio.Queue(1)
+        receiver[recvkey] = q
 
-    try:
-        async with async_timeout.timeout(timeout):
-            comment = await q.get()
-            slaveconfig = config.getSlaveconfig()
-            slaveid = ''
-            for k, v in slaveconfig.items():
-                if v.get('comment', '') == comment:
-                    slaveid = str(k)
-                    break
-            if slaveid and comment:
-                await botmsg.delete()
-                return str(slaveid), comment
-            else:
-                await botmsg.delete()
-                return '', comment
+        try:
+            async with async_timeout.timeout(timeout):
+                comment = await q.get()
+                slaveconfig = config.getSlaveconfig()
+                slaveid = ''
+                for k, v in slaveconfig.items():
+                    if v.get('comment', '') == comment:
+                        slaveid = str(k)
+                        break
+                if slaveid and comment:
+                    await botmsg.delete()
+                    return str(slaveid), comment
+                else:
+                    await botmsg.delete()
+                    return '', ''
 
-    except asyncio.exceptions.TimeoutError:
-        print("获取超时")
-        return '', ''
-    finally:
-        receiver.pop(recvkey, None)
+        except asyncio.exceptions.TimeoutError:
+            print("获取超时")
+            return '', ''
+        finally:
+            receiver.pop(recvkey, None)
+    else:
+        api_route = '/api/getSlaveId'
+        le = len(api_route) + len("?comment=")
+        key = gen_msg_key(call.message)
+        if key in receiver:
+            q = receiver[key]
+            try:
+                if isinstance(q, asyncio.Queue):
+                    q.put_nowait(str(call.data)[le:])
+            except asyncio.queues.QueueFull:
+                pass
+        else:
+            await call.message.reply("❌无法找到该消息与之对应的队列")
 
 
 async def select_slave(app: Client, call: CallbackQuery):
