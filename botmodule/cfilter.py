@@ -1,6 +1,6 @@
 from typing import Union
 
-from pyrogram import filters, StopPropagation
+from pyrogram import filters, StopPropagation, Client
 from pyrogram.types import Message, CallbackQuery
 from loguru import logger
 from utils.cleaner import addon
@@ -36,14 +36,26 @@ def prefix_filter(prefix: str):
     return filters.create(func, prefix=prefix)
 
 
-def next_filter(message: Message):
+def next_filter(message: "Message", handler_index: int):
     """
     特定消息下一条过滤器，比如bot想获取发送完这条消息后读取下一条消息。
-    """
-    async def func(_, __, update: Message):
-        return (message.chat.id == update.chat.id) and message.id == update.id - 1
 
-    return filters.create(func)
+    handler_index: handler添加到groups的下标
+    """
+
+    async def func(flt, app: "Client", update: "Message"):
+
+        group: list = app.dispatcher.groups[-1]
+        if flt.message.chat.id == update.chat.id:
+            if flt.message.id == update.id - 1:
+                return True
+            if update.id - flt.message.id > 3:
+                group.pop(0)
+                logger.info("使用next_filter的MessageHandler已自我销毁。")
+        return False
+        # return (flt.message.chat.id == update.chat.id) and flt.message.id == update.id - 1
+
+    return filters.create(func, message=message, index=handler_index)
 
 
 def admin_filter():
