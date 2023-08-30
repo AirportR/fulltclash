@@ -5,7 +5,7 @@ from pyrogram.types import CallbackQuery, Message
 from loguru import logger
 import botmodule
 from botmodule import init_bot
-from botmodule.cfilter import dynamic_data_filter, allfilter, AccessCallback
+from botmodule.cfilter import dynamic_data_filter, allfilter, AccessCallback, prefix_filter, next_filter
 from botmodule.command.authority import get_url_from_invite
 from botmodule.command.leave import leavechat, set_anti_group
 from botmodule.command.logs import export_logs
@@ -140,6 +140,10 @@ def command_loader(app: Client):
     async def start(client, message):
         await botmodule.invite_pass2(client, message)
 
+    @app.on_message(next_filter() & filters.private, group=-1)
+    async def _(client: Client, message: Message):
+        await botmodule.recv_data(client, message)
+
     @app.on_message(filters.private, group=3)
     @AccessCallback(1)
     async def temp(client, message):
@@ -169,7 +173,7 @@ def command_loader(app: Client):
 
     @app.on_message(filters.command(['setting']) & allfilter(2), group=2)
     async def setting(client, message):
-        await botmodule.setting_page(client, message)
+        await botmodule.home_setting(client, message)
 
     @app.on_message(filters.command(['restart', 'reboot']) & allfilter(2), group=2)
     async def restart(client, message):
@@ -206,21 +210,45 @@ def command_loader(app: Client):
 
 
 def callback_loader(app: Client):
-    @app.on_callback_query(botmodule.cfilter.prefix_filter("/api/slave/page/"), 1)
+    @app.on_callback_query(prefix_filter("/api/rule/disable") | prefix_filter("/api/rule/enable"), 1)
+    async def _(client: Client, call: CallbackQuery):
+        await botmodule.bot_rule_action(client, call)
+
+    @app.on_callback_query(prefix_filter("/api/rule/delete"), 1)
+    async def _(client: Client, call: CallbackQuery):
+        await botmodule.bot_rule_delete(client, call)
+
+    @app.on_callback_query(prefix_filter("/api/rule/getrule"), 1)
+    async def _(client: Client, call: CallbackQuery):
+        await botmodule.bot_rule_page(client, call)
+
+    @app.on_callback_query(prefix_filter("/api/setting/home"), 1)
+    async def _(client: Client, call: CallbackQuery):
+        await botmodule.home_setting(client, call)
+
+    @app.on_callback_query(prefix_filter("/api/rule/page/") | dynamic_data_filter("/api/rule/home"), 1)
+    async def _(client: Client, call: CallbackQuery):
+        await botmodule.home_rule(client, call)
+
+    @app.on_callback_query(prefix_filter("/api/slave/page/"), 1)
     async def _(client: Client, call: CallbackQuery):
         await botmodule.select_slave_only_1(client, call)
 
-    @app.on_callback_query(botmodule.cfilter.prefix_filter("/api/sort/"), 1)
+    @app.on_callback_query(prefix_filter("/api/sort/"), 1)
     async def _(client: Client, call: CallbackQuery):
         await botmodule.select_sort_only(client, call)
 
-    @app.on_callback_query(botmodule.cfilter.prefix_filter("/api/getSlaveId"))
+    @app.on_callback_query(prefix_filter("/api/getSlaveId"))
     async def _(client: Client, call: CallbackQuery):
         await botmodule.select_slave_only(client, call)
 
     @app.on_callback_query(dynamic_data_filter("/api/script/ok"))
     async def _(client: Client, call: CallbackQuery):
         await botmodule.select_script_only(client, call)
+
+    @app.on_callback_query(dynamic_data_filter("/api/rule/new"), 1)
+    async def _(client: Client, call: CallbackQuery):
+        await botmodule.bot_new_rule(client, call)
 
     @app.on_callback_query(filters=dynamic_data_filter('stop') & filters.user(botmodule.init_bot.reloadUser()), group=1)
     async def invite_test(client: Client, callback_query: CallbackQuery):
@@ -231,27 +259,30 @@ def callback_loader(app: Client):
         await botmodule.reload_addon_from_telegram(client, call=callback_query)
         callback_query.stop_propagation()
 
-    @app.on_callback_query(filters.user(init_bot.admin), group=1)
+    @app.on_callback_query(filters.user(init_bot.admin) & (prefix_filter("/api/config/page/") |
+                                                           dynamic_data_filter("/api/config/home")), group=1)
     async def bot_setting(client, callback_query: CallbackQuery):
-        if callback_query.data.startswith('cpage'):
-            await botmodule.select_config_page(client, callback_query, page=int(callback_query.data[5:]), column=2)
-            return
-        # elif callback_query.data.startswith('config'):
-        #     await botmodule.setting_config(client, callback_query, column=2)
+        await botmodule.select_config_page(client, callback_query, column=2)
+        # if callback_query.data.startswith('cpage'):
+        #     await botmodule.select_config_page(client, callback_query, page=int(callback_query.data[5:]), column=2)
         #     return
-        elif callback_query.data == 'setconfig':
-            await botmodule.select_config_page(client, callback_query, page=1, column=2)
-            return
+        # # elif callback_query.data.startswith('config'):
+        # #     await botmodule.setting_config(client, callback_query, column=2)
+        # #     return
+        # elif callback_query.data == 'setconfig':
+        #     await botmodule.select_config_page(client, callback_query, page=1, column=2)
+        #     return
 
     @app.on_callback_query(group=2)
     async def settings_test(client, callback_query: CallbackQuery):
         if callback_query.data == "blank":
             return
-        if await check_callback_master(callback_query, botmodule.init_bot.reloadUser()):
-            return
-        elif callback_query.data == "close":
+        if callback_query.data == "close":
             await callback_query.message.delete()
             return
+        if await check_callback_master(callback_query, botmodule.init_bot.reloadUser()):
+            return
+
         elif callback_query.data.startswith('page'):
             await botmodule.select_page(client, callback_query, page=int(str(callback_query.data)[4:]))
             return

@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, List
 
 from pyrogram import filters, StopPropagation, Client
 from pyrogram.types import Message, CallbackQuery
@@ -9,11 +9,12 @@ from utils import check
 from botmodule.init_bot import reloadUser, admin
 
 callbackfunc = addon.init_callback()
+MESSAGE_LIST: List["Message"] = []  # 这个列表用来存放临时的消息，主要用来给 next_filter使用
 
 
 # custom filter
 
-def dynamic_data_filter(data):
+def dynamic_data_filter(data: str):
     """
     特定的回调数据过滤器。比如回调数据 callback.data == "close" ,data == "close"。那么成功命中，返回真
     """
@@ -36,26 +37,24 @@ def prefix_filter(prefix: str):
     return filters.create(func, prefix=prefix)
 
 
-def next_filter(message: "Message", handler_index: int):
+def next_filter():
     """
     特定消息下一条过滤器，比如bot想获取发送完这条消息后读取下一条消息。
 
     handler_index: handler添加到groups的下标
     """
-
-    async def func(flt, app: "Client", update: "Message"):
-
-        group: list = app.dispatcher.groups[-1]
-        if flt.message.chat.id == update.chat.id:
-            if flt.message.id == update.id - 1:
-                return True
-            if update.id - flt.message.id > 3:
-                group.pop(0)
-                logger.info("使用next_filter的MessageHandler已自我销毁。")
+    async def func(flt, _: "Client", update: "Message"):
+        msg_list: List["Message"] = flt.message
+        if not isinstance(msg_list, list):
+            return False
+        for m in msg_list:
+            if m.chat.id == update.chat.id:
+                if m.id == update.id - 1:
+                    return True
         return False
         # return (flt.message.chat.id == update.chat.id) and flt.message.id == update.id - 1
 
-    return filters.create(func, message=message, index=handler_index)
+    return filters.create(func, message=MESSAGE_LIST)
 
 
 def admin_filter():

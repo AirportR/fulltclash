@@ -9,13 +9,13 @@ from pyrogram import Client
 from pyrogram.errors import RPCError
 from pyrogram.types import BotCommand, CallbackQuery, Message, InlineKeyboardMarkup, InlineKeyboardButton as IKB
 
-from utils.cleaner import addon, config, ArgCleaner
+from utils.cleaner import addon, ArgCleaner
 from utils.myqueue import bot_put
 from utils.check import get_telegram_id_from_message as getID
 from utils import message_delete_queue as mdq
 from glovar import __version__
-from botmodule.rule import get_rule
-from botmodule.init_bot import latest_version_hash as v_hash
+from botmodule.rule import get_rule, new_rule
+from botmodule.init_bot import latest_version_hash as v_hash, config
 from botmodule.command.authority import (Invite, INVITE_SELECT_CACHE as ISC,
                                          BOT_MESSAGE_CACHE, generate_random_string as genkey)
 
@@ -160,10 +160,10 @@ async def test_setting(client: Client, callback_query: CallbackQuery, row=3, **k
         await edit_mess.edit_text("⚠️无法获取发起该任务的源消息")
         return test_items, origin_message, message, test_type
     try:
-        if "✅" in callback_data:
+        if "✅" == callback_data[0]:
             await editkeybord_yes_or_no(client, callback_query, mode=0)
             return test_items, origin_message, message, test_type
-        elif "❌" in callback_data:
+        elif "❌" == callback_data[0]:
             await editkeybord_yes_or_no(client, callback_query, mode=1)
             return test_items, origin_message, message, test_type
         elif "🪞选项翻转" in callback_data:
@@ -341,11 +341,13 @@ async def select_page(client: Client, call: CallbackQuery, **kwargs):
     await client.edit_message_text(chat_id, mess_id, "请选择想要启用的测试项: ", reply_markup=new_ikm)
 
 
-def gen_msg_key(message: Message) -> str:
+def gen_msg_key(message: Message, offset: int = 0) -> str:
     """
     生成针对此消息对象的唯一键
+
+    offset: message.id的偏移量
     """
-    return str(message.chat.id) + ":" + str(message.id)
+    return str(message.chat.id) + ":" + str(message.id + offset)
 
 
 def get_sort_str(message: Message) -> str:
@@ -475,7 +477,7 @@ async def select_task(app: Client, originmsg: Message, slaveid: str, sort: str, 
     if originmsg.text.startswith('/invite'):
         comment = config.getSlavecomment(slaveid)
         scripttext = ",".join(script) if script is not None else ""
-        invite_help_text = f"🍀选中后端: {comment}\n⛓️选中排序: {sort}\n🧵选中脚本: {scripttext}\n\n"
+        invite_help_text = f"🤖选中后端: {comment}\n⛓️选中排序: {sort}\n🧵选中脚本: {scripttext}\n\n"
         botmsg = await originmsg.reply(invite_help_text)
         key = genkey(8)
         BOT_MESSAGE_CACHE[key] = botmsg
@@ -517,7 +519,7 @@ async def select_slave_only_1(_: Client, call: Union[CallbackQuery, Message], **
 
 
 async def select_script_only(_: "Client", call: Union["CallbackQuery", "Message"],
-                             timeout: int = 6) -> Union[List[str], None]:
+                             timeout: int = 120) -> Union[List[str], None]:
     """
     高层级的选择测试脚本api
     timeout: 获取的超时时间，超时返回None
@@ -591,7 +593,7 @@ async def select_script_only(_: "Client", call: Union["CallbackQuery", "Message"
 
 
 async def select_sort_only(_: "Client", call: Union["CallbackQuery", "Message"],
-                           timeout: int = 6, speed: bool = False) -> str:
+                           timeout: int = 10, speed: bool = False) -> str:
     """
     高层级的选择排序api
     timeout: 获取的超时时间，超时返回空字符串
@@ -775,27 +777,176 @@ async def select_sort(app: Client, call: CallbackQuery):
     await app.edit_message_text(chat_id, mess_id, "请选择想要启用的测试项: ", reply_markup=IKM)
 
 
-async def setting_page(_: Client, message: Message):
+async def home_setting(_: Client, call: Union[Message, CallbackQuery]):
     text = config.config.get('bot', {}).get('description', f"🛠️FullTclash bot管理总枢🛠️\n\n版本: {__version__}({v_hash})")
     addon_button = IKB("🧩插件管理(开发中)", callback_data="blank")
-    config_button = IKB("⚙️配置管理", callback_data="setconfig")
+    config_button = IKB("⚙️配置管理", callback_data="/api/config/home")
     sub_button = IKB("🌐订阅管理(开发中)", callback_data="blank")
     slave_button = IKB("🧰后端管理(开发中)", callback_data="blank")
-    IKM = InlineKeyboardMarkup([[addon_button], [config_button], [sub_button], [slave_button]])
-    await message.reply_text(text, reply_markup=IKM, quote=True)
+    rule_button = IKB("🚦规则管理", callback_data="/api/rule/home")
+    IKM = InlineKeyboardMarkup([[addon_button], [config_button], [sub_button], [slave_button], [rule_button]])
+    if isinstance(call, CallbackQuery):
+        await call.message.edit_text(text, reply_markup=IKM)
+    else:
+        await call.reply_text(text, reply_markup=IKM, quote=True)
 
 
-async def select_config_page(_: Client, callback: Union[CallbackQuery, Message], **kwargs):
+async def select_config_page(_: Client, call: Union[CallbackQuery, Message], **kwargs):
     # page = kwargs.get('page', 1)
     # row = kwargs.get('row', 5)
+    page_prefix = "/api/config/page/"
+    contentprefix = '/api/config/getConfig'
+    page = 1 if isinstance(call, Message) else 1 \
+        if call.data == "/api/config/home" else int(call.data[len(page_prefix):])
     configkeys = list(config.config.keys())
     # max_page = int(len(configkeys) / row * 2) + 1
-    content_keyboard = page_frame('cpage', 'config', configkeys, **kwargs)
-    content_keyboard.append([dbtn['b_close']])
+    content_keyboard = page_frame(page_prefix, contentprefix, configkeys, "?key=", page=page, **kwargs)
+    content_keyboard.append([IKB("🔙返回上一级", "/api/setting/home"), dbtn['b_close']])
 
     IKM = InlineKeyboardMarkup(content_keyboard)
-    if isinstance(callback, CallbackQuery):
-        botmsg = callback.message
+    if isinstance(call, CallbackQuery):
+        botmsg = call.message
         await botmsg.edit_text(f"⚙️以下是配置项预览: \n\n共找到{len(configkeys)}条配置项", reply_markup=IKM)
     else:
-        await callback.reply("请选择测试后端:", reply_markup=IKM, quote=True)
+        await call.reply("⚙️以下是配置项预览: \n\n共找到{len(configkeys)}条配置项", reply_markup=IKM, quote=True)
+
+
+async def home_rule(_: Client, call: Union[CallbackQuery, Message], **kwargs):
+    page_prefix = "/api/rule/page/"
+    api_route = '/api/rule/getrule'
+    msg = call.message if isinstance(call, CallbackQuery) else call
+    page = 1 if isinstance(call, Message) else 1 if call.data == "/api/rule/home" else int(call.data[len(page_prefix):])
+    rule_conf = config.getUserconfig().get('rule', {})
+    if not isinstance(rule_conf, dict):
+        logger.warning("配置文件反序列化类型错误！")
+        return
+    rulename = list(rule_conf.keys())
+    bot_text = f"当前已注册{len(rulename)}条规则，点击具体规则了解详细信息"
+    content_keyboard = page_frame(page_prefix, api_route, rulename, split='?name=', page=page, **kwargs)
+    content_keyboard.append([IKB("🔙返回上一级", "/api/setting/home"), dbtn['b_close']])
+    content_keyboard.insert(0, [IKB("新增规则", "/api/rule/new")])
+    if isinstance(call, CallbackQuery):
+        await msg.edit_text(bot_text, reply_markup=InlineKeyboardMarkup(content_keyboard))
+    else:
+        await msg.reply(bot_text, reply_markup=InlineKeyboardMarkup(content_keyboard), quote=True)
+
+
+async def recv_data(_: "Client", msg: "Message"):
+    try:
+        key0 = gen_msg_key(msg)
+        if key0 in receiver:
+            temp_q = receiver[key0]
+            if isinstance(temp_q, asyncio.Queue):
+                temp_q.put_nowait(msg.text.strip())
+    except asyncio.queues.QueueFull:
+        logger.error("队列已满")
+
+
+async def bot_rule_action(_: 'Client', call: "CallbackQuery"):
+    api_route = "/api/rule/disable?name=" if "disable" in str(call.data) else "/api/rule/enable?name="
+    api_route2 = "/api/rule/enable?name=" if "disable" in str(call.data) else "/api/rule/disable?name="
+    rule_name = str(call.data)[len(api_route):]
+    rule_conf = config.getUserconfig().get('rule', {})
+    rule = rule_conf.get(rule_name, None)
+    rule['enable'] = False if "disable" in str(call.data) else True
+    rule_conf[rule_name] = rule
+    config.yaml['userconfig']['rule'] = rule_conf
+    if config.reload():
+        new_keyboard = deepcopy(call.message.reply_markup.inline_keyboard)
+        status_button = new_keyboard[0][0]
+        status_button.text = " ✅状态：启用" if rule.get('enable', True) else " ❌状态：禁用"
+        status_button.callback_data = api_route2 + rule_name
+        new_keyboard[0][0] = status_button
+        await call.message.edit_text(call.message.text, reply_markup=InlineKeyboardMarkup(new_keyboard))
+
+
+async def bot_rule_delete(_: 'Client', call: "CallbackQuery"):
+    api_route = "/api/rule/delete?name="
+    rule_name = str(call.data)[len(api_route):]
+    rule_conf = config.getUserconfig().get('rule', {})
+    rule_conf.pop(rule_name, None)
+    config.yaml['userconfig']['rule'] = rule_conf
+    if config.reload():
+        new_keyboard = [call.message.reply_markup.inline_keyboard[-1]]
+        await call.message.edit_text(f"删除规则：**{rule_name}** 成功", reply_markup=InlineKeyboardMarkup(new_keyboard))
+        await call.answer(f"删除规则：{rule_name} 成功~", show_alert=True)
+
+
+async def bot_rule_page(_: 'Client', call: "CallbackQuery"):
+    api_route = '/api/rule/getrule?name='
+    rule_conf = config.getUserconfig().get('rule', {})
+    rule_name = str(call.data[len(api_route):])
+    if not isinstance(rule_conf, dict):
+        logger.warning("配置文件反序列化类型错误！")
+        return
+    rule = rule_conf.get(rule_name, None)
+    if not isinstance(rule, dict):
+        logger.warning("找不到此规则")
+        await call.message.reply("找不到此规则")
+        return
+    slaveid = rule.get('slaveid', '')
+    comment = config.getSlavecomment(str(slaveid))
+    sort = rule.get('sort', '')
+    script = rule.get('script', [])
+    text = f"🚦规则名: {rule_name}\n🤖选中后端: {comment}\n⛓️选中排序: {sort}\n🧵选中脚本: {str(script)}\n\n"
+    status = " ✅状态：启用" if rule.get('enable', True) else " ❌状态：禁用"
+    status_action = f"/api/rule/enable?name={rule_name}" if rule.get('enable', True) else\
+        f"/api/rule/disable?name={rule_name}"
+    status_button = IKB(status, status_action)
+    keyboard = [
+        [status_button],
+        [IKB("🗑️删除此规则", f"/api/rule/delete?name={rule_name}")],
+        [IKB("🔙返回上一级", "/api/rule/home"), dbtn['b_close']]
+    ]
+    IKM = InlineKeyboardMarkup(keyboard)
+    await call.message.edit_text(text, reply_markup=IKM)
+
+
+async def bot_new_rule(app: Client, call: CallbackQuery):
+    msg_text0 = "很好！请在**60s**内给规则取一个名字(直接打字发送)："
+    msg_text = "接下来请完成后端、排序方式、测试项选择。\n提示："
+    reply_markup = call.message.reply_markup if call.message.reply_markup is not None else None
+    if reply_markup:
+        reply_markup.inline_keyboard = [reply_markup.inline_keyboard[-1]]
+    await call.message.edit_text(msg_text, reply_markup=reply_markup)
+    botmsg_0 = await call.message.reply(msg_text0)
+    from botmodule.cfilter import MESSAGE_LIST
+
+    recvkey = gen_msg_key(botmsg_0, 1)
+    q = asyncio.Queue(1)
+    receiver[recvkey] = q
+    MESSAGE_LIST.append(botmsg_0)
+    try:
+        async with async_timeout.timeout(60):
+            rulename = await q.get()
+
+    except asyncio.exceptions.TimeoutError:
+        await botmsg_0.edit_text("⚠️获取规则名超时，取消操作")
+        mdq.put(botmsg_0)
+        return
+    finally:
+        receiver.pop(recvkey, None)
+        MESSAGE_LIST.remove(botmsg_0)
+    msg_text0 = f"获取到的规则名: {rulename}\n"
+    await botmsg_0.edit_text(f"获取到的规则名: {rulename}\n")
+    slaveid, comment = await select_slave_only(app, botmsg_0)
+    if slaveid and comment:
+        msg_text0 += f"已选择的后端名称: {comment}\n"
+        await botmsg_0.edit_text(msg_text0)
+        sort_str = await select_sort_only(app, botmsg_0, 20, speed=True)
+        if sort_str:
+            msg_text0 += f"已选择的排序方式: {sort_str}\n"
+            await botmsg_0.edit_text(msg_text0)
+            script = await select_script_only(app, botmsg_0)
+            if script:
+                msg_text0 += f"已选择的测试脚本: {str(script)}\n"
+                await botmsg_0.edit_text(msg_text0)
+                status = new_rule(rulename, slaveid, sort_str, script)
+                if status:
+                    await botmsg_0.reply(status, quote=True)
+                await botmsg_0.reply(f"✅规则 **{rulename}**已成功写入到配置文件，"
+                                     f"快去使用:\n\n `/invite {rulename}`\n\n进行测试吧~")
+                mdq.put(botmsg_0)
+                await call.message.delete()
+                return
+    await botmsg_0.edit_text(botmsg_0.text + f"\n❌选择超时，取消操作。")
