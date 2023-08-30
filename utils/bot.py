@@ -208,7 +208,7 @@ def command_loader(app: Client):
 def callback_loader(app: Client):
     @app.on_callback_query(botmodule.cfilter.prefix_filter("/api/slave/page/"), 1)
     async def _(client: Client, call: CallbackQuery):
-        await botmodule.select_slave_only_pre(client, call)
+        await botmodule.select_slave_only_1(client, call)
 
     @app.on_callback_query(botmodule.cfilter.prefix_filter("/api/sort/"), 1)
     async def _(client: Client, call: CallbackQuery):

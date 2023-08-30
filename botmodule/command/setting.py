@@ -1,21 +1,20 @@
 import asyncio
 import contextlib
 from copy import deepcopy
-from typing import Union, List
+from typing import Union, List, Dict
 
 import async_timeout
 from loguru import logger
-from pyrogram import types, Client
+from pyrogram import Client
 from pyrogram.errors import RPCError
-from pyrogram.types import BotCommand, CallbackQuery, Message
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton as IKB
+from pyrogram.types import BotCommand, CallbackQuery, Message, InlineKeyboardMarkup, InlineKeyboardButton as IKB
+
 from utils.cleaner import addon, config, ArgCleaner
 from utils.myqueue import bot_put
 from utils.check import get_telegram_id_from_message as getID
 from utils import message_delete_queue as mdq
 from glovar import __version__
 from botmodule.rule import get_rule
-
 from botmodule.init_bot import latest_version_hash as v_hash
 from botmodule.command.authority import (Invite, INVITE_SELECT_CACHE as ISC,
                                          BOT_MESSAGE_CACHE, generate_random_string as genkey)
@@ -54,15 +53,7 @@ dbtn = default_button = {
     'b_add_conf': IKB("新增配置", callback_data="add_config"),
     8: IKB("👌完成选择", "/api/script/ok")
 }
-sort_str_parser = {
-    "origin": "订阅原序",
-    "rhttp": "HTTP降序",
-    "http": "HTTP升序",
-    "aspeed": "平均速度升序",
-    "arspeed": "平均速度降序",
-    "mspeed": "最大速度升序",
-    "mrspeed": "最大速度降序",
-}
+
 buttons = [dbtn[1], dbtn[2], dbtn[3], dbtn[25], dbtn[15], dbtn[18], dbtn[20], dbtn[21], dbtn[19]]
 buttons.extend(addon.init_button(isreload=True))
 max_page_g = int(len(buttons) / 9) + 1
@@ -85,7 +76,7 @@ sc = select_cache = {
     'sort': {},  # 记录排序选择
     'slaveid': {},  # 记录后端id选择
 }
-receiver = {}
+receiver: Dict[str, asyncio.Queue] = {}  # 临时数据接收器
 
 
 def reload_button():
@@ -94,7 +85,7 @@ def reload_button():
     buttons.extend(addon.init_button())
 
 
-async def editkeybord1(_: Client, callback_query: CallbackQuery, mode=0):
+async def editkeybord_yes_or_no(_: Client, callback_query: CallbackQuery, mode=0):
     """
     反转✅和❌
     param: mode=0 把✅变成❌，否则把❌变成✅
@@ -131,8 +122,7 @@ async def editkeybord_reverse(_: Client, callback_query: CallbackQuery):
     await edit_mess.edit_text(edit_text, reply_markup=IKM22)
 
 
-async def setcommands(client):
-    my = types.BotCommandScopeAllGroupChats()
+async def setcommands(client: Client):
     await client.set_bot_commands(
         [
             BotCommand("help", "获取帮助"),
@@ -140,7 +130,8 @@ async def setcommands(client):
             BotCommand("topo", "节点落地分析"),
             BotCommand("test", "进行流媒体测试"),
             BotCommand("setting", "bot的相关设置")
-        ], scope=my)
+        ]
+    )
 
 
 @logger.catch()
@@ -170,10 +161,10 @@ async def test_setting(client: Client, callback_query: CallbackQuery, row=3, **k
         return test_items, origin_message, message, test_type
     try:
         if "✅" in callback_data:
-            await editkeybord1(client, callback_query, mode=0)
+            await editkeybord_yes_or_no(client, callback_query, mode=0)
             return test_items, origin_message, message, test_type
         elif "❌" in callback_data:
-            await editkeybord1(client, callback_query, mode=1)
+            await editkeybord_yes_or_no(client, callback_query, mode=1)
             return test_items, origin_message, message, test_type
         elif "🪞选项翻转" in callback_data:
             message = await editkeybord_reverse(client, callback_query)
@@ -263,11 +254,6 @@ async def test_setting(client: Client, callback_query: CallbackQuery, row=3, **k
         logger.warning(str(r))
     finally:
         return test_items, origin_message, message, test_type
-
-
-def get_keyboard(call: CallbackQuery):
-    inline_keyboard = call.message.reply_markup.inline_keyboard
-    return inline_keyboard
 
 
 @logger.catch()
@@ -367,11 +353,6 @@ def get_sort_str(message: Message) -> str:
     return sc['sort'].pop(k, "订阅原序")
 
 
-# def get_slave_id(chat_id: int, message_id: int) -> str:
-#     k = str(chat_id) + ":" + str(message_id)
-#     return sc['slaveid'].pop(k, "local")
-
-
 def get_slave_id(message: Message) -> str:
     k = gen_msg_key(message)
     return sc['slaveid'].pop(k, "local")
@@ -424,30 +405,6 @@ def page_frame(pageprefix: str, contentprefix: str, content: List[str], split: s
     return content_keyboard
 
 
-async def task_handler(app: Client, message: Message, **kwargs):
-    userconfig = config.getUserconfig()
-    ruleconfig = userconfig.get('rule', {})
-    ID = str(getID(message))
-    tgargs = ArgCleaner.getarg(message.text)
-    rulename = ''
-    if tgargs[0].startswith("/invite"):
-        rulename = tgargs[1] if len(tgargs) > 1 else ''
-    if rulename and (rulename in ruleconfig):
-        slaveid, sort, script = get_rule(rulename)
-        if slaveid is None and sort is None and script is None:
-            await select_slave_page(app, message, **kwargs)
-            return
-        await select_task(app, message, slaveid, sort, script)
-    elif ID in ruleconfig:
-        slaveid, sort, script = get_rule(ID)
-        if slaveid is None and sort is None and script is None:
-            await select_slave_page(app, message, **kwargs)
-            return
-        await select_task(app, message, slaveid, sort, script)
-    else:
-        await select_slave_page(app, message, **kwargs)
-
-
 async def select_slave_page(_: Client, call: Union[CallbackQuery, Message], content_prefix: str = "slave:", **kwargs):
     """
     选择后端页面的入口
@@ -490,6 +447,30 @@ async def select_slave_page(_: Client, call: Union[CallbackQuery, Message], cont
         await call.reply("请选择测试后端:", reply_markup=IKM, quote=True)
 
 
+async def task_handler(app: Client, message: Message, **kwargs):
+    userconfig = config.getUserconfig()
+    ruleconfig = userconfig.get('rule', {})
+    ID = str(getID(message))
+    tgargs = ArgCleaner.getarg(message.text)
+    rulename = ''
+    if tgargs[0].startswith("/invite"):
+        rulename = tgargs[1] if len(tgargs) > 1 else ''
+    if rulename and (rulename in ruleconfig):
+        slaveid, sort, script = get_rule(rulename)
+        if slaveid is None and sort is None and script is None:
+            await select_slave_page(app, message, **kwargs)
+            return
+        await select_task(app, message, slaveid, sort, script)
+    elif ID in ruleconfig:
+        slaveid, sort, script = get_rule(ID)
+        if slaveid is None and sort is None and script is None:
+            await select_slave_page(app, message, **kwargs)
+            return
+        await select_task(app, message, slaveid, sort, script)
+    else:
+        await select_slave_page(app, message, **kwargs)
+
+
 async def select_task(app: Client, originmsg: Message, slaveid: str, sort: str, script: list = None):
     if originmsg.text.startswith('/invite'):
         comment = config.getSlavecomment(slaveid)
@@ -514,7 +495,7 @@ async def select_task(app: Client, originmsg: Message, slaveid: str, sort: str, 
 
 
 # async def select_slave_()
-async def select_slave_only_pre(_: Client, call: Union[CallbackQuery, Message], **kwargs):
+async def select_slave_only_1(_: Client, call: Union[CallbackQuery, Message], **kwargs):
     """
     receiver: 指定一个列表变量，它将作为slaveid的接收者。
     """
@@ -539,10 +520,9 @@ async def select_script_only(_: "Client", call: Union["CallbackQuery", "Message"
                              timeout: int = 6) -> Union[List[str], None]:
     """
     高层级的选择测试脚本api
-    timeout: 获取的超时时间，超时返回订阅原序
-    speed: 是否是speed的排序
+    timeout: 获取的超时时间，超时返回None
 
-    return: 排序字符串: ["订阅原序", "HTTP升序", "HTTP降序", ...]
+    return: 包含选择的测试项列表
     """
     api_route = "/api/script/ok"
     if isinstance(call, Message):
@@ -614,7 +594,7 @@ async def select_sort_only(_: "Client", call: Union["CallbackQuery", "Message"],
                            timeout: int = 6, speed: bool = False) -> str:
     """
     高层级的选择排序api
-    timeout: 获取的超时时间，超时返回订阅原序
+    timeout: 获取的超时时间，超时返回空字符串
     speed: 是否是speed的排序
 
     return: 排序字符串: ["订阅原序", "HTTP升序", "HTTP降序", ...]
@@ -639,6 +619,15 @@ async def select_sort_only(_: "Client", call: Union["CallbackQuery", "Message"],
         receiver[recvkey] = q
 
         try:
+            sort_str_parser = {
+                "origin": "订阅原序",
+                "rhttp": "HTTP降序",
+                "http": "HTTP升序",
+                "aspeed": "平均速度升序",
+                "arspeed": "平均速度降序",
+                "mspeed": "最大速度升序",
+                "mrspeed": "最大速度降序",
+            }
             async with async_timeout.timeout(timeout):
                 sort_str = await q.get()
                 sort_str = sort_str_parser.get(sort_str, "")
@@ -665,15 +654,14 @@ async def select_sort_only(_: "Client", call: Union["CallbackQuery", "Message"],
             await call.message.reply("❌无法找到该消息与之对应的队列")
 
 
-async def select_slave_only(app: Client, call: Union[CallbackQuery, Message], **kwargs) -> tuple[str, str]:
+async def select_slave_only(app: Client, call: Union[CallbackQuery, Message], timeout=60, **kwargs) -> tuple[str, str]:
     """
     高层级的选择后端api
 
     return: (slaveid, comment)
     """
     if isinstance(call, Message):
-        timeout = 60
-        botmsg = await select_slave_only_pre(app, call, timeout=timeout, **kwargs)
+        botmsg = await select_slave_only_1(app, call, timeout=timeout, **kwargs)
 
         recvkey = gen_msg_key(botmsg)
         q = asyncio.Queue(1)
@@ -716,6 +704,9 @@ async def select_slave_only(app: Client, call: Union[CallbackQuery, Message], **
 
 
 async def select_slave(app: Client, call: CallbackQuery):
+    """
+    内置的旧版选择后端回调查询
+    """
     botmsg = call.message
     originmsg = call.message.reply_to_message
     slavename = call.data[6:]
