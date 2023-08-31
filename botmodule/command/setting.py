@@ -686,6 +686,8 @@ async def select_slave_only(app: Client, call: Union[CallbackQuery, Message], ti
                             break
                         slaveid = str(k)
                         break
+                if not slaveid and comment == "本地后端":
+                    slaveid = "local"
                 if slaveid and comment:
                     await botmsg.delete()
                     return str(slaveid), comment
