@@ -50,6 +50,8 @@ def new_rule(rulename: str, slaveid: str, sort: str, script: List[str]) -> str:
         if rulename in rule_conf:
             flag = 1
         rule_conf[rulename] = rule
+        if not config.getUserconfig():
+            config.yaml['userconfig'] = {}
         config.yaml['userconfig']['rule'] = rule_conf
         if not config.reload():
             return "❌规则添加失败"
