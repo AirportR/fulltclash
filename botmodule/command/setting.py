@@ -1,5 +1,6 @@
 import asyncio
 import contextlib
+import secrets
 from copy import deepcopy
 from typing import Union, List, Dict
 
@@ -508,6 +509,9 @@ async def select_slave_only_1(_: Client, call: Union[CallbackQuery, Message], **
     comment = [i.get('comment', None) for k, i in slaveconfig.items() if
                i.get('comment', None) and k != "default-slave"]
     content_keyboard = page_frame(page_prefix, api_route, comment, split='?comment=', page=page, **kwargs)
+    if page == 1:
+        localslave = IKB(dsc, api_route + "?comment=" + dsc)
+        content_keyboard.insert(0, [localslave])
     content_keyboard.append([dbtn['b_close']])
 
     IKM = InlineKeyboardMarkup(content_keyboard)
@@ -674,8 +678,12 @@ async def select_slave_only(app: Client, call: Union[CallbackQuery, Message], ti
                 comment = await q.get()
                 slaveconfig = config.getSlaveconfig()
                 slaveid = ''
+
                 for k, v in slaveconfig.items():
                     if v.get('comment', '') == comment:
+                        if str(k) == "default-slave":
+                            slaveid = 'local'
+                            break
                         slaveid = str(k)
                         break
                 if slaveid and comment:
@@ -857,7 +865,7 @@ async def bot_rule_action(_: 'Client', call: "CallbackQuery"):
         status_button.text = " ✅状态：启用" if rule.get('enable', True) else " ❌状态：禁用"
         status_button.callback_data = api_route2 + rule_name
         new_keyboard[0][0] = status_button
-        await call.message.edit_text(call.message.text, reply_markup=InlineKeyboardMarkup(new_keyboard))
+        await call.message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(new_keyboard))
 
 
 async def bot_rule_delete(_: 'Client', call: "CallbackQuery"):
@@ -890,8 +898,8 @@ async def bot_rule_page(_: 'Client', call: "CallbackQuery"):
     script = rule.get('script', [])
     text = f"🚦规则名: {rule_name}\n🤖选中后端: {comment}\n⛓️选中排序: {sort}\n🧵选中脚本: {str(script)}\n\n"
     status = " ✅状态：启用" if rule.get('enable', True) else " ❌状态：禁用"
-    status_action = f"/api/rule/enable?name={rule_name}" if rule.get('enable', True) else\
-        f"/api/rule/disable?name={rule_name}"
+    status_action = f"/api/rule/disable?name={rule_name}" if rule.get('enable', True) else\
+        f"/api/rule/enable?name={rule_name}"
     status_button = IKB(status, status_action)
     keyboard = [
         [status_button],
@@ -903,7 +911,11 @@ async def bot_rule_page(_: 'Client', call: "CallbackQuery"):
 
 
 async def bot_new_rule(app: Client, call: CallbackQuery):
+    caidan = "彩蛋: 试试把规则名设置成自己的userid(ง •_•)ง"
+    trigger_prob = 13
     msg_text0 = "很好！请在**60s**内给规则取一个名字(直接打字发送)："
+    if secrets.randbelow(100) < trigger_prob:
+        msg_text0 += f"\n\n{caidan}"
     msg_text = "接下来请完成后端、排序方式、测试项选择。\n提示："
     reply_markup = call.message.reply_markup if call.message.reply_markup is not None else None
     if reply_markup:
