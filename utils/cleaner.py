@@ -151,7 +151,7 @@ class AddonCleaner:
         经过去重并支持黑名单一并去除。最后返回一个新列表
         :return:
         """
-        base_item = ['Netflix', 'Youtube', 'Disney+', 'OpenAI', 'Viu', 'steam货币', 'Spotify',
+        base_item = ['Netflix', 'Youtube', 'Disney+', 'OpenAI', 'Viu', 'steam货币', 'TVB',
                      '维基百科', '落地IP风险']
         base_item = base_item + list(self._script.keys())
         new_item = sorted(set(base_item) - set(self.blacklist), key=base_item.index)
@@ -175,7 +175,7 @@ class AddonCleaner:
         """
         newlist = list(set(alist).intersection(set(self.global_test_item())))
         newlist = sorted(newlist, key=alist.index)
-        if httptest:
+        if httptest or "HTTP(S)延迟" in alist:
             newlist.insert(0, "HTTP(S)延迟")
         return newlist
 
@@ -389,7 +389,7 @@ class ClashCleaner:
         :param _config: 传入一个文件对象，或者一个字符串,文件对象需指向 yaml/yml 后缀文件
         """
         self.path = ''
-        self.unsupport_type = ['wireguard', 'vless', 'hysteria', 'tuic']
+        self.unsupport_type = [] if config.getClashBranch() == 'meta' else ['wireguard', 'hysteria', 'tuic', 'vless']
         self.yaml = {}
         self.load(_config, _config2)
         if not isinstance(self.yaml, dict):
@@ -399,8 +399,11 @@ class ClashCleaner:
         if type(_config).__name__ == 'str':
             if _config == ':memory:':
                 try:
-                    self.yaml = yaml.safe_load(preTemplate()) if _config2 is None else yaml.safe_load(_config2)
-                    self.check_type()
+                    if _config2 is None:
+                        self.yaml = yaml.safe_load(preTemplate())
+                    else:
+                        self.yaml = yaml.safe_load(_config2)
+                        self.check_type()
                     return
                 except Exception as e:
                     logger.error(str(e))
@@ -741,11 +744,47 @@ class ConfigManager:
         except KeyError:
             return int(300)
 
+    def getClashBranch(self):
+        """
+        确定clash内核分支版本
+        """
+        branch = self.config.get('clash', {}).get('branch', 'origin')
+        if branch == 'meta':
+            return 'meta'
+        elif isinstance(branch, str):
+            return 'origin'
+        else:
+            raise TypeError("clash.branch配置的值不合法，请检查！")
+
     def getMasterconfig(self):
         return self.config.get('masterconfig', {})
 
+    def getUserconfig(self):
+        userconfig = self.config.get('userconfig', {})
+        if not isinstance(userconfig, dict):
+            logger.warning("userconfig的类型应为字典")
+            return {}
+        return userconfig
+
+    def getSlavecomment(self, slaveid: str) -> str:
+        """
+        转换slaveid-->comment
+        return comment
+        """
+        try:
+            if slaveid == 'local':
+                return self.get_default_slave().get('comment', 'Local')
+            else:
+                return self.getSlaveconfig().get(slaveid, {}).get('comment', self.getSlavecomment('local'))
+        except Exception as e:
+            logger.error(str(e))
+            return 'Local'
+
     def getSlaveconfig(self):
-        return self.config.get('slaveconfig', {})
+        a = self.config.get('slaveconfig', {})
+        if isinstance(a, dict):
+            return a
+        return {}
 
     def getBuildToken(self):
         token = self.config.get('buildtoken', 'c7004ded9db897e538405c67e50e0ef0c3dbad717e67a92d02f6ebcfd1022a5ad1d' +
@@ -757,6 +796,7 @@ class ConfigManager:
     def getBotconfig(self):
         botconfig = self.config.get('bot', {})
         if botconfig is None:
+            print("bot_config为None")
             return {}
         if not botconfig:
             return botconfig
@@ -873,11 +913,13 @@ class ConfigManager:
         try:
             return self.config['clash']['path']
         except KeyError:
-            logger.warning("获取运行路径失败，将采用默认运行路径 ./bin/fulltclash(.exe)\n自动识别windows与linux。架构默认为amd64")
+            logger.warning("获取运行路径失败，将采用默认运行路径: ./bin\n自动识别windows,linux,macos系统。架构默认为amd64")
             if sys.platform.startswith("linux"):
                 path = './bin/fulltclash-linux-amd64'
             elif sys.platform.startswith("win32"):
                 path = r'.\bin\fulltclash-windows-amd64.exe'
+            elif 'darwin' in sys.platform:
+                path = './bin/fulltclash-macos-amd64'
             else:
                 path = './bin/fulltclash-linux-amd64'
             d = {'path': path}
@@ -913,13 +955,12 @@ class ConfigManager:
             print(e)
 
     @logger.catch
-    def add_admin(self, admin: list or str or int):
+    def add_admin(self, admin: Union[list, str, int]):
         """
         添加管理员
         """
         adminlist = []
-
-        if admin is list:
+        if isinstance(admin, list):
             for li in admin:
                 adminlist.append(li)
         else:
@@ -960,7 +1001,23 @@ class ConfigManager:
         slaveconfig[slave_id] = {'public-key': key, 'username': username, 'comment': comment}
         self.yaml['slaveconfig'] = slaveconfig
 
-    @logger.catch
+    def add_rule(self, userid: str, enable: bool = False, slaveid: str = "local", sort: str = "订阅原序",
+                 script: list = None):
+        """
+        设定用户默认规则，后端部分
+        """
+        script_list = []
+        if script is None:
+            script_list = ['HTTP(S)延迟']
+        self.get_default_slave().get('comment', 'Local')
+        conf = {'enable': enable, 'slaveid': slaveid, 'sort': sort, 'script': script_list}
+        uconf = self.getUserconfig()
+        rconf = uconf.get('rule', {})
+        rconf[userid] = conf
+        self.yaml['userconfig']['rule'] = rconf
+        if not self.reload():
+            logger.error("重载失败")
+
     def add_user(self, user: list or str or int):
         """
         添加授权用户
@@ -1111,11 +1168,13 @@ class ReCleaner:
     预测试结果清洗类
     """
 
-    def __init__(self, data: dict):
+    def __init__(self, data: dict, script_list: List[str] = None):
         self.data = data
+        self.info = data
         self._sum = 0
         self._netflix_info = []
         self._script = addon.script
+        self._script_list = media_item if script_list is None else script_list
 
     @property
     def script(self):
@@ -1123,7 +1182,7 @@ class ReCleaner:
 
     def get_all(self):
         info = {}
-        items = media_item
+        items = self._script_list
         try:
             for item in items:
                 i = item
@@ -1132,7 +1191,8 @@ class ReCleaner:
                     info[i] = task(self)
                     continue
                 if i == "Youtube":
-                    you = self.getyoutubeinfo()
+                    from addons.unlockTest import youtube
+                    you = youtube.get_youtube_info(self)
                     info['Youtube'] = you
                 elif i == "Disney":
                     dis = self.getDisneyinfo()
@@ -1303,29 +1363,28 @@ class ResultCleaner:
                 new_list.append(0)
         return new_list
 
+    def convert_proxy_typename(self):
+        if '类型' in self.data:
+            new_type = []
+            type1 = self.data['类型']
+            if not isinstance(type1, list):
+                return
+            for t in type1:
+                if t == 'ss':
+                    new_type.append("Shadowsocks")
+                elif t == "ssr":
+                    new_type.append("ShadowsocksR")
+                else:
+                    new_type.append(t.capitalize())
+            self.data['类型'] = new_type
+
     def start(self, sort="订阅原序"):
         try:
-            if '类型' in self.data:
-                type1 = self.data['类型']
-                new_type = []
-                for t in type1:
-                    if t == 'ss':
-                        new_type.append("Shadowsocks")
-                    elif t == "ssr":
-                        new_type.append("ShadowsocksR")
-                    else:
-                        new_type.append(t.capitalize())
-                self.data['类型'] = new_type
-            if sort == "HTTP倒序":
+            self.convert_proxy_typename()
+            if sort == "HTTP降序" or sort == "HTTP倒序":
                 self.sort_by_ping(reverse=True)
             elif sort == "HTTP升序":
                 self.sort_by_ping()
-            if 'HTTP延迟(内核)' in self.data:
-                rtt = self.data['HTTP延迟(内核)']
-                new_rtt = []
-                for r in rtt:
-                    new_rtt.append(str(r) + 'ms')
-                self.data['HTTP延迟(内核)'] = new_rtt
             if 'HTTP(S)延迟' in self.data:
                 rtt = self.data['HTTP(S)延迟']
                 new_rtt = []
@@ -1333,10 +1392,13 @@ class ResultCleaner:
                     new_rtt.append(str(r) + 'ms')
                 self.data['HTTP(S)延迟'] = new_rtt
             return self.data
-        except TypeError:
+        except TypeError as t:
+            logger.error(str(t))
             return {}
 
     def sort_by_ping(self, reverse=False):
+        if 'HTTP(S)延迟' not in self.data:
+            return
         http_l = self.data.get('HTTP(S)延迟')
         if not reverse:
             for i in range(len(http_l)):
@@ -1373,7 +1435,7 @@ class ArgCleaner:
         self.string = string
 
     @staticmethod
-    def getarg(string: str, sep: str = ' ') -> list:
+    def getarg(string: str, sep: str = ' ') -> list[str]:
         """
         对字符串使用特定字符进行切片
         Args:
@@ -1383,7 +1445,7 @@ class ArgCleaner:
         Returns: 返回一个切好的字符串列表
 
         """
-        return [x for x in string.strip().split(sep) if x != '']
+        return [x for x in string.strip().split(sep) if x != ''] if string is not None else []
 
     def getall(self, string: str = None):
         """

@@ -1,5 +1,6 @@
 import bisect
 import math
+import time
 from typing import Union, Tuple
 
 import PIL
@@ -9,12 +10,11 @@ from loguru import logger
 from PIL import Image, ImageDraw, ImageFont, ImageColor
 from pilmoji import Pilmoji
 from pilmoji.source import Twemoji
-import time
+
 from utils.cleaner import ConfigManager
 import utils.emoji_custom as emoji_source
 
-__version__ = '3.5.10'
-
+__version__ = '3.6.0'
 
 # 这是将测试的结果输出为图片的模块。
 # 设计思路:
@@ -876,7 +876,8 @@ class ExportResult:
         """
         font = self.__font
         draw = ImageDraw.Draw(Image.new("RGBA", (1, 1), (255, 255, 255, 255)))
-        textSize = draw.textsize(text, font=font)[0]
+        textSize = int(draw.textlength(text, font=font))
+        # textSize = draw.textsize(text, font=font)[0]
         return textSize
 
     def text_maxwidth(self, strlist: list):
@@ -1021,7 +1022,8 @@ class ExportTopo(ExportResult):
         """
         font = self.__font
         draw = ImageDraw.Draw(Image.new("RGBA", (1, 1), (255, 255, 255, 255)))
-        textSize = draw.textsize(text, font=font)[0]
+        textSize = int(draw.textlength(text, font=font))
+        # textSize = draw.textsize(text, font=font)[0]
         return textSize
 
     def get_mid(self, start, end, str_name: str):
@@ -1264,8 +1266,9 @@ class ExportTopo(ExportResult):
         emoji_time = get_clock_emoji()
         export_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
         system_timezone = datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo
-        list1 = ["出口分析", "📊后端:{} 版本:{}  概要={}->{}".format(slavecomment, __version__, max_entrance, cuk),
-                 f"{emoji_time}测试时间: {export_time} ({system_timezone}) 总共耗时: {self.wtime}s 测试结果仅供参考,以实际情况为准。簇代表节点复用。"]
+        tips = "测试结果仅供参考，以实际情况为准，簇代表落地复用。"
+        list1 = ["出口分析", f"📊版本:{__version__}  后端:{slavecomment}  概要:{max_entrance}->{cuk}",
+                 f"{emoji_time}测试时间: {export_time}({system_timezone}) 总共耗时: {self.wtime}s {tips}"]
         export_time = export_time.replace(':', '-')
         title = list1[0]
         idraw.text((self.get_mid(0, image_width, title), 1), title, font=fnt, fill=(0, 0, 0))  # 标题
@@ -1273,7 +1276,7 @@ class ExportTopo(ExportResult):
             pilmoji.text((10, image_height - 120), text=list1[1], font=fnt, fill=(0, 0, 0),
                          emoji_position_offset=(0, 7))
             pilmoji.text((10, image_height - 60), text=list1[2], font=fnt, fill=(0, 0, 0),
-                         emoji_position_offset=(0, 8))
+                         emoji_position_offset=(0, 10))
         else:
             idraw.text((10, image_height - 120), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
             idraw.text((10, image_height - 60), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间

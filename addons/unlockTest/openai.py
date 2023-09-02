@@ -7,6 +7,8 @@ from loguru import logger
 from pyrogram.types import InlineKeyboardButton
 
 openaiurl = "https://chat.openai.com/favicon.ico"
+
+# openaiurl = "https://chat.openai.com"
 openaiurl2 = "https://chat.openai.com/cdn-cgi/trace"
 SUPPORT_REGION = ['AL', 'DZ', 'AD', 'AO', 'AG', 'AR', 'AM', 'AU', 'AT', 'AZ', 'BS', 'BD', 'BB', 'BE', 'BZ', 'BJ', 'BT',
                   'BA', 'UA',
@@ -46,11 +48,15 @@ async def fetch_openai(Collector, session: aiohttp.ClientSession, proxy=None, re
         async with session.get(openaiurl, headers=_headers, proxy=proxy, timeout=10) as res:
             res1_status = res.status
             if res.status == 403:
-                ct = res.headers.get('Content-Type', 'None')
-                if 'text/html' in ct:
-                    Collector.info['OpenAI'] = "失败"
-                    return
+                # ct = res.headers.get('Content-Type', 'None')
+                # if 'text/html' in ct:
+                #     Collector.info['OpenAI'] = "失败"
+                #     return
                 text = await res.text()
+                if text.find('Please stand by, while we are checking your browser') > 0:
+                    logger.info("OpenAI检测到CloudFlare拦截")
+                    Collector.info['OpenAI'] = "CloudFlare拦截"
+
                 index = text.find("Sorry, you have been blocked")
                 index2 = text.find("Unable to load site")
                 if index > 0 or index2 > 0:
@@ -64,7 +70,7 @@ async def fetch_openai(Collector, session: aiohttp.ClientSession, proxy=None, re
             else:
                 Collector.info['OpenAI'] = "未知"
         async with session.get(openaiurl2, headers=_headers, proxy=proxy, timeout=10) as res2:
-            if res2.status == 200 and res1_status == 200:
+            if res2.status == 200 and (res1_status == 200 or res1_status == 403):
                 text2 = await res2.text()
                 index2 = text2.find("loc=")
                 if index2 > 0:

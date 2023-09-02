@@ -1,10 +1,10 @@
 import asyncio
-import json
 import ssl
 import time
+from typing import List
+
 import aiohttp
 import async_timeout
-import websockets
 from urllib.parse import quote
 from aiohttp.client_exceptions import ClientConnectorError, ContentTypeError
 from aiohttp_socks import ProxyConnector, ProxyConnectionError
@@ -28,6 +28,7 @@ config = cleaner.ConfigManager()
 addon = cleaner.addon
 media_items = config.get_media_item()
 proxies = config.get_proxy()  # 代理
+netflix_url = config.config.get('netflixurl', "https://www.netflix.com/title/70143836")
 
 
 def reload_config(media: list = None):
@@ -198,20 +199,20 @@ class SubCollector(BaseCollector):
         super().__init__()
         self.text = None
         self._headers = {'User-Agent': 'clash'}  # 这个请求头是获取流量信息的关键
-        self.subconvertor = config.config.get('subconvertor', {})
-        self.cvt_enable = self.subconvertor.get('enable', False)
+        self.subconverter = config.config.get('subconverter', {})
+        self.cvt_enable = self.subconverter.get('enable', False)
         self.url = suburl
         self.include = include
         self.exclude = exclude
         self.codeurl = quote(suburl, encoding='utf-8')
         self.code_include = quote(include, encoding='utf-8')
         self.code_exclude = quote(exclude, encoding='utf-8')
-        self.cvt_host = str(self.subconvertor.get('host', '127.0.0.1:25500'))
+        self.cvt_host = str(self.subconverter.get('host', '127.0.0.1:25500'))
         self.cvt_url = f"http://{self.cvt_host}/sub?target=clash&new_name=true&url={self.codeurl}" \
                        + f"&include={self.code_include}&exclude={self.code_exclude}"
-        self.sub_remote_config = self.subconvertor.get('remoteconfig', '')
-        self.config_include = quote(self.subconvertor.get('include', ''), encoding='utf-8')  # 这两个
-        self.config_exclude = quote(self.subconvertor.get('exclude', ''), encoding='utf-8')
+        self.sub_remote_config = self.subconverter.get('remoteconfig', '')
+        self.config_include = quote(self.subconverter.get('include', ''), encoding='utf-8')  # 这两个
+        self.config_exclude = quote(self.subconverter.get('exclude', ''), encoding='utf-8')
         # print(f"配置文件过滤,包含：{self.config_include} 排除：{self.config_exclude}")
         if self.config_include or self.config_exclude:
             self.cvt_url = f"http://{self.cvt_host}/sub?target=clash&new_name=true&url={self.cvt_url}" \
@@ -273,10 +274,10 @@ class SubCollector(BaseCollector):
         :param inmemory: 直接返回数据到内存，不保存到本地
         :return: 获得一个文件: sub.yaml, bool : True or False
         """
-        _headers = {'User-Agent': 'clash-verge'}
+        _headers = {'User-Agent': 'clash-meta'}
         # suburl = self.url
         suburl = self.cvt_url if self.cvt_enable else self.url
-        cvt_text = r"subconvertor状态: {}".format("已启用" if self.cvt_enable else "未启用")
+        cvt_text = "subconverter状态: {}".format("已启用" if self.cvt_enable else "未启用")
         logger.info(cvt_text)
         try:
             async with aiohttp.ClientSession(headers=_headers) as session:
@@ -360,45 +361,44 @@ class Miaospeed:
         self.slaveRequestNode = [{'Name': 'test01', 'Payload': str(i)} for i in self.nodes]
         self.SlaveRequest['Nodes'] = self.slaveRequestNode
 
-    async def start(self):
-        start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
-        info = []
-        resdata = {start_time: {}}
-        from async_timeout import timeout
-        try:
-            async with timeout(len(self.nodes) * 10 + 1):
-                async with websockets.connect(f'ws://{self.host}:{self.port}') as websocket:
-                    payload = json.dumps(self.SlaveRequest)
-                    await websocket.send(payload)
-                    num = 0
-                    while True:
-                        response_str = await websocket.recv()
-                        num += 1
-                        logger.info(f"已接收第{num}次结果")
-                        res1 = json.loads(response_str)
-                        info.append(res1)
-
-        except asyncio.TimeoutError:
-            logger.info("本次测试已完成")
-        except KeyboardInterrupt:
-            pass
-        finally:
-            resdata.update({start_time: info})
-            return resdata, start_time
+    # async def start(self):
+    #     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
+    #     info = []
+    #     resdata = {start_time: {}}
+    #     from async_timeout import timeout
+    #     try:
+    #         async with timeout(len(self.nodes) * 10 + 1):
+    #             async with websockets.connect(f'ws://{self.host}:{self.port}') as websocket:
+    #                 payload = json.dumps(self.SlaveRequest)
+    #                 await websocket.send(payload)
+    #                 num = 0
+    #                 while True:
+    #                     response_str = await websocket.recv()
+    #                     num += 1
+    #                     logger.info(f"已接收第{num}次结果")
+    #                     res1 = json.loads(response_str)
+    #                     info.append(res1)
+    #
+    #     except asyncio.TimeoutError:
+    #         logger.info("本次测试已完成")
+    #     except KeyboardInterrupt:
+    #         pass
+    #     finally:
+    #         resdata.update({start_time: info})
+    #         return resdata, start_time
 
 
 class Collector:
-    def __init__(self):
+    def __init__(self, script: List[str] = None):
         self.session = None
         self.tasks = []
+        self._script = script
         self._headers = {
             'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                           "Chrome/106.0.0.0 Safari/537.36"}
         self._headers_json = {
             'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                           "Chrome/106.0.0.0 Safari/537.36", "Content-Type": 'application/json'}
-        self.netflixurl1 = "https://www.netflix.com/title/70242311"
-        self.netflixurl2 = "https://www.netflix.com/title/70143836"
         self.ipurl = "https://api.ip.sb/geoip"
         self.youtubeurl = "https://www.youtube.com/premium"
         self.youtubeHeaders = {
@@ -427,9 +427,9 @@ class Collector:
         :param proxy: 代理
         :return: tasks: []
         """
-        items = media_items
+        items = media_items if self._script is None else self._script
         try:
-            if len(items):
+            if len(items) and isinstance(items, list):
                 for item in items:
                     i = item
                     if i in addon.script:
@@ -437,14 +437,14 @@ class Collector:
                         self.tasks.append(task(self, session, proxy=proxy))
                         continue
                     if i == "Youtube":
-                        task4 = asyncio.create_task(self.fetch_youtube(session, proxy=proxy))
-                        self.tasks.append(task4)
+                        from addons.unlockTest import youtube
+                        self.tasks.append(youtube.task(self, session, proxy=proxy))
                     elif i == "Disney" or i == "Disney+":
                         task5 = asyncio.create_task(self.fetch_dis(session, proxy=proxy))
                         self.tasks.append(task5)
                     elif i == "Netflix":
                         from addons.unlockTest import netflix
-                        self.tasks.append(netflix.task(self, session, proxy=proxy))
+                        self.tasks.append(netflix.task(self, session, proxy=proxy, netflixurl=netflix_url))
                     elif i == "TVB":
                         from addons.unlockTest import tvb
                         self.tasks.append(tvb.task(self, session, proxy=proxy))
@@ -498,36 +498,6 @@ class Collector:
         except Exception as e:
             logger.error(str(e))
 
-    async def fetch_youtube(self, session: aiohttp.ClientSession, proxy=None, reconnection=2):
-        """
-        Youtube解锁检测
-        :param reconnection:
-        :param session:
-        :param proxy:
-        :return:
-        """
-
-        try:
-            youtube = await session.get(self.youtubeurl, proxy=proxy, timeout=5, headers=self.youtubeHeaders,
-                                        cookies=self.youtubeCookie)
-            if youtube.status is not None:
-                self.info['youtube'] = await youtube.text()
-                self.info['youtube_status_code'] = youtube.status
-                logger.info("Youtube 成功访问")
-            else:
-                self.info['youtube'] = None
-        except ClientConnectorError as c:
-            logger.warning("Youtube请求发生错误:" + str(c))
-            if reconnection != 0:
-                await self.fetch_youtube(session=session, proxy=proxy, reconnection=reconnection - 1)
-        except asyncio.exceptions.TimeoutError:
-            logger.warning("Youtube请求超时，正在重新发送请求......")
-            if reconnection != 0:
-                await self.fetch_youtube(session=session, proxy=proxy, reconnection=reconnection - 1)
-        except ProxyConnectionError as p:
-            logger.warning("似乎目标端口未开启监听")
-            logger.warning(str(p))
-
     async def fetch_dis(self, session: aiohttp.ClientSession, proxy=None, reconnection=2):
         """
         Disney+ 解锁检测
@@ -554,7 +524,6 @@ class Collector:
                             self.info['disney'] = "未知"
                     else:
                         self.info['disney'] = "解锁({})".format(region)
-                    logger.info("disney+ 成功访问(轻检测，检测结果准确率下降)")
                 elif 399 < dis1.status:
                     self.info['disney'] = "N/A"
                     logger.info(f"disney+ 访问错误 {dis1.status}")
@@ -580,7 +549,6 @@ class Collector:
                         self.info['disney'] = "解锁({})".format(region)
                 else:
                     self.info['disney'] = "失败"
-                logger.info("disney+ 成功访问")
                 dis2.close()
         except ssl.SSLError:
             if reconnection != 0:
@@ -614,21 +582,19 @@ class Collector:
         try:
             conn = ProxyConnector(host=host, port=port, limit=0)
             session = aiohttp.ClientSession(connector=conn, headers=self._headers)
+            # if proxy is None:
+            #     proxy = f"http://{host}:{port}"
             tasks = self.create_tasks(session, proxy=proxy)
             if tasks:
-                await asyncio.wait(tasks)
-            await session.close()
-            return self.info
-        except ConnectionRefusedError as e:
-            logger.error(str(e))
-            return self.info
-        except ProxyConnectionError as e:
-            logger.error(str(e))
+                try:
+                    await asyncio.wait(tasks)
+                except (ConnectionRefusedError, ProxyConnectionError, ssl.SSLError) as e:
+                    logger.error(str(e))
+                    return self.info
+                finally:
+                    await session.close()
             return self.info
         except Exception as e:
-            logger.error(str(e))
-            return self.info
-        except ssl.SSLError as e:
             logger.error(str(e))
             return self.info
 
@@ -765,18 +731,4 @@ async def delay_https_task(session: aiohttp.ClientSession = None, collector=None
 
 
 if __name__ == "__main__":
-    "this is a test demo"
-    import sys
-    import os
-
-    os.chdir(os.path.abspath(os.path.join(os.getcwd(), os.pardir)))
-    sys.path.append(os.path.abspath(os.path.join(os.getcwd(), os.pardir)))
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    ccnr = cleaner.ClashCleaner(r"在这里填入你的订阅路径")
-    miaospeed = Miaospeed(ccnr.getProxies())
-    resd, _start_time = loop.run_until_complete(miaospeed.start())
-    cl1 = cleaner.ConfigManager(configpath=r"./results/miaospeed{}.yaml".format(_start_time.replace(':', '-')),
-                                data=resd)
-    cl1.save(r"./results/miaospeed{}.yaml".format(_start_time.replace(':', '-')))
-    print(resd)
+    pass

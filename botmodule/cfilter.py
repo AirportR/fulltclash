@@ -1,5 +1,7 @@
-from pyrogram import filters
-from pyrogram.types import Message
+from typing import Union, List
+
+from pyrogram import filters, StopPropagation, Client
+from pyrogram.types import Message, CallbackQuery
 from loguru import logger
 from utils.cleaner import addon
 from utils.cron.utils import message_delete_queue
@@ -7,11 +9,12 @@ from utils import check
 from botmodule.init_bot import reloadUser, admin
 
 callbackfunc = addon.init_callback()
+MESSAGE_LIST: List["Message"] = []  # 这个列表用来存放临时的消息，主要用来给 next_filter使用
 
 
 # custom filter
 
-def dynamic_data_filter(data):
+def dynamic_data_filter(data: str):
     """
     特定的回调数据过滤器。比如回调数据 callback.data == "close" ,data == "close"。那么成功命中，返回真
     """
@@ -21,6 +24,37 @@ def dynamic_data_filter(data):
 
     # "data" kwarg is accessed with "flt.data" above
     return filters.create(func, data=data)
+
+
+def prefix_filter(prefix: str):
+    """
+    特定文本前缀过滤器，支持回调数据过滤。
+    """
+
+    async def func(flt, _, update: Union[Message, CallbackQuery]):
+        return update.text.startswith(flt.prefix) if isinstance(update, Message) else update.data.startswith(flt.prefix)
+
+    return filters.create(func, prefix=prefix)
+
+
+def next_filter():
+    """
+    特定消息下一条过滤器，比如bot想获取发送完这条消息后读取下一条消息。
+
+    handler_index: handler添加到groups的下标
+    """
+    async def func(flt, _: "Client", update: "Message"):
+        msg_list: List["Message"] = flt.message
+        if not isinstance(msg_list, list):
+            return False
+        for m in msg_list:
+            if m.chat.id == update.chat.id:
+                if m.id == update.id - 1:
+                    return True
+        return False
+        # return (flt.message.chat.id == update.chat.id) and flt.message.id == update.id - 1
+
+    return filters.create(func, message=MESSAGE_LIST)
 
 
 def admin_filter():
@@ -64,10 +98,14 @@ def AccessCallback(default=0):
     检查用户是否在配置文件所加载的的列表中，这是一个装饰器.
     default: 默认的回调函数值，如果不为0，则不会调用默认的回调函数
     """
+
     def wrapper(func):
         async def inner(client, message):
             for call in callbackfunc:
-                callres = await call(client, message)
+                try:
+                    callres = await call(client, message)
+                except StopPropagation:  # 停止回调传播
+                    callres = False
                 if not isinstance(callres, bool):
                     logger.warning("未返回布尔值，可能会出现意料之外的结果！")
                 if not callres:
@@ -81,6 +119,7 @@ def AccessCallback(default=0):
                     return
             else:
                 await func(client, message)
+
         return inner
 
     return wrapper
@@ -88,14 +127,12 @@ def AccessCallback(default=0):
 
 def getErrorText(text: str):
     if text.endswith("url"):
-        return f"❌ 格式错误哦 QAQ，正确的食用方式为： {text} <订阅链接> <包含过滤器> <排除过滤器>"
+        return f"❌ 格式错误哦 QAQ，正确的食用方式为： \n{text} <订阅链接> <包含过滤器> <排除过滤器>"
     elif text.startswith("/test") or text.startswith("/topo") or text.startswith("/analyze") or text.startswith(
             "/speed"):
-        return f"❌ 格式错误哦 QAQ，正确的食用方式为： {text} <任务名称> <包含过滤器> <排除过滤器>"
-    elif text.startswith("/invite"):
-        return f"❌ 使用方式: {text} <回复一个目标> <...若干检测项>"
+        return f"❌ 格式错误哦 QAQ，正确的食用方式为： \n{text} <任务名称> <包含过滤器> <排除过滤器>"
     else:
-        return f"❌ 使用方式: {text} <参数1> <参数2>"
+        return f"❌ 使用方式: \n{text} <参数1> <参数2>"
 
 
 def command_argnum_filter(argnum: int = 1):
@@ -114,6 +151,8 @@ def command_argnum_filter(argnum: int = 1):
         arg = [x for x in arg if x != '']
         if len(arg) > argnum:
             return True
+        elif arg[0] == '/invite':
+            return True
         else:
             back_message = await message.reply(getErrorText(arg[0]))
             message_delete_queue.put_nowait([message.chat.id, message.id, 10])
@@ -123,7 +162,7 @@ def command_argnum_filter(argnum: int = 1):
     return filters.create(func)
 
 
-def allfilter(group: int, *args, **kwargs):
+def allfilter(group: int):
     """
     所有自定义filter
     """

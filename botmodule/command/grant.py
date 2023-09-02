@@ -120,7 +120,7 @@ async def restart_or_killme(_, message, kill=False):
             # p = sys.executable
             # 用 main.py 替换当前进程，传递 sys.argv 中的参数
             # 注意：这个函数不会返回，除非出现错误
-            os.execlp(sys.executable, sys.executable, "main.py", *sys.argv)
+            os.execlp(sys.executable, "main.py", *sys.argv)
             # os.execl(p, p, *sys.argv)
             sys.exit()
     except RPCError as r:

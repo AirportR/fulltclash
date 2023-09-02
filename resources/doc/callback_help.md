@@ -220,12 +220,14 @@ async def callback(bot: Client, message: Message) -> bool:
                         return False
                     else:
                         cooling_queue[ID] = time.time()
-                        await invite(bot, message)
+                        await select_slave_page(bot, message, page=1)
+                        # await invite(bot, message)
                         # 这里返回False是因为我们上面已经发起了一个invite，我们不再需要走原来的invite逻辑了，返回True就会触发两个，不信你试试。
                         return False
                 else:
                     cooling_queue[ID] = time.time()
-                    await invite(bot, message)
+                    await select_slave_page(bot, message, page=1)
+                    # await invite(bot, message)
                     return False
         # 匹配invite指令，不是的话不走这个回调
         return True
