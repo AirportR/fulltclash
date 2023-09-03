@@ -203,7 +203,9 @@ class AddonCleaner:
         """
         动态加载测速脚本
         """
+        module_suffix = ["py", "pyd", "so", "dll"]
         try:
+            path = os.path.abspath(path)
             di = os.listdir(path)
         except FileNotFoundError:
             di = None
@@ -213,13 +215,15 @@ class AddonCleaner:
         else:
             for d in di:
                 if len(d) > 3:
-                    if d[-3:] == '.py' and d != "__init__.py":
-                        module_name.append(d[:-3])
+                    e = d.split('.')
+                    if len(e) < 1:
+                        continue
+                    if e[-1] in module_suffix and d != "__init__.py":
+                        module_name.append(e[0])
                     else:
                         pass
         self._script.clear()
         logger.info("模块即将动态加载: " + str(module_name))
-        logger.info("正在尝试获取 'SCRIPT' 属性组件")
         # module_name = ["abema"]
         num = 0
         for mname in module_name:
@@ -240,14 +244,13 @@ class AddonCleaner:
                 script = getattr(mo1, 'SCRIPT')
             except AttributeError:
                 script = None
-            if script is None or type(script).__name__ != "dict":
+            if script is None or not isinstance(script, dict):
                 continue
 
             sname = script.get('MYNAME', None)
             stask = script.get("TASK", None)
             sget = script.get("GET", None)
-            if type(stask).__name__ == 'function' and type(sname).__name__ == 'str' and type(
-                    sget).__name__ == 'function':
+            if callable(stask) and isinstance(sname, str) and callable(sget):
                 self._script[sname] = [stask, sget]
                 num += 1
                 logger.info(f"已成功加载测试脚本：{sname}")
