@@ -7,6 +7,7 @@ from loguru import logger
 from pyrogram.types import InlineKeyboardButton
 
 openaiurl = "https://chat.openai.com/favicon.ico"
+
 # openaiurl = "https://chat.openai.com"
 openaiurl2 = "https://chat.openai.com/cdn-cgi/trace"
 SUPPORT_REGION = ['AL', 'DZ', 'AD', 'AO', 'AG', 'AR', 'AM', 'AU', 'AT', 'AZ', 'BS', 'BD', 'BB', 'BE', 'BZ', 'BJ', 'BT',
