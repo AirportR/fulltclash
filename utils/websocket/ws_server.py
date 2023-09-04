@@ -122,8 +122,9 @@ async def websocket_handler(request):
             return
 
         await ws.send_json(str(websocket.WebSocketJson(websocket.PayloadStatus.OK, '接受数据成功', '')))
-        passwd = plaindata.get('token', '')
-        if passwd != 'fulltclashdev':
+        _xoaobs_ab_q = plaindata.get('token', '')
+
+        if _xoaobs_ab_q != 'fulltclashdev':
             await ws.send_json(str(websocket.WebSocketJson(websocket.PayloadStatus.ERROR, '身份验证失败！', '')))
             return
         try:
@@ -138,7 +139,7 @@ async def websocket_handler(request):
     return ws
 
 
-async def server(host: str = '0.0.0.0', port: int = 8765):
+async def server(host: str = '127.0.0.1', port: int = 8765):
     app = web.Application()
     app.add_routes([web.get('/', websocket_handler)])
 
@@ -179,7 +180,7 @@ def check_args():
         buildtoken = str(args.buildtoken)
         GCONFIG.yaml['buildtoken'] = buildtoken
         GCONFIG.reload()
-        logger.info(f"已覆写FullTCore编译Token")
+        logger.info("已覆写FullTCore编译Token")
 
 
 async def main():
@@ -199,7 +200,7 @@ async def main():
         host = ba[0]
     except Exception as e:
         logger.error(str(e))
-        host = '0.0.0.0'
+        host = '127.0.0.1'
         port = 8765
 
     from utils.cleaner import addon

@@ -342,13 +342,13 @@ class Miaospeed:
         'TaskTimeout': 5,
         'Scripts': []}
     VendorType = 'Clash'
-    start_token = ''
+    Challenge = ''
     SlaveRequest = {'Basics': SlaveRequestBasics,
                     'Options': SlaveRequestOptions,
                     'Configs': SlaveRequestConfigs,
                     'Vendor': VendorType,
                     'RandomSequence': 'str1',
-                    'Challenge': start_token}
+                    'Challenge': Challenge}
 
     def __init__(self, proxyconfig: list, host: str = '127.0.0.1', port: int = 1112, ):
         """
