@@ -1361,7 +1361,7 @@ class ResultCleaner:
     def start(self, sort="订阅原序"):
         try:
             self.convert_proxy_typename()
-            if sort == "HTTP倒序":
+            if sort == "HTTP降序" or sort == "HTTP倒序":
                 self.sort_by_ping(reverse=True)
             elif sort == "HTTP升序":
                 self.sort_by_ping()
