@@ -49,6 +49,7 @@ FullTClash bot 是承载其测试任务的Telegram 机器人（以下简称bot�
 | Hysteria       |       | √          |
 | Wireguard      |       | √          |
 | ShadowsocksR   | √     | √          |
+----------------------
 本项目默认使用Clash原生内核，需要Clash.Meta支持请参阅代理客户端编译一栏。
 ## 使用文档
 
