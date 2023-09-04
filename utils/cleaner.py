@@ -199,13 +199,13 @@ class AddonCleaner:
             logger.warning("script_name is empty")
             return success_list
 
-    def init_addons(self, path: str):
+    def init_addons(self, path: str, package: str = "addons"):
         """
         动态加载测速脚本
         """
         module_suffix = ["py", "pyd", "so", "dll"]
         try:
-            path = os.path.abspath(path)
+            # path = os.path.abspath(path)
             di = os.listdir(path)
         except FileNotFoundError:
             di = None
@@ -228,7 +228,7 @@ class AddonCleaner:
         num = 0
         for mname in module_name:
             try:
-                mo1 = importlib.import_module(f"addons.{mname}")
+                mo1 = importlib.import_module(f".{mname}", package=package)
             except ModuleNotFoundError as m:
                 logger.warning(str(m))
                 mo1 = None
@@ -758,6 +758,10 @@ class ConfigManager:
             return 'origin'
         else:
             raise TypeError("clash.branch配置的值不合法，请检查！")
+
+    @staticmethod
+    def getLicenceCode():
+        return 'FullTclash'
 
     def getMasterconfig(self):
         return self.config.get('masterconfig', {})
