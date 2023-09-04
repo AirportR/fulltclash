@@ -156,7 +156,7 @@ async def server(host: str = '127.0.0.1', port: int = 8765):
 def check_args():
     import argparse
     parser = argparse.ArgumentParser(description="FullTClash-纯后端命令行快速启动")
-    parser.add_argument("-b", "--bind", required=False, type=str, help="覆写绑定的外部地址端口，默认为0.0.0.0:8765")
+    parser.add_argument("-b", "--bind", required=False, type=str, help="覆写绑定的外部地址端口，默认为127.0.0.1:8765")
     parser.add_argument("-t", "--token", required=True, type=str, help="Websocket通信Token，也叫做密码，防止不合法的请求。")
     parser.add_argument("-f", "--buildtoken", required=False, type=str, help="FullTCore代理客户端的buildtoken，不填则为默认值")
 
