@@ -1357,25 +1357,115 @@ class ResultCleaner:
                     new_type.append(t.capitalize())
             self.data['类型'] = new_type
 
+    def sort(self, sort_str: str = "订阅原序"):
+        if sort_str == "HTTP降序" or sort_str == "HTTP倒序":
+            self.sort_by_item("HTTP(S)延迟", reverse=True)
+        elif sort_str == "HTTP升序":
+            self.sort_by_item("HTTP(S)延迟")
+        elif sort_str == "平均速度降序" or sort_str == '平均速度倒序':
+            self.sort_by_item("平均速度", reverse=True)
+        elif sort_str == "平均速度升序":
+            self.sort_by_item("平均速度")
+        elif sort_str == '最大速度升序':
+            self.sort_by_item("最大速度")
+        elif sort_str == '最大速度降序':
+            self.sort_by_item("最大速度", reverse=True)
+
+    def padding(self):
+        """
+        填充字符
+        """
+        if 'HTTP(S)延迟' in self.data:
+            rtt = self.data['HTTP(S)延迟']
+            new_rtt = []
+            for r in rtt:
+                new_rtt.append(str(r) + 'ms')
+            self.data['HTTP(S)延迟'] = new_rtt
+
+        if '平均速度' in self.data:
+            new_list = []
+            for a in self.data['平均速度']:
+                avgspeed_mb = a / 1024 / 1024
+                if avgspeed_mb < 1:
+                    avgspeed = a / 1024
+                    new_list.append(f"{avgspeed:.2f}KB")
+                else:
+                    new_list.append(f"{avgspeed_mb:.2f}MB")
+            self.data['平均速度'] = new_list
+        if '最大速度' in self.data:
+            new_list = []
+            for a in self.data['最大速度']:
+                maxspeed_mb = a / 1024 / 1024
+                if maxspeed_mb < 1:
+                    maxspeed = a / 1024
+                    new_list.append(f"{maxspeed:.2f}KB")
+                else:
+                    new_list.append(f"{maxspeed_mb:.2f}MB")
+            self.data['最大速度'] = new_list
+        if '每秒速度' in self.data:
+            self.data['每秒速度'] = [[j / 1024 / 1024 for j in i] for i in self.data['每秒速度']]
+
     def start(self, sort="订阅原序"):
         try:
             self.convert_proxy_typename()
-            if sort == "HTTP降序" or sort == "HTTP倒序":
-                self.sort_by_ping(reverse=True)
-            elif sort == "HTTP升序":
-                self.sort_by_ping()
-            if 'HTTP(S)延迟' in self.data:
-                rtt = self.data['HTTP(S)延迟']
-                new_rtt = []
-                for r in rtt:
-                    new_rtt.append(str(r) + 'ms')
-                self.data['HTTP(S)延迟'] = new_rtt
+            self.sort(sort)
+            self.padding()
             return self.data
         except TypeError as t:
             logger.error(str(t))
             return {}
 
-    def sort_by_ping(self, reverse=False):
+    def sort_by_item(self, item: str, reverse=False):
+        """
+        非常具有复用性的代码，我很满意(ง •_•)ง
+        """
+        if item not in self.data:
+            return
+        item_list = self.data.get(item, [])
+        if item == "HTTP(S)延迟" and not reverse:
+            for i in range(len(item_list)):
+                if item_list[i] == 0:
+                    item_list[i] = 9999999
+        temp_1 = [k for k, v in self.data.items()
+                  if not isinstance(v, (list, tuple)) or len(v) != len(item_list)]
+        temp_dict = {}
+        for t in temp_1:
+            temp_dict[t] = self.data.pop(t)
+        if item_list:
+            zipobj = zip(item_list, *(v for k, v in self.data.items()))
+            new_list = [list(e) for e in zip(*sorted(zipobj, key=lambda x: x[0], reverse=reverse))]
+            new_list.pop(0)
+            for i, k in enumerate(self.data.keys()):
+                self.data[k] = new_list[i]
+            # self.data['平均速度'] = avgspeed
+            self.data.update(temp_dict)
+
+    def sort_by_ping(self, reverse: bool = False):
+        if 'HTTP(S)延迟' not in self.data:
+            return
+        http_l = self.data.get('HTTP(S)延迟', [])
+        if not reverse:
+            for i in range(len(http_l)):
+                if http_l[i] == 0:
+                    http_l[i] = 9999999
+        temp_1 = [k for k, v in self.data.items()
+                  if not isinstance(v, (list, tuple)) or len(v) != len(http_l)]
+        temp_dict = {}
+        for t in temp_1:
+            temp_dict[t] = self.data.pop(t)
+        if http_l:
+            zipobj = zip(http_l, *(v for k, v in self.data.items() if len(v) == len(http_l)))
+            new_list = [list(e) for e in zip(*sorted(zipobj, key=lambda x: x[0], reverse=reverse))]
+            new_list.pop(0)
+            for i, k in enumerate(self.data.keys()):
+                self.data[k] = new_list[i]
+            # self.data['平均速度'] = avgspeed
+            self.data.update(temp_dict)
+
+    def sort_by_ping_old(self, reverse=False):
+        """
+        旧版排序，已废弃
+        """
         if 'HTTP(S)延迟' not in self.data:
             return
         http_l = self.data.get('HTTP(S)延迟')

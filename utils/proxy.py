@@ -176,7 +176,7 @@ class FullTClash:
             async with aiohttp.ClientSession() as session:
                 start = loop.time()
                 with contextlib.suppress(asyncio.exceptions.TimeoutError):
-                    async with session.get(pingurl, proxy=addr, timeout=5) as _:
+                    async with session.get(pingurl, proxy=addr, timeout=timeout) as _:
                         pass
                 async with session.get(pingurl, proxy=addr, timeout=timeout) as _:
                     end = loop.time()
