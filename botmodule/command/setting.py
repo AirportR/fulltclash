@@ -556,7 +556,6 @@ async def select_script_only(_: "Client", call: Union["CallbackQuery", "Message"
             async with async_timeout.timeout(timeout):
                 script_list = await q.get()
                 if isinstance(script_list, list):
-                    await botmsg.delete(revoke=True)
                     return script_list
                 else:
                     await botmsg.reply("❌数据类型接收错误")
@@ -567,6 +566,7 @@ async def select_script_only(_: "Client", call: Union["CallbackQuery", "Message"
             return None
         finally:
             receiver.pop(recvkey, None)
+            await botmsg.delete(revoke=True)
 
     else:
         bot_key = gen_msg_key(call.message)
@@ -639,13 +639,13 @@ async def select_sort_only(_: "Client", call: Union["CallbackQuery", "Message"],
             async with async_timeout.timeout(timeout):
                 sort_str = await q.get()
                 sort_str = sort_str_parser.get(sort_str, "")
-                await botmsg.delete(revoke=True)
                 return sort_str
 
         except asyncio.exceptions.TimeoutError:
             print("获取超时")
             return ""
         finally:
+            await botmsg.delete(revoke=True)
             receiver.pop(recvkey, None)
 
     elif isinstance(call, CallbackQuery):
@@ -691,7 +691,6 @@ async def select_slave_only(app: Client, call: Union[CallbackQuery, Message], ti
                 if not slaveid and comment == "本地后端":
                     slaveid = "local"
                 if slaveid and comment:
-                    await botmsg.delete()
                     return str(slaveid), comment
                 else:
                     await botmsg.delete()
@@ -702,6 +701,7 @@ async def select_slave_only(app: Client, call: Union[CallbackQuery, Message], ti
             return '', ''
         finally:
             receiver.pop(recvkey, None)
+            await botmsg.delete(revoke=True)
     else:
         api_route = '/api/getSlaveId'
         le = len(api_route) + len("?comment=")
