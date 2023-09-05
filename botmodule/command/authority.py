@@ -157,7 +157,8 @@ async def invite_pass(client: Client, message: Message):
 
         if task_type_select in task_type:
 
-            s_text = f"✅身份验证成功\n🚗任务项: {task_type_select} \n\n**接下来请在{timeout_value}s内发送订阅链接** <过滤器> 否则任务取消"
+            s_text = f"✅身份验证成功\n🚗任务项: {task_type_select} \n\n" \
+                     f"**接下来请在{timeout_value}s内发送Clash配置格式的订阅链接** <过滤器> 否则任务取消\n"
             success_mes = await message.reply(s_text)
             success_message_list.update({ID: success_mes})
             mes = message_list.pop(key2 + ID, None)

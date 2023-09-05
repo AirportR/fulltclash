@@ -741,7 +741,7 @@ async def select_slave(app: Client, call: CallbackQuery):
         ISC['slaveid'][gen_msg_key(target)] = slaveid
         await botmsg.edit_text("请选择排序方式：", reply_markup=IKM2)
     elif originmsg.text.startswith('/test'):
-        await botmsg.edit_text("请选择排序方式：", reply_markup=IKM2)
+        await botmsg.edit_text("请选择排序方式(速度相关的排序无效): ", reply_markup=IKM2)
     elif originmsg.text.startswith('/topo') or originmsg.text.startswith('/analyze'):
         sort_str = get_sort_str(botmsg)
         slaveid = get_slave_id(botmsg)
@@ -750,9 +750,9 @@ async def select_slave(app: Client, call: CallbackQuery):
         await bot_put(app, originmsg, put_type, None, sort=sort_str, coreindex=2, slaveid=slaveid)
     elif originmsg.text.startswith('/speed'):
         slaveid = get_slave_id(botmsg)
+        await botmsg.delete()
         sort_str = await select_sort_only(app, call.message, 20, speed=True)
         put_type = "speedurl" if originmsg.text.split(' ', 1)[0].split('@', 1)[0].endswith('url') else "speed"
-        await botmsg.delete()
         await bot_put(app, originmsg, put_type, None, sort=sort_str, coreindex=1, slaveid=slaveid)
     else:
         await botmsg.edit_text("🐛暂时未适配")
