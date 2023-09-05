@@ -68,7 +68,7 @@ IKM2 = InlineKeyboardMarkup(
         [dbtn['b_rhttp'], dbtn['b_http']],
         [dbtn['b_aspeed'], dbtn['b_arspeed']],
         [dbtn['b_mspeed'], dbtn['b_mrspeed']],
-        [dbtn['b_cancel']]
+        [dbtn['b_close']]
     ]
 )
 
