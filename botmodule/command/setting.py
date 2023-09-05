@@ -595,7 +595,7 @@ async def select_script_only(_: "Client", call: Union["CallbackQuery", "Message"
             except asyncio.queues.QueueFull:
                 pass
         else:
-            await call.message.reply("❌无法找到该消息与之对应的队列")
+            await call.answer("❌无法找到该消息与之对应的队列")
 
 
 async def select_sort_only(_: "Client", call: Union["CallbackQuery", "Message"],
@@ -659,7 +659,7 @@ async def select_sort_only(_: "Client", call: Union["CallbackQuery", "Message"],
             except asyncio.queues.QueueFull:
                 pass
         else:
-            await call.message.reply("❌无法找到该消息与之对应的队列")
+            await call.answer("❌无法找到该消息与之对应的队列")
 
 
 async def select_slave_only(app: Client, call: Union[CallbackQuery, Message], timeout=60, **kwargs) -> tuple[str, str]:
@@ -714,7 +714,7 @@ async def select_slave_only(app: Client, call: Union[CallbackQuery, Message], ti
             except asyncio.queues.QueueFull:
                 pass
         else:
-            await call.message.reply("❌无法找到该消息与之对应的队列")
+            await call.answer("❌无法找到该消息与之对应的队列")
 
 
 async def select_slave(app: Client, call: CallbackQuery):
@@ -752,8 +752,12 @@ async def select_slave(app: Client, call: CallbackQuery):
         slaveid = get_slave_id(botmsg)
         await botmsg.delete()
         sort_str = await select_sort_only(app, call.message, 20, speed=True)
-        put_type = "speedurl" if originmsg.text.split(' ', 1)[0].split('@', 1)[0].endswith('url') else "speed"
-        await bot_put(app, originmsg, put_type, None, sort=sort_str, coreindex=1, slaveid=slaveid)
+        if sort_str:
+            put_type = "speedurl" if originmsg.text.split(' ', 1)[0].split('@', 1)[0].endswith('url') else "speed"
+            await bot_put(app, originmsg, put_type, None, sort=sort_str, coreindex=1, slaveid=slaveid)
+        else:
+            b = await botmsg.reply("❌选择超时，已取消任务。")
+            mdq.put(b, 5)
     else:
         await botmsg.edit_text("🐛暂时未适配")
         return
