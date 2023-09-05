@@ -1627,7 +1627,7 @@ class ExportSpeed(ExportResult):
         self.slave = info.pop('slave', {})
         self.slave_comment = self.slave.get('comment', self.config.getSlaveconfig().get('default-slave', {})
                                             .get('comment', 'Local'))
-        self.export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
+        self.export_time = time.strftime("%Y-%m-%dT%H%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
         self.footer1 = f"📊版本={__version__}  " \
                        f"后端={self.slave_comment}  " \
                        f"消耗流量={self.traffic}MB   " \
@@ -2004,7 +2004,8 @@ class ExportSpeed(ExportResult):
         # 保存结果
         if debug:
             img.show(self.export_time.replace(':', '-'))
+            return None, None
         else:
             img.save(r"./results/{}.png".format(self.export_time.replace(':', '-')))
             print(self.export_time)
-            return self.export_time, img.size
+            return self.export_time.replace(':', '-'), img.size
