@@ -66,6 +66,8 @@ IKM2 = InlineKeyboardMarkup(
         # 第一行
         [dbtn['b_origin']],
         [dbtn['b_rhttp'], dbtn['b_http']],
+        [dbtn['b_aspeed'], dbtn['b_arspeed']],
+        [dbtn['b_mspeed'], dbtn['b_mrspeed']],
         [dbtn['b_cancel']]
     ]
 )
@@ -747,8 +749,8 @@ async def select_slave(app: Client, call: CallbackQuery):
         await botmsg.delete()
         await bot_put(app, originmsg, put_type, None, sort=sort_str, coreindex=2, slaveid=slaveid)
     elif originmsg.text.startswith('/speed'):
-        sort_str = get_sort_str(botmsg)
         slaveid = get_slave_id(botmsg)
+        sort_str = await select_sort_only(app, call.message, 20, speed=True)
         put_type = "speedurl" if originmsg.text.split(' ', 1)[0].split('@', 1)[0].endswith('url') else "speed"
         await botmsg.delete()
         await bot_put(app, originmsg, put_type, None, sort=sort_str, coreindex=1, slaveid=slaveid)
