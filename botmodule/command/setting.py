@@ -154,14 +154,15 @@ async def test_setting(client: Client, callback_query: CallbackQuery, row=3, **k
     mess_id = callback_query.message.id
     chat_id = callback_query.message.chat.id
     origin_message = callback_query.message.reply_to_message
+    if origin_message is None:
+        logger.warning("⚠️无法获取发起该任务的源消息")
+        # await edit_mess.edit_text("⚠️无法获取发起该任务的源消息")
+        return test_items, origin_message, message, ''
     inline_keyboard = callback_query.message.reply_markup.inline_keyboard
 
     with contextlib.suppress(IndexError, ValueError):
         test_type = origin_message.text.split(" ", maxsplit=1)[0].split("@", maxsplit=1)[0]
-    if origin_message is None:
-        logger.warning("⚠️无法获取发起该任务的源消息")
-        await edit_mess.edit_text("⚠️无法获取发起该任务的源消息")
-        return test_items, origin_message, message, test_type
+
     try:
         if "✅" == callback_data[0]:
             await editkeybord_yes_or_no(client, callback_query, mode=0)
