@@ -264,11 +264,11 @@ class SpeedCore(Basecore):
                         if self._stopped:
                             break
                         async with session.get(url, timeout=self._download_interval + 3) as response:
+                            # logger.info("polling start")
                             while not self._stopped:
                                 if not break_speed:
                                     chunk = await response.content.read(buffer)
                                     if not chunk:
-                                        logger.info("polling start")
                                         break
                                     await self.record(len(chunk))
                                 else:
@@ -318,13 +318,20 @@ class SpeedCore(Basecore):
             return 0, 0, [], 0
 
     # 以下为 另一部分
-    async def batch_speed(self, nodelist: list, port: int = 11220, proxy_obj: Union[proxy.FullTClash] = None):
+    async def batch_speed(self, nodelist: list, port: int = 11220, proxy_obj: Union[proxy.FullTClash] = None,
+                          udp_only: bool = False):
+        """
+        nodelist: 节点列表
+        port: 代理socks5入站端口
+        proxy_obj: 代理提供者的实例
+        udp_only: 仅测试udp NAT发现行为
+        """
         info = {}
         progress = 0
         sending_time = 0
         nodenum = len(nodelist)
         control_port = proxy.CONTROL_PORT if proxy_obj is None else proxy_obj.cport
-        test_items = ["HTTP(S)延迟", "平均速度", "最大速度", "每秒速度", "UDP类型"]
+        test_items = ["UDP类型"] if udp_only else ["HTTP(S)延迟", "平均速度", "最大速度", "每秒速度", "UDP类型"]
         for item in test_items:
             info[item] = []
         info["消耗流量"] = 0  # 单位:MB
@@ -332,42 +339,45 @@ class SpeedCore(Basecore):
             return info
 
         await self.progress(progress, nodenum)
-        for name in nodelist:
-            # proxys.switchProxy(name, 0)
-            await proxy.FullTClash.setproxy(name, 0, control_port)
-            # delay = await proxys.http_delay_tls(index=0)
-            # delay = await proxys.http_delay(index=0)
+        for node in nodelist:
+            await proxy.FullTClash.setproxy(node, 0, control_port)
             delay = await proxy.FullTClash.urltest(port)
             udptype, _, _, _, _ = self.nat_type_test('127.0.0.1', proxyport=port)
             if udptype is None:
                 udptype = "Unknown"
-            res = await self.speed_start("127.0.0.1", port, 4096)
-            avgspeed_mb = res[0] / 1024 / 1024
-            if avgspeed_mb < 1:
-                avgspeed = "%.2f" % (res[0] / 1024) + "KB"
+            if udp_only:
+                info['UDP类型'].append(udptype)
             else:
-                avgspeed = "%.2f" % avgspeed_mb + "MB"
-            maxspeed_mb = res[1] / 1024 / 1024
-            if maxspeed_mb < 1:
-                maxspeed = "%.2f" % (res[1] / 1024) + "KB"
-            else:
-                maxspeed = "%.2f" % maxspeed_mb + "MB"
-            speedresult = [v / 1024 / 1024 for v in res[2]]
-            traffic_used = float("%.2f" % (res[3] / 1024 / 1024))
-            info["消耗流量"] += traffic_used
-            res2 = [delay, avgspeed, maxspeed, speedresult, udptype]
-            for i, _ in enumerate(test_items):
-                info[test_items[i]].append(res2[i])
+                res = await self.speed_start("127.0.0.1", port, 4096)
+                avgspeed = res[0]
+                maxspeed = res[1]
+                # avgspeed_mb = res[0] / 1024 / 1024
+                # if avgspeed_mb < 1:
+                #     avgspeed = "%.2f" % (res[0] / 1024) + "KB"
+                # else:
+                #     avgspeed = "%.2f" % avgspeed_mb + "MB"
+                # maxspeed_mb = res[1] / 1024 / 1024
+                # if maxspeed_mb < 1:
+                #     maxspeed = "%.2f" % (res[1] / 1024) + "KB"
+                # else:
+                #     maxspeed = "%.2f" % maxspeed_mb + "MB"
+                # speedresult = [v / 1024 / 1024 for v in res[2]]
+                speedresult = res[2]
+                traffic_used = float("%.2f" % (res[3] / 1024 / 1024))
+                info["消耗流量"] += traffic_used
+                res2 = [delay, avgspeed, maxspeed, speedresult, udptype]
+                for i, _ in enumerate(test_items):
+                    info[test_items[i]].append(res2[i])
 
-            if break_speed:
-                logger.warning("❌测速任务已取消")
-                break
-            progress += 1
-            cal = progress / nodenum * 100
-            # p_text = "%.2f" % cal
-            if cal >= sending_time:
-                sending_time += 10
-                await self.progress(progress, nodenum)
+                if break_speed:
+                    logger.warning("❌测速任务已取消")
+                    break
+                progress += 1
+                cal = progress / nodenum * 100
+                # p_text = "%.2f" % cal
+                if cal >= sending_time:
+                    sending_time += 10
+                    await self.progress(progress, nodenum)
         return info
 
     async def core(self, proxyinfo: list, **kwargs):
@@ -396,8 +406,10 @@ class SpeedCore(Basecore):
                 logger.error(str(e))
             finally:
                 fulltclash.close()
-                logger.info("子进程已关闭，回收资源。")
-            info = cleaner.ResultCleaner(info).start()
+            # 排序
+            sort_str = kwargs.get('sort', '订阅原序')
+            info = cleaner.ResultCleaner(info).start(sort_str)
+            info['sort'] = sort_str
             # 计算测试消耗时间
             wtime = "%.1f" % float(time.time() - s1)
             info['wtime'] = wtime

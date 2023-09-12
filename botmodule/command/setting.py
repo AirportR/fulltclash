@@ -66,7 +66,9 @@ IKM2 = InlineKeyboardMarkup(
         # 第一行
         [dbtn['b_origin']],
         [dbtn['b_rhttp'], dbtn['b_http']],
-        [dbtn['b_cancel']]
+        [dbtn['b_aspeed'], dbtn['b_arspeed']],
+        [dbtn['b_mspeed'], dbtn['b_mrspeed']],
+        [dbtn['b_close']]
     ]
 )
 
@@ -152,14 +154,15 @@ async def test_setting(client: Client, callback_query: CallbackQuery, row=3, **k
     mess_id = callback_query.message.id
     chat_id = callback_query.message.chat.id
     origin_message = callback_query.message.reply_to_message
+    if origin_message is None:
+        logger.warning("⚠️无法获取发起该任务的源消息")
+        # await edit_mess.edit_text("⚠️无法获取发起该任务的源消息")
+        return test_items, origin_message, message, ''
     inline_keyboard = callback_query.message.reply_markup.inline_keyboard
 
     with contextlib.suppress(IndexError, ValueError):
         test_type = origin_message.text.split(" ", maxsplit=1)[0].split("@", maxsplit=1)[0]
-    if origin_message is None:
-        logger.warning("⚠️无法获取发起该任务的源消息")
-        await edit_mess.edit_text("⚠️无法获取发起该任务的源消息")
-        return test_items, origin_message, message, test_type
+
     try:
         if "✅" == callback_data[0]:
             await editkeybord_yes_or_no(client, callback_query, mode=0)
@@ -554,7 +557,6 @@ async def select_script_only(_: "Client", call: Union["CallbackQuery", "Message"
             async with async_timeout.timeout(timeout):
                 script_list = await q.get()
                 if isinstance(script_list, list):
-                    await botmsg.delete(revoke=True)
                     return script_list
                 else:
                     await botmsg.reply("❌数据类型接收错误")
@@ -565,6 +567,7 @@ async def select_script_only(_: "Client", call: Union["CallbackQuery", "Message"
             return None
         finally:
             receiver.pop(recvkey, None)
+            await botmsg.delete(revoke=True)
 
     else:
         bot_key = gen_msg_key(call.message)
@@ -593,7 +596,7 @@ async def select_script_only(_: "Client", call: Union["CallbackQuery", "Message"
             except asyncio.queues.QueueFull:
                 pass
         else:
-            await call.message.reply("❌无法找到该消息与之对应的队列")
+            await call.answer("❌无法找到该消息与之对应的队列")
 
 
 async def select_sort_only(_: "Client", call: Union["CallbackQuery", "Message"],
@@ -637,13 +640,13 @@ async def select_sort_only(_: "Client", call: Union["CallbackQuery", "Message"],
             async with async_timeout.timeout(timeout):
                 sort_str = await q.get()
                 sort_str = sort_str_parser.get(sort_str, "")
-                await botmsg.delete(revoke=True)
                 return sort_str
 
         except asyncio.exceptions.TimeoutError:
             print("获取超时")
             return ""
         finally:
+            await botmsg.delete(revoke=True)
             receiver.pop(recvkey, None)
 
     elif isinstance(call, CallbackQuery):
@@ -657,7 +660,7 @@ async def select_sort_only(_: "Client", call: Union["CallbackQuery", "Message"],
             except asyncio.queues.QueueFull:
                 pass
         else:
-            await call.message.reply("❌无法找到该消息与之对应的队列")
+            await call.answer("❌无法找到该消息与之对应的队列")
 
 
 async def select_slave_only(app: Client, call: Union[CallbackQuery, Message], timeout=60, **kwargs) -> tuple[str, str]:
@@ -689,7 +692,6 @@ async def select_slave_only(app: Client, call: Union[CallbackQuery, Message], ti
                 if not slaveid and comment == "本地后端":
                     slaveid = "local"
                 if slaveid and comment:
-                    await botmsg.delete()
                     return str(slaveid), comment
                 else:
                     await botmsg.delete()
@@ -700,6 +702,7 @@ async def select_slave_only(app: Client, call: Union[CallbackQuery, Message], ti
             return '', ''
         finally:
             receiver.pop(recvkey, None)
+            await botmsg.delete(revoke=True)
     else:
         api_route = '/api/getSlaveId'
         le = len(api_route) + len("?comment=")
@@ -712,7 +715,7 @@ async def select_slave_only(app: Client, call: Union[CallbackQuery, Message], ti
             except asyncio.queues.QueueFull:
                 pass
         else:
-            await call.message.reply("❌无法找到该消息与之对应的队列")
+            await call.answer("❌无法找到该消息与之对应的队列")
 
 
 async def select_slave(app: Client, call: CallbackQuery):
@@ -739,7 +742,7 @@ async def select_slave(app: Client, call: CallbackQuery):
         ISC['slaveid'][gen_msg_key(target)] = slaveid
         await botmsg.edit_text("请选择排序方式：", reply_markup=IKM2)
     elif originmsg.text.startswith('/test'):
-        await botmsg.edit_text("请选择排序方式：", reply_markup=IKM2)
+        await botmsg.edit_text("请选择排序方式(速度相关的排序无效): ", reply_markup=IKM2)
     elif originmsg.text.startswith('/topo') or originmsg.text.startswith('/analyze'):
         sort_str = get_sort_str(botmsg)
         slaveid = get_slave_id(botmsg)
@@ -747,11 +750,15 @@ async def select_slave(app: Client, call: CallbackQuery):
         await botmsg.delete()
         await bot_put(app, originmsg, put_type, None, sort=sort_str, coreindex=2, slaveid=slaveid)
     elif originmsg.text.startswith('/speed'):
-        sort_str = get_sort_str(botmsg)
         slaveid = get_slave_id(botmsg)
-        put_type = "speedurl" if originmsg.text.split(' ', 1)[0].split('@', 1)[0].endswith('url') else "speed"
         await botmsg.delete()
-        await bot_put(app, originmsg, put_type, None, sort=sort_str, coreindex=1, slaveid=slaveid)
+        sort_str = await select_sort_only(app, call.message, 20, speed=True)
+        if sort_str:
+            put_type = "speedurl" if originmsg.text.split(' ', 1)[0].split('@', 1)[0].endswith('url') else "speed"
+            await bot_put(app, originmsg, put_type, None, sort=sort_str, coreindex=1, slaveid=slaveid)
+        else:
+            b = await botmsg.reply("❌选择超时，已取消任务。")
+            mdq.put(b, 5)
     else:
         await botmsg.edit_text("🐛暂时未适配")
         return
