@@ -34,6 +34,9 @@ FullTClash bot 是承载其测试任务的Telegram 机器人（以下简称bot�
 1. HTTP延迟测试
 2. 链路拓扑测试（节点出入口分析）。
 3. 下行速度测试
+
+## 具备特性
+
 ## 支持协议
 
 | 客户端上游分支        | Clash | Clash.Meta |
@@ -47,6 +50,7 @@ FullTClash bot 是承载其测试任务的Telegram 机器人（以下简称bot�
 | VLESS          |       | √          |
 | Tuic           |       | √          |
 | Hysteria       |       | √          |
+| Hysteria2      |       | √          |
 | Wireguard      |       | √          |
 | ShadowsocksR   | √     | √          |
 ----------------------
