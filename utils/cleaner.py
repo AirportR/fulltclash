@@ -1,3 +1,4 @@
+import asyncio
 import importlib
 import os
 import re
@@ -198,11 +199,13 @@ class AddonCleaner:
             logger.warning("script_name is empty")
             return success_list
 
-    def init_addons(self, path: str):
+    def init_addons(self, path: str, package: str = "addons"):
         """
         动态加载测速脚本
         """
+        module_suffix = ["py", "pyd", "so", "dll"]
         try:
+            # path = os.path.abspath(path)
             di = os.listdir(path)
         except FileNotFoundError:
             di = None
@@ -212,18 +215,20 @@ class AddonCleaner:
         else:
             for d in di:
                 if len(d) > 3:
-                    if d[-3:] == '.py' and d != "__init__.py":
-                        module_name.append(d[:-3])
+                    e = d.split('.')
+                    if len(e) < 1:
+                        continue
+                    if e[-1] in module_suffix and d != "__init__.py":
+                        module_name.append(e[0])
                     else:
                         pass
         self._script.clear()
         logger.info("模块即将动态加载: " + str(module_name))
-        logger.info("正在尝试获取 'SCRIPT' 属性组件")
         # module_name = ["abema"]
         num = 0
         for mname in module_name:
             try:
-                mo1 = importlib.import_module(f"addons.{mname}")
+                mo1 = importlib.import_module(f".{mname}", package=package)
             except ModuleNotFoundError as m:
                 logger.warning(str(m))
                 mo1 = None
@@ -239,14 +244,13 @@ class AddonCleaner:
                 script = getattr(mo1, 'SCRIPT')
             except AttributeError:
                 script = None
-            if script is None or type(script).__name__ != "dict":
+            if script is None or not isinstance(script, dict):
                 continue
 
             sname = script.get('MYNAME', None)
             stask = script.get("TASK", None)
             sget = script.get("GET", None)
-            if type(stask).__name__ == 'function' and type(sname).__name__ == 'str' and type(
-                    sget).__name__ == 'function':
+            if callable(stask) and isinstance(sname, str) and callable(sget):
                 self._script[sname] = [stask, sget]
                 num += 1
                 logger.info(f"已成功加载测试脚本：{sname}")
@@ -755,6 +759,10 @@ class ConfigManager:
         else:
             raise TypeError("clash.branch配置的值不合法，请检查！")
 
+    @staticmethod
+    def getLicenceCode():
+        return 'FullTclash'
+
     def getMasterconfig(self):
         return self.config.get('masterconfig', {})
 
@@ -806,6 +814,9 @@ class ConfigManager:
         if 'bot_token' in botconfig:
             logger.info("从配置中获取到了bot_token")
         return botconfig
+
+    def getFont(self):
+        return self.config.get('font', "./resources/alibaba-Regular.ttf")
 
     def getColor(self):
         return self.config.get('image', {}).get('color', {})
@@ -1425,7 +1436,7 @@ class ResultCleaner:
         if item == "HTTP(S)延迟" and not reverse:
             for i in range(len(item_list)):
                 if item_list[i] == 0:
-                    item_list[i] = 9999999
+                    item_list[i] = 999999
         temp_1 = [k for k, v in self.data.items()
                   if not isinstance(v, (list, tuple)) or len(v) != len(item_list)]
         temp_dict = {}
@@ -1447,7 +1458,7 @@ class ResultCleaner:
         if not reverse:
             for i in range(len(http_l)):
                 if http_l[i] == 0:
-                    http_l[i] = 9999999
+                    http_l[i] = 999999
         temp_1 = [k for k, v in self.data.items()
                   if not isinstance(v, (list, tuple)) or len(v) != len(http_l)]
         temp_dict = {}
@@ -1558,6 +1569,23 @@ def domain_to_ip(host: str):
             ips.add(result[4][0])
         ip = list(ips)
         return ip
+    except socket.gaierror:
+        return None
+
+
+async def async_domain_to_ip(host: str):
+    loop = asyncio.get_running_loop()
+    try:
+        results = await loop.getaddrinfo(
+            host,
+            None,
+            family=socket.AF_UNSPEC,
+            type=socket.SOCK_STREAM,
+        )
+        ips = set()
+        for result in results:
+            ips.add(result[4][0])
+        return list(ips)
     except socket.gaierror:
         return None
 

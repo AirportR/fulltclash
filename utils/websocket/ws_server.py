@@ -7,11 +7,11 @@ from aiohttp import web
 from loguru import logger
 
 from utils import websocket
-from utils.backend import select_core, GCONFIG
+from utils.backend import select_core, GCONFIG, break_speed
 from utils.safe import cipher_chacha20, sha256_32bytes, plain_chahcha20
 
 SPEED_Q = asyncio.Queue(1)  # 速度测试队列。确保同一时间只有一个测速任务在占用带宽
-CONN_Q = asyncio.Queue(3)  # 连通性、拓扑测试队列，最大同时测试数量为10个任务，设置太高会影响到测速的带宽，进而影响结果。
+CONN_Q = asyncio.Queue(3)  # 连通性、拓扑测试队列，最大同时测试数量为3个任务，设置太高会影响到测速的带宽，进而影响结果。
 QUEUE_NUM_SPEED = 0  # 测速队列被阻塞的任务计数
 QUEUE_NUM_CONN = 0  # 连通性、拓扑测试队列阻塞任务计数
 
@@ -90,6 +90,8 @@ async def router(plaindata: dict, ws: web.WebSocketResponse, **kwargs):
         infostr = json.dumps(plaindata)
         cipherdata = cipher_chacha20(infostr.encode(), sha256_32bytes(key))
         await ws.send_bytes(cipherdata)
+    elif do == "stopspeed":
+        break_speed.append(True)
     await ws.close()
 
 
