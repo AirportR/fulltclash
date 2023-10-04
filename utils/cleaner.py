@@ -3,6 +3,7 @@ import importlib
 import os
 import re
 import sys
+from copy import deepcopy
 from typing import Union, List
 import socket
 import yaml
@@ -1432,7 +1433,8 @@ class ResultCleaner:
         """
         if item not in self.data:
             return
-        item_list = self.data.get(item, [])
+        raw_item_list = self.data.get(item, [])
+        item_list = deepcopy(raw_item_list)
         if item == "HTTP(S)延迟" and not reverse:
             for i in range(len(item_list)):
                 if item_list[i] == 0:
