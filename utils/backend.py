@@ -289,32 +289,52 @@ class SpeedCore(Basecore):
             buffer: int,
             workers: int = 0,
     ) -> tuple:
-        download_semaphore = asyncio.Semaphore(workers if workers else Speedtest().thread)
-        async with download_semaphore:
-            st = Speedtest()
-            urls = st.speedurl
-            # logger.debug(f"Url: {url}")
-            thread = workers if workers else st.thread
-            logger.info(f"Running st_async, workers: {thread}.")
-            tasks = [
-                asyncio.create_task(SpeedCore.fetch(st, urls, proxy_host, proxy_port, buffer))
-                for _ in range(thread)
-            ]
-            await asyncio.wait(tasks)
-            st.show_progress_full()
-            spmean = st.total_red / st.time_used if st.time_used else 0
-            spmax = st.max_speed
+        st = Speedtest()
+        try:
+            from ftclib import speed_test
+        except ImportError:
+            speed_test = None
+        if speed_test is not None:
+            workers = workers if workers else st.thread
+            print("rust黑科技，启动!")
+
+            res = await speed_test(proxy_host, proxy_port, st.speedurl, workers)
+            spmean = sum(res) / len(res) if res else 0
+            spmax = max(res) if res else 0
             if spmean > spmax:
                 spmean, spmax = spmax, spmean
-            if st.time_used:
-                return (
-                    spmean,
-                    spmax,
-                    st.speed_list[1:],
-                    st.total_red,
-                )
+            return (
+                spmean,
+                spmax,
+                res,
+                10,
+            )
+        else:
+            download_semaphore = asyncio.Semaphore(workers if workers else Speedtest().thread)
+            async with download_semaphore:
+                urls = st.speedurl
+                # logger.debug(f"Url: {url}")
+                thread = workers if workers else st.thread
+                logger.info(f"Running st_async, workers: {thread}.")
+                tasks = [
+                    asyncio.create_task(SpeedCore.fetch(st, urls, proxy_host, proxy_port, buffer))
+                    for _ in range(thread)
+                ]
+                await asyncio.wait(tasks)
+                st.show_progress_full()
+                spmean = st.total_red / st.time_used if st.time_used else 0
+                spmax = st.max_speed
+                if spmean > spmax:
+                    spmean, spmax = spmax, spmean
+                if st.time_used:
+                    return (
+                        spmean,
+                        spmax,
+                        st.speed_list[1:],
+                        st.total_red,
+                    )
 
-            return 0, 0, [], 0
+                return 0, 0, [], 0
 
     # 以下为 另一部分
     async def batch_speed(self, nodelist: list, port: int = 11220, proxy_obj: Union[proxy.FullTClash] = None,
