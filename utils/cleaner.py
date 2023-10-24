@@ -5,8 +5,16 @@ import re
 import sys
 from typing import Union, List
 import socket
+
 import yaml
 from loguru import logger
+
+try:
+    import re2
+
+    remodule = re
+except ImportError:
+    remodule = re
 
 
 class IPCleaner:
@@ -443,10 +451,11 @@ class ClashCleaner:
                 if isinstance(proxy, dict):
                     name = proxy['name']
                     ptype = proxy['type']
+
                     if not isinstance(name, str):
                         # 将节点名称转为字符串
                         proxy['name'] = str(name)
-                    if ptype not in self.unsupport_type:
+                    if ptype not in self.unsupport_type and len(name) < 128:
                         newproxies.append(proxy)
             self.yaml['proxies'] = newproxies
         except KeyError:
@@ -632,12 +641,21 @@ class ClashCleaner:
         result2 = []
         nodelist = self.getProxies()
         pattern1 = pattern2 = None
+
         try:
             if include:
-                pattern1 = re.compile(include)
+                if len(include) < 32:
+                    pattern1 = remodule.compile(include)
+                else:
+                    pattern1 = None
+                    logger.warning(f"包含过滤器的文本: {include} 大于32个长度，无法生效！")
             if exclude:
-                pattern2 = re.compile(exclude)
-        except re.error:
+                if len(exclude) < 32:
+                    pattern2 = remodule.compile(exclude)
+                else:
+                    pattern2 = None
+                    logger.warning(f"排除过滤器的文本: {exclude} 大于32个长度，无法生效！")
+        except remodule.error:
             logger.error("正则错误！请检查正则表达式！")
             return self.nodesName()
         except Exception as e:
@@ -648,11 +666,12 @@ class ClashCleaner:
         else:
             for node in nodelist:
                 try:
-                    r = pattern1.findall(node.get('name', ''))
+                    nodename = node.get('name', '')
+                    r = pattern1.findall(nodename)
                     if r:
-                        logger.info("包含过滤器已命中:" + str(node.get('name', '')))
+                        logger.info("包含过滤器已命中:" + str(nodename))
                         result.append(node)
-                except re.error as rerror:
+                except remodule.error as rerror:
                     logger.error(str(rerror))
                     result.append(node)
                 except Exception as e:
@@ -665,9 +684,10 @@ class ClashCleaner:
         else:
             for node in result:
                 try:
-                    r = pattern2.findall(node.get('name', ''))
+                    nodename2 = node.get('name', '')
+                    r = pattern2.findall(nodename2)
                     if r:
-                        logger.info("排除过滤器已命中: " + str(node.get('name', '')))
+                        logger.info("排除过滤器已命中: " + str(nodename2))
                         jishu2 += 1
                     else:
                         result2.append(node)
@@ -1055,12 +1075,14 @@ class ConfigManager:
         try:
             userlist = self.config['user']
             if userlist is not None:
-                if user is list:
+                if isinstance(user, list):
                     for li in user:
-                        userlist.remove(li)
+                        li_int = int(li)
+                        userlist.remove(li_int)
                 else:
+                    user_int = int(user)
                     try:
-                        userlist.remove(user)
+                        userlist.remove(user_int)
                     except ValueError:
                         logger.warning("目标本身未在用户列表中")
                 self.yaml['user'] = userlist
