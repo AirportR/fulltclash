@@ -12,7 +12,7 @@ from loguru import logger
 try:
     import re2
 
-    remodule = re
+    remodule = re2
 except ImportError:
     remodule = re
 
