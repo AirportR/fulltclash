@@ -1075,12 +1075,14 @@ class ConfigManager:
         try:
             userlist = self.config['user']
             if userlist is not None:
-                if user is list:
+                if isinstance(user, list):
                     for li in user:
-                        userlist.remove(li)
+                        li_int = int(li)
+                        userlist.remove(li_int)
                 else:
+                    user_int = int(user)
                     try:
-                        userlist.remove(user)
+                        userlist.remove(user_int)
                     except ValueError:
                         logger.warning("目标本身未在用户列表中")
                 self.yaml['user'] = userlist
