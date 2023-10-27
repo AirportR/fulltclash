@@ -1,10 +1,8 @@
-from pyrogram import Client
-from pyrogram.types import Message
+from typing import List
 
 from loguru import logger
-from botmodule.init_bot import config, admin
-from utils.check import get_id
-from utils.cleaner import ArgCleaner, addon
+from botmodule.init_bot import config
+from utils.cleaner import addon
 
 
 def get_rule(rulename: str):
@@ -36,15 +34,30 @@ def get_rule(rulename: str):
     return slaveid, sort, script
 
 
-async def bot_rule(_: "Client", message: "Message"):
+def new_rule(rulename: str, slaveid: str, sort: str, script: List[str]) -> str:
     """
-    bot前端部分
+    新增规则的接口
     """
-    ID = get_id(message)
-    username = None
-    tgargs = ArgCleaner.getarg(message.text)
-    if message.from_user:
-        username = message.from_user.username
-    if ID in admin or username in admin:
-        # 说明是管理员
-        pass
+    rule_conf = config.getUserconfig().get('rule', {})
+    if isinstance(rule_conf, dict):
+        rule = {
+            'enable': True,
+            'slaveid': slaveid,
+            'sort': sort,
+            'script': script
+        }
+        flag = 0
+        if rulename in rule_conf:
+            flag = 1
+        rule_conf[rulename] = rule
+        if not config.getUserconfig():
+            temp = {'rule': rule_conf}
+            config.yaml['userconfig'] = temp
+        else:
+            config.yaml['userconfig']['rule'] = rule_conf
+        if not config.reload():
+            return "❌规则添加失败"
+        if flag != 0:
+            return "⚠️此规则名先前已存在，规则已被覆盖。"
+        return ""
+    return "❌读取配置错误"

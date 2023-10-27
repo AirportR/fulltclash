@@ -14,7 +14,7 @@ from pilmoji.source import Twemoji
 from utils.cleaner import ConfigManager
 import utils.emoji_custom as emoji_source
 
-__version__ = '3.6.0'
+__version__ = '3.6.2'
 
 # 这是将测试的结果输出为图片的模块。
 # 设计思路:
@@ -125,10 +125,10 @@ class ExportCommon(BaseExport):
 
         # 以下这个变量保存着大多数绘图相关的值，比如字体大小、绘图标题这些，这样看是不是更整齐美观了呢
         self.image = {
-            'wtime': self.allinfo.pop('wtime', "未知"),
-            'filter_include': self.filter.pop('include', ''),
-            'filter_exclude': self.filter.pop('exclude', ''),
-            'sort': self.allinfo.pop('sort', '订阅原序'),
+            'wtime': self.allinfo.get('wtime', "未知"),
+            'filter_include': self.filter.get('include', ''),
+            'filter_exclude': self.filter.get('exclude', ''),
+            'sort': self.allinfo.get('sort', '订阅原序'),
             'front_size': self.front_size,  # 字体大小
             'linespace': self.linespace,  # 行距,约定60行间距为标准行间距
             'title': self.image_config.get('title', 'FullTclash'),
@@ -336,8 +336,11 @@ class ExportCommon(BaseExport):
 
         infolist_width = self.key_width_list()
         info_width = sum(infolist_width)
-
         img_width = img_width + nodename_width + info_width
+
+        maxwidth = max(img_width, self.text_width(self.get_footer(1)), self.text_width(self.get_footer(2))) + 28
+        infolist_width[-1] += maxwidth - img_width
+        img_width = maxwidth
         return img_width, nodename_width, infolist_width
 
     def get_mid(self, start_x: Union[int, float], end_x: Union[int, float], str_name: str) -> Union[int, float]:
@@ -399,36 +402,46 @@ class ExportCommon(BaseExport):
         img.paste(bkg, (0, self.image['height'] - self.image['linespace'] * 2))
         return img
 
-    def draw_info(self, idraw: Union[ImageDraw.ImageDraw, Pilmoji]) -> str:
+    def get_footer(self, style: int) -> str:
+        if style == 1:
+            _default_slavename = self.config.getSlaveconfig().get('default-slave', {}).get('comment', 'Local')
+            _slavename = self.allinfo.get('slave', {}).get('comment', _default_slavename)
+            _sort = self.allinfo.get('sort', '订阅原序')
+            _filter_include = self.filter.get('include', '')
+            _filter_exclude = self.filter.get('exclude', '')
+            footer = f"📊版本={__version__}  后端={_slavename}  排序={_sort}  " + \
+                     f"过滤器={_filter_include} <-> {_filter_exclude}"
+            return footer
+        elif style == 2:
+            _wtime = self.allinfo.get('wtime', 0)
+            _e_time = get_clock_emoji()
+            _export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())
+            sys_timezone = datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo
+            footer = f"{_e_time}测试时间: {_export_time} ({sys_timezone}) 总共耗时: {_wtime}s 测试结果仅供参考，以实际情况为准"
+            return footer
+        else:
+            return ""
+
+    def draw_info(self, idraw: Union[ImageDraw.ImageDraw, Pilmoji]):
         """
         绘制标题栏和结尾栏信息
         """
         _width = self.image['widths'][0]
         _height = self.image['height']
         _title = f"{self.image['title']} - 连通性测试"
-        _wtime = self.image['wtime']
-        _sort = self.image['sort']
-        _filter_include = self.image['filter_include']
-        _filter_exclude = self.image['filter_exclude']
-        emoji_time = get_clock_emoji()
-        _export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())
-        system_timezone = datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo
-        _default_slavename = self.config.getSlaveconfig().get('default-slave', {}).get('comment', 'Local')
-        _slavename = self.allinfo.pop('slave', {}).get('comment', _default_slavename)
-        footer = f"📊版本:{__version__}  后端: {_slavename}  排序: {_sort}   " + \
-                 f"过滤器: {_filter_include} <-> {_filter_exclude}"
-        footer2 = f"{emoji_time}测试时间: {_export_time} ({system_timezone}) 总共耗时: {_wtime}s 测试结果仅供参考,以实际情况为准"
+
+        _footer = self.get_footer(1)
+        _footer2 = self.get_footer(2)
 
         idraw.text((self.get_mid(0, _width, _title), 3), _title, font=self._font, fill=(0, 0, 0))  # 标题
         if isinstance(idraw, Pilmoji):
-            idraw.text((10, _height - (self.image['linespace'] - 4) * 2), footer, font=self._font, fill=(0, 0, 0),
+            idraw.text((10, _height - (self.image['linespace'] - 4) * 2), _footer, font=self._font, fill=(0, 0, 0),
                        emoji_position_offset=(0, 6))  # 版本信息
-            idraw.text((10, _height - (self.image['linespace'] - 5)), footer2, font=self._font, fill=(0, 0, 0),
+            idraw.text((10, _height - (self.image['linespace'] - 5)), _footer2, font=self._font, fill=(0, 0, 0),
                        emoji_position_offset=(0, 6))  # 测试时间
         else:
-            idraw.text((10, _height - (self.image['linespace'] - 4) * 2), footer, font=self._font, fill=(0, 0, 0))
-            idraw.text((10, _height - (self.image['linespace'] - 5)), footer2, font=self._font, fill=(0, 0, 0))
-        return _export_time.replace(':', '-')
+            idraw.text((10, _height - (self.image['linespace'] - 4) * 2), _footer, font=self._font, fill=(0, 0, 0))
+            idraw.text((10, _height - (self.image['linespace'] - 5)), _footer2, font=self._font, fill=(0, 0, 0))
 
     def draw_label(self, idraw):
         """
@@ -580,8 +593,8 @@ class ExportCommon(BaseExport):
         idraw.font = self._font  # 设置字体，之后就不用一直在参数里传入字体实例啦
         pilmoji = Pilmoji(img, source=self.emoji_source)  # emoji表情修复，emoji必须在参数手动指定字体。
 
-        _export_time = self.draw_info(pilmoji)  # 2.绘制标题栏与结尾栏，返回输出图片的时间,文件动态命名。
-
+        self.draw_info(pilmoji)  # 2.绘制标题栏与结尾栏，返回输出图片的时间,文件动态命名。
+        _export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime()).replace(":", "-")
         self.draw_label(idraw)  # 3.绘制标签
 
         # 在一个大循环里绘制，主要思路是按行绘制
@@ -867,18 +880,23 @@ class ExportResult:
             key_list.append(i)
         return key_list
 
-    def text_width(self, text: str):
+    def text_width(self, text: str, emoji: bool = False):
         """
         得到字符串在图片中的绘图长度
-
+        :param emoji: 是否含有emoji
         :param text: 文本内容
         :return: int
         """
         font = self.__font
-        draw = ImageDraw.Draw(Image.new("RGBA", (1, 1), (255, 255, 255, 255)))
-        textSize = int(draw.textlength(text, font=font))
-        # textSize = draw.textsize(text, font=font)[0]
-        return textSize
+        if emoji:
+            img = Image.new("RGBA", (1, 1), (255, 255, 255, 255))
+            pm = Pilmoji(img, source=emoji_source.TwemojiLocalSource)
+            x, _ = pm.getsize(text, font=self.__font)
+            return x
+        else:
+            draw = ImageDraw.Draw(Image.new("RGBA", (1, 1), (255, 255, 255, 255)))
+            textSize = int(draw.textlength(text, font=font))
+            return textSize
 
     def text_maxwidth(self, strlist: list):
         """
@@ -891,7 +909,7 @@ class ExportResult:
         draw = ImageDraw.Draw(Image.new("RGBA", (1, 1), (255, 255, 255, 255)))
         max_width = 0
         for i in strlist:
-            max_width = max(max_width, draw.textsize(str(i), font=font)[0])
+            max_width = max(max_width, int(draw.textlength(str(i), font=font)))
         return max_width
 
     def key_value(self):  # 比较测试项名称和测试项结果的长度
@@ -1013,10 +1031,11 @@ class ExportTopo(ExportResult):
         heightlist = (self.nodenum + 4) * 60
         return heightlist
 
-    def text_width(self, text: str):
+    def text_width(self, text: str, emoji: bool = False):
         """
         得到字符串在图片中的绘图长度
 
+        :param emoji 是否含有emoji
         :param text: 文本内容
         :return: int
         """
@@ -1228,6 +1247,25 @@ class ExportTopo(ExportResult):
         slavecomment = self.info.pop('slave', {}).get('comment', _default_slavename)
         fnt = self.__font
         image_width, info_list_length = self.get_width(compare=img2_width)
+
+        fail = self.info.get('地区', 0)
+        entrances = self.info.get('入口')
+        max_entrance = max(entrances) if entrances else 0
+        cuk = len(fail)
+
+        emoji_time = get_clock_emoji()
+        export_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
+        system_timezone = datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo
+        tips = "测试结果仅供参考，以实际情况为准，簇代表落地复用。"
+        export_time = export_time.replace(':', '-')
+        title = "出口分析"
+
+        footer1 = f"📊版本:{__version__}  后端:{slavecomment}  概要:{max_entrance}->{cuk}"
+        footer2 = f"{emoji_time}测试时间: {export_time}({system_timezone}) 总共耗时: {self.wtime}s {tips}"
+        maxwidth = max(self.text_width(footer1, True), self.text_width(footer2, True), image_width) + 15
+        info_list_length[-1] += maxwidth - image_width
+        image_width = maxwidth
+
         image_height = self.get_height()
         key_list = self.get_key_list()
         self.background = self.image_config.get('background', {})
@@ -1258,28 +1296,15 @@ class ExportTopo(ExportResult):
                 else:
                     end_color.append(c.get('value', '#EDF7FF'))
         # 绘制标题栏与结尾栏
-        fail = self.info.get('地区', 0)
-        entrances = self.info.get('入口')
-        max_entrance = max(entrances) if entrances else 0
-        cuk = len(fail)
-
-        emoji_time = get_clock_emoji()
-        export_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
-        system_timezone = datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo
-        tips = "测试结果仅供参考，以实际情况为准，簇代表落地复用。"
-        list1 = ["出口分析", f"📊版本:{__version__}  后端:{slavecomment}  概要:{max_entrance}->{cuk}",
-                 f"{emoji_time}测试时间: {export_time}({system_timezone}) 总共耗时: {self.wtime}s {tips}"]
-        export_time = export_time.replace(':', '-')
-        title = list1[0]
         idraw.text((self.get_mid(0, image_width, title), 1), title, font=fnt, fill=(0, 0, 0))  # 标题
         if self.emoji:
-            pilmoji.text((10, image_height - 120), text=list1[1], font=fnt, fill=(0, 0, 0),
+            pilmoji.text((10, image_height - 120), text=footer1, font=fnt, fill=(0, 0, 0),
                          emoji_position_offset=(0, 7))
-            pilmoji.text((10, image_height - 60), text=list1[2], font=fnt, fill=(0, 0, 0),
+            pilmoji.text((10, image_height - 60), text=footer2, font=fnt, fill=(0, 0, 0),
                          emoji_position_offset=(0, 10))
         else:
-            idraw.text((10, image_height - 120), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
-            idraw.text((10, image_height - 60), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
+            idraw.text((10, image_height - 120), text=footer1, font=fnt, fill=(0, 0, 0))  # 版本信息
+            idraw.text((10, image_height - 60), text=footer2, font=fnt, fill=(0, 0, 0))  # 测试时间
         # 绘制标签
         idraw.text((20, 60), '序号', font=fnt, fill=(0, 0, 0))  # 序号
         start_x = 100
@@ -1588,6 +1613,7 @@ class ExportSpeed(ExportResult):
             info = {}
         self.wtime = info.pop('wtime', "-1")
         self.filter = info.pop('filter', {})
+        self.sort = info.pop('sort', "订阅原序")
         self.filter_include = self.filter.get('include', '')
         self.filter_exclude = self.filter.get('exclude', '')
         self.thread = str(info.pop('线程', ''))
@@ -1599,6 +1625,18 @@ class ExportSpeed(ExportResult):
         self.__font = ImageFont.truetype(self.config.getFont(), self.front_size)
         self.speedblock_width = 20
         self.slave = info.pop('slave', {})
+        self.slave_comment = self.slave.get('comment', self.config.getSlaveconfig().get('default-slave', {})
+                                            .get('comment', 'Local'))
+        self.export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
+        self.footer1 = f"📊版本={__version__}  " \
+                       f"后端={self.slave_comment}  " \
+                       f"消耗流量={self.traffic}MB   " \
+                       f"线程={self.thread}  " \
+                       f"排序={self.sort}  " \
+                       f"过滤器={self.filter_include} <-> {self.filter_exclude}"
+        self.footer2 = f"{get_clock_emoji()}测试时间: {self.export_time} " \
+                       f"({datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo}) " \
+                       f"总共耗时: {self.wtime}s 测试结果仅供参考,以实际情况为准"
 
     def key_value(self):
         """
@@ -1631,6 +1669,26 @@ class ExportSpeed(ExportResult):
                 max_width = key_width + 40
             width_list.append(max_width)
         return width_list  # 测试项列的大小
+
+    def get_width(self, compare: int = None):
+        """
+        获得整个图片的宽度,compare参数在这里无用，是继承给子类用的
+        :return:
+        """
+        img_width = 100  # 序号
+        nodename_width = self.text_maxwidth(self.basedata)
+        nodename_width = max(nodename_width, 420)
+        nodename_width = nodename_width + 120
+        infolist_width = self.key_value()
+        info_width = sum(infolist_width)
+
+        img_width = img_width + nodename_width + info_width
+        footer_length1 = self.text_width(self.footer1, True)
+        footer_length2 = self.text_width(self.footer2, True)
+        max_width = max(img_width, footer_length1, footer_length2) + 12  # 12为补偿量
+        infolist_width[-1] += max_width - img_width
+        img_width = max_width
+        return img_width, nodename_width, infolist_width
 
     @property
     def interval(self):
@@ -1672,12 +1730,6 @@ class ExportSpeed(ExportResult):
         color_list = []
         for c in self.color:
             color_list.append(c.get('value', '#f5f3f2'))
-        # while len(color_list) < 7:
-        #     color_list.append('#f5f3f2')
-        # if len(color_list) > 7:
-        #     return color_list[:7]
-        # else:
-        #     return color_list
         return color_list
 
     @property
@@ -1726,7 +1778,7 @@ class ExportSpeed(ExportResult):
         return end_colores_list
 
     @logger.catch
-    def exportImage(self):
+    def exportImage(self, debug: bool = False):
         fnt = self.__font
         image_width, nodename_width, info_list_length = self.get_width()
         image_height = self.get_height()
@@ -1745,26 +1797,25 @@ class ExportSpeed(ExportResult):
         img.paste(bkg, (0, image_height - 120))
         idraw = ImageDraw.Draw(img)
         # 绘制标题栏与结尾栏
-        emoji_time = get_clock_emoji()
-        export_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
-        system_timezone = datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo
+        # emoji_time = get_clock_emoji()
+        # export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
+        # system_timezone = datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo
         _default_slavename = self.config.getSlaveconfig().get('default-slave', {}).get('comment', 'Local')
-        slavecomment = self.slave.get('comment', _default_slavename)
-        list1 = [f"{self.title} - 速度测试",
-                 f"📊版本:{__version__}  后端: {slavecomment}  消耗流量: {self.traffic}MB   线程: {self.thread}  " +
-                 f"过滤器: {self.filter_include} <-> {self.filter_exclude}",
-                 f"{emoji_time}测试时间: {export_time} ({system_timezone}) 总共耗时: {self.wtime}s 测试结果仅供参考,以实际情况为准"]
-        export_time = export_time.replace(':', '-')
-        title = list1[0]
+        # slavecomment = self.slave.get('comment', _default_slavename)
+        # export_time = export_time.replace(':', '-')
+        title = f"{self.title} - 速度测试"
+        # footer1 = f"📊版本={__version__}  后端={slavecomment}  消耗流量={self.traffic}MB   线程={self.thread}  " \
+        #           f"排序={self.sort}  过滤器={self.filter_include} <-> {self.filter_exclude}"
+        # footer2 = f"{emoji_time}测试时间: {export_time} ({system_timezone}) 总共耗时: {self.wtime}s 测试结果仅供参考,以实际情况为准"
         idraw.text((self.get_mid(0, image_width, title), 5), title, font=fnt, fill=(0, 0, 0))  # 标题
         if self.emoji:
-            pilmoji.text((10, image_height - 112), text=list1[1], font=fnt, fill=(0, 0, 0),
+            pilmoji.text((10, image_height - 112), text=self.footer1, font=fnt, fill=(0, 0, 0),
                          emoji_position_offset=(0, 5))
-            pilmoji.text((10, image_height - 55), text=list1[2], font=fnt, fill=(0, 0, 0),
+            pilmoji.text((10, image_height - 55), text=self.footer2, font=fnt, fill=(0, 0, 0),
                          emoji_position_offset=(0, 5))
         else:
-            idraw.text((10, image_height - 112), text=list1[1], font=fnt, fill=(0, 0, 0))  # 版本信息
-            idraw.text((10, image_height - 55), text=list1[2], font=fnt, fill=(0, 0, 0))  # 测试时间
+            idraw.text((10, image_height - 112), text=self.footer1, font=fnt, fill=(0, 0, 0))  # 版本信息
+            idraw.text((10, image_height - 55), text=self.footer2, font=fnt, fill=(0, 0, 0))  # 测试时间
 
         # 绘制标签
         idraw.text((20, 65), '序号', font=fnt, fill=(0, 0, 0))  # 序号
@@ -1951,6 +2002,10 @@ class ExportSpeed(ExportResult):
         if self.watermark['enable']:
             img = self.draw_watermark(img.convert("RGBA"))
         # 保存结果
-        img.save(r"./results/{}.png".format(export_time.replace(':', '-')))
-        print(export_time)
-        return export_time, img.size
+        if debug:
+            img.show(self.export_time.replace(':', '-'))
+            return None, None
+        else:
+            img.save(r"./results/{}.png".format(self.export_time.replace(':', '-')))
+            print(self.export_time)
+            return self.export_time.replace(':', '-'), img.size

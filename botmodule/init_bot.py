@@ -215,7 +215,7 @@ def start_clash():
     proxy_subprocess = start_fulltclash(port_list)
 
 
-start_clash()
+# start_clash()
 
 
 def reloadUser():

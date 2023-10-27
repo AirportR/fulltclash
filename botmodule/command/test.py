@@ -32,6 +32,9 @@ sp = slave_progress
 
 
 def convert_core_index(corestr: str) -> int:
+    """
+    转换任务类型为测试核心编号
+    """
     if isinstance(corestr, str):
         if corestr.startswith("speed"):
             return 1

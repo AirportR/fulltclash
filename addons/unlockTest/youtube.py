@@ -17,12 +17,16 @@ async def fetch_youtube(collector, session: aiohttp.ClientSession, proxy=None, r
         "upgrade-insecure-requests": "1",
     }
     youtubeCookie = {
-        'YSC': 'BiCUU3-5Gdk',
-        'CONSENT': 'YES+cb.20220301-11-p0.en+FX+700',
-        'GPS': '1',
-        'VISITOR_INFO1_LIVE': '4VwPMkB7W5A',
-        '_gcl_au': '1.1.1809531354.1646633279',
-        'PREF': 'tz=Asia.Shanghai'
+      "YSC": "5zC2aW67GI8",
+      "VISITOR_PRIVACY_METADATA": "CgJHQhICGgA%3D",
+      "CONSENT": "PENDING+132",
+      "SOCS": "CAISNQgDEitib3FfaWRlbnRpdHlmcm9udGVuZHVpc2VydmVyXzIwMjMwOTA1LjA0X3AwGgJlbiACGgYIgLH5pwY",
+      "GPS": "1",
+      "VISITOR_INFO1_LIVE": "bx-EllW9cGY",
+      "PREF": "f4",
+      "_gcl_au": "1.1.334566905.1694411324",
+      "_ga": "GA1.1.2073006311.1694411325",
+      "_ga_VCGEPY40VB": "GS1.1.1694411324.1.0.1694411329.0.0.0"
     }
     youtubeurl = "https://www.youtube.com/premium"
     try:
@@ -109,12 +113,11 @@ async def demo():
             self.data = self.info
 
     fakecl = FakeColl()
-    session = aiohttp.ClientSession()
-    await fetch_youtube(fakecl, session)
-    print(get_youtube_info(fakecl))
-    await session.close()
+    async with aiohttp.ClientSession() as session:
+        await fetch_youtube(fakecl, session, proxy="http://127.0.0.1:1112")
+        print(get_youtube_info(fakecl))
+        await asyncio.sleep(0)
 
 
 if __name__ == "__main__":
-    loop = asyncio.new_event_loop()
-    loop.run_until_complete(demo())
+    asyncio.run(demo())

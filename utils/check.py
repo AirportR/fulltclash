@@ -4,7 +4,7 @@ import re
 import contextlib
 
 import pyrogram.types
-from pyrogram.types import Message
+from pyrogram.types import Message, CallbackQuery
 from pyrogram.errors import RPCError, MessageDeleteForbidden
 from loguru import logger
 from pyrogram.filters import private_filter
@@ -76,10 +76,10 @@ async def check_share(message, shareid: list):
     return str(ID) in shareid
 
 
-async def check_callback_master(callback_query, USER_TARGET=None, strict: bool = False):
+async def check_callback_master(call: CallbackQuery, USER_TARGET=None, strict: bool = False):
     """
 
-    :param callback_query: 回调数据结构
+    :param call: 回调数据结构
     :param USER_TARGET: 用户名单
     :param strict: 严格模式，如果为true,则每个任务的内联键盘只有任务的发起者能操作，若为false，则所有用户都能操作内联键盘。
     :return:
@@ -88,21 +88,29 @@ async def check_callback_master(callback_query, USER_TARGET=None, strict: bool =
     if USER_TARGET and not strict:
         master.extend(USER_TARGET)
     try:
-        master.append(callback_query.message.reply_to_message.from_user.id)  # 发起测试任务的用户id
-        if int(callback_query.from_user.id) not in master:
-            await callback_query.answer("不要乱动别人的操作哟👻", show_alert=True)
+        from_id = None
+        if call.message and call.message.reply_to_message:
+            r_msg = call.message.reply_to_message
+            if r_msg.from_user:
+                from_id = r_msg.from_user.id
+            elif r_msg.sender_chat:
+                from_id = r_msg.sender_chat.id
+        if from_id:
+            master.append(from_id)  # 发起测试任务的用户id
+        if int(call.from_user.id) not in master:
+            await call.answer("不要乱动别人的操作哟👻", show_alert=True)
             return True
         else:
             return False
 
     except AttributeError:
-        master.append(callback_query.message.reply_to_message.sender_chat.id)
-        if int(callback_query.from_user.id) in master:  # 如果不在USER_TARGET名单是不会有权限的
+        master.append(call.message.reply_to_message.sender_chat.id)
+        if int(call.from_user.id) in master:  # 如果不在USER_TARGET名单是不会有权限的
             return False
-        if str(callback_query.from_user.username) in master:
+        if str(call.from_user.username) in master:
             return False
         else:
-            await callback_query.answer(f"不要乱动别人的操作哟👻", show_alert=True)
+            await call.answer(f"不要乱动别人的操作哟👻", show_alert=True)
             return True
     except Exception as e:
         logger.error(str(e))

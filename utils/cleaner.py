@@ -5,8 +5,16 @@ import re
 import sys
 from typing import Union, List
 import socket
+
 import yaml
 from loguru import logger
+
+try:
+    import re2
+
+    remodule = re2
+except ImportError:
+    remodule = re
 
 
 class IPCleaner:
@@ -175,7 +183,7 @@ class AddonCleaner:
         """
         newlist = list(set(alist).intersection(set(self.global_test_item())))
         newlist = sorted(newlist, key=alist.index)
-        if httptest:
+        if httptest or "HTTP(S)延迟" in alist:
             newlist.insert(0, "HTTP(S)延迟")
         return newlist
 
@@ -199,11 +207,13 @@ class AddonCleaner:
             logger.warning("script_name is empty")
             return success_list
 
-    def init_addons(self, path: str):
+    def init_addons(self, path: str, package: str = "addons"):
         """
         动态加载测速脚本
         """
+        module_suffix = ["py", "pyd", "so", "dll"]
         try:
+            # path = os.path.abspath(path)
             di = os.listdir(path)
         except FileNotFoundError:
             di = None
@@ -213,18 +223,20 @@ class AddonCleaner:
         else:
             for d in di:
                 if len(d) > 3:
-                    if d[-3:] == '.py' and d != "__init__.py":
-                        module_name.append(d[:-3])
+                    e = d.split('.')
+                    if len(e) < 1:
+                        continue
+                    if e[-1] in module_suffix and d != "__init__.py":
+                        module_name.append(e[0])
                     else:
                         pass
         self._script.clear()
         logger.info("模块即将动态加载: " + str(module_name))
-        logger.info("正在尝试获取 'SCRIPT' 属性组件")
         # module_name = ["abema"]
         num = 0
         for mname in module_name:
             try:
-                mo1 = importlib.import_module(f"addons.{mname}")
+                mo1 = importlib.import_module(f".{mname}", package=package)
             except ModuleNotFoundError as m:
                 logger.warning(str(m))
                 mo1 = None
@@ -240,14 +252,13 @@ class AddonCleaner:
                 script = getattr(mo1, 'SCRIPT')
             except AttributeError:
                 script = None
-            if script is None or type(script).__name__ != "dict":
+            if script is None or not isinstance(script, dict):
                 continue
 
             sname = script.get('MYNAME', None)
             stask = script.get("TASK", None)
             sget = script.get("GET", None)
-            if type(stask).__name__ == 'function' and type(sname).__name__ == 'str' and type(
-                    sget).__name__ == 'function':
+            if callable(stask) and isinstance(sname, str) and callable(sget):
                 self._script[sname] = [stask, sget]
                 num += 1
                 logger.info(f"已成功加载测试脚本：{sname}")
@@ -440,10 +451,11 @@ class ClashCleaner:
                 if isinstance(proxy, dict):
                     name = proxy['name']
                     ptype = proxy['type']
+
                     if not isinstance(name, str):
                         # 将节点名称转为字符串
                         proxy['name'] = str(name)
-                    if ptype not in self.unsupport_type:
+                    if ptype not in self.unsupport_type and len(name) < 128:
                         newproxies.append(proxy)
             self.yaml['proxies'] = newproxies
         except KeyError:
@@ -629,12 +641,21 @@ class ClashCleaner:
         result2 = []
         nodelist = self.getProxies()
         pattern1 = pattern2 = None
+
         try:
             if include:
-                pattern1 = re.compile(include)
+                if len(include) < 32:
+                    pattern1 = remodule.compile(include)
+                else:
+                    pattern1 = None
+                    logger.warning(f"包含过滤器的文本: {include} 大于32个长度，无法生效！")
             if exclude:
-                pattern2 = re.compile(exclude)
-        except re.error:
+                if len(exclude) < 32:
+                    pattern2 = remodule.compile(exclude)
+                else:
+                    pattern2 = None
+                    logger.warning(f"排除过滤器的文本: {exclude} 大于32个长度，无法生效！")
+        except remodule.error:
             logger.error("正则错误！请检查正则表达式！")
             return self.nodesName()
         except Exception as e:
@@ -645,11 +666,12 @@ class ClashCleaner:
         else:
             for node in nodelist:
                 try:
-                    r = pattern1.findall(node.get('name', ''))
+                    nodename = node.get('name', '')
+                    r = pattern1.findall(nodename)
                     if r:
-                        logger.info("包含过滤器已命中:" + str(node.get('name', '')))
+                        logger.info("包含过滤器已命中:" + str(nodename))
                         result.append(node)
-                except re.error as rerror:
+                except remodule.error as rerror:
                     logger.error(str(rerror))
                     result.append(node)
                 except Exception as e:
@@ -662,9 +684,10 @@ class ClashCleaner:
         else:
             for node in result:
                 try:
-                    r = pattern2.findall(node.get('name', ''))
+                    nodename2 = node.get('name', '')
+                    r = pattern2.findall(nodename2)
                     if r:
-                        logger.info("排除过滤器已命中: " + str(node.get('name', '')))
+                        logger.info("排除过滤器已命中: " + str(nodename2))
                         jishu2 += 1
                     else:
                         result2.append(node)
@@ -711,7 +734,7 @@ class ConfigManager:
                 logger.warning("无法在 ./resources/ 下找到 config.yaml 配置文件，正在尝试寻找旧目录 ./config.yaml")
                 try:
                     with open('./config.yaml', "r", encoding="UTF-8") as fp1:
-                        self.config = yaml.load(fp1, Loader=yaml.FullLoader)
+                        self.config = yaml.safe_load(fp1)
                         self.yaml.update(self.config)
                 except FileNotFoundError:
                     self.config = {}
@@ -755,6 +778,10 @@ class ConfigManager:
             return 'origin'
         else:
             raise TypeError("clash.branch配置的值不合法，请检查！")
+
+    @staticmethod
+    def getLicenceCode():
+        return 'FullTclash'
 
     def getMasterconfig(self):
         return self.config.get('masterconfig', {})
@@ -1048,12 +1075,14 @@ class ConfigManager:
         try:
             userlist = self.config['user']
             if userlist is not None:
-                if user is list:
+                if isinstance(user, list):
                     for li in user:
-                        userlist.remove(li)
+                        li_int = int(li)
+                        userlist.remove(li_int)
                 else:
+                    user_int = int(user)
                     try:
-                        userlist.remove(user)
+                        userlist.remove(user_int)
                     except ValueError:
                         logger.warning("目标本身未在用户列表中")
                 self.yaml['user'] = userlist
@@ -1168,11 +1197,13 @@ class ReCleaner:
     预测试结果清洗类
     """
 
-    def __init__(self, data: dict):
+    def __init__(self, data: dict, script_list: List[str] = None):
         self.data = data
+        self.info = data
         self._sum = 0
         self._netflix_info = []
         self._script = addon.script
+        self._script_list = media_item if script_list is None else script_list
 
     @property
     def script(self):
@@ -1180,7 +1211,7 @@ class ReCleaner:
 
     def get_all(self):
         info = {}
-        items = media_item
+        items = self._script_list
         try:
             for item in items:
                 i = item
@@ -1361,40 +1392,132 @@ class ResultCleaner:
                 new_list.append(0)
         return new_list
 
+    def convert_proxy_typename(self):
+        if '类型' in self.data:
+            new_type = []
+            type1 = self.data['类型']
+            if not isinstance(type1, list):
+                return
+            for t in type1:
+                if t == 'ss':
+                    new_type.append("Shadowsocks")
+                elif t == "ssr":
+                    new_type.append("ShadowsocksR")
+                else:
+                    new_type.append(t.capitalize())
+            self.data['类型'] = new_type
+
+    def sort(self, sort_str: str = "订阅原序"):
+        if sort_str == "HTTP降序" or sort_str == "HTTP倒序":
+            self.sort_by_item("HTTP(S)延迟", reverse=True)
+        elif sort_str == "HTTP升序":
+            self.sort_by_item("HTTP(S)延迟")
+        elif sort_str == "平均速度降序" or sort_str == '平均速度倒序':
+            self.sort_by_item("平均速度", reverse=True)
+        elif sort_str == "平均速度升序":
+            self.sort_by_item("平均速度")
+        elif sort_str == '最大速度升序':
+            self.sort_by_item("最大速度")
+        elif sort_str == '最大速度降序':
+            self.sort_by_item("最大速度", reverse=True)
+
+    def padding(self):
+        """
+        填充字符
+        """
+        if 'HTTP(S)延迟' in self.data:
+            rtt = self.data['HTTP(S)延迟']
+            new_rtt = []
+            for r in rtt:
+                new_rtt.append(str(r) + 'ms')
+            self.data['HTTP(S)延迟'] = new_rtt
+
+        if '平均速度' in self.data:
+            new_list = []
+            for a in self.data['平均速度']:
+                avgspeed_mb = a / 1024 / 1024
+                if avgspeed_mb < 1:
+                    avgspeed = a / 1024
+                    new_list.append(f"{avgspeed:.2f}KB")
+                else:
+                    new_list.append(f"{avgspeed_mb:.2f}MB")
+            self.data['平均速度'] = new_list
+        if '最大速度' in self.data:
+            new_list = []
+            for a in self.data['最大速度']:
+                maxspeed_mb = a / 1024 / 1024
+                if maxspeed_mb < 1:
+                    maxspeed = a / 1024
+                    new_list.append(f"{maxspeed:.2f}KB")
+                else:
+                    new_list.append(f"{maxspeed_mb:.2f}MB")
+            self.data['最大速度'] = new_list
+        if '每秒速度' in self.data:
+            self.data['每秒速度'] = [[j / 1024 / 1024 for j in i] for i in self.data['每秒速度']]
+
     def start(self, sort="订阅原序"):
         try:
-            if '类型' in self.data:
-                type1 = self.data['类型']
-                new_type = []
-                for t in type1:
-                    if t == 'ss':
-                        new_type.append("Shadowsocks")
-                    elif t == "ssr":
-                        new_type.append("ShadowsocksR")
-                    else:
-                        new_type.append(t.capitalize())
-                self.data['类型'] = new_type
-            if sort == "HTTP倒序":
-                self.sort_by_ping(reverse=True)
-            elif sort == "HTTP升序":
-                self.sort_by_ping()
-            if 'HTTP延迟(内核)' in self.data:
-                rtt = self.data['HTTP延迟(内核)']
-                new_rtt = []
-                for r in rtt:
-                    new_rtt.append(str(r) + 'ms')
-                self.data['HTTP延迟(内核)'] = new_rtt
-            if 'HTTP(S)延迟' in self.data:
-                rtt = self.data['HTTP(S)延迟']
-                new_rtt = []
-                for r in rtt:
-                    new_rtt.append(str(r) + 'ms')
-                self.data['HTTP(S)延迟'] = new_rtt
+            self.convert_proxy_typename()
+            self.sort(sort)
+            self.padding()
             return self.data
-        except TypeError:
+        except TypeError as t:
+            logger.error(str(t))
             return {}
 
-    def sort_by_ping(self, reverse=False):
+    def sort_by_item(self, item: str, reverse=False):
+        """
+        非常具有复用性的代码，我很满意(ง •_•)ง
+        """
+        if item not in self.data:
+            return
+        item_list = self.data.get(item, [])
+        if item == "HTTP(S)延迟" and not reverse:
+            for i in range(len(item_list)):
+                if item_list[i] == 0:
+                    item_list[i] = 9999999
+        temp_1 = [k for k, v in self.data.items()
+                  if not isinstance(v, (list, tuple)) or len(v) != len(item_list)]
+        temp_dict = {}
+        for t in temp_1:
+            temp_dict[t] = self.data.pop(t)
+        if item_list:
+            zipobj = zip(item_list, *(v for k, v in self.data.items()))
+            new_list = [list(e) for e in zip(*sorted(zipobj, key=lambda x: x[0], reverse=reverse))]
+            new_list.pop(0)
+            for i, k in enumerate(self.data.keys()):
+                self.data[k] = new_list[i]
+            # self.data['平均速度'] = avgspeed
+            self.data.update(temp_dict)
+
+    def sort_by_ping(self, reverse: bool = False):
+        if 'HTTP(S)延迟' not in self.data:
+            return
+        http_l = self.data.get('HTTP(S)延迟', [])
+        if not reverse:
+            for i in range(len(http_l)):
+                if http_l[i] == 0:
+                    http_l[i] = 9999999
+        temp_1 = [k for k, v in self.data.items()
+                  if not isinstance(v, (list, tuple)) or len(v) != len(http_l)]
+        temp_dict = {}
+        for t in temp_1:
+            temp_dict[t] = self.data.pop(t)
+        if http_l:
+            zipobj = zip(http_l, *(v for k, v in self.data.items() if len(v) == len(http_l)))
+            new_list = [list(e) for e in zip(*sorted(zipobj, key=lambda x: x[0], reverse=reverse))]
+            new_list.pop(0)
+            for i, k in enumerate(self.data.keys()):
+                self.data[k] = new_list[i]
+            # self.data['平均速度'] = avgspeed
+            self.data.update(temp_dict)
+
+    def sort_by_ping_old(self, reverse=False):
+        """
+        旧版排序，已废弃
+        """
+        if 'HTTP(S)延迟' not in self.data:
+            return
         http_l = self.data.get('HTTP(S)延迟')
         if not reverse:
             for i in range(len(http_l)):

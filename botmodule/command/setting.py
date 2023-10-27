@@ -1,23 +1,22 @@
 import asyncio
 import contextlib
+import secrets
 from copy import deepcopy
-from typing import Union, List
+from typing import Union, List, Dict
 
 import async_timeout
 from loguru import logger
-from pyrogram import types, Client
+from pyrogram import Client
 from pyrogram.errors import RPCError
-from pyrogram.types import BotCommand, CallbackQuery, Message
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton as IKB
-from pyrogram.handlers import CallbackQueryHandler
-from utils.cleaner import addon, config, ArgCleaner
+from pyrogram.types import BotCommand, CallbackQuery, Message, InlineKeyboardMarkup, InlineKeyboardButton as IKB
+
+from utils.cleaner import addon, ArgCleaner
 from utils.myqueue import bot_put
 from utils.check import get_telegram_id_from_message as getID
 from utils import message_delete_queue as mdq
 from glovar import __version__
-from botmodule.rule import get_rule
-
-from botmodule.init_bot import latest_version_hash as v_hash
+from botmodule.rule import get_rule, new_rule
+from botmodule.init_bot import latest_version_hash as v_hash, config
 from botmodule.command.authority import (Invite, INVITE_SELECT_CACHE as ISC,
                                          BOT_MESSAGE_CACHE, generate_random_string as genkey)
 
@@ -38,17 +37,22 @@ dbtn = default_button = {
     'yusanjia': IKB("御三家(N-Y-D)", callback_data='御三家(N-Y-D)'),
     'b_cancel': IKB("👋点错了，给我取消", callback_data='👋点错了，给我取消'),
     'b_alive': IKB("节点存活率", callback_data="节点存活率"),
-    'b_okpage': IKB("🔒锁定本页设置", callback_data="ok_p"),
+    'b_okpage': IKB("🔒完成本页选择", callback_data="ok_p"),
     'b_all': IKB("全测", callback_data="全测"),
     'b_origin': IKB("♾️订阅原序", callback_data="sort:订阅原序"),
     'b_rhttp': IKB("⬇️HTTP倒序", callback_data="sort:HTTP倒序"),
     'b_http': IKB("⬆️HTTP升序", callback_data="sort:HTTP升序"),
+    'b_aspeed': IKB("⬆️平均速度升序", callback_data="sort:平均速度升序"),
+    'b_arspeed': IKB("⬇️平均速度降序", callback_data="sort:平均速度降序"),
+    'b_mspeed': IKB("⬆️最大速度升序", callback_data="sort:最大速度升序"),
+    'b_mrspeed': IKB("⬇️最大速度降序", callback_data="sort:最大速度降序"),
     'b_slave': IKB(dsc, "slave:" + dsi),
     'b_close': IKB("❌关闭页面", callback_data="close"),
     'upper': IKB("⬆️返回上一层", callback_data="preconfig"),
     'b_del_conf': IKB("删除配置", callback_data="del_config"),
     'b_edit_conf': IKB("修改配置", callback_data="edit_config"),
     'b_add_conf': IKB("新增配置", callback_data="add_config"),
+    8: IKB("👌完成选择", "/api/script/ok")
 }
 
 buttons = [dbtn[1], dbtn[2], dbtn[3], dbtn[25], dbtn[15], dbtn[18], dbtn[20], dbtn[21], dbtn[19]]
@@ -62,7 +66,9 @@ IKM2 = InlineKeyboardMarkup(
         # 第一行
         [dbtn['b_origin']],
         [dbtn['b_rhttp'], dbtn['b_http']],
-        [dbtn['b_cancel']]
+        [dbtn['b_aspeed'], dbtn['b_arspeed']],
+        [dbtn['b_mspeed'], dbtn['b_mrspeed']],
+        [dbtn['b_close']]
     ]
 )
 
@@ -73,8 +79,7 @@ sc = select_cache = {
     'sort': {},  # 记录排序选择
     'slaveid': {},  # 记录后端id选择
 }
-api_route = '/api/getSlaveId'
-receiver = {}
+receiver: Dict[str, asyncio.Queue] = {}  # 临时数据接收器
 
 
 def reload_button():
@@ -83,7 +88,7 @@ def reload_button():
     buttons.extend(addon.init_button())
 
 
-async def editkeybord1(_: Client, callback_query: CallbackQuery, mode=0):
+async def editkeybord_yes_or_no(_: Client, callback_query: CallbackQuery, mode=0):
     """
     反转✅和❌
     param: mode=0 把✅变成❌，否则把❌变成✅
@@ -120,8 +125,7 @@ async def editkeybord_reverse(_: Client, callback_query: CallbackQuery):
     await edit_mess.edit_text(edit_text, reply_markup=IKM22)
 
 
-async def setcommands(client):
-    my = types.BotCommandScopeAllGroupChats()
+async def setcommands(client: Client):
     await client.set_bot_commands(
         [
             BotCommand("help", "获取帮助"),
@@ -129,7 +133,8 @@ async def setcommands(client):
             BotCommand("topo", "节点落地分析"),
             BotCommand("test", "进行流媒体测试"),
             BotCommand("setting", "bot的相关设置")
-        ], scope=my)
+        ]
+    )
 
 
 @logger.catch()
@@ -149,20 +154,21 @@ async def test_setting(client: Client, callback_query: CallbackQuery, row=3, **k
     mess_id = callback_query.message.id
     chat_id = callback_query.message.chat.id
     origin_message = callback_query.message.reply_to_message
+    if origin_message is None:
+        logger.warning("⚠️无法获取发起该任务的源消息")
+        # await edit_mess.edit_text("⚠️无法获取发起该任务的源消息")
+        return test_items, origin_message, message, ''
     inline_keyboard = callback_query.message.reply_markup.inline_keyboard
 
     with contextlib.suppress(IndexError, ValueError):
         test_type = origin_message.text.split(" ", maxsplit=1)[0].split("@", maxsplit=1)[0]
-    if origin_message is None:
-        logger.warning("⚠️无法获取发起该任务的源消息")
-        await edit_mess.edit_text("⚠️无法获取发起该任务的源消息")
-        return test_items, origin_message, message, test_type
+
     try:
-        if "✅" in callback_data:
-            await editkeybord1(client, callback_query, mode=0)
+        if "✅" == callback_data[0]:
+            await editkeybord_yes_or_no(client, callback_query, mode=0)
             return test_items, origin_message, message, test_type
-        elif "❌" in callback_data:
-            await editkeybord1(client, callback_query, mode=1)
+        elif "❌" == callback_data[0]:
+            await editkeybord_yes_or_no(client, callback_query, mode=1)
             return test_items, origin_message, message, test_type
         elif "🪞选项翻转" in callback_data:
             message = await editkeybord_reverse(client, callback_query)
@@ -183,17 +189,35 @@ async def test_setting(client: Client, callback_query: CallbackQuery, row=3, **k
             message = None
             return test_items, origin_message, message, test_type
         elif "全测" == callback_data:
-            test_items = ['HTTP(S)延迟']
-            test_items += addon.global_test_item()
+            test_items += addon.global_test_item(httptest=True)
+            if callback_query.message.reply_markup and callback_query.message.reply_markup.inline_keyboard:
+                if callback_query.message.reply_markup.inline_keyboard[-1][-1].callback_data == "/api/script/ok":
+                    bot_key = gen_msg_key(edit_mess)
+                    if bot_key in receiver:
+                        q = receiver[bot_key]
+                        try:
+                            if isinstance(q, asyncio.Queue):
+                                q.put_nowait(test_items)
+                            else:
+                                await edit_mess.reply("运行发现逻辑错误，请联系管理员~")
+                        except asyncio.queues.QueueFull:
+                            pass
+                    else:
+                        await edit_mess.reply("❌无法找到该消息与之对应的队列")
+                    return [], None, None, None
             message = await edit_mess.edit_text("⌛正在提交任务~")
             return test_items, origin_message, message, test_type
         elif 'ok_p' == callback_data:
             test_items = sc['script'].get(str(chat_id) + ':' + str(mess_id), ['HTTP(S)延迟'])
+            ok_button = dbtn['ok_b']
+            if callback_query.message.reply_markup and callback_query.message.reply_markup.inline_keyboard:
+                if callback_query.message.reply_markup.inline_keyboard[-1][-1].callback_data == "/api/script/ok":
+                    ok_button = dbtn[8]
             # test_items = select_item_cache.get(str(chat_id) + ':' + str(mess_id), ['HTTP(S)延迟'])
             for b_1 in inline_keyboard:
                 for b in b_1:
                     if "✅" in b.text:
-                        test_items.append(str(b.text)[1:])
+                        test_items.append(str(b.callback_data)[1:])
             blank1 = IKB("已完成本页提交", callback_data="blank")
             pre_page = IKB("        ", callback_data="blank")
             next_page = IKB("        ", callback_data="blank")
@@ -207,7 +231,7 @@ async def test_setting(client: Client, callback_query: CallbackQuery, row=3, **k
                     elif f"/{max_page}" in b.text:
                         blank = IKB(b.text, callback_data='blank')
                         page = str(b.text)[0]
-            new_ikm = InlineKeyboardMarkup([[blank1], [pre_page, blank, next_page], [dbtn['b_cancel'], dbtn['ok_b']], ])
+            new_ikm = InlineKeyboardMarkup([[blank1], [pre_page, blank, next_page], [dbtn['b_cancel'], ok_button], ])
             # 设置状态
             sc['script'][str(chat_id) + ':' + str(mess_id)] = test_items
             # select_item_cache[str(chat_id) + ':' + str(mess_id)] = test_items
@@ -236,15 +260,14 @@ async def test_setting(client: Client, callback_query: CallbackQuery, row=3, **k
         return test_items, origin_message, message, test_type
 
 
-def get_keyboard(call: CallbackQuery):
-    inline_keyboard = call.message.reply_markup.inline_keyboard
-    return inline_keyboard
-
-
 @logger.catch()
 async def select_page(client: Client, call: CallbackQuery, **kwargs):
     page = kwargs.get('page', 1)
     row = kwargs.get('row', 3)
+    ok_button = dbtn['ok_b']
+    if call.message.reply_markup and call.message.reply_markup.inline_keyboard:
+        if call.message.reply_markup.inline_keyboard[-1][-1].callback_data == "/api/script/ok":
+            ok_button = dbtn[8]
     chat_id = call.message.chat.id
     mess_id = call.message.id
     msgkey = str(chat_id) + ':' + str(mess_id) + ':' + str(page)
@@ -261,11 +284,11 @@ async def select_page(client: Client, call: CallbackQuery, **kwargs):
             if max_page == 1:
                 new_ikm = InlineKeyboardMarkup([[blank1],
                                                 [blank_button, blank, blank_button],
-                                                [dbtn['b_cancel'], dbtn['b_reverse']], dbtn['ok_b']])
+                                                [dbtn['b_cancel'], dbtn['b_reverse']], ok_button])
             else:
                 new_ikm = InlineKeyboardMarkup([[blank1],
                                                 [dbtn['b_all'], blank, next_page],
-                                                [dbtn['b_cancel'], dbtn['ok_b']]])
+                                                [dbtn['b_cancel'], ok_button]])
         else:
             keyboard = [[dbtn['b_okpage']]]
             if len(buttons) > 8:
@@ -281,14 +304,14 @@ async def select_page(client: Client, call: CallbackQuery, **kwargs):
                 keyboard.append([dbtn['b_all'], blank, next_page])
             keyboard.append([dbtn['yusanjia'], dbtn['b_alive']])
             keyboard.append([dbtn['b_cancel'], dbtn['b_reverse']])
-            keyboard.append([dbtn['ok_b']])
+            keyboard.append([ok_button])
             new_ikm = InlineKeyboardMarkup(keyboard)
     elif page == max_page:
         # if page_is_locked.get(str(chat_id) + ':' + str(mess_id) + ':' + str(page), False):
         if sc['lpage'].get(msgkey, False):
             new_ikm = InlineKeyboardMarkup([[blank1],
                                             [pre_page, blank, blank_button],
-                                            [dbtn['b_cancel'], dbtn['ok_b']]])
+                                            [dbtn['b_cancel'], ok_button]])
         else:
             keyboard = [[dbtn['b_okpage']]]
             sindex = (page - 1) * row * 3
@@ -300,12 +323,12 @@ async def select_page(client: Client, call: CallbackQuery, **kwargs):
             keyboard.append(third_row)
             keyboard.append([pre_page, blank, blank_button])
             keyboard.append([dbtn['b_cancel'], dbtn['b_reverse']])
-            keyboard.append([dbtn['ok_b']])
+            keyboard.append([ok_button])
             new_ikm = InlineKeyboardMarkup(keyboard)
     else:
         # if page_is_locked.get(str(chat_id) + ':' + str(mess_id) + ':' + str(page), False):
         if sc['lpage'].get(msgkey, False):
-            new_ikm = InlineKeyboardMarkup([[blank1], [pre_page, blank, next_page], [dbtn['b_cancel'], dbtn['ok_b']]])
+            new_ikm = InlineKeyboardMarkup([[blank1], [pre_page, blank, next_page], [dbtn['b_cancel'], ok_button]])
         else:
             keyboard = [[dbtn['b_okpage']]]
             sindex = (page - 1) * row * 3
@@ -317,26 +340,23 @@ async def select_page(client: Client, call: CallbackQuery, **kwargs):
             keyboard.append(third_row)
             keyboard.append([pre_page, blank, next_page])
             keyboard.append([dbtn['b_cancel'], dbtn['b_reverse']])
-            keyboard.append([dbtn['ok_b']])
+            keyboard.append([ok_button])
             new_ikm = InlineKeyboardMarkup(keyboard)
     await client.edit_message_text(chat_id, mess_id, "请选择想要启用的测试项: ", reply_markup=new_ikm)
 
 
-def gen_msg_key(message: Message) -> str:
+def gen_msg_key(message: Message, offset: int = 0) -> str:
     """
     生成针对此消息对象的唯一键
+
+    offset: message.id的偏移量
     """
-    return str(message.chat.id) + ":" + str(message.id)
+    return str(message.chat.id) + ":" + str(message.id + offset)
 
 
 def get_sort_str(message: Message) -> str:
     k = gen_msg_key(message)
     return sc['sort'].pop(k, "订阅原序")
-
-
-# def get_slave_id(chat_id: int, message_id: int) -> str:
-#     k = str(chat_id) + ":" + str(message_id)
-#     return sc['slaveid'].pop(k, "local")
 
 
 def get_slave_id(message: Message) -> str:
@@ -391,30 +411,6 @@ def page_frame(pageprefix: str, contentprefix: str, content: List[str], split: s
     return content_keyboard
 
 
-async def task_handler(app: Client, message: Message, **kwargs):
-    userconfig = config.getUserconfig()
-    ruleconfig = userconfig.get('rule', {})
-    ID = str(getID(message))
-    tgargs = ArgCleaner.getarg(message.text)
-    rulename = ''
-    if tgargs[0].startswith("/invite"):
-        rulename = tgargs[1] if len(tgargs) > 1 else ''
-    if rulename and (rulename in ruleconfig):
-        slaveid, sort, script = get_rule(rulename)
-        if slaveid is None and sort is None and script is None:
-            await select_slave_page(app, message, **kwargs)
-            return
-        await select_task(app, message, slaveid, sort, script)
-    elif ID in ruleconfig:
-        slaveid, sort, script = get_rule(ID)
-        if slaveid is None and sort is None and script is None:
-            await select_slave_page(app, message, **kwargs)
-            return
-        await select_task(app, message, slaveid, sort, script)
-    else:
-        await select_slave_page(app, message, **kwargs)
-
-
 async def select_slave_page(_: Client, call: Union[CallbackQuery, Message], content_prefix: str = "slave:", **kwargs):
     """
     选择后端页面的入口
@@ -457,13 +453,36 @@ async def select_slave_page(_: Client, call: Union[CallbackQuery, Message], cont
         await call.reply("请选择测试后端:", reply_markup=IKM, quote=True)
 
 
+async def task_handler(app: Client, message: Message, **kwargs):
+    userconfig = config.getUserconfig()
+    ruleconfig = userconfig.get('rule', {})
+    ID = str(getID(message))
+    tgargs = ArgCleaner.getarg(message.text)
+    rulename = ''
+    if tgargs[0].startswith("/invite"):
+        rulename = tgargs[1] if len(tgargs) > 1 else ''
+    if rulename and (rulename in ruleconfig):
+        slaveid, sort, script = get_rule(rulename)
+        if slaveid is None and sort is None and script is None:
+            await select_slave_page(app, message, **kwargs)
+            return
+        await select_task(app, message, slaveid, sort, script)
+    elif ID in ruleconfig:
+        slaveid, sort, script = get_rule(ID)
+        if slaveid is None and sort is None and script is None:
+            await select_slave_page(app, message, **kwargs)
+            return
+        await select_task(app, message, slaveid, sort, script)
+    else:
+        await select_slave_page(app, message, **kwargs)
+
+
 async def select_task(app: Client, originmsg: Message, slaveid: str, sort: str, script: list = None):
     if originmsg.text.startswith('/invite'):
         comment = config.getSlavecomment(slaveid)
         scripttext = ",".join(script) if script is not None else ""
-        invite_help_text = f"🍀选中后端: {comment}\n⛓️选中排序: {sort}\n🧵选中脚本: {scripttext}\n\n"
+        invite_help_text = f"🤖选中后端: {comment}\n⛓️选中排序: {sort}\n🧵选中脚本: {scripttext}\n\n"
         botmsg = await originmsg.reply(invite_help_text)
-        await asyncio.sleep(2)
         key = genkey(8)
         BOT_MESSAGE_CACHE[key] = botmsg
         await Invite(key=key).invite(app, originmsg)
@@ -482,16 +501,20 @@ async def select_task(app: Client, originmsg: Message, slaveid: str, sort: str, 
 
 
 # async def select_slave_()
-async def select_slave_only_pre(_: Client, call: Union[CallbackQuery, Message], **kwargs):
+async def select_slave_only_1(_: Client, call: Union[CallbackQuery, Message], **kwargs):
     """
     receiver: 指定一个列表变量，它将作为slaveid的接收者。
     """
     page_prefix = '/api/slave/page/'
-    page = 1 if isinstance(call, Message) else call.data[len(page_prefix)]
+    api_route = '/api/getSlaveId'
+    page = 1 if isinstance(call, Message) else call.data[len(page_prefix):]
     slaveconfig = config.getSlaveconfig()
     comment = [i.get('comment', None) for k, i in slaveconfig.items() if
                i.get('comment', None) and k != "default-slave"]
     content_keyboard = page_frame(page_prefix, api_route, comment, split='?comment=', page=page, **kwargs)
+    if page == 1:
+        localslave = IKB(dsc, api_route + "?comment=" + dsc)
+        content_keyboard.insert(0, [localslave])
     content_keyboard.append([dbtn['b_close']])
 
     IKM = InlineKeyboardMarkup(content_keyboard)
@@ -502,57 +525,203 @@ async def select_slave_only_pre(_: Client, call: Union[CallbackQuery, Message], 
         return await target.reply(f"请选择测试后端, 你有{kwargs.get('timeout', 60)}s的时间选择:\n", quote=True, reply_markup=IKM)
 
 
-async def get_s_id(_: Client, c: CallbackQuery):
-    le = len(api_route) + len("?comment=")
-    key = gen_msg_key(c.message)
-    if key in receiver:
-        q = receiver[key]
+async def select_script_only(_: "Client", call: Union["CallbackQuery", "Message"],
+                             timeout: int = 120) -> Union[List[str], None]:
+    """
+    高层级的选择测试脚本api
+    timeout: 获取的超时时间，超时返回None
+
+    return: 包含选择的测试项列表
+    """
+    api_route = "/api/script/ok"
+    if isinstance(call, Message):
+        IKM = InlineKeyboardMarkup(
+            [
+                # 第一行
+                [dbtn['b_okpage']],
+                [dbtn[1], dbtn[2], dbtn[3]],
+                # 第二行
+                [dbtn[20], dbtn[25], dbtn[18]],
+                [dbtn[15], dbtn[21], dbtn[19]],
+                [dbtn['b_all'], blank_g, next_page_g],
+                [dbtn['b_cancel'], dbtn['b_reverse']],
+                [IKB("👌完成选择", api_route)]
+            ]
+        )
+        botmsg = await call.reply(f"请选择想要启用的测试项(你有{timeout}s的时间选择): ", reply_markup=IKM, quote=True)
+        recvkey = gen_msg_key(botmsg)
+        q = asyncio.Queue(1)
+        receiver[recvkey] = q
+
         try:
-            if isinstance(q, asyncio.Queue):
-                q.put_nowait(str(c.data)[le:])
-        except asyncio.queues.QueueFull:
-            return
+            async with async_timeout.timeout(timeout):
+                script_list = await q.get()
+                if isinstance(script_list, list):
+                    return script_list
+                else:
+                    await botmsg.reply("❌数据类型接收错误")
+                    return None
+
+        except asyncio.exceptions.TimeoutError:
+            print("获取超时")
+            return None
+        finally:
+            receiver.pop(recvkey, None)
+            await botmsg.delete(revoke=True)
+
     else:
-        await c.message.reply("❌无法找到该消息与之对应的队列")
+        bot_key = gen_msg_key(call.message)
+        test_items = sc['script'].pop(bot_key, ['HTTP(S)延迟'])
+        # test_items = select_item_cache.pop(str(chat_id) + ':' + str(mess_id), ['HTTP(S)延迟'])
+        # message = await client.edit_message_text(chat_id, mess_id, "⌛正在提交任务~")
+        issuc = []
+        row = 3
+        max_page = int(len(buttons) / (row * 3)) + 1
+        for i in range(max_page):
+            res1 = sc['lpage'].pop(bot_key + ':' + str(i), '')
+            # res1 = page_is_locked.pop(str(chat_id) + ':' + str(mess_id) + ':' + str(i), '')
+            if res1:
+                issuc.append(res1)
+        if not issuc:
+            if test_items[0] != 'HTTP(S)延迟':
+                logger.warning("资源回收失败")
+
+        if bot_key in receiver:
+            q = receiver[bot_key]
+            try:
+                if isinstance(q, asyncio.Queue):
+                    q.put_nowait(test_items)
+                else:
+                    await call.message.reply("运行发现逻辑错误，请联系管理员~")
+            except asyncio.queues.QueueFull:
+                pass
+        else:
+            await call.answer("❌无法找到该消息与之对应的队列")
 
 
-async def select_slave_only(app: Client, call: Union[CallbackQuery, Message], **kwargs) -> tuple[str, str]:
+async def select_sort_only(_: "Client", call: Union["CallbackQuery", "Message"],
+                           timeout: int = 10, speed: bool = False) -> str:
+    """
+    高层级的选择排序api
+    timeout: 获取的超时时间，超时返回空字符串
+    speed: 是否是speed的排序
+
+    return: 排序字符串: ["订阅原序", "HTTP升序", "HTTP降序", ...]
+    """
+    api_route = "/api/sort/"
+    if isinstance(call, Message):
+
+        content_keyboard = [
+            [IKB("♾️订阅原序", f"{api_route}origin")],
+            [IKB("⬇️HTTP降序", f"{api_route}rhttp"), IKB("⬆️HTTP升序", f"{api_route}http")],
+        ]
+        if speed:
+            content_keyboard.append([IKB("⬆️平均速度升序", f"{api_route}aspeed"),
+                                     IKB("⬇️平均速度降序", f"{api_route}arspeed")])
+            content_keyboard.append([IKB("⬆️最大速度升序", f"{api_route}mspeed"),
+                                     IKB("⬇️最大速度降序", f"{api_route}mrspeed")])
+        content_keyboard.append([dbtn['b_cancel']])
+        botmsg = await call.reply(f"请选择排序方式(你有{timeout}s的时间选择): ",
+                                  reply_markup=InlineKeyboardMarkup(content_keyboard), quote=True)
+        recvkey = gen_msg_key(botmsg)
+        q = asyncio.Queue(1)
+        receiver[recvkey] = q
+
+        try:
+            sort_str_parser = {
+                "origin": "订阅原序",
+                "rhttp": "HTTP降序",
+                "http": "HTTP升序",
+                "aspeed": "平均速度升序",
+                "arspeed": "平均速度降序",
+                "mspeed": "最大速度升序",
+                "mrspeed": "最大速度降序",
+            }
+            async with async_timeout.timeout(timeout):
+                sort_str = await q.get()
+                sort_str = sort_str_parser.get(sort_str, "")
+                return sort_str
+
+        except asyncio.exceptions.TimeoutError:
+            print("获取超时")
+            return ""
+        finally:
+            await botmsg.delete(revoke=True)
+            receiver.pop(recvkey, None)
+
+    elif isinstance(call, CallbackQuery):
+        key = gen_msg_key(call.message)
+        le = len(api_route)
+        if key in receiver:
+            q = receiver[key]
+            try:
+                if isinstance(q, asyncio.Queue):
+                    q.put_nowait(call.data[le:])
+            except asyncio.queues.QueueFull:
+                pass
+        else:
+            await call.answer("❌无法找到该消息与之对应的队列")
+
+
+async def select_slave_only(app: Client, call: Union[CallbackQuery, Message], timeout=60, **kwargs) -> tuple[str, str]:
     """
     高层级的选择后端api
 
     return: (slaveid, comment)
     """
-    timeout = 60
-    botmsg = await select_slave_only_pre(app, call, timeout=timeout, **kwargs)
+    if isinstance(call, Message):
+        botmsg = await select_slave_only_1(app, call, timeout=timeout, **kwargs)
 
-    recvkey = gen_msg_key(botmsg)
-    q = asyncio.Queue(1)
-    receiver[recvkey] = q
+        recvkey = gen_msg_key(botmsg)
+        q = asyncio.Queue(1)
+        receiver[recvkey] = q
 
-    try:
-        async with async_timeout.timeout(timeout):
-            comment = await q.get()
-            slaveconfig = config.getSlaveconfig()
-            slaveid = ''
-            for k, v in slaveconfig.items():
-                if v.get('comment', '') == comment:
-                    slaveid = str(k)
-                    break
-            if slaveid and comment:
-                await botmsg.delete()
-                return str(slaveid), comment
-            else:
-                await botmsg.delete()
-                return '', comment
+        try:
+            async with async_timeout.timeout(timeout):
+                comment = await q.get()
+                slaveconfig = config.getSlaveconfig()
+                slaveid = ''
 
-    except asyncio.exceptions.TimeoutError:
-        print("获取超时")
-        return '', ''
-    finally:
-        receiver.pop(recvkey, None)
+                for k, v in slaveconfig.items():
+                    if v.get('comment', '') == comment:
+                        if str(k) == "default-slave":
+                            slaveid = 'local'
+                            break
+                        slaveid = str(k)
+                        break
+                if not slaveid and comment == "本地后端":
+                    slaveid = "local"
+                if slaveid and comment:
+                    return str(slaveid), comment
+                else:
+                    await botmsg.delete()
+                    return '', ''
+
+        except asyncio.exceptions.TimeoutError:
+            print("获取超时")
+            return '', ''
+        finally:
+            receiver.pop(recvkey, None)
+            await botmsg.delete(revoke=True)
+    else:
+        api_route = '/api/getSlaveId'
+        le = len(api_route) + len("?comment=")
+        key = gen_msg_key(call.message)
+        if key in receiver:
+            q = receiver[key]
+            try:
+                if isinstance(q, asyncio.Queue):
+                    q.put_nowait(str(call.data)[le:])
+            except asyncio.queues.QueueFull:
+                pass
+        else:
+            await call.answer("❌无法找到该消息与之对应的队列")
 
 
 async def select_slave(app: Client, call: CallbackQuery):
+    """
+    内置的旧版选择后端回调查询
+    """
     botmsg = call.message
     originmsg = call.message.reply_to_message
     slavename = call.data[6:]
@@ -573,7 +742,7 @@ async def select_slave(app: Client, call: CallbackQuery):
         ISC['slaveid'][gen_msg_key(target)] = slaveid
         await botmsg.edit_text("请选择排序方式：", reply_markup=IKM2)
     elif originmsg.text.startswith('/test'):
-        await botmsg.edit_text("请选择排序方式：", reply_markup=IKM2)
+        await botmsg.edit_text("请选择排序方式(速度相关的排序无效): ", reply_markup=IKM2)
     elif originmsg.text.startswith('/topo') or originmsg.text.startswith('/analyze'):
         sort_str = get_sort_str(botmsg)
         slaveid = get_slave_id(botmsg)
@@ -581,11 +750,15 @@ async def select_slave(app: Client, call: CallbackQuery):
         await botmsg.delete()
         await bot_put(app, originmsg, put_type, None, sort=sort_str, coreindex=2, slaveid=slaveid)
     elif originmsg.text.startswith('/speed'):
-        sort_str = get_sort_str(botmsg)
         slaveid = get_slave_id(botmsg)
-        put_type = "speedurl" if originmsg.text.split(' ', 1)[0].split('@', 1)[0].endswith('url') else "speed"
         await botmsg.delete()
-        await bot_put(app, originmsg, put_type, None, sort=sort_str, coreindex=1, slaveid=slaveid)
+        sort_str = await select_sort_only(app, call.message, 20, speed=True)
+        if sort_str:
+            put_type = "speedurl" if originmsg.text.split(' ', 1)[0].split('@', 1)[0].endswith('url') else "speed"
+            await bot_put(app, originmsg, put_type, None, sort=sort_str, coreindex=1, slaveid=slaveid)
+        else:
+            b = await botmsg.reply("❌选择超时，已取消任务。")
+            mdq.put(b, 5)
     else:
         await botmsg.edit_text("🐛暂时未适配")
         return
@@ -621,27 +794,180 @@ async def select_sort(app: Client, call: CallbackQuery):
     await app.edit_message_text(chat_id, mess_id, "请选择想要启用的测试项: ", reply_markup=IKM)
 
 
-async def setting_page(_: Client, message: Message):
+async def home_setting(_: Client, call: Union[Message, CallbackQuery]):
     text = config.config.get('bot', {}).get('description', f"🛠️FullTclash bot管理总枢🛠️\n\n版本: {__version__}({v_hash})")
     addon_button = IKB("🧩插件管理(开发中)", callback_data="blank")
-    config_button = IKB("⚙️配置管理", callback_data="setconfig")
+    config_button = IKB("⚙️配置管理", callback_data="/api/config/home")
     sub_button = IKB("🌐订阅管理(开发中)", callback_data="blank")
     slave_button = IKB("🧰后端管理(开发中)", callback_data="blank")
-    IKM = InlineKeyboardMarkup([[addon_button], [config_button], [sub_button], [slave_button]])
-    await message.reply_text(text, reply_markup=IKM, quote=True)
+    rule_button = IKB("🚦规则管理", callback_data="/api/rule/home")
+    IKM = InlineKeyboardMarkup([[addon_button], [config_button], [sub_button], [slave_button], [rule_button]])
+    if isinstance(call, CallbackQuery):
+        await call.message.edit_text(text, reply_markup=IKM)
+    else:
+        await call.reply_text(text, reply_markup=IKM, quote=True)
 
 
-async def select_config_page(_: Client, callback: Union[CallbackQuery, Message], **kwargs):
+async def select_config_page(_: Client, call: Union[CallbackQuery, Message], **kwargs):
     # page = kwargs.get('page', 1)
     # row = kwargs.get('row', 5)
+    page_prefix = "/api/config/page/"
+    contentprefix = '/api/config/getConfig'
+    page = 1 if isinstance(call, Message) else 1 \
+        if call.data == "/api/config/home" else int(call.data[len(page_prefix):])
     configkeys = list(config.config.keys())
     # max_page = int(len(configkeys) / row * 2) + 1
-    content_keyboard = page_frame('cpage', 'config', configkeys, **kwargs)
-    content_keyboard.append([dbtn['b_close']])
+    content_keyboard = page_frame(page_prefix, contentprefix, configkeys, "?key=", page=page, **kwargs)
+    content_keyboard.append([IKB("🔙返回上一级", "/api/setting/home"), dbtn['b_close']])
 
     IKM = InlineKeyboardMarkup(content_keyboard)
-    if isinstance(callback, CallbackQuery):
-        botmsg = callback.message
+    if isinstance(call, CallbackQuery):
+        botmsg = call.message
         await botmsg.edit_text(f"⚙️以下是配置项预览: \n\n共找到{len(configkeys)}条配置项", reply_markup=IKM)
     else:
-        await callback.reply("请选择测试后端:", reply_markup=IKM, quote=True)
+        await call.reply("⚙️以下是配置项预览: \n\n共找到{len(configkeys)}条配置项", reply_markup=IKM, quote=True)
+
+
+async def home_rule(_: Client, call: Union[CallbackQuery, Message], **kwargs):
+    page_prefix = "/api/rule/page/"
+    api_route = '/api/rule/getrule'
+    msg = call.message if isinstance(call, CallbackQuery) else call
+    page = 1 if isinstance(call, Message) else 1 if call.data == "/api/rule/home" else int(call.data[len(page_prefix):])
+    rule_conf = config.getUserconfig().get('rule', {})
+    if not isinstance(rule_conf, dict):
+        logger.warning("配置文件反序列化类型错误！")
+        return
+    rulename = list(rule_conf.keys())
+    bot_text = f"当前已注册{len(rulename)}条规则，点击具体规则了解详细信息"
+    content_keyboard = page_frame(page_prefix, api_route, rulename, split='?name=', page=page, **kwargs)
+    content_keyboard.append([IKB("🔙返回上一级", "/api/setting/home"), dbtn['b_close']])
+    content_keyboard.insert(0, [IKB("新增规则", "/api/rule/new")])
+    if isinstance(call, CallbackQuery):
+        await msg.edit_text(bot_text, reply_markup=InlineKeyboardMarkup(content_keyboard))
+    else:
+        await msg.reply(bot_text, reply_markup=InlineKeyboardMarkup(content_keyboard), quote=True)
+
+
+async def recv_data(_: "Client", msg: "Message"):
+    try:
+        key0 = gen_msg_key(msg)
+        if key0 in receiver:
+            temp_q = receiver[key0]
+            if isinstance(temp_q, asyncio.Queue):
+                temp_q.put_nowait(msg.text.strip())
+    except asyncio.queues.QueueFull:
+        logger.error("队列已满")
+
+
+async def bot_rule_action(_: 'Client', call: "CallbackQuery"):
+    api_route = "/api/rule/disable?name=" if "disable" in str(call.data) else "/api/rule/enable?name="
+    api_route2 = "/api/rule/enable?name=" if "disable" in str(call.data) else "/api/rule/disable?name="
+    rule_name = str(call.data)[len(api_route):]
+    rule_conf = config.getUserconfig().get('rule', {})
+    rule = rule_conf.get(rule_name, None)
+    rule['enable'] = False if "disable" in str(call.data) else True
+    rule_conf[rule_name] = rule
+    config.yaml['userconfig']['rule'] = rule_conf
+    if config.reload():
+        new_keyboard = deepcopy(call.message.reply_markup.inline_keyboard)
+        status_button = new_keyboard[0][0]
+        status_button.text = " ✅状态：启用" if rule.get('enable', True) else " ❌状态：禁用"
+        status_button.callback_data = api_route2 + rule_name
+        new_keyboard[0][0] = status_button
+        await call.message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(new_keyboard))
+
+
+async def bot_rule_delete(_: 'Client', call: "CallbackQuery"):
+    api_route = "/api/rule/delete?name="
+    rule_name = str(call.data)[len(api_route):]
+    rule_conf = config.getUserconfig().get('rule', {})
+    rule_conf.pop(rule_name, None)
+    config.yaml['userconfig']['rule'] = rule_conf
+    if config.reload():
+        new_keyboard = [call.message.reply_markup.inline_keyboard[-1]]
+        await call.message.edit_text(f"删除规则：**{rule_name}** 成功", reply_markup=InlineKeyboardMarkup(new_keyboard))
+        await call.answer(f"删除规则：{rule_name} 成功~", show_alert=True)
+
+
+async def bot_rule_page(_: 'Client', call: "CallbackQuery"):
+    api_route = '/api/rule/getrule?name='
+    rule_conf = config.getUserconfig().get('rule', {})
+    rule_name = str(call.data[len(api_route):])
+    if not isinstance(rule_conf, dict):
+        logger.warning("配置文件反序列化类型错误！")
+        return
+    rule = rule_conf.get(rule_name, None)
+    if not isinstance(rule, dict):
+        logger.warning("找不到此规则")
+        await call.message.reply("找不到此规则")
+        return
+    slaveid = rule.get('slaveid', '')
+    comment = config.getSlavecomment(str(slaveid))
+    sort = rule.get('sort', '')
+    script = rule.get('script', [])
+    text = f"🚦规则名: {rule_name}\n🤖选中后端: {comment}\n⛓️选中排序: {sort}\n🧵选中脚本: {str(script)}\n\n"
+    status = " ✅状态：启用" if rule.get('enable', True) else " ❌状态：禁用"
+    status_action = f"/api/rule/disable?name={rule_name}" if rule.get('enable', True) else\
+        f"/api/rule/enable?name={rule_name}"
+    status_button = IKB(status, status_action)
+    keyboard = [
+        [status_button],
+        [IKB("🗑️删除此规则", f"/api/rule/delete?name={rule_name}")],
+        [IKB("🔙返回上一级", "/api/rule/home"), dbtn['b_close']]
+    ]
+    IKM = InlineKeyboardMarkup(keyboard)
+    await call.message.edit_text(text, reply_markup=IKM)
+
+
+async def bot_new_rule(app: Client, call: CallbackQuery):
+    caidan = "彩蛋: 试试把规则名设置成自己的userid(ง •_•)ง"
+    trigger_prob = 13
+    msg_text0 = "很好！请在**60s**内给规则取一个名字(直接打字发送)："
+    if secrets.randbelow(100) < trigger_prob:
+        msg_text0 += f"\n\n{caidan}"
+    msg_text = "接下来请完成后端、排序方式、测试项选择。\n提示："
+    reply_markup = call.message.reply_markup if call.message.reply_markup is not None else None
+    if reply_markup:
+        reply_markup.inline_keyboard = [reply_markup.inline_keyboard[-1]]
+    await call.message.edit_text(msg_text, reply_markup=reply_markup)
+    botmsg_0 = await call.message.reply(msg_text0)
+    from botmodule.cfilter import MESSAGE_LIST
+
+    recvkey = gen_msg_key(botmsg_0, 1)
+    q = asyncio.Queue(1)
+    receiver[recvkey] = q
+    MESSAGE_LIST.append(botmsg_0)
+    try:
+        async with async_timeout.timeout(60):
+            rulename = await q.get()
+
+    except asyncio.exceptions.TimeoutError:
+        await botmsg_0.edit_text("⚠️获取规则名超时，取消操作")
+        mdq.put(botmsg_0)
+        return
+    finally:
+        receiver.pop(recvkey, None)
+        MESSAGE_LIST.remove(botmsg_0)
+    msg_text0 = f"获取到的规则名: {rulename}\n"
+    await botmsg_0.edit_text(f"获取到的规则名: {rulename}\n")
+    slaveid, comment = await select_slave_only(app, botmsg_0)
+    if slaveid and comment:
+        msg_text0 += f"已选择的后端名称: {comment}\n"
+        await botmsg_0.edit_text(msg_text0)
+        sort_str = await select_sort_only(app, botmsg_0, 20, speed=True)
+        if sort_str:
+            msg_text0 += f"已选择的排序方式: {sort_str}\n"
+            await botmsg_0.edit_text(msg_text0)
+            script = await select_script_only(app, botmsg_0)
+            if script:
+                msg_text0 += f"已选择的测试脚本: {str(script)}\n"
+                await botmsg_0.edit_text(msg_text0)
+                status = new_rule(rulename, slaveid, sort_str, script)
+                if status:
+                    await botmsg_0.reply(status, quote=True)
+                await botmsg_0.reply(f"✅规则 **{rulename}**已成功写入到配置文件，"
+                                     f"快去使用:\n\n `/invite {rulename}`\n\n进行测试吧~")
+                mdq.put(botmsg_0)
+                await call.message.delete()
+                return
+    await botmsg_0.edit_text(botmsg_0.text + f"\n❌选择超时，取消操作。")

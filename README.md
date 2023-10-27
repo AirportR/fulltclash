@@ -34,6 +34,23 @@ FullTClash bot 是承载其测试任务的Telegram 机器人（以下简称bot�
 1. HTTP延迟测试
 2. 链路拓扑测试（节点出入口分析）。
 3. 下行速度测试
+## 支持协议
+
+| 客户端上游分支        | Clash | Clash.Meta |
+|----------------|-------|------------|
+| SOCKS (4/4a/5) | √     | √          |
+| HTTP(S)        | √     | √          |
+| Shadowsocks    | √     | √          |
+| VMess          | √     | √          |
+| Trojan         | √     | √          | 
+| Snell          | √     | √          | 
+| VLESS          |       | √          |
+| Tuic           |       | √          |
+| Hysteria       |       | √          |
+| Wireguard      |       | √          |
+| ShadowsocksR   | √     | √          |
+----------------------
+本项目默认使用Clash原生内核，需要Clash.Meta支持请参阅代理客户端编译一栏。
 ## 使用文档
 
 可以在 [这里](https://fulltclash.gitbook.io/fulltclash-doc) 找到FullTclash的使用文档。
@@ -201,7 +218,7 @@ fulltclash-windows-amd64 为 Windows-amd64 所支持的
 1、在本项目的主GitHub仓库进行fork，你可以只fork dev的分支。 \
 2、在你的计算机上使用git clone来下载你fork后的仓库。 \
 3、在下载后的本地仓库进行修改。\
-4、执行git add .（请不要忘记句号！！！）\ 
+4、执行git add .（请不要忘记句号！！！）\
 5、执行git commit，并输入你做出的更改。\
 6、回到你的仓库，发起pr请求，等待下一步（通过/驳回/修改）。
 
