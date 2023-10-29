@@ -224,7 +224,7 @@ class SubCollector(BaseCollector):
             self.sub_remote_config = quote(self.sub_remote_config, encoding='utf-8')
             self.cvt_url = self.cvt_url + "&config=" + self.sub_remote_config
         if not force_convert:
-            if "/sub?target=clash" in self.url:
+            if "/sub?target=" in self.url:
                 self.cvt_url = self.url
 
     async def start(self, proxy=None):
