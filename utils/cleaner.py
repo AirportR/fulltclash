@@ -11,7 +11,6 @@ from loguru import logger
 
 try:
     import re2
-
     remodule = re2
 except ImportError:
     remodule = re
@@ -1582,7 +1581,43 @@ class ArgCleaner:
             return arg
 
 
-def geturl(string: str):
+def protocol_join(protocol_link: str):
+    if not protocol_link:
+        return ''
+    protocol_prefix = ['vmess', 'vless', 'ss', 'ssr', 'trojan', 'hysteria2', 'hysteria',
+                       'socks5', 'snell', 'tuic', 'juicity']
+    p = protocol_link.split('://')
+    if len(p) < 2:
+        return ''
+    if p[0] not in protocol_prefix:
+        return ''
+
+    from urllib.parse import quote
+    subcvtconf = config.config.get('subconverter', {})
+    enable = subcvtconf.get('enable', False)
+    if not isinstance(enable, bool):  # 如果没有解析成bool值，强制禁用subconverter
+        enable = False
+    if not enable:
+        return ''
+    subcvtaddr = subcvtconf.get('host', '')
+    remoteconfig = subcvtconf.get('remoteconfig', '')
+    if not remoteconfig:
+        remoteconfig = "https%3A%2F%2Fraw.githubusercontent.com%2FACL4SSR%2FACL4SSR%2Fmaster%2FClash%2F" \
+                       "config%2FACL4SSR_Online.ini"
+    else:
+        remoteconfig = quote(remoteconfig)
+
+    new_link = f"https://{subcvtaddr}/sub?target=clash&new_name=true&url=" + quote(protocol_link) + \
+               f"&insert=false&config={remoteconfig}"
+    return new_link
+
+
+def geturl(string: str, protocol_match: bool = False):
+    """
+    获取URL
+
+    :param: protocol_match: 是否匹配协议URI，并拼接成ubconverter形式
+    """
     text = string
     pattern = re.compile(
         r"https?://(?:[a-zA-Z]|\d|[$-_@.&+]|[!*,]|[\w\u4e00-\u9fa5])+")  # 匹配订阅地址
@@ -1591,7 +1626,13 @@ def geturl(string: str):
         url = pattern.findall(text)[0]  # 列表中第一个项为订阅地址
         return url
     except IndexError:
-        return None
+        if protocol_match:
+            args = ArgCleaner.getarg(string)
+            protocol_link = args[1] if len(args) > 1 else ''
+            new_link = protocol_join(protocol_link)
+            return new_link if new_link else None
+        else:
+            return None
 
 
 @logger.catch

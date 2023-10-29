@@ -191,10 +191,13 @@ class SubCollector(BaseCollector):
     """
 
     @logger.catch()
-    def __init__(self, suburl: str, include: str = '', exclude: str = ''):
+    def __init__(self, suburl: str, include: str = '', exclude: str = '', force_convert: bool = False):
         """
         这里在初始化中读取了subconverter的相关配置，但是由于sunconverter无人维护，容易出问题，因此之后我不会再维护此功能。也就是在下载订阅时
         订阅转换
+
+        :param: force_convert: 是否强制转换，如果传进来的url本身就已经是subconverter拼接过的，那么套娃转换会拖慢拉去订阅的速度。
+                                设置为False会检查是否为subconverter拼接过的
         """
         super().__init__()
         self.text = None
@@ -220,6 +223,9 @@ class SubCollector(BaseCollector):
         if self.sub_remote_config:
             self.sub_remote_config = quote(self.sub_remote_config, encoding='utf-8')
             self.cvt_url = self.cvt_url + "&config=" + self.sub_remote_config
+        if not force_convert:
+            if "/sub?target=clash" in self.url:
+                self.cvt_url = self.url
 
     async def start(self, proxy=None):
         try:
