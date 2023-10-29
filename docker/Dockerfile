@@ -38,6 +38,7 @@ RUN apt-get update && \
     cp resources/config.yaml.example resources/config.yaml && \
     rm -f /etc/localtime && \
     cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    echo "Asia/Shanghai" > /etc/timezone && \
     echo "00 6 * * * bash /app/docker/update.sh" >> /var/spool/cron/crontabs/root && \
     mkdir /etc/supervisord.d && \
     mv /app/docker/supervisord.conf /etc/supervisord.conf && \
