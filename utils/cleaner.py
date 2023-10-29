@@ -1628,7 +1628,7 @@ def geturl(string: str, protocol_match: bool = False):
     except IndexError:
         if protocol_match:
             args = ArgCleaner.getarg(string)
-            protocol_link = args[1] if len(args) > 1 else ''
+            protocol_link = args[1] if len(args) > 1 else text.strip() if not text.startswith("/") else ''
             new_link = protocol_join(protocol_link)
             return new_link if new_link else None
         else:
