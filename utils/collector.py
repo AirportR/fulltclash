@@ -306,7 +306,11 @@ class SubCollector(BaseCollector):
                                     break
                                 fd.write(chunk)
                         return True
-                    return False
+                    else:
+                        if self.url == self.cvt_url:
+                            return False
+                        self.cvt_url = self.url
+                        return await self.getSubConfig(inmemory=True)
         except asyncio.exceptions.TimeoutError:
             logger.info("获取订阅超时")
             return False
@@ -597,8 +601,7 @@ class Collector:
                 except (ConnectionRefusedError, ProxyConnectionError, ssl.SSLError) as e:
                     logger.error(str(e))
                     return self.info
-                finally:
-                    await session.close()
+            await session.close()
             return self.info
         except Exception as e:
             logger.error(str(e))

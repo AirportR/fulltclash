@@ -620,7 +620,7 @@ async def select_sort_only(_: "Client", call: Union["CallbackQuery", "Message"],
                                      IKB("⬇️平均速度降序", f"{api_route}arspeed")])
             content_keyboard.append([IKB("⬆️最大速度升序", f"{api_route}mspeed"),
                                      IKB("⬇️最大速度降序", f"{api_route}mrspeed")])
-        content_keyboard.append([dbtn['b_cancel']])
+        content_keyboard.append([dbtn['b_close']])
         botmsg = await call.reply(f"请选择排序方式(你有{timeout}s的时间选择): ",
                                   reply_markup=InlineKeyboardMarkup(content_keyboard), quote=True)
         recvkey = gen_msg_key(botmsg)
