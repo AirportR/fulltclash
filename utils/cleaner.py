@@ -9,6 +9,12 @@ import socket
 import yaml
 from loguru import logger
 
+try:
+    import re2
+    remodule = re2
+except ImportError:
+    remodule = re
+
 
 class IPCleaner:
     def __init__(self, data):
@@ -444,10 +450,11 @@ class ClashCleaner:
                 if isinstance(proxy, dict):
                     name = proxy['name']
                     ptype = proxy['type']
+
                     if not isinstance(name, str):
                         # 将节点名称转为字符串
                         proxy['name'] = str(name)
-                    if ptype not in self.unsupport_type:
+                    if ptype not in self.unsupport_type and len(name) < 128:
                         newproxies.append(proxy)
             self.yaml['proxies'] = newproxies
         except KeyError:
@@ -633,12 +640,21 @@ class ClashCleaner:
         result2 = []
         nodelist = self.getProxies()
         pattern1 = pattern2 = None
+
         try:
             if include:
-                pattern1 = re.compile(include)
+                if len(include) < 32:
+                    pattern1 = remodule.compile(include)
+                else:
+                    pattern1 = None
+                    logger.warning(f"包含过滤器的文本: {include} 大于32个长度，无法生效！")
             if exclude:
-                pattern2 = re.compile(exclude)
-        except re.error:
+                if len(exclude) < 32:
+                    pattern2 = remodule.compile(exclude)
+                else:
+                    pattern2 = None
+                    logger.warning(f"排除过滤器的文本: {exclude} 大于32个长度，无法生效！")
+        except remodule.error:
             logger.error("正则错误！请检查正则表达式！")
             return self.nodesName()
         except Exception as e:
@@ -649,11 +665,12 @@ class ClashCleaner:
         else:
             for node in nodelist:
                 try:
-                    r = pattern1.findall(node.get('name', ''))
+                    nodename = node.get('name', '')
+                    r = pattern1.findall(nodename)
                     if r:
-                        logger.info("包含过滤器已命中:" + str(node.get('name', '')))
+                        logger.info("包含过滤器已命中:" + str(nodename))
                         result.append(node)
-                except re.error as rerror:
+                except remodule.error as rerror:
                     logger.error(str(rerror))
                     result.append(node)
                 except Exception as e:
@@ -666,9 +683,10 @@ class ClashCleaner:
         else:
             for node in result:
                 try:
-                    r = pattern2.findall(node.get('name', ''))
+                    nodename2 = node.get('name', '')
+                    r = pattern2.findall(nodename2)
                     if r:
-                        logger.info("排除过滤器已命中: " + str(node.get('name', '')))
+                        logger.info("排除过滤器已命中: " + str(nodename2))
                         jishu2 += 1
                     else:
                         result2.append(node)
@@ -1039,12 +1057,14 @@ class ConfigManager:
         try:
             userlist = self.config['user']
             if userlist is not None:
-                if user is list:
+                if isinstance(user, list):
                     for li in user:
-                        userlist.remove(li)
+                        li_int = int(li)
+                        userlist.remove(li_int)
                 else:
+                    user_int = int(user)
                     try:
-                        userlist.remove(user)
+                        userlist.remove(user_int)
                     except ValueError:
                         logger.warning("目标本身未在用户列表中")
                 self.yaml['user'] = userlist
@@ -1545,7 +1565,43 @@ class ArgCleaner:
             return arg
 
 
-def geturl(string: str):
+def protocol_join(protocol_link: str):
+    if not protocol_link:
+        return ''
+    protocol_prefix = ['vmess', 'vless', 'ss', 'ssr', 'trojan', 'hysteria2', 'hysteria',
+                       'socks5', 'snell', 'tuic', 'juicity']
+    p = protocol_link.split('://')
+    if len(p) < 2:
+        return ''
+    if p[0] not in protocol_prefix:
+        return ''
+
+    from urllib.parse import quote
+    subcvtconf = config.config.get('subconverter', {})
+    enable = subcvtconf.get('enable', False)
+    if not isinstance(enable, bool):  # 如果没有解析成bool值，强制禁用subconverter
+        enable = False
+    if not enable:
+        return ''
+    subcvtaddr = subcvtconf.get('host', '')
+    remoteconfig = subcvtconf.get('remoteconfig', '')
+    if not remoteconfig:
+        remoteconfig = "https%3A%2F%2Fraw.githubusercontent.com%2FACL4SSR%2FACL4SSR%2Fmaster%2FClash%2F" \
+                       "config%2FACL4SSR_Online.ini"
+    else:
+        remoteconfig = quote(remoteconfig)
+
+    new_link = f"https://{subcvtaddr}/sub?target=clash&new_name=true&url=" + quote(protocol_link) + \
+               f"&insert=false&config={remoteconfig}"
+    return new_link
+
+
+def geturl(string: str, protocol_match: bool = False):
+    """
+    获取URL
+
+    :param: protocol_match: 是否匹配协议URI，并拼接成ubconverter形式
+    """
     text = string
     pattern = re.compile(
         r"https?://(?:[a-zA-Z]|\d|[$-_@.&+]|[!*,]|[\w\u4e00-\u9fa5])+")  # 匹配订阅地址
@@ -1554,7 +1610,13 @@ def geturl(string: str):
         url = pattern.findall(text)[0]  # 列表中第一个项为订阅地址
         return url
     except IndexError:
-        return None
+        if protocol_match:
+            args = ArgCleaner.getarg(string)
+            protocol_link = args[1] if len(args) > 1 else text.strip() if not text.startswith("/") else ''
+            new_link = protocol_join(protocol_link)
+            return new_link if new_link else None
+        else:
+            return None
 
 
 @logger.catch
