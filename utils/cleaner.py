@@ -11,6 +11,7 @@ from loguru import logger
 
 try:
     import re2
+
     remodule = re2
 except ImportError:
     remodule = re
@@ -405,16 +406,28 @@ class ClashCleaner:
         if not isinstance(self.yaml, dict):
             self.yaml = {}
 
-    def load(self, _config, _config2: Union[str, bytes]):
-        if type(_config).__name__ == 'str':
+    def notag(self, _config: str):
+        """
+        去除制表符，yaml反序列化不允许制表符出现在标量以外的地方
+        """
+        return _config.replace('\t', '  ')
+
+    def load(self, _config, _config2: Union[str, bytes] = None):
+        if isinstance(_config, str):
             if _config == ':memory:':
                 try:
                     if _config2 is None:
                         self.yaml = yaml.safe_load(preTemplate())
                     else:
-                        self.yaml = yaml.safe_load(_config2)
+                        try:
+                            self.yaml = yaml.safe_load(_config2)
+                        except yaml.MarkedYAMLError:
+                            print("发现非法制表符")
+                            _config2 = self.notag(_config2)
+                            self.yaml = yaml.safe_load(_config2)
                         self.check_type()
                     return
+
                 except Exception as e:
                     logger.error(str(e))
                     self.yaml = {}
