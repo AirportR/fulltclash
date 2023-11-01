@@ -406,11 +406,11 @@ class ClashCleaner:
         if not isinstance(self.yaml, dict):
             self.yaml = {}
 
-    def notag(self, _config: str):
+    def notag(self, _config: Union[bytes, str]):
         """
         去除制表符，yaml反序列化不允许制表符出现在标量以外的地方
         """
-        return _config.replace('\t', '  ')
+        return _config.replace(b'\t', b'  ')
 
     def load(self, _config, _config2: Union[str, bytes] = None):
         if isinstance(_config, str):
@@ -422,7 +422,6 @@ class ClashCleaner:
                         try:
                             self.yaml = yaml.safe_load(_config2)
                         except yaml.MarkedYAMLError:
-                            print("发现非法制表符")
                             _config2 = self.notag(_config2)
                             self.yaml = yaml.safe_load(_config2)
                         self.check_type()
