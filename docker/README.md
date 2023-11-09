@@ -1,6 +1,6 @@
 # 使用Docker安装
 
-> 这能让你在Windows、Mac、Linux、openwrt、Nas几乎任何支持Docker的环境下使用此项目！
+> 这能让你在Windows、Mac、Linux、openwrt、Nas几乎任何支持Docker(目前仅Amd64和Arm64)的环境下使用此项目！
 
 ## 1.创建配置文件
 新建配置文件保存目录`mkdir /etc/FullTclash`
