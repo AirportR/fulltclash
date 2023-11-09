@@ -24,7 +24,9 @@ clash:
 ## 构建Docker镜像
 
 ### 下载Dockerfile
+```
 wget -N https://raw.githubusercontent.com/AirportR/FullTclash/dev/docker/Dockerfile
+```
 
 ### 构建镜像
 ```
