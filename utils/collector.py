@@ -422,7 +422,6 @@ class Miaospeed:
 
 class Collector:
     def __init__(self, script: List[str] = None):
-        self.session = None
         self.tasks = []
         self._script = script
         self._headers = {
@@ -431,25 +430,9 @@ class Collector:
         self._headers_json = {
             'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                           "Chrome/106.0.0.0 Safari/537.36", "Content-Type": 'application/json'}
-        self.ipurl = "https://api.ip.sb/geoip"
-        self.youtubeurl = "https://www.youtube.com/premium"
-        self.youtubeHeaders = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ' +
-                          'Chrome/80.0.3987.87 Safari/537.36',
-            'Accept-Language': 'en'
-        }
-        self.youtubeCookie = {
-            'YSC': 'BiCUU3-5Gdk',
-            'CONSENT': 'YES+cb.20220301-11-p0.en+FX+700',
-            'GPS': '1',
-            'VISITOR_INFO1_LIVE': '4VwPMkB7W5A',
-            '_gcl_au': '1.1.1809531354.1646633279',
-            'PREF': 'tz=Asia.Shanghai'
-        }
         self.info = {}
         self.disneyurl1 = "https://www.disneyplus.com/"
         self.disneyurl2 = "https://global.edge.bamgrid.com/token"
-        self.daznurl = "https://startup.core.indazn.com/misl/v5/Startup"
 
     @logger.catch
     def create_tasks(self, session: aiohttp.ClientSession, proxy=None):
@@ -501,34 +484,6 @@ class Collector:
         except Exception as e:
             logger.error(e)
             return []
-
-    async def fetch_ip(self, session: aiohttp.ClientSession, proxy=None):
-        """
-        ip查询
-        :param session:
-        :param proxy:
-        :return:
-        """
-        try:
-            res = await session.get(self.ipurl, proxy=proxy, timeout=5)
-            logger.info("ip查询状态：" + str(res.status))
-            if res.status != 200:
-                self.info['ip'] = None
-                self.info['netflix1'] = None
-                self.info['netflix2'] = None
-                self.info['youtube'] = None
-                self.info['ne_status_code1'] = None
-                self.info['ne_status_code2'] = None
-                logger.warning("无法查询到代理ip")
-                return self.info
-            else:
-                self.info['ip'] = await res.json()
-        except ClientConnectorError as c:
-            logger.warning(c)
-            self.info['ip'] = None
-            return self.info
-        except Exception as e:
-            logger.error(str(e))
 
     async def fetch_dis(self, session: aiohttp.ClientSession, proxy=None, reconnection=2):
         """
@@ -614,8 +569,6 @@ class Collector:
         try:
             conn = ProxyConnector(host=host, port=port, limit=0)
             session = aiohttp.ClientSession(connector=conn, headers=self._headers)
-            # if proxy is None:
-            #     proxy = f"http://{host}:{port}"
             tasks = self.create_tasks(session, proxy=proxy)
             if tasks:
                 try:
