@@ -452,31 +452,31 @@ class Collector:
                         self.tasks.append(task(self, session, proxy=proxy))
                         continue
                     if i == "Youtube":
-                        from addons.unlockTest import youtube
+                        from addons.builtin import youtube
                         self.tasks.append(youtube.task(self, session, proxy=proxy))
                     elif i == "Disney" or i == "Disney+":
                         task5 = asyncio.create_task(self.fetch_dis(session, proxy=proxy))
                         self.tasks.append(task5)
                     elif i == "Netflix":
-                        from addons.unlockTest import netflix
+                        from addons.builtin import netflix
                         self.tasks.append(netflix.task(self, session, proxy=proxy, netflixurl=netflix_url))
                     elif i == "TVB":
-                        from addons.unlockTest import tvb
+                        from addons.builtin import tvb
                         self.tasks.append(tvb.task(self, session, proxy=proxy))
                     elif i == "Viu":
-                        from addons.unlockTest import viu
+                        from addons.builtin import viu
                         self.tasks.append(viu.task(self, session, proxy=proxy))
                     elif i == "Iprisk" or i == "落地IP风险":
-                        from addons.unlockTest import ip_risk
+                        from addons.builtin import ip_risk
                         self.tasks.append(ip_risk.task(self, session, proxy=proxy))
                     elif i == "steam货币":
-                        from addons.unlockTest import steam
+                        from addons.builtin import steam
                         self.tasks.append(steam.task(self, session, proxy=proxy))
                     elif i == "维基百科":
-                        from addons.unlockTest import wikipedia
+                        from addons.builtin import wikipedia
                         self.tasks.append(wikipedia.task(self, session, proxy=proxy))
                     elif item == "OpenAI":
-                        from addons.unlockTest import openai
+                        from addons.builtin import openai
                         self.tasks.append(openai.task(self, session, proxy=proxy))
                     else:
                         pass
