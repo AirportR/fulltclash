@@ -9,6 +9,7 @@ from urllib.parse import quote
 from aiohttp.client_exceptions import ClientConnectorError, ContentTypeError
 from aiohttp_socks import ProxyConnector, ProxyConnectionError
 from loguru import logger
+
 from utils import cleaner
 
 """
@@ -21,7 +22,7 @@ from utils import cleaner
 需要注意的是，这些类/函数仅作采集工作，并不负责清洗。我们需要将拿到的数据给cleaner类清洗。
 
 ** 开发建议 **
-如果你想自己添加一个流媒体测试项，建议继承Collector类，重写类中的create_tasks方法，以及自定义自己的流媒体测试函数 fetch_XXX()
+如果你想自己添加一个流媒体测试项，建议查看 ./resources/dos/新增流媒体测试项指南.md
 """
 
 config = cleaner.ConfigManager()
@@ -211,14 +212,15 @@ class SubCollector(BaseCollector):
         self.code_include = quote(include, encoding='utf-8')
         self.code_exclude = quote(exclude, encoding='utf-8')
         self.cvt_host = str(self.subconverter.get('host', '127.0.0.1:25500'))
-        self.cvt_url = f"http://{self.cvt_host}/sub?target=clash&new_name=true&url={self.codeurl}" \
+        self.cvt_scheme = self.parse_cvt_scheme()
+        self.cvt_url = f"{self.cvt_scheme}://{self.cvt_host}/sub?target=clash&new_name=true&url={self.codeurl}" \
                        + f"&include={self.code_include}&exclude={self.code_exclude}"
         self.sub_remote_config = self.subconverter.get('remoteconfig', '')
         self.config_include = quote(self.subconverter.get('include', ''), encoding='utf-8')  # 这两个
         self.config_exclude = quote(self.subconverter.get('exclude', ''), encoding='utf-8')
         # print(f"配置文件过滤,包含：{self.config_include} 排除：{self.config_exclude}")
         if self.config_include or self.config_exclude:
-            self.cvt_url = f"http://{self.cvt_host}/sub?target=clash&new_name=true&url={self.cvt_url}" \
+            self.cvt_url = f"{self.cvt_scheme}://{self.cvt_host}/sub?target=clash&new_name=true&url={self.cvt_url}" \
                            + f"&include={self.code_include}&exclude={self.code_exclude}"
         if self.sub_remote_config:
             self.sub_remote_config = quote(self.sub_remote_config, encoding='utf-8')
@@ -226,6 +228,15 @@ class SubCollector(BaseCollector):
         if not force_convert:
             if "/sub?target=" in self.url:
                 self.cvt_url = self.url
+
+    def parse_cvt_scheme(self) -> str:
+        temp_cvt = self.cvt_host.split(":")
+        cvt_scheme = 'http'
+        if len(temp_cvt) == 2:
+            hostname = temp_cvt[0]
+            if hostname != "127.0.0.1":
+                cvt_scheme = 'https'
+        return cvt_scheme
 
     async def start(self, proxy=None):
         try:
@@ -285,27 +296,38 @@ class SubCollector(BaseCollector):
         suburl = self.cvt_url if self.cvt_enable else self.url
         cvt_text = "subconverter状态: {}".format("已启用" if self.cvt_enable else "未启用")
         logger.info(cvt_text)
+
+        async def safe_read(_response: aiohttp.ClientResponse, limit: int = 524288000):
+            if _response.content_length and _response.content_length > limit:
+                logger.warning(f"订阅文件大小超过了{limit / 1024 / 1024}MB的阈值，已取消获取。")
+                return False
+            _data = b''
+            if inmemory:
+                while True:
+                    _chunk = await _response.content.read(1024)
+                    if not _chunk:
+                        logger.info("获取订阅成功")
+                        break
+                    _data += _chunk
+                    if len(_data) > limit:
+                        logger.warning(f"订阅文件大小超过了{limit / 1024 / 1024}MB的阈值，已取消获取。")
+                        return False
+                return _data
+            else:
+                with open(save_path, 'wb+') as fd:
+                    while True:
+                        _chunk = await _response.content.read(1024)
+                        if not _chunk:
+                            logger.info("获取订阅成功")
+                            break
+                        fd.write(_chunk)
+            return True
+
         try:
             async with aiohttp.ClientSession(headers=_headers) as session:
                 async with session.get(suburl, proxy=proxy, timeout=20) as response:
                     if response.status == 200:
-                        data = b''
-                        if inmemory:
-                            while True:
-                                chunk = await response.content.read()
-                                if not chunk:
-                                    logger.info("获取订阅成功")
-                                    break
-                                data += chunk
-                            return data
-                        with open(save_path, 'wb+') as fd:
-                            while True:
-                                chunk = await response.content.read()
-                                if not chunk:
-                                    logger.info("获取订阅成功")
-                                    break
-                                fd.write(chunk)
-                        return True
+                        return await safe_read(response)
                     else:
                         if self.url == self.cvt_url:
                             return False
