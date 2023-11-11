@@ -706,7 +706,7 @@ class ClashCleaner:
     @logger.catch
     def save(self, savePath: str = "./sub.yaml"):
         with open(savePath, "w", encoding="UTF-8") as fp:
-            yaml.dump(self.yaml, fp)
+            yaml.safe_dump(self.yaml, fp, encoding='utf-8')
 
 
 class ConfigManager:
@@ -1096,7 +1096,7 @@ class ConfigManager:
     def save(self, savePath: str = "./resources/config.yaml"):
         with open(savePath, "w+", encoding="UTF-8") as fp:
             try:
-                yaml.dump(self.yaml, fp)
+                yaml.safe_dump(self.yaml, fp, encoding='utf-8')
                 return True
             except Exception as e:
                 logger.error(e)
