@@ -1075,7 +1075,7 @@ class ConfigManager:
     def save(self, savePath: str = "./resources/config.yaml"):
         with open(savePath, "w+", encoding="UTF-8") as fp:
             try:
-                yaml.dump(self.yaml, fp)
+                yaml.safe_dump(self.yaml, fp, encoding='utf-8')
                 return True
             except Exception as e:
                 logger.error(e)
