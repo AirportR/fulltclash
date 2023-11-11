@@ -655,17 +655,9 @@ class ClashCleaner:
 
         try:
             if include:
-                if len(include) < 32:
-                    pattern1 = remodule.compile(include)
-                else:
-                    pattern1 = None
-                    logger.warning(f"包含过滤器的文本: {include} 大于32个长度，无法生效！")
+                pattern1 = remodule.compile(include)
             if exclude:
-                if len(exclude) < 32:
-                    pattern2 = remodule.compile(exclude)
-                else:
-                    pattern2 = None
-                    logger.warning(f"排除过滤器的文本: {exclude} 大于32个长度，无法生效！")
+                pattern2 = remodule.compile(exclude)
         except remodule.error:
             logger.error("正则错误！请检查正则表达式！")
             return self.nodesName()
