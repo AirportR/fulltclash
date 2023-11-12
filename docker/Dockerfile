@@ -23,12 +23,15 @@ RUN apt-get update && \
     rm -f /etc/localtime && \
     cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo "Asia/Shanghai" > /etc/timezone && \
-    echo "00 6 * * * root bash /app/docker/update.sh" >> /var/spool/cron/crontabs/root && \
     mkdir /etc/supervisord.d && \
     mv /app/docker/supervisord.conf /etc/supervisord.conf && \
     mv /app/docker/fulltclash.conf /etc/supervisord.d/fulltclash.conf && \
     chmod +x /app/docker/fulltcore.sh && \
     /app/docker/fulltcore.sh && \
+    cp /app/docker/crontab /etc/cron.d/crontab && \
+    chmod 0644 /etc/cron.d/crontab && \
+    /usr/bin/crontab /etc/cron.d/crontab && \
+    chmod +x /app/docker/update.sh && \
     chmod +x /app/docker/docker-entrypoint.sh && \
     rm -rf /var/lib/apt/lists/*
 
