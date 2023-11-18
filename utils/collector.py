@@ -297,7 +297,7 @@ class SubCollector(BaseCollector):
         cvt_text = "subconverter状态: {}".format("已启用" if self.cvt_enable else "未启用")
         logger.info(cvt_text)
 
-        async def safe_read(_response: aiohttp.ClientResponse, limit: int = 524288000):
+        async def safe_read(_response: aiohttp.ClientResponse, limit: int = 52428800):
             if _response.content_length and _response.content_length > limit:
                 logger.warning(f"订阅文件大小超过了{limit / 1024 / 1024}MB的阈值，已取消获取。")
                 return False

@@ -26,7 +26,7 @@ class IPCleaner:
     def get(self, key, _default=None):
         try:
             if self._data is None:
-                return {}
+                return ""
             return self._data[key]
         except KeyError:
             return _default
