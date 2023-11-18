@@ -9,6 +9,7 @@ from urllib.parse import quote
 from aiohttp.client_exceptions import ClientConnectorError, ContentTypeError
 from aiohttp_socks import ProxyConnector, ProxyConnectionError
 from loguru import logger
+
 from utils import cleaner
 
 """
@@ -21,7 +22,7 @@ from utils import cleaner
 需要注意的是，这些类/函数仅作采集工作，并不负责清洗。我们需要将拿到的数据给cleaner类清洗。
 
 ** 开发建议 **
-如果你想自己添加一个流媒体测试项，建议继承Collector类，重写类中的create_tasks方法，以及自定义自己的流媒体测试函数 fetch_XXX()
+如果你想自己添加一个流媒体测试项，建议查看 ./resources/dos/新增流媒体测试项指南.md
 """
 
 config = cleaner.ConfigManager()
@@ -191,10 +192,13 @@ class SubCollector(BaseCollector):
     """
 
     @logger.catch()
-    def __init__(self, suburl: str, include: str = '', exclude: str = ''):
+    def __init__(self, suburl: str, include: str = '', exclude: str = '', force_convert: bool = False):
         """
         这里在初始化中读取了subconverter的相关配置，但是由于sunconverter无人维护，容易出问题，因此之后我不会再维护此功能。也就是在下载订阅时
         订阅转换
+
+        :param: force_convert: 是否强制转换，如果传进来的url本身就已经是subconverter拼接过的，那么套娃转换会拖慢拉去订阅的速度。
+                                设置为False会检查是否为subconverter拼接过的
         """
         super().__init__()
         self.text = None
@@ -208,18 +212,31 @@ class SubCollector(BaseCollector):
         self.code_include = quote(include, encoding='utf-8')
         self.code_exclude = quote(exclude, encoding='utf-8')
         self.cvt_host = str(self.subconverter.get('host', '127.0.0.1:25500'))
-        self.cvt_url = f"http://{self.cvt_host}/sub?target=clash&new_name=true&url={self.codeurl}" \
+        self.cvt_scheme = self.parse_cvt_scheme()
+        self.cvt_url = f"{self.cvt_scheme}://{self.cvt_host}/sub?target=clash&new_name=true&url={self.codeurl}" \
                        + f"&include={self.code_include}&exclude={self.code_exclude}"
         self.sub_remote_config = self.subconverter.get('remoteconfig', '')
         self.config_include = quote(self.subconverter.get('include', ''), encoding='utf-8')  # 这两个
         self.config_exclude = quote(self.subconverter.get('exclude', ''), encoding='utf-8')
         # print(f"配置文件过滤,包含：{self.config_include} 排除：{self.config_exclude}")
         if self.config_include or self.config_exclude:
-            self.cvt_url = f"http://{self.cvt_host}/sub?target=clash&new_name=true&url={self.cvt_url}" \
+            self.cvt_url = f"{self.cvt_scheme}://{self.cvt_host}/sub?target=clash&new_name=true&url={self.cvt_url}" \
                            + f"&include={self.code_include}&exclude={self.code_exclude}"
         if self.sub_remote_config:
             self.sub_remote_config = quote(self.sub_remote_config, encoding='utf-8')
             self.cvt_url = self.cvt_url + "&config=" + self.sub_remote_config
+        if not force_convert:
+            if "/sub?target=" in self.url:
+                self.cvt_url = self.url
+
+    def parse_cvt_scheme(self) -> str:
+        temp_cvt = self.cvt_host.split(":")
+        cvt_scheme = 'http'
+        if len(temp_cvt) == 2:
+            hostname = temp_cvt[0]
+            if hostname != "127.0.0.1":
+                cvt_scheme = 'https'
+        return cvt_scheme
 
     async def start(self, proxy=None):
         try:
@@ -279,28 +296,43 @@ class SubCollector(BaseCollector):
         suburl = self.cvt_url if self.cvt_enable else self.url
         cvt_text = "subconverter状态: {}".format("已启用" if self.cvt_enable else "未启用")
         logger.info(cvt_text)
+
+        async def safe_read(_response: aiohttp.ClientResponse, limit: int = 52428800):
+            if _response.content_length and _response.content_length > limit:
+                logger.warning(f"订阅文件大小超过了{limit / 1024 / 1024}MB的阈值，已取消获取。")
+                return False
+            _data = b''
+            if inmemory:
+                while True:
+                    _chunk = await _response.content.read(1024)
+                    if not _chunk:
+                        logger.info("获取订阅成功")
+                        break
+                    _data += _chunk
+                    if len(_data) > limit:
+                        logger.warning(f"订阅文件大小超过了{limit / 1024 / 1024}MB的阈值，已取消获取。")
+                        return False
+                return _data
+            else:
+                with open(save_path, 'wb+') as fd:
+                    while True:
+                        _chunk = await _response.content.read(1024)
+                        if not _chunk:
+                            logger.info("获取订阅成功")
+                            break
+                        fd.write(_chunk)
+            return True
+
         try:
             async with aiohttp.ClientSession(headers=_headers) as session:
                 async with session.get(suburl, proxy=proxy, timeout=20) as response:
                     if response.status == 200:
-                        data = b''
-                        if inmemory:
-                            while True:
-                                chunk = await response.content.read()
-                                if not chunk:
-                                    logger.info("获取订阅成功")
-                                    break
-                                data += chunk
-                            return data
-                        with open(save_path, 'wb+') as fd:
-                            while True:
-                                chunk = await response.content.read()
-                                if not chunk:
-                                    logger.info("获取订阅成功")
-                                    break
-                                fd.write(chunk)
-                        return True
-                    return False
+                        return await safe_read(response)
+                    else:
+                        if self.url == self.cvt_url:
+                            return False
+                        self.cvt_url = self.url
+                        return await self.getSubConfig(inmemory=True)
         except asyncio.exceptions.TimeoutError:
             logger.info("获取订阅超时")
             return False
@@ -390,7 +422,6 @@ class Miaospeed:
 
 class Collector:
     def __init__(self, script: List[str] = None):
-        self.session = None
         self.tasks = []
         self._script = script
         self._headers = {
@@ -399,25 +430,9 @@ class Collector:
         self._headers_json = {
             'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                           "Chrome/106.0.0.0 Safari/537.36", "Content-Type": 'application/json'}
-        self.ipurl = "https://api.ip.sb/geoip"
-        self.youtubeurl = "https://www.youtube.com/premium"
-        self.youtubeHeaders = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ' +
-                          'Chrome/80.0.3987.87 Safari/537.36',
-            'Accept-Language': 'en'
-        }
-        self.youtubeCookie = {
-            'YSC': 'BiCUU3-5Gdk',
-            'CONSENT': 'YES+cb.20220301-11-p0.en+FX+700',
-            'GPS': '1',
-            'VISITOR_INFO1_LIVE': '4VwPMkB7W5A',
-            '_gcl_au': '1.1.1809531354.1646633279',
-            'PREF': 'tz=Asia.Shanghai'
-        }
         self.info = {}
         self.disneyurl1 = "https://www.disneyplus.com/"
         self.disneyurl2 = "https://global.edge.bamgrid.com/token"
-        self.daznurl = "https://startup.core.indazn.com/misl/v5/Startup"
 
     @logger.catch
     def create_tasks(self, session: aiohttp.ClientSession, proxy=None):
@@ -437,31 +452,31 @@ class Collector:
                         self.tasks.append(task(self, session, proxy=proxy))
                         continue
                     if i == "Youtube":
-                        from addons.unlockTest import youtube
+                        from addons.builtin import youtube
                         self.tasks.append(youtube.task(self, session, proxy=proxy))
                     elif i == "Disney" or i == "Disney+":
                         task5 = asyncio.create_task(self.fetch_dis(session, proxy=proxy))
                         self.tasks.append(task5)
                     elif i == "Netflix":
-                        from addons.unlockTest import netflix
+                        from addons.builtin import netflix
                         self.tasks.append(netflix.task(self, session, proxy=proxy, netflixurl=netflix_url))
                     elif i == "TVB":
-                        from addons.unlockTest import tvb
+                        from addons.builtin import tvb
                         self.tasks.append(tvb.task(self, session, proxy=proxy))
                     elif i == "Viu":
-                        from addons.unlockTest import viu
+                        from addons.builtin import viu
                         self.tasks.append(viu.task(self, session, proxy=proxy))
                     elif i == "Iprisk" or i == "落地IP风险":
-                        from addons.unlockTest import ip_risk
+                        from addons.builtin import ip_risk
                         self.tasks.append(ip_risk.task(self, session, proxy=proxy))
                     elif i == "steam货币":
-                        from addons.unlockTest import steam
+                        from addons.builtin import steam
                         self.tasks.append(steam.task(self, session, proxy=proxy))
                     elif i == "维基百科":
-                        from addons.unlockTest import wikipedia
+                        from addons.builtin import wikipedia
                         self.tasks.append(wikipedia.task(self, session, proxy=proxy))
                     elif item == "OpenAI":
-                        from addons.unlockTest import openai
+                        from addons.builtin import openai
                         self.tasks.append(openai.task(self, session, proxy=proxy))
                     else:
                         pass
@@ -469,34 +484,6 @@ class Collector:
         except Exception as e:
             logger.error(e)
             return []
-
-    async def fetch_ip(self, session: aiohttp.ClientSession, proxy=None):
-        """
-        ip查询
-        :param session:
-        :param proxy:
-        :return:
-        """
-        try:
-            res = await session.get(self.ipurl, proxy=proxy, timeout=5)
-            logger.info("ip查询状态：" + str(res.status))
-            if res.status != 200:
-                self.info['ip'] = None
-                self.info['netflix1'] = None
-                self.info['netflix2'] = None
-                self.info['youtube'] = None
-                self.info['ne_status_code1'] = None
-                self.info['ne_status_code2'] = None
-                logger.warning("无法查询到代理ip")
-                return self.info
-            else:
-                self.info['ip'] = await res.json()
-        except ClientConnectorError as c:
-            logger.warning(c)
-            self.info['ip'] = None
-            return self.info
-        except Exception as e:
-            logger.error(str(e))
 
     async def fetch_dis(self, session: aiohttp.ClientSession, proxy=None, reconnection=2):
         """
@@ -582,8 +569,6 @@ class Collector:
         try:
             conn = ProxyConnector(host=host, port=port, limit=0)
             session = aiohttp.ClientSession(connector=conn, headers=self._headers)
-            # if proxy is None:
-            #     proxy = f"http://{host}:{port}"
             tasks = self.create_tasks(session, proxy=proxy)
             if tasks:
                 try:
@@ -591,8 +576,7 @@ class Collector:
                 except (ConnectionRefusedError, ProxyConnectionError, ssl.SSLError) as e:
                     logger.error(str(e))
                     return self.info
-                finally:
-                    await session.close()
+            await session.close()
             return self.info
         except Exception as e:
             logger.error(str(e))

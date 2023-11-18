@@ -1,6 +1,8 @@
 import random
 import urllib.parse
 import aiohttp
+from pyrogram.enums import ParseMode
+from pyrogram.types import Message
 from loguru import logger
 from aiohttp.client_exceptions import ClientConnectorError
 from utils.cleaner import geturl
@@ -60,16 +62,16 @@ async def getsub_async(url: str, username: str, pwd: str, proxy=None):
             return str(e)
 
 
-async def baipiao(_, message):
+async def baipiao(_, message: "Message"):
     back_message = await message.reply("正在尝试注册...")  # 发送提示
     regisurl = geturl(str(message.text))
     if regisurl:
         suburl = await getsub_async(regisurl, random_value(10), random_value(8), proxy=proxies)
     else:
-        await back_message.edit_text("❌发生错误，请检查注册地址是否正确")
+        await back_message.edit_text("❌发生错误，请检查注册地址是否正确", parse_mode=ParseMode.DISABLED)
         return
     if suburl:
-        await back_message.edit_text(suburl)
+        await back_message.edit_text(suburl, parse_mode=ParseMode.DISABLED)
         return
     else:
         await back_message.edit_text("❌发生错误，请检查注册地址是否正确")

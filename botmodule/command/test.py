@@ -168,7 +168,7 @@ async def process(app: Client, message: Message, **kwargs):
     back_message = await message.reply("⏳任务接收成功，测试进行中...", quote=True)
     tgtext = str(message.text)
     tgargs = cleaner.ArgCleaner().getall(tgtext)
-    suburl = cleaner.geturl(tgtext) if kwargs.get('url', None) is None else kwargs.get('url', None)
+    suburl = cleaner.geturl(tgtext, True) if kwargs.get('url', None) is None else kwargs.get('url', None)
     put_type = kwargs.pop('put_type', '') if kwargs.get('put_type', '') else tgargs[0].split("@")[0]
     logger.info("测试指令: " + str(put_type))
     if not put_type:

@@ -26,7 +26,7 @@ class IPCleaner:
     def get(self, key, _default=None):
         try:
             if self._data is None:
-                return {}
+                return ""
             return self._data[key]
         except KeyError:
             return _default
@@ -406,16 +406,27 @@ class ClashCleaner:
         if not isinstance(self.yaml, dict):
             self.yaml = {}
 
-    def load(self, _config, _config2: Union[str, bytes]):
-        if type(_config).__name__ == 'str':
+    def notag(self, _config: Union[bytes, str]):
+        """
+        去除制表符，yaml反序列化不允许制表符出现在标量以外的地方
+        """
+        return _config.replace(b'\t', b'  ')
+
+    def load(self, _config, _config2: Union[str, bytes] = None):
+        if isinstance(_config, str):
             if _config == ':memory:':
                 try:
                     if _config2 is None:
                         self.yaml = yaml.safe_load(preTemplate())
                     else:
-                        self.yaml = yaml.safe_load(_config2)
+                        try:
+                            self.yaml = yaml.safe_load(_config2)
+                        except yaml.MarkedYAMLError:
+                            _config2 = self.notag(_config2)
+                            self.yaml = yaml.safe_load(_config2)
                         self.check_type()
                     return
+
                 except Exception as e:
                     logger.error(str(e))
                     self.yaml = {}
@@ -644,17 +655,9 @@ class ClashCleaner:
 
         try:
             if include:
-                if len(include) < 32:
-                    pattern1 = remodule.compile(include)
-                else:
-                    pattern1 = None
-                    logger.warning(f"包含过滤器的文本: {include} 大于32个长度，无法生效！")
+                pattern1 = remodule.compile(include)
             if exclude:
-                if len(exclude) < 32:
-                    pattern2 = remodule.compile(exclude)
-                else:
-                    pattern2 = None
-                    logger.warning(f"排除过滤器的文本: {exclude} 大于32个长度，无法生效！")
+                pattern2 = remodule.compile(exclude)
         except remodule.error:
             logger.error("正则错误！请检查正则表达式！")
             return self.nodesName()
@@ -703,7 +706,7 @@ class ClashCleaner:
     @logger.catch
     def save(self, savePath: str = "./sub.yaml"):
         with open(savePath, "w", encoding="UTF-8") as fp:
-            yaml.dump(self.yaml, fp)
+            yaml.safe_dump(self.yaml, fp, encoding='utf-8')
 
 
 class ConfigManager:
@@ -1093,7 +1096,7 @@ class ConfigManager:
     def save(self, savePath: str = "./resources/config.yaml"):
         with open(savePath, "w+", encoding="UTF-8") as fp:
             try:
-                yaml.dump(self.yaml, fp)
+                yaml.safe_dump(self.yaml, fp, encoding='utf-8')
                 return True
             except Exception as e:
                 logger.error(e)
@@ -1220,7 +1223,7 @@ class ReCleaner:
                     info[i] = task(self)
                     continue
                 if i == "Youtube":
-                    from addons.unlockTest import youtube
+                    from addons.builtin import youtube
                     you = youtube.get_youtube_info(self)
                     info['Youtube'] = you
                 elif i == "Disney":
@@ -1233,25 +1236,25 @@ class ReCleaner:
                     dazn = self.get_dazn_info()
                     info['Dazn'] = dazn
                 elif i == "Netflix":
-                    from addons.unlockTest import netflix
+                    from addons.builtin import netflix
                     info['Netflix'] = netflix.get_netflix_info_new(self)
                 elif i == "TVB":
-                    from addons.unlockTest import tvb
+                    from addons.builtin import tvb
                     info['TVB'] = tvb.get_TVBAnywhere_info(self)
                 elif i == "Viu":
-                    from addons.unlockTest import viu
+                    from addons.builtin import viu
                     info['Viu'] = viu.get_viu_info(self)
                 elif i == "iprisk" or i == "落地IP风险":
-                    from addons.unlockTest import ip_risk
+                    from addons.builtin import ip_risk
                     info['落地IP风险'] = ip_risk.get_iprisk_info(self)
                 elif i == "steam货币":
-                    from addons.unlockTest import steam
+                    from addons.builtin import steam
                     info['steam货币'] = steam.get_steam_info(self)
                 elif i == "维基百科":
-                    from addons.unlockTest import wikipedia
+                    from addons.builtin import wikipedia
                     info['维基百科'] = wikipedia.get_wikipedia_info(self)
                 elif item == "OpenAI":
-                    from addons.unlockTest import openai
+                    from addons.builtin import openai
                     info['OpenAI'] = openai.get_openai_info(self)
                 else:
                     pass
@@ -1582,7 +1585,43 @@ class ArgCleaner:
             return arg
 
 
-def geturl(string: str):
+def protocol_join(protocol_link: str):
+    if not protocol_link:
+        return ''
+    protocol_prefix = ['vmess', 'vless', 'ss', 'ssr', 'trojan', 'hysteria2', 'hysteria',
+                       'socks5', 'snell', 'tuic', 'juicity']
+    p = protocol_link.split('://')
+    if len(p) < 2:
+        return ''
+    if p[0] not in protocol_prefix:
+        return ''
+
+    from urllib.parse import quote
+    subcvtconf = config.config.get('subconverter', {})
+    enable = subcvtconf.get('enable', False)
+    if not isinstance(enable, bool):  # 如果没有解析成bool值，强制禁用subconverter
+        enable = False
+    if not enable:
+        return ''
+    subcvtaddr = subcvtconf.get('host', '')
+    remoteconfig = subcvtconf.get('remoteconfig', '')
+    if not remoteconfig:
+        remoteconfig = "https%3A%2F%2Fraw.githubusercontent.com%2FACL4SSR%2FACL4SSR%2Fmaster%2FClash%2F" \
+                       "config%2FACL4SSR_Online.ini"
+    else:
+        remoteconfig = quote(remoteconfig)
+
+    new_link = f"https://{subcvtaddr}/sub?target=clash&new_name=true&url=" + quote(protocol_link) + \
+               f"&insert=false&config={remoteconfig}"
+    return new_link
+
+
+def geturl(string: str, protocol_match: bool = False):
+    """
+    获取URL
+
+    :param: protocol_match: 是否匹配协议URI，并拼接成ubconverter形式
+    """
     text = string
     pattern = re.compile(
         r"https?://(?:[a-zA-Z]|\d|[$-_@.&+]|[!*,]|[\w\u4e00-\u9fa5])+")  # 匹配订阅地址
@@ -1591,7 +1630,13 @@ def geturl(string: str):
         url = pattern.findall(text)[0]  # 列表中第一个项为订阅地址
         return url
     except IndexError:
-        return None
+        if protocol_match:
+            args = ArgCleaner.getarg(string)
+            protocol_link = args[1] if len(args) > 1 else text.strip() if not text.startswith("/") else ''
+            new_link = protocol_join(protocol_link)
+            return new_link if new_link else None
+        else:
+            return None
 
 
 @logger.catch

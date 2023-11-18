@@ -121,7 +121,7 @@ async def get_url_from_invite(_, message2):
                 include_text = texts_li[1]
             if len(texts_li) > 2:
                 exclude_text = texts_li[2]
-            url_li = geturl(text_li)
+            url_li = geturl(text_li, True)
             if url_li:
                 await temp_queue.put((url_li, include_text, exclude_text))
             else:
