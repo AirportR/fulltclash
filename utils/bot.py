@@ -1,16 +1,14 @@
-import asyncio
-
 from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery, Message
 from loguru import logger
+
 import botmodule
 from botmodule import init_bot
-from botmodule.cfilter import dynamic_data_filter, allfilter, AccessCallback, prefix_filter, next_filter
+from botmodule.cfilter import dynamic_data_filter as dyn_flt, allfilter, AccessCallback, prefix_filter, next_filter, \
+    exclude_text_filter as ex_flt
 from botmodule.command.authority import get_url_from_invite
 from botmodule.command.leave import leavechat, set_anti_group
 from botmodule.command.logs import export_logs
-# from utils.cron.utils import message_delete_queue
-# from utils.myqueue import q, bot_task_queue
 from utils.myqueue import bot_put
 from utils.check import check_callback_master
 from utils.backend import break_speed
@@ -19,7 +17,6 @@ from utils.cleaner import reload_config as r2
 
 config = init_bot.config
 admin = init_bot.admin  # 管理员
-task_num = 0  # 任务数
 bridge = config.config.get('userbot', {}).get('id', [])
 common_cmd = config.getBotconfig().get('command', [])
 
@@ -56,8 +53,11 @@ def command_loader2(app: Client):
     后端专属指令
     """
     masterconfig = config.getMasterconfig()
-    master_bridge = [int(i.get('bridge')) for i in masterconfig.values()] if masterconfig else []
-    print("userbot白名单：", master_bridge)
+    try:
+        master_bridge = [int(i.get('bridge')) for i in masterconfig.values()] if masterconfig else []
+    except Exception as e:
+        logger.info(str(e))
+        master_bridge = []
 
     @app.on_message(filters.caption & filters.document & filters.user(master_bridge), 1)
     async def put_task(client: Client, message: Message):
@@ -163,7 +163,7 @@ def command_loader(app: Client):
     async def _(_: Client, message: Message):
         await message.reply("🚧开发中~🚧")
 
-    @app.on_message(filters.command(['install', 'list']) & allfilter(2), group=2)
+    @app.on_message(filters.command(['install']) & allfilter(2), group=2)
     async def install_script(client, message):
         await botmodule.download_script(client, message)
 
@@ -226,7 +226,7 @@ def callback_loader(app: Client):
     async def _(client: Client, call: CallbackQuery):
         await botmodule.home_setting(client, call)
 
-    @app.on_callback_query(prefix_filter("/api/rule/page/") | dynamic_data_filter("/api/rule/home"), 1)
+    @app.on_callback_query(prefix_filter("/api/rule/page/") | dyn_flt("/api/rule/home"), 1)
     async def _(client: Client, call: CallbackQuery):
         await botmodule.home_rule(client, call)
 
@@ -242,64 +242,60 @@ def callback_loader(app: Client):
     async def _(client: Client, call: CallbackQuery):
         await botmodule.select_slave_only(client, call)
 
-    @app.on_callback_query(dynamic_data_filter("/api/script/ok"))
+    @app.on_callback_query(dyn_flt("/api/script/ok"))
     async def _(client: Client, call: CallbackQuery):
         await botmodule.select_script_only(client, call)
 
-    @app.on_callback_query(dynamic_data_filter("/api/rule/new"), 1)
+    @app.on_callback_query(dyn_flt("/api/rule/new"), 1)
     async def _(client: Client, call: CallbackQuery):
         await botmodule.bot_new_rule(client, call)
 
-    @app.on_callback_query(filters=dynamic_data_filter('stop') & filters.user(botmodule.init_bot.reloadUser()), group=1)
+    @app.on_callback_query(filters=dyn_flt('stop') & filters.user(botmodule.init_bot.reloadUser()), group=1)
     async def invite_test(client: Client, callback_query: CallbackQuery):
         await botmodule.stopspeed(client, callback_query)
 
-    @app.on_callback_query(filters=dynamic_data_filter('reload:addon') & filters.user(init_bot.admin), group=1)
+    @app.on_callback_query(filters=dyn_flt('reload:addon') & filters.user(init_bot.admin), group=1)
     async def reload_addon(client, callback_query):
         await botmodule.reload_addon_from_telegram(client, call=callback_query)
         callback_query.stop_propagation()
 
     @app.on_callback_query(filters.user(init_bot.admin) & (prefix_filter("/api/config/page/") |
-                                                           dynamic_data_filter("/api/config/home")), group=1)
+                                                           dyn_flt("/api/config/home")), group=1)
     async def bot_setting(client, callback_query: CallbackQuery):
         await botmodule.select_config_page(client, callback_query, column=2)
-        # if callback_query.data.startswith('cpage'):
-        #     await botmodule.select_config_page(client, callback_query, page=int(callback_query.data[5:]), column=2)
-        #     return
-        # # elif callback_query.data.startswith('config'):
-        # #     await botmodule.setting_config(client, callback_query, column=2)
-        # #     return
-        # elif callback_query.data == 'setconfig':
-        #     await botmodule.select_config_page(client, callback_query, page=1, column=2)
-        #     return
 
-    @app.on_callback_query(group=2)
+    @app.on_callback_query(filters=ex_flt(["blank"]), group=2)
     async def settings_test(client, callback_query: CallbackQuery):
-        if callback_query.data == "blank":
-            return
         if callback_query.data == "close":
             await callback_query.message.delete()
             return
-        if await check_callback_master(callback_query, botmodule.init_bot.reloadUser()):
-            return
 
         elif callback_query.data.startswith('page'):
+            if await check_callback_master(callback_query, botmodule.init_bot.reloadUser()):
+                return
             await botmodule.select_page(client, callback_query, page=int(str(callback_query.data)[4:]))
             return
         elif callback_query.data.startswith('spage'):
+            if await check_callback_master(callback_query, botmodule.init_bot.reloadUser()):
+                return
             await botmodule.select_slave_page(client, callback_query, page=int(callback_query.data[5:]))
             return
         elif callback_query.data.startswith('slave'):
+            if await check_callback_master(callback_query, botmodule.init_bot.reloadUser()):
+                return
             await botmodule.select_slave(client, callback_query)
             return
         elif callback_query.data.startswith('sort:'):
+            if await check_callback_master(callback_query, botmodule.init_bot.reloadUser()):
+                return
             await botmodule.select_sort(client, callback_query)
             return
+
+        # 注意以下代码为历史遗留问题，可能会让人迷惑
         test_items, origin_message, message, test_type = await botmodule.test_setting(client, callback_query)
         # logger.info(str(test_items))
         if message:
             sort_str = botmodule.get_sort_str(message)
             slaveid = botmodule.get_slave_id(message)
-            await asyncio.sleep(2)
             await message.delete()
             await bot_put(client, origin_message, test_type, test_items, sort=sort_str, coreindex=3, slaveid=slaveid)
