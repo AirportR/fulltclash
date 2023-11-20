@@ -603,7 +603,7 @@ async def select_script_only(_: "Client", call: Union["CallbackQuery", "Message"
 
 
 async def select_sort_only(_: "Client", call: Union["CallbackQuery", "Message"],
-                           timeout: int = 10, speed: bool = False) -> str:
+                           timeout: int = 60, speed: bool = False) -> str:
     """
     高层级的选择排序api
     timeout: 获取的超时时间，超时返回空字符串
