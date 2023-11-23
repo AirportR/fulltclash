@@ -1202,7 +1202,7 @@ class ReCleaner:
                     info[i] = task(self)
                     continue
                 if i == "Youtube":
-                    from addons.unlockTest import youtube
+                    from addons.builtin import youtube
                     you = youtube.get_youtube_info(self)
                     info['Youtube'] = you
                 elif i == "Disney":
@@ -1215,25 +1215,25 @@ class ReCleaner:
                     dazn = self.get_dazn_info()
                     info['Dazn'] = dazn
                 elif i == "Netflix":
-                    from addons.unlockTest import netflix
+                    from addons.builtin import netflix
                     info['Netflix'] = netflix.get_netflix_info_new(self)
                 elif i == "TVB":
-                    from addons.unlockTest import tvb
+                    from addons.builtin import tvb
                     info['TVB'] = tvb.get_TVBAnywhere_info(self)
                 elif i == "Viu":
-                    from addons.unlockTest import viu
+                    from addons.builtin import viu
                     info['Viu'] = viu.get_viu_info(self)
                 elif i == "iprisk" or i == "落地IP风险":
-                    from addons.unlockTest import ip_risk
+                    from addons.builtin import ip_risk
                     info['落地IP风险'] = ip_risk.get_iprisk_info(self)
                 elif i == "steam货币":
-                    from addons.unlockTest import steam
+                    from addons.builtin import steam
                     info['steam货币'] = steam.get_steam_info(self)
                 elif i == "维基百科":
-                    from addons.unlockTest import wikipedia
+                    from addons.builtin import wikipedia
                     info['维基百科'] = wikipedia.get_wikipedia_info(self)
                 elif item == "OpenAI":
-                    from addons.unlockTest import openai
+                    from addons.builtin import openai
                     info['OpenAI'] = openai.get_openai_info(self)
                 else:
                     pass
