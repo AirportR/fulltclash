@@ -68,7 +68,7 @@ def get_iprisk_info(ReCleaner):
             if info_str == "N/A":
                 return "N/A"
             index = info_str.find('IP Fraud Risk API')
-            info_pre = info_str[index + 88:index + 160] if index > 0 else "{}"
+            info_pre = info_str[index + 96:index + 180] if index > 0 else "{}"
             index2 = info_pre.find("}")
             info_str2 = info_pre[:index2 + 1] if index2 > 0 else "{}"
             info = json.loads(info_str2)
@@ -85,3 +85,22 @@ SCRIPT = {
     "TASK": task,
     "GET": get_iprisk_info
 }
+
+
+async def demo():
+    class FakeColl:
+        def __init__(self):
+            self.info = {}
+            self.data = self.info
+
+    fakecl = FakeColl()
+
+    session = aiohttp.ClientSession()
+    await fetch_ip_risk(fakecl, session, proxy='http://127.0.0.1:11112')
+    print(get_iprisk_info(fakecl))
+    await session.close()
+
+
+if __name__ == "__main__":
+    loop = asyncio.new_event_loop()
+    loop.run_until_complete(demo())
