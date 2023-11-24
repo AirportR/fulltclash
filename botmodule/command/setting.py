@@ -22,6 +22,7 @@ from botmodule.command.authority import (Invite, INVITE_SELECT_CACHE as ISC,
 
 dsc = default_slave_comment = config.getSlaveconfig().get('default-slave', {}).get('comment', "本地后端")
 dsi = default_slave_id = config.getSlaveconfig().get('default-slave', {}).get('username', "local")
+ds_shadow = bool(config.getSlaveconfig().get('default-slave', {}).get('shadow', False))  # 是否隐藏默认后端
 dbtn = default_button = {
     1: IKB("✅Netflix", callback_data='✅Netflix'),
     2: IKB("✅Youtube", callback_data='✅Youtube'),
@@ -442,7 +443,8 @@ async def select_slave_page(_: Client, call: Union[CallbackQuery, Message], cont
         next_page.callback_data = 'blank'
     else:
         content_keyboard = [[IKB(c, content_prefix + c)] for c in comment[(page - 1) * row:page * row]]
-    content_keyboard.insert(0, [dbtn['b_slave']])
+    if not ds_shadow:
+        content_keyboard.insert(0, [dbtn['b_slave']])
     content_keyboard.append([pre_page, blank, next_page])
     content_keyboard.append([dbtn['b_cancel']])
     IKM = InlineKeyboardMarkup(content_keyboard)
@@ -513,8 +515,9 @@ async def select_slave_only_1(_: Client, call: Union[CallbackQuery, Message], **
                i.get('comment', None) and k != "default-slave"]
     content_keyboard = page_frame(page_prefix, api_route, comment, split='?comment=', page=page, **kwargs)
     if page == 1:
-        localslave = IKB(dsc, api_route + "?comment=" + dsc)
-        content_keyboard.insert(0, [localslave])
+        if not ds_shadow:
+            localslave = IKB(dsc, api_route + "?comment=" + dsc)
+            content_keyboard.insert(0, [localslave])
     content_keyboard.append([dbtn['b_close']])
 
     IKM = InlineKeyboardMarkup(content_keyboard)
@@ -522,7 +525,7 @@ async def select_slave_only_1(_: Client, call: Union[CallbackQuery, Message], **
     if isinstance(call, CallbackQuery):
         await target.edit_text(target.text, reply_markup=IKM)
     else:
-        return await target.reply(f"请选择测试后端, 你有{kwargs.get('timeout', 60)}s的时间选择:\n", quote=True, reply_markup=IKM)
+        return await target.reply(f"请选择测试后端:\n", quote=True, reply_markup=IKM)
 
 
 async def select_script_only(_: "Client", call: Union["CallbackQuery", "Message"],
@@ -548,7 +551,7 @@ async def select_script_only(_: "Client", call: Union["CallbackQuery", "Message"
                 [IKB("👌完成选择", api_route)]
             ]
         )
-        botmsg = await call.reply(f"请选择想要启用的测试项(你有{timeout}s的时间选择): ", reply_markup=IKM, quote=True)
+        botmsg = await call.reply(f"请选择想要启用的测试项: ", reply_markup=IKM, quote=True)
         recvkey = gen_msg_key(botmsg)
         q = asyncio.Queue(1)
         receiver[recvkey] = q
@@ -600,7 +603,7 @@ async def select_script_only(_: "Client", call: Union["CallbackQuery", "Message"
 
 
 async def select_sort_only(_: "Client", call: Union["CallbackQuery", "Message"],
-                           timeout: int = 10, speed: bool = False) -> str:
+                           timeout: int = 60, speed: bool = False) -> str:
     """
     高层级的选择排序api
     timeout: 获取的超时时间，超时返回空字符串
@@ -621,7 +624,7 @@ async def select_sort_only(_: "Client", call: Union["CallbackQuery", "Message"],
             content_keyboard.append([IKB("⬆️最大速度升序", f"{api_route}mspeed"),
                                      IKB("⬇️最大速度降序", f"{api_route}mrspeed")])
         content_keyboard.append([dbtn['b_close']])
-        botmsg = await call.reply(f"请选择排序方式(你有{timeout}s的时间选择): ",
+        botmsg = await call.reply(f"请选择排序方式: ",
                                   reply_markup=InlineKeyboardMarkup(content_keyboard), quote=True)
         recvkey = gen_msg_key(botmsg)
         q = asyncio.Queue(1)
@@ -756,9 +759,9 @@ async def select_slave(app: Client, call: CallbackQuery):
         if sort_str:
             put_type = "speedurl" if originmsg.text.split(' ', 1)[0].split('@', 1)[0].endswith('url') else "speed"
             await bot_put(app, originmsg, put_type, None, sort=sort_str, coreindex=1, slaveid=slaveid)
-        else:
-            b = await botmsg.reply("❌选择超时，已取消任务。")
-            mdq.put(b, 5)
+        # else:
+        #     b = await botmsg.reply("❌选择超时，已取消任务。")
+        #     mdq.put(b, 5)
     else:
         await botmsg.edit_text("🐛暂时未适配")
         return
@@ -907,7 +910,7 @@ async def bot_rule_page(_: 'Client', call: "CallbackQuery"):
     script = rule.get('script', [])
     text = f"🚦规则名: {rule_name}\n🤖选中后端: {comment}\n⛓️选中排序: {sort}\n🧵选中脚本: {str(script)}\n\n"
     status = " ✅状态：启用" if rule.get('enable', True) else " ❌状态：禁用"
-    status_action = f"/api/rule/disable?name={rule_name}" if rule.get('enable', True) else\
+    status_action = f"/api/rule/disable?name={rule_name}" if rule.get('enable', True) else \
         f"/api/rule/enable?name={rule_name}"
     status_button = IKB(status, status_action)
     keyboard = [
@@ -922,7 +925,7 @@ async def bot_rule_page(_: 'Client', call: "CallbackQuery"):
 async def bot_new_rule(app: Client, call: CallbackQuery):
     caidan = "彩蛋: 试试把规则名设置成自己的userid(ง •_•)ง"
     trigger_prob = 13
-    msg_text0 = "很好！请在**60s**内给规则取一个名字(直接打字发送)："
+    msg_text0 = "很好！请在**60s**内给规则取一个名字(直接打字发送, 不能是中文)："
     if secrets.randbelow(100) < trigger_prob:
         msg_text0 += f"\n\n{caidan}"
     msg_text = "接下来请完成后端、排序方式、测试项选择。\n提示："

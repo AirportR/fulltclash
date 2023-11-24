@@ -43,7 +43,7 @@ async def bot_task_queue_slave(app: Client, message: Message, putinfo: dict, qu:
 
 async def bot_put(client: Client, message: Message, put_type: str, test_items: list = None, **kwargs):
     """
-    推送任务，bot推送反馈
+    推送任务，bot推送反馈。这里是bot推送任务的起点，在这里实现了一个简单的队列
     :param test_items:
     :param client:
     :param message:
@@ -78,15 +78,6 @@ async def bot_put(client: Client, message: Message, put_type: str, test_items: l
             await mes.delete()
             await bot_task_queue(client, message, put_type, CONN_Q, test_items=test_items, **kwargs)
             QUEUE_NUM_CONN -= 1
-
-        # mes = await message.reply("排队中,前方队列任务数量为: " + str(task_num - 1))
-        # await q.put(message)
-        # r1(test_items)
-        # r2(test_items)
-        # await mes.delete()
-        #
-        # await bot_task_queue(client, message, put_type, q, test_items=test_items, **kwargs)
-        # task_num -= 1
 
     except AttributeError as a:
         logger.error(str(a))

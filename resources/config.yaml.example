@@ -61,6 +61,13 @@ bot:
 #  default-slave: # 默认后端配置。
 #    comment: "本地测试后端" # 默认测试后端的备注。
 #    username: "local" # 默认测试后端的ID，此项请勿修改，会影响本地后端的运行。
+#    shadow: false # 3.6.5新增。是否隐藏后端，默认不隐藏，即 false ，想隐藏可以改为 true
+#  "slave1": #第一个后端，注意这里的名字是随便填的，是为了方便你该配置所标记的。
+#    address: 127.0.0.1:8765 #此项配置为websocket后端专属配置，当type为websocket时才有效。后端地址格式为 ip:port ，也可以是 域名:port。
+#    comment: "ws后端 [ws] [meta]" #后端备注，在测试图显示的。
+#    public-key: "12345678" #后端解密的通讯token，也叫做通信密钥，密钥不对无法对接成功。
+#    type: "websocket" #此项指明后端连接类型。仅有两个有效值：["websocket", "bot"] 这里websocket后端。
+
 #userconfig: #用户权限组相关配置
 #  rule: #测试时的默认规则,3.6.0加入
 #    "规则名":
@@ -78,7 +85,7 @@ bot:
 # title: 'FullTclash' # 绘图时的标题
 # 以下是颜色配置，其中speed是速度相关,name为颜色名字，value为颜色值，目前仅支持十六进制，label是颜色对应的速度区间（单位MB）,不用动，只需改value值，其他项是为了做区分。
 # color:
-#  speed: # 刚刚好有七个颜色，多一个少一个可能会有奇怪的效果。注意缩进。如果不想有太多颜色，可以两个颜色取同样的颜色值。
+#  speed: # 刚刚好有七个颜色，想要更多颜色，自己加项。注意缩进。如果不想有太多颜色，可以两个颜色取同样的颜色值。
 #   - { label: 0, name: '云水', value: '#B4C3D0', alpha: 255, end_color: '#B4C3D0' }
 #   - { label: 1, name: '晴山', value: '#91AEC4', alpha: 255, end_color: '#91AEC4' }
 #   - { label: 5, name: '秋波', value: '#8BB8CB', alpha: 255, end_color: '#8BB8CB' }
@@ -87,6 +94,7 @@ bot:
 #   - { label: 60, name: '甸子', value: '#238BBC', alpha: 255, end_color: '#238BBC' }
 #   - { label: 100, name: '景泰', value: '#2A73AC', alpha: 255, end_color: '#2A73AC' }
 #  delay: #延迟单位: ms
+#   - { label: 0, name: '云水', value: '#B4C3D0', alpha: 255, end_color: '#B4C3D0' }
 #   - { label: 1, name: '云水', value: '#B4C3D0', alpha: 255, end_color: '#B4C3D0' }
 #   - { label: 100, name: '晴山', value: '#91AEC4', alpha: 255, end_color: '#91AEC4' }
 #   - { label: 200, name: '秋波', value: '#8BB8CB', alpha: 255, end_color: '#8BB8CB' }
