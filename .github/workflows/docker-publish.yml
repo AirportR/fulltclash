@@ -21,6 +21,12 @@ jobs:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set Environment Variables
+        run: |
+          IMG=fulltclash
+          OWNER="$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')"
+          echo "IMG=${IMG}" >> $GITHUB_ENV
+          echo "IMAGE=ghcr.io/${OWNER}/${IMG}" >> $GITHUB_ENV
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
@@ -29,5 +35,5 @@ jobs:
           file: ./docker/Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/fulltclash:latest
-            ghcr.io/${{ github.repository_owner }}/fulltclash:dev
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:dev
