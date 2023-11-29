@@ -14,4 +14,5 @@ if [[ $last_version ==  "$git_version" ]]; then
 else
     echo -e "检查到新版本，正在更新"
     update
+    supervisorctl restart fulltclash
 fi
