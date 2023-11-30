@@ -21,22 +21,33 @@ clash:
  branch: meta
 ```
 
-## 构建Docker镜像
+## 部署
 
-### 下载Dockerfile
-```
-wget -N https://raw.githubusercontent.com/AirportR/FullTclash/dev/docker/Dockerfile
-```
 
-### 构建镜像
+### 拉取镜像
 ```
-docker build -t fulltclash:dev .
+docker pull ghcr.io/airportr/fulltclash:dev
 ```
 
-启动
+### docker
+```bash
+docker run -itd --name=fulltclash --restart=always -v /etc/FullTclash/config.yaml:/app/resources/config.yaml ghcr.io/airportr/fulltclash:dev
 ```
-docker run -itd --name=fulltclash --restart=always -v /etc/FullTclash/config.yaml:/app/resources/config.yaml fulltclash:dev
+
+### docker-compose
+
+```bash
+# 安装 docker-compose
+# curl -L https://github.com/docker/compose/releases/latest/download/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
+# chmod +x /usr/local/bin/docker-compose
+wget -N https://raw.githubusercontent.com/AirportR/FullTclash/dev/docker/docker-compose.yml
+
+# 启动
+docker-compose up -d
+# 停止
+docker-compose down
 ```
+
 查看日志
 ```
 docker exec -it fulltclash tail -f /var/log/fulltclash.log
