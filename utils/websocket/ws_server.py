@@ -148,7 +148,7 @@ async def websocket_handler(request):
 
 async def server(host: str = '127.0.0.1', port: int = 8765):
     app = web.Application()
-    app.add_routes([web.get('/ws', websocket_handler)])
+    app.add_routes([web.get('/', websocket_handler)])
 
     runner = web.AppRunner(app)
     await runner.setup()
