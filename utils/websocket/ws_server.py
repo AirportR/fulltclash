@@ -34,64 +34,72 @@ async def ws_progress(progress, nodenum, ws: web.WebSocketResponse, corenum: int
         await ws.send_bytes(c)
 
 
-async def router(plaindata: dict, ws: web.WebSocketResponse, **kwargs):
+async def task_run(plaindata: dict, ws: web.WebSocketResponse, **kwargs):
     global QUEUE_NUM_SPEED
     global QUEUE_NUM_CONN
+    key = GCONFIG.config.get('websocket', {}).get('token', '')
+    coreindex = plaindata.get('coreindex', None)
+    coreindex = int(coreindex) if coreindex else None
+    proxyinfo = plaindata.pop('proxies', [])
+    core = select_core(coreindex, (ws_progress, (ws, coreindex, plaindata)))
+    if core is None:
+        return
+    kwargs.update(plaindata)
+    logger.info("开始测试")
+    botmsg = plaindata.get('edit-message', {})
+    if coreindex == 1:
+        new_payload = {'text': f"排队中，前方测速队列任务数量为: {QUEUE_NUM_SPEED}",
+                       'edit-message': botmsg}
+        nospeed = GCONFIG.config.get('nospeed', False)
+        if nospeed:
+            new_payload['text'] = "❌此后端禁止测速服务"
+        wjson = websocket.WebSocketJson(websocket.PayloadStatus.OK, 'edit', new_payload)
+        cipherdata = cipher_chacha20(str(wjson).encode(), sha256_32bytes(key))
+        await ws.send_bytes(cipherdata)
+        if nospeed:
+            return
+        logger.info(f"排队中，前方测速队列任务数量为: {QUEUE_NUM_SPEED}")
+        QUEUE_NUM_SPEED += 1
+        await SPEED_Q.put(1)
+    else:
+        logger.info(f"排队中，前方队列任务数量为: {QUEUE_NUM_CONN}")
+        new_payload = {'text': f"排队中，前方队列任务数量为: {QUEUE_NUM_CONN}",
+                       'edit-message': botmsg}
+        wjson = websocket.WebSocketJson(websocket.PayloadStatus.OK, 'edit', new_payload)
+        cipherdata2 = cipher_chacha20(str(wjson).encode(), sha256_32bytes(key))
+        await ws.send_bytes(cipherdata2)
+        QUEUE_NUM_CONN += 1
+        await CONN_Q.put(1)
+    try:
+        info = await core.core(proxyinfo, **kwargs) if proxyinfo else {}
+    except Exception as e:
+        logger.error(str(e))
+        info = {}
+    finally:
+        if coreindex == 1:
+            await SPEED_Q.get()
+            QUEUE_NUM_SPEED -= 1
+        else:
+            await CONN_Q.get()
+            QUEUE_NUM_CONN -= 1
+
+    plaindata['result'] = info
+    print("测试结果: ", info)
+    infostr = json.dumps(plaindata)
+    cipherdata = cipher_chacha20(infostr.encode(), sha256_32bytes(key))
+    await ws.send_bytes(cipherdata)
+
+
+def stopspeed():
+    break_speed.append(True)
+
+
+async def router(plaindata: dict, ws: web.WebSocketResponse, **kwargs):
     do = plaindata.pop('do', '')
     if do == 'run':
-        key = GCONFIG.config.get('websocket', {}).get('token', '')
-        coreindex = plaindata.get('coreindex', None)
-        coreindex = int(coreindex) if coreindex else None
-        proxyinfo = plaindata.pop('proxies', [])
-        core = select_core(coreindex, (ws_progress, (ws, coreindex, plaindata)))
-        if core is None:
-            return
-        kwargs.update(plaindata)
-        logger.info("开始测试")
-        botmsg = plaindata.get('edit-message', {})
-        if coreindex == 1:
-            new_payload = {'text': f"排队中，前方测速队列任务数量为: {QUEUE_NUM_SPEED}",
-                           'edit-message': botmsg}
-            nospeed = GCONFIG.config.get('nospeed', False)
-            if nospeed:
-                new_payload['text'] = "❌此后端禁止测速服务"
-            wjson = websocket.WebSocketJson(websocket.PayloadStatus.OK, 'edit', new_payload)
-            cipherdata = cipher_chacha20(str(wjson).encode(), sha256_32bytes(key))
-            await ws.send_bytes(cipherdata)
-            if nospeed:
-                return
-            logger.info(f"排队中，前方测速队列任务数量为: {QUEUE_NUM_SPEED}")
-            QUEUE_NUM_SPEED += 1
-            await SPEED_Q.put(1)
-        else:
-            logger.info(f"排队中，前方队列任务数量为: {QUEUE_NUM_CONN}")
-            new_payload = {'text': f"排队中，前方队列任务数量为: {QUEUE_NUM_CONN}",
-                           'edit-message': botmsg}
-            wjson = websocket.WebSocketJson(websocket.PayloadStatus.OK, 'edit', new_payload)
-            cipherdata2 = cipher_chacha20(str(wjson).encode(), sha256_32bytes(key))
-            await ws.send_bytes(cipherdata2)
-            QUEUE_NUM_CONN += 1
-            await CONN_Q.put(1)
-        try:
-            info = await core.core(proxyinfo, **kwargs) if proxyinfo else {}
-        except Exception as e:
-            logger.error(str(e))
-            info = {}
-        finally:
-            if coreindex == 1:
-                await SPEED_Q.get()
-                QUEUE_NUM_SPEED -= 1
-            else:
-                await CONN_Q.get()
-                QUEUE_NUM_CONN -= 1
-
-        plaindata['result'] = info
-        print("测试结果: ", info)
-        infostr = json.dumps(plaindata)
-        cipherdata = cipher_chacha20(infostr.encode(), sha256_32bytes(key))
-        await ws.send_bytes(cipherdata)
+        await task_run(plaindata, ws, **kwargs)
     elif do == "stopspeed":
-        break_speed.append(True)
+        stopspeed()
     await ws.close()
 
 
@@ -110,7 +118,6 @@ async def websocket_handler(request):
             logger.warning(str(e))
             wjson = websocket.WebSocketJson(websocket.PayloadStatus.ERROR, 'Data decryption failed.', '')
             await ws.send_str(str(wjson))
-            # await ws.send_str('Data decryption failed.')
             logger.warning("Data decryption failed.")
             return
         try:
@@ -119,8 +126,6 @@ async def websocket_handler(request):
             logger.error("Data decryption failed.")
             wjson = websocket.WebSocketJson(websocket.PayloadStatus.ERROR, 'Data decryption failed.', '')
             await ws.send_str(str(wjson))
-            # await ws.send_json({'status': 'Data decryption failed.'})
-            # await ws.send_str('Data decryption failed.')
             return
 
         await ws.send_json(str(websocket.WebSocketJson(websocket.PayloadStatus.OK, '接受数据成功', '')))
@@ -143,7 +148,7 @@ async def websocket_handler(request):
 
 async def server(host: str = '127.0.0.1', port: int = 8765):
     app = web.Application()
-    app.add_routes([web.get('/', websocket_handler)])
+    app.add_routes([web.get('/ws', websocket_handler)])
 
     runner = web.AppRunner(app)
     await runner.setup()
