@@ -9,12 +9,21 @@ from loguru import logger
 
 from utils.clash import check_port, start_fulltclash
 from utils.cleaner import ConfigManager
-from utils.safe import gen_key
 
 config = ConfigManager()  # 配置加载
 admin = config.getAdmin()  # 管理员
 config.add_user(admin)  # 管理员同时也是用户
 config.reload()
+
+
+def check_permission():
+    if sys.platform != "win32":
+        try:
+            status = os.system(f"chmod +x {clash_path}")
+            if status != 0:
+                raise OSError(f"Failed to execute command: chmod +x {clash_path}")
+        except OSError as o:
+            print(o)
 
 
 def check_args():
@@ -104,8 +113,9 @@ def check_init():
         return
     if "fulltclash-private.pem" in dirs:
         return
-    logger.info("正在初始化公私钥")
-    gen_key()
+    # logger.info("正在初始化公私钥")
+    # gen_key()
+    check_permission()
 
 
 def check_version() -> str:
@@ -124,8 +134,6 @@ def check_version() -> str:
     return _latest_version_hash
 
 
-check_args()
-check_init()
 # 获取远程仓库的最新提交哈希
 latest_version_hash = check_version()
 
@@ -145,6 +153,8 @@ logger.info("管理员名单加载:" + str(admin))
 USERNAME = "@FullTclashBot"
 port = config.get_proxy_port()
 proxy_subprocess = None
+check_args()
+check_init()
 try:
     _proxy = config.get_bot_proxy(isjoint=False).split(':')
     proxy_host = _proxy[0]
