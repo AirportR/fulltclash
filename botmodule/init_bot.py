@@ -6,8 +6,6 @@ import sys
 from subprocess import check_output
 
 from loguru import logger
-
-from utils.clash import check_port, start_fulltclash
 from utils.cleaner import ConfigManager
 
 config = ConfigManager()  # 配置加载
@@ -143,8 +141,8 @@ botconfig = config.getBotconfig()
 api_id = botconfig.get('api_id', None)
 api_hash = botconfig.get('api_hash', None)
 bot_token = botconfig.get('bot_token', None)
-clash_path = config.get_clash_path()  # 为clash核心运行路径, Windows系统需要加后缀名.exe
-clash_work_path = config.get_clash_work_path()  # clash工作路径
+clash_path = config.get_clash_path()  # 为代理客户端运行路径
+# clash_work_path = config.get_clash_work_path()  # clash工作路径
 corenum = min(config.config.get('clash', {}).get('core', 1), 128)
 
 USER_TARGET = config.getuser()  # 这是用户列表，从配置文件读取
@@ -201,31 +199,6 @@ else:
     proxies = None
 
 logger.info("配置已加载, Telegram bot程序开始运行...")
-
-
-def start_clash():
-    # 端口检查
-    global proxy_subprocess
-    loop = asyncio.get_event_loop()
-    start_port = config.config.get('clash', {}).get('startup', 11220)
-    port_list = [str(start_port + i * 2) for i in range(corenum)]
-    res2 = loop.run_until_complete(check_port(start_port - 1, start_port + 1 + corenum * 2))
-    if res2:
-        logger.warning("端口检查中发现已有其他进程占用了端口，请更换端口,否则测试可能会出现不可预知的错误。(亦或者是您分开启动？)")
-        return
-    # if config.config.get('clash', {}).get('auto-start', False):
-    print("开始启动clash core")
-    if sys.platform != "win32":
-        try:
-            status = os.system(f"chmod +x {clash_path}")
-            if status != 0:
-                raise OSError(f"Failed to execute command: chmod +x {clash_path}")
-        except OSError as o:
-            print(o)
-    proxy_subprocess = start_fulltclash(port_list)
-
-
-# start_clash()
 
 
 def reloadUser():

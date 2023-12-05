@@ -943,22 +943,9 @@ class ConfigManager:
         try:
             return self.config['clash']['path']
         except KeyError:
-            logger.warning("获取运行路径失败，将采用默认运行路径: ./bin\n自动识别windows,linux,macos系统。架构默认为amd64")
-            if sys.platform.startswith("linux"):
-                path = './bin/fulltclash-linux-amd64'
-            elif sys.platform.startswith("win32"):
-                path = r'.\bin\fulltclash-windows-amd64.exe'
-            elif 'darwin' in sys.platform:
-                path = './bin/fulltclash-macos-amd64'
-            else:
-                path = './bin/fulltclash-linux-amd64'
-            d = {'path': path}
-            try:
-                self.yaml['clash'].update(d)
-            except KeyError:
-                di = {'clash': d}
-                self.yaml.update(di)
-            return path
+            logger.warning("为减轻项目文件大小从3.6.5版本开始，不再默认提供代理客户端二进制文件，请自行前往以下网址获取: \n"
+                           "https://github.com/AirportR/FullTCore/releases")
+            raise ValueError("找不到代理客户端二进制文件")
 
     def get_sub(self, subname: str = None):
         """
