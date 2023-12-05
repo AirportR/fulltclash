@@ -201,7 +201,7 @@ fulltclash-windows-amd64 为 Windows-amd64 所支持的
 
 编译完成覆盖原文件即可 ，如果操作难度太大，可以发起issue详谈。
 ### Docker启动
-教程文档待更新
+[./docker/ 目录](https://github.com/AirportR/FullTclash/tree/dev/docker)
 ### 为程序设置进程守护(Linux)
 由于Linux系统特性，关闭ssh连接后，前台程序会被关闭。您需要设置进程守护，才能在后台不间断地运行程序。具体方法Google搜索即可。
 ## 交流探讨
