@@ -19,7 +19,7 @@ RUN apt-get update && \
     apt-get install --no-install-recommends -y \
     git tzdata curl wget jq bash nano cron && \
     git clone -b dev --single-branch --depth=1 https://github.com/AirportR/FullTclash.git /app && \
-    cp resources/config.yaml.example resources/config.yaml && \
+    git clone --single-branch --depth=1 https://github.com/twitter/twemoji.git /app/resources/emoji/twemoji && \
     rm -f /etc/localtime && \
     cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo "Asia/Shanghai" > /etc/timezone && \
