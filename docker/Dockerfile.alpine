@@ -39,7 +39,7 @@ RUN apk add --no-cache \
     chmod +x /app/docker/fulltcore.sh && \
     bash /app/docker/fulltcore.sh && \
     chmod +x /app/docker/update.sh && \
-    chmod +x /opt/docker-entrypoint.sh
+    chmod +x /app/docker/docker-entrypoint.sh
 
 COPY --from=compile-image /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=compile-image /opt/venv /opt/venv
