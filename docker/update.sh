@@ -1,4 +1,5 @@
 #!/bin/bash
+source ~/.bashrc
 
 git_version=$(git --git-dir='/app/.git' --work-tree='/app' rev-parse HEAD)
 last_version=$(curl -Ls "https://api.github.com/repos/AirportR/FullTclash/commits/dev" | jq .sha | sed -E 's/.*"([^"]+)".*/\1/')
@@ -14,5 +15,5 @@ if [[ $last_version ==  "$git_version" ]]; then
 else
     echo -e "检查到新版本，正在更新"
     update
-    supervisorctl restart fulltclash
+    /opt/venv/bin/supervisorctl restart fulltclash
 fi
