@@ -1035,12 +1035,12 @@ class ConfigManager:
         if not self.reload():
             logger.error("重载失败")
 
-    def add_user(self, user: list or str or int):
+    def add_user(self, user: Union[list, str, int]):
         """
         添加授权用户
         """
         userlist = []
-        if type(user).__name__ == "list":
+        if isinstance(user, list):
             for li in user:
                 userlist.append(li)
         else:
@@ -1051,11 +1051,9 @@ class ConfigManager:
                 userlist.extend(old)
             newuserlist = list(set(userlist))  # 去重
             self.yaml['user'] = newuserlist
-            logger.info("添加成功")
         except KeyError:
             newuserlist = list(set(userlist))  # 去重
             self.yaml['user'] = newuserlist
-            logger.info("添加成功")
 
     @logger.catch
     def del_user(self, user: list or str or int):

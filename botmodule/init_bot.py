@@ -37,6 +37,7 @@ def check_args():
     parser.add_argument("-ps5", "--proxy-socks5", required=False, type=str, help=help_text_socks5)
     parser.add_argument("-http", "--proxy-http", required=False, type=str, help=help_text_http)
     parser.add_argument("-su", "--admin", required=False, help="设置bot的管理员，多个管理员以 , 分隔")
+    parser.add_argument("-d", "--path", required=False, type=str, help="设置代理客户端路径")
 
     args = parser.parse_args()
     if args.r:
@@ -47,12 +48,12 @@ def check_args():
                 logger.info("已移除my_bot.session")
             except Exception as e2:
                 logger.error(f"session文件移除失败：{e2}")
-
+    if args.path:
+        config.yaml['clash'] = config.config.get('clash', {}).setdefault('path', str(args.d))
     if args.admin:
         adminlist = str(args.admin).split(",")
         logger.info(f"即将添加管理员：{adminlist}")
         config.add_admin(adminlist)
-        config.reload()
     if args.proxy_http:
         config.yaml['proxy'] = str(args.proxy_http)
         logger.info("从命令行参数中设置HTTP代理")
@@ -69,11 +70,11 @@ def check_args():
         logger.info("从命令行参数中设置api_hash,api_id,bot_token")
         if args.proxy_socks5:
             logger.info("从命令行参数中设置bot的socks5代理")
-        i = config.reload()
-        if i:
-            logger.info("已覆写配置文件。")
-        else:
-            logger.warning("覆写配置失败！")
+    i = config.reload()
+    if i:
+        logger.info("已覆写配置文件。")
+    else:
+        logger.warning("覆写配置失败！")
 
 
 def check_init():
@@ -91,28 +92,15 @@ def check_init():
             else:
                 logger.warning("初始化emoji失败")
     dirs = os.listdir()
-    if "clash" in dirs and "logs" in dirs and "results" in dirs and 'key' in dirs:
+    if "logs" in dirs and "results" in dirs:
         return
     logger.info("检测到初次使用，正在初始化...")
-    if not os.path.isdir('clash'):
-        os.mkdir("clash")
-        logger.info("创建文件夹: clash 用于保存订阅")
     if not os.path.isdir('logs'):
         os.mkdir("logs")
         logger.info("创建文件夹: logs 用于保存日志")
     if not os.path.isdir('results'):
         os.mkdir("results")
         logger.info("创建文件夹: results 用于保存测试结果")
-    if not os.path.isdir('key'):
-        os.mkdir("key")
-        logger.info("创建文件夹: key 用于保存公钥")
-    dirs = os.listdir('./key')
-    if "fulltclash-public.pem" in dirs:
-        return
-    if "fulltclash-private.pem" in dirs:
-        return
-    # logger.info("正在初始化公私钥")
-    # gen_key()
     check_permission()
 
 
@@ -132,6 +120,42 @@ def check_version() -> str:
     return _latest_version_hash
 
 
+def parse_proxy():
+    _proxies = None
+    try:
+        _proxy = config.get_bot_proxy(isjoint=False).split(':')
+        p_host = _proxy[0]
+        p_port = _proxy[1]
+        p_username = None
+        p_password = None
+        lenproxy = len(_proxy)
+        if lenproxy < 3:
+            logger.info("当前代理设置为：" + p_host + ":" + p_port)
+        else:
+            p_username = _proxy[2]
+            p_password = _proxy[3] if lenproxy > 3 else ''
+            logger.info(f"当前代理设置为： {p_host}:{p_port} 用户名：{p_username} 密码：{p_password}")
+        if p_host and p_port and p_username and p_password:
+            _proxies = {
+                "scheme": "socks5",  # "socks4", "socks5" and "http" are supported
+                "hostname": p_host,
+                "port": int(p_port),
+                "username": f"{p_username}",
+                "password": f"{p_password}"
+            }
+        elif p_host and p_port:
+            _proxies = {
+                "scheme": "socks5",  # "socks4", "socks5" and "http" are supported
+                "hostname": p_host,
+                "port": int(p_port)
+            }
+    except (AttributeError, Exception) as err:
+        logger.info(str(err))
+        _proxies = None
+    finally:
+        return _proxies
+
+
 # 获取远程仓库的最新提交哈希
 latest_version_hash = check_version()
 
@@ -147,57 +171,9 @@ corenum = min(config.config.get('clash', {}).get('core', 1), 128)
 
 USER_TARGET = config.getuser()  # 这是用户列表，从配置文件读取
 logger.info("管理员名单加载:" + str(admin))
-# 你的机器人的用户名
-USERNAME = "@FullTclashBot"
-port = config.get_proxy_port()
-proxy_subprocess = None
 check_args()
 check_init()
-try:
-    _proxy = config.get_bot_proxy(isjoint=False).split(':')
-    proxy_host = _proxy[0]
-    proxy_port = _proxy[1]
-    proxy_username = None
-    proxy_password = None
-    lenproxy = len(_proxy)
-    if lenproxy < 3:
-        logger.info("当前代理设置为: " + proxy_host + ":" + proxy_port)
-    else:
-        proxy_username = _proxy[2]
-        proxy_password = _proxy[3]
-        logger.info(
-            "当前代理设置为: " + proxy_host + ":" + proxy_port + "\n" + "用户名：" + proxy_username + "密码：" + proxy_password)
-except AttributeError as attr:
-    logger.info(str(attr))
-    proxy_host = None
-    proxy_port = None
-    proxy_username = None
-    proxy_password = None
-except Exception as e:
-    logger.error(str(e))
-    proxy_host = None
-    proxy_port = None
-    proxy_username = None
-    proxy_password = None
-# 如果是在国内环境，则需要代理环境以供程序连接上TG
-
-if proxy_host and proxy_port and proxy_username and proxy_password:
-    proxies = {
-        "scheme": "socks5",  # "socks4", "socks5" and "http" are supported
-        "hostname": proxy_host,
-        "port": int(proxy_port),
-        "username": f"{proxy_username}",
-        "password": f"{proxy_password}"
-    }
-elif proxy_host and proxy_port:
-    proxies = {
-        "scheme": "socks5",  # "socks4", "socks5" and "http" are supported
-        "hostname": proxy_host,
-        "port": int(proxy_port)
-    }
-else:
-    proxies = None
-
+proxies = parse_proxy()
 logger.info("配置已加载, Telegram bot程序开始运行...")
 
 
