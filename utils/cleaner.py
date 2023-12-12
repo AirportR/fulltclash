@@ -1,8 +1,6 @@
 import asyncio
 import importlib
 import os
-import re
-import sys
 from typing import Union, List
 import socket
 
@@ -10,10 +8,10 @@ import yaml
 from loguru import logger
 
 try:
-    import re2
-
-    remodule = re2
+    import re2 as re
+    remodule = re
 except ImportError:
+    import re
     remodule = re
 
 
@@ -406,7 +404,8 @@ class ClashCleaner:
         if not isinstance(self.yaml, dict):
             self.yaml = {}
 
-    def notag(self, _config: Union[bytes, str]):
+    @staticmethod
+    def notag(_config: Union[bytes, str]):
         """
         去除制表符，yaml反序列化不允许制表符出现在标量以外的地方
         """
