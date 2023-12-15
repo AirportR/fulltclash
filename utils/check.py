@@ -410,6 +410,8 @@ async def check_photo(app: "Client", msg_id: int, botmsg_id: int, chat_id: int, 
                 pass
 
     except RPCError as r:
+        if chat_id:
+            await app.send_document(chat_id, image_name, caption=caption)
         logger.error(r)
 
 
