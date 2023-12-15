@@ -37,7 +37,7 @@ def exclude_text_filter(text: Union[str, List[str]]) -> "Filter":
     text = [text] if isinstance(text, str) else text
 
     async def func(flt, _, update: Union[Message, CallbackQuery]):
-        return update.data not in flt.text if isinstance(update, CallbackQuery) else\
+        return update.data not in flt.text if isinstance(update, CallbackQuery) else \
             update.text and update.text not in flt.text
 
     return filters.create(func, text=text)
@@ -156,6 +156,27 @@ def getErrorText(text: str):
         return f"❌ 使用方式: \n{text} <参数1> <参数2>"
 
 
+def sub_filter():
+    """
+    对订阅名称做预先检查
+    """
+    async def func(_, __, message: Message) -> bool:
+        string = str(message.text)
+        arg = string.strip().split(' ')
+        arg = [x for x in arg if x != '']
+        if arg[0].endswith("url"):
+            return True
+        if check.check_sub_name(arg[1]):
+            return True
+        else:
+            botmsg = await message.reply("❌找不到该任务名称")
+            message_delete_queue.put(botmsg, 10)
+            message_delete_queue.put(message, 10)
+            return False
+
+    return filters.create(func)
+
+
 def command_argnum_filter(argnum: int = 1):
     """
     命令行参数数量过滤器。
@@ -183,9 +204,9 @@ def command_argnum_filter(argnum: int = 1):
     return filters.create(func)
 
 
-def allfilter(group: int, *args):
+def pre_filter(group: int, *args):
     """
-    所有自定义filter
+    预定义的filter
     """
     if group == 1:
         return command_argnum_filter(*args)

@@ -176,6 +176,14 @@ async def check_subowner(message, back_message, subinfo: dict, admin: list, pass
         return False
 
 
+def check_sub_name(subname: str) -> bool:
+    """
+    预先检查订阅名
+    """
+    sub = config.get_sub(subname)
+    return bool(sub)
+
+
 async def check_user(message, USER_TARGET: list, isalert=True):
     """
     检查是否是用户，如果是返回真
