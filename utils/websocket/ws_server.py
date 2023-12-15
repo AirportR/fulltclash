@@ -220,8 +220,7 @@ async def main():
 
     from utils.cleaner import addon
     addon.init_addons('./addons')
-    task = asyncio.create_task(server(host, port))
-    await task
+    await server(host, port)
 
 
 def check_init():
