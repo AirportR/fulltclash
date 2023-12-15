@@ -3,7 +3,8 @@ import hashlib
 import re
 import contextlib
 
-import pyrogram.types
+from pyrogram import Client
+from pyrogram.enums import ChatAction
 from pyrogram.types import Message, CallbackQuery
 from pyrogram.errors import RPCError, MessageDeleteForbidden
 from loguru import logger
@@ -363,32 +364,51 @@ async def check_speed_nodes(message, nodenum, args: tuple, speed_max_num=config.
         return False
 
 
-async def check_photo(message: pyrogram.types.Message, back_message, name, wtime, size: tuple = None):
+async def check_photo(app: "Client", msg_id: int, botmsg_id: int, chat_id: int, name: str, wtime: str,
+                      size: tuple = None):
     """
     检查图片是否生成成功
+    :param app: bot客户端
     :param wtime: 消耗时间
-    :param message: 消息对象
-    :param back_message: 消息对象
+    :param msg_id: 发起任务的消息id
+    :param botmsg_id: bot消息id
+    :param chat_id: 对话id
     :param name: 图片名
     :param size: 图片大小
     :return:
     """
+    image_name = fr'./results/{name}.png'
+    caption = f"⏱️总共耗时: {wtime}s"
     try:
         if name == '' or name is None:
-            await back_message.edit_text("⚠️生成图片失败,可能原因: 节点过多/网络不稳定")
+            await app.edit_message_text(chat_id, botmsg_id, "⚠️生成图片失败,可能原因: 节点过多/网络不稳定")
+            # await back_message.edit_text("⚠️生成图片失败,可能原因: 节点过多/网络不稳定")
         else:
             x, y = size if size is not None else (0, 0)
             if x > 0 and y > 0:
                 if x < 2500 and y < 3500:
-                    await message.reply_photo(fr'./results/{name}.png', caption=f"⏱️总共耗时: {wtime}s")
+                    await app.send_chat_action(chat_id, ChatAction.UPLOAD_PHOTO)
+                    await app.send_photo(chat_id, image_name, caption=f"⏱️总共耗时: {wtime}s",
+                                         reply_to_message_id=msg_id)
+                    # await message.reply_photo(fr'./results/{name}.png', caption=f"⏱️总共耗时: {wtime}s")
                 else:
-                    await message.reply_document(fr"./results/{name}.png", caption=f"⏱️总共耗时: {wtime}s")
+                    await app.send_chat_action(chat_id, ChatAction.UPLOAD_DOCUMENT)
+                    await app.send_document(chat_id, image_name, caption=caption, reply_to_message_id=msg_id)
+                    # await message.reply_document(fr"./results/{name}.png", caption=f"⏱️总共耗时: {wtime}s")
             else:
-                await message.reply_document(fr"./results/{name}.png", caption=f"⏱️总共耗时: {wtime}s")
-            await back_message.delete()
-            if not await private_filter(name, name, message):
-                with contextlib.suppress(MessageDeleteForbidden):
-                    await message.delete()
+                await app.send_chat_action(chat_id, ChatAction.UPLOAD_DOCUMENT)
+                await app.send_document(chat_id, image_name, caption=caption, reply_to_message_id=msg_id)
+                # await message.reply_document(fr"./results/{name}.png", caption=f"⏱️总共耗时: {wtime}s")
+            try:
+                bot_msg = await app.get_messages(chat_id, botmsg_id)
+                await bot_msg.delete()
+                msg = await app.get_messages(chat_id, msg_id)
+                if not await private_filter(name, name, msg):
+                    with contextlib.suppress(MessageDeleteForbidden):
+                        await msg.delete()
+            except ValueError:
+                pass
+
     except RPCError as r:
         logger.error(r)
 

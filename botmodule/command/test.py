@@ -95,7 +95,7 @@ async def select_core(put_type: str, message: Message, **kwargs):
 
 
 @logger.catch()
-async def select_export(msg: Message, backmsg: Message, put_type: str, info: dict, **kwargs):
+async def select_export(app: "Client", msg_id: int, botmsg_id: int, chat_id: int, put_type: str, info: dict, **kwargs):
     try:
         if put_type.startswith("speed") or kwargs.get('coreindex', -1) == 1:
             if info:
@@ -104,14 +104,16 @@ async def select_export(msg: Message, backmsg: Message, put_type: str, info: dic
                 ex = export.ExportSpeed(name=None, info=info)
                 with ThreadPoolExecutor() as pool:
                     loop = asyncio.get_running_loop()
-                    stime, img_size = await loop.run_in_executor(
+                    file_name, img_size = await loop.run_in_executor(
                         pool, ex.exportImage)
                 # 发送回TG
-                if msg is None and backmsg is None:
-                    logger.warning(f"消息对象无效，无法发送结果。本次测速结果图路径为：{stime}")
+                if botmsg_id and msg_id:
+                    if chat_id:
+                        await app.send_message(chat_id, "❌发送图片失败，详情请查看日志。")
+                    else:
+                        logger.error(f"消息对象无效，无法发送结果。本次测速结果图路径为：{file_name}")
                 else:
-                    await backmsg.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
-                    await check.check_photo(msg, backmsg, stime, wtime, img_size)
+                    await check.check_photo(app, msg_id, botmsg_id, chat_id, file_name, wtime, img_size)
         elif put_type.startswith("analyze") or put_type.startswith("topo") or put_type.startswith("inbound") \
                 or put_type.startswith("outbound") or kwargs.get('coreindex', -1) == 2:
             info1 = info.get('inbound', {})
@@ -125,9 +127,10 @@ async def select_export(msg: Message, backmsg: Message, put_type: str, info: dic
                     ex = export.ExportTopo(name=None, info=info1)
                     with ThreadPoolExecutor() as pool:
                         loop = asyncio.get_running_loop()
-                        stime, img_size = await loop.run_in_executor(
+                        file_name, img_size = await loop.run_in_executor(
                             pool, ex.exportTopoInbound)
-                    await check.check_photo(msg, backmsg, 'Topo' + stime, wtime, img_size)
+                    await check.check_photo(app, msg_id, botmsg_id, chat_id, 'Topo' + file_name, wtime, img_size)
+                    # await check.check_photo(msg, backmsg, 'Topo' + stime, wtime, img_size)
                     return
                 if info2:
                     # 生成图片
@@ -141,24 +144,24 @@ async def select_export(msg: Message, backmsg: Message, put_type: str, info: dic
                         ex = export.ExportTopo(name=None, info=info2)
                         with ThreadPoolExecutor() as pool:
                             loop = asyncio.get_running_loop()
-                            stime, h, w = await loop.run_in_executor(
+                            file_name, h, w = await loop.run_in_executor(
                                 pool, ex.exportTopoOutbound)
                             img_size = (w, h)
                     else:
-                        stime, img_size = export.ExportTopo(name=None, info=info1).exportTopoInbound(
+                        file_name, img_size = export.ExportTopo(name=None, info=info1).exportTopoInbound(
                             info2.get('节点名称', []), info2,
                             img2_width=image_width2)
                     # 发送回TG
-                    await msg.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
-                    await check.check_photo(msg, backmsg, 'Topo' + stime, wtime, img_size)
+                    await check.check_photo(app, msg_id, botmsg_id, chat_id, 'Topo' + file_name, wtime, img_size)
+                    # await check.check_photo(msg, backmsg, 'Topo' + stime, wtime, img_size)
         elif put_type.startswith("test") or kwargs.get('coreindex', -1) == 3:
             if info:
                 wtime = info.get('wtime', "-1")
                 # 生成图片
                 file_name, img_size = export.ExportCommon(info.pop('节点名称', []), info).draw()
                 # 发送回TG
-                await msg.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
-                await check.check_photo(msg, backmsg, file_name, wtime, img_size)
+                await check.check_photo(app, msg_id, botmsg_id, chat_id, file_name, wtime, img_size)
+                # await check.check_photo(msg, backmsg, file_name, wtime, img_size)
         else:
             raise TypeError("Unknown export type, please input again.\n未知的绘图类型，请重新输入!")
     except RPCError as r:
@@ -223,13 +226,13 @@ async def process(app: Client, message: Message, **kwargs):
 async def put_slave_task(app: Client, message: Message, proxyinfo: list, **kwargs):
     slaveid = kwargs.pop('slaveid', 'local')
     put_type = kwargs.pop('put_type', '')
-    raw_backmsg: Message = kwargs.pop('backmsg', None)
-    if raw_backmsg is None:
+    bot_msg: Message = kwargs.pop('backmsg', None)
+    if bot_msg is None:
         logger.warning("已丢失BOT消息！")
         return
     else:
-        logger.info(f"BOT进度条编辑的chat_id:{raw_backmsg.chat.id},message_id:{raw_backmsg.id}")
-        BOT_MESSAGE_LIST[str(raw_backmsg.chat.id) + ':' + str(raw_backmsg.id)] = raw_backmsg
+        logger.info(f"BOT进度条编辑的chat_id:{bot_msg.chat.id},message_id:{bot_msg.id}")
+        BOT_MESSAGE_LIST[str(bot_msg.chat.id) + ':' + str(bot_msg.id)] = bot_msg
     coreindex = kwargs.get('coreindex', 0)
     include_text = kwargs.get('include_text', '')
     exclude_text = kwargs.get('exclude_text', '')
@@ -241,7 +244,7 @@ async def put_slave_task(app: Client, message: Message, proxyinfo: list, **kwarg
             await message.reply("找不到测试核心")
             return
         info = await core.core(proxyinfo, **kwargs)
-        await select_export(message, raw_backmsg, put_type, info, **kwargs)
+        await select_export(app, message.id, bot_msg.id, message.chat.id, put_type, info, **kwargs)
         return
     slaveconfig = config.getSlaveconfig()
     slave = slaveconfig.get(slaveid, {})
@@ -256,9 +259,9 @@ async def put_slave_task(app: Client, message: Message, proxyinfo: list, **kwarg
         'test-items': kwargs.get('test_items', None),  # 兼容写法，不推荐用
         'script': kwargs.get('test_items', None) or kwargs.get('script', None),
         'sort': kwargs.get('sort', '订阅原序'),
-        'edit-message-id': raw_backmsg.id,
-        'edit-chat-id': raw_backmsg.chat.id,
-        'edit-message': {'message-id': raw_backmsg.id, 'chat-id': raw_backmsg.chat.id},
+        'edit-message-id': bot_msg.id,
+        'edit-chat-id': bot_msg.chat.id,
+        'edit-message': {'message-id': bot_msg.id, 'chat-id': bot_msg.chat.id},
         'origin-message': {'chat-id': message.chat.id, 'message-id': message.id},
         'slave': {
             'id': slaveid,

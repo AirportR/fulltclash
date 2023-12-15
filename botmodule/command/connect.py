@@ -191,9 +191,10 @@ async def task_result(app: Client, message: Message):
     info['slave'] = {'comment': slavecomment, 'id': int(slaveid)}
     origin_message_d = resultdata.get('origin-message', {})
     botmsg_d = resultdata.get('edit-message', {})
+    chat_id = origin_message_d.get('chat-id', 0)
     try:
-        origin_msg = await app.get_messages(origin_message_d.get('chat-id', 0), origin_message_d.get('message-id', 0))
-        botmsg = await app.get_messages(botmsg_d.get('chat-id', 0), botmsg_d.get('message-id', 0))
+        origin_msg = await app.get_messages(chat_id, origin_message_d.get('message-id', 0))
+        botmsg = await app.get_messages(chat_id, botmsg_d.get('message-id', 0))
     except RPCError as e:
         logger.error(str(e))
         return
@@ -205,4 +206,5 @@ async def task_result(app: Client, message: Message):
         3: 'test',
         -1: 'unknown'
     }
-    await select_export(origin_msg, botmsg, puttype[resultdata.get('coreindex', -1)], info)
+    await select_export(app, origin_message_d.get('message-id', 0), botmsg_d.get('message-id', 0), chat_id,
+                        puttype[resultdata.get('coreindex', -1)], info)
