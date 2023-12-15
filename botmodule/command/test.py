@@ -1,11 +1,10 @@
 import asyncio
 import io
 import json
-from concurrent.futures import ThreadPoolExecutor
 from typing import Union
 
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
-from pyrogram import enums, Client
+from pyrogram import Client
 from pyrogram.errors import RPCError
 from loguru import logger
 
@@ -97,23 +96,18 @@ async def select_core(put_type: str, message: Message, **kwargs):
 @logger.catch()
 async def select_export(app: "Client", msg_id: int, botmsg_id: int, chat_id: int, put_type: str, info: dict, **kwargs):
     try:
+        if not botmsg_id and not msg_id:
+            if chat_id:
+                await app.send_message(chat_id, "❌无效的消息id")
+        loop = asyncio.get_running_loop()
         if put_type.startswith("speed") or kwargs.get('coreindex', -1) == 1:
             if info:
                 wtime = info.get('wtime', "-1")
                 # stime = export.ExportSpeed(name=None, info=info).exportImage()
                 ex = export.ExportSpeed(name=None, info=info)
-                with ThreadPoolExecutor() as pool:
-                    loop = asyncio.get_running_loop()
-                    file_name, img_size = await loop.run_in_executor(
-                        pool, ex.exportImage)
+                file_name, img_size = await loop.run_in_executor(None, ex.exportImage)
                 # 发送回TG
-                if botmsg_id and msg_id:
-                    if chat_id:
-                        await app.send_message(chat_id, "❌发送图片失败，详情请查看日志。")
-                    else:
-                        logger.error(f"消息对象无效，无法发送结果。本次测速结果图路径为：{file_name}")
-                else:
-                    await check.check_photo(app, msg_id, botmsg_id, chat_id, file_name, wtime, img_size)
+                await check.check_photo(app, msg_id, botmsg_id, chat_id, file_name, wtime, img_size)
         elif put_type.startswith("analyze") or put_type.startswith("topo") or put_type.startswith("inbound") \
                 or put_type.startswith("outbound") or kwargs.get('coreindex', -1) == 2:
             info1 = info.get('inbound', {})
@@ -125,10 +119,7 @@ async def select_export(app: "Client", msg_id: int, botmsg_id: int, chat_id: int
                     wtime = info1.get('wtime', "未知")
                     # stime = export.ExportTopo(name=None, info=info1).exportTopoInbound()
                     ex = export.ExportTopo(name=None, info=info1)
-                    with ThreadPoolExecutor() as pool:
-                        loop = asyncio.get_running_loop()
-                        file_name, img_size = await loop.run_in_executor(
-                            pool, ex.exportTopoInbound)
+                    file_name, img_size = await loop.run_in_executor(None, ex.exportTopoInbound)
                     await check.check_photo(app, msg_id, botmsg_id, chat_id, 'Topo' + file_name, wtime, img_size)
                     # await check.check_photo(msg, backmsg, 'Topo' + stime, wtime, img_size)
                     return
@@ -137,20 +128,21 @@ async def select_export(app: "Client", msg_id: int, botmsg_id: int, chat_id: int
                     wtime = info2.get('wtime', "未知")
                     clone_info2 = {}
                     clone_info2.update(info2)
-                    _, __, image_width2 = export.ExportTopo().exportTopoOutbound(nodename=None,
-                                                                                 info=clone_info2)
+                    pre_ex = export.ExportTopo()
+                    _, __, image_width2 = await loop.run_in_executor(None, pre_ex.exportTopoOutbound, None, clone_info2)
+                    # _, __, image_width2 = export.ExportTopo().exportTopoOutbound(nodename=None, info=clone_info2)
                     if put_type.startswith("outbound"):
                         # stime = export.ExportTopo(name=None, info=info2).exportTopoOutbound()
                         ex = export.ExportTopo(name=None, info=info2)
-                        with ThreadPoolExecutor() as pool:
-                            loop = asyncio.get_running_loop()
-                            file_name, h, w = await loop.run_in_executor(
-                                pool, ex.exportTopoOutbound)
-                            img_size = (w, h)
+                        file_name, h, w = await loop.run_in_executor(None, ex.exportTopoOutbound)
+                        img_size = (w, h)
                     else:
-                        file_name, img_size = export.ExportTopo(name=None, info=info1).exportTopoInbound(
-                            info2.get('节点名称', []), info2,
-                            img2_width=image_width2)
+                        ex = export.ExportTopo(name=None, info=info1)
+                        file_name, img_size = await loop.run_in_executor(None, ex.exportTopoInbound,
+                                                                         info2.get('节点名称', []), info2, image_width2)
+                        # file_name, img_size = export.ExportTopo(name=None, info=info1).exportTopoInbound(
+                        #     info2.get('节点名称', []), info2,
+                        #     img2_width=image_width2)
                     # 发送回TG
                     await check.check_photo(app, msg_id, botmsg_id, chat_id, 'Topo' + file_name, wtime, img_size)
                     # await check.check_photo(msg, backmsg, 'Topo' + stime, wtime, img_size)
@@ -158,7 +150,9 @@ async def select_export(app: "Client", msg_id: int, botmsg_id: int, chat_id: int
             if info:
                 wtime = info.get('wtime', "-1")
                 # 生成图片
-                file_name, img_size = export.ExportCommon(info.pop('节点名称', []), info).draw()
+                ex = export.ExportCommon(info.pop('节点名称', []), info)
+                file_name, img_size = await loop.run_in_executor(None, ex.draw)
+                # file_name, img_size = export.ExportCommon(info.pop('节点名称', []), info).draw()
                 # 发送回TG
                 await check.check_photo(app, msg_id, botmsg_id, chat_id, file_name, wtime, img_size)
                 # await check.check_photo(msg, backmsg, file_name, wtime, img_size)
@@ -216,11 +210,6 @@ async def process(app: Client, message: Message, **kwargs):
     kwargs['include_text'] = include_text
     kwargs['exclude_text'] = exclude_text
     await put_slave_task(app, message, proxyinfo, core=core, backmsg=back_message, put_type=put_type, **kwargs)
-    # if isinstance(info, dict):
-    #     PlUGIN_DATA['result'].setdefault(int(time.time()), info)
-    #     await select_export(message, back_message, put_type, info, **kwargs)
-    # else:
-    #     return
 
 
 async def put_slave_task(app: Client, message: Message, proxyinfo: list, **kwargs):
@@ -237,7 +226,7 @@ async def put_slave_task(app: Client, message: Message, proxyinfo: list, **kwarg
     include_text = kwargs.get('include_text', '')
     exclude_text = kwargs.get('exclude_text', '')
     userbot_id = config.config.get('userbot', {}).get('id', '')
-    bot_info = await app.get_me()
+
     if slaveid == 'local':
         core = kwargs.pop('core', None)
         if core is None:
@@ -251,7 +240,7 @@ async def put_slave_task(app: Client, message: Message, proxyinfo: list, **kwarg
     rawkey = slave.get('public-key', '')
     key = sha256_32bytes(str(rawkey))
     slave_type = slave.get('type', 'bot')
-
+    bot_info = await app.get_me()
     payload = {
         'proxies': proxyinfo,
         'master': {'id': bot_info.id},
