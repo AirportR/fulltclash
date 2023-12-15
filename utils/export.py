@@ -14,7 +14,7 @@ from pilmoji.source import Twemoji
 from utils.cleaner import ConfigManager
 import utils.emoji_custom as emoji_source
 
-__version__ = '3.6.4'
+__version__ = '3.6.5'
 
 # 这是将测试的结果输出为图片的模块。
 # 设计思路:
@@ -1245,6 +1245,7 @@ class ExportTopo(ExportResult):
             self.__init__(nodename, info)
         _default_slavename = self.config.getSlaveconfig().get('default-slave', {}).get('comment', 'Local')
         slavecomment = self.info.pop('slave', {}).get('comment', _default_slavename)
+        _ = self.info.pop('task', {})
         fnt = self.__font
         image_width, info_list_length = self.get_width(compare=img2_width)
 
