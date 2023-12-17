@@ -1,0 +1,10 @@
+version: '3.9'
+
+services:
+  fulltclash:
+      image: ghcr.io/airportr/fulltclash:dev
+      restart: always
+      network_mode: host
+      container_name: fulltclash
+      volumes:
+          - /etc/FullTclash/config.yaml:/app/resources/config.yaml

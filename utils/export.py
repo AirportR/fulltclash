@@ -14,7 +14,7 @@ from pilmoji.source import Twemoji
 from utils.cleaner import ConfigManager
 import utils.emoji_custom as emoji_source
 
-__version__ = '3.6.4'
+__version__ = '3.6.5'
 
 # 这是将测试的结果输出为图片的模块。
 # 设计思路:
@@ -668,38 +668,17 @@ class ExportSpeed2(ExportCommon):
         for i, t1 in enumerate(_key_list):
             if "RTT延迟" == t1 or "HTTP(S)延迟" == t1:
                 rtt = float(self.info[t1][t][:-2])
-                if interval[0] < rtt < interval[1]:
-                    block = c_block_grad((_info_list_width[i], 60), color_value=colorvalue[0], end_color=end_color[0],
-                                         alpha=alphas[0])
-                    img.alpha_composite(block, (width, 60 * (t + 2)))
-                elif interval[1] <= rtt < interval[2]:
-                    block = c_block_grad((_info_list_width[i], 60), color_value=colorvalue[1], end_color=end_color[1],
-                                         alpha=alphas[1])
-                    img.alpha_composite(block, (width, 60 * (t + 2)))
-                elif interval[2] <= rtt < interval[3]:
-                    block = c_block_grad((_info_list_width[i], 60), color_value=colorvalue[2], end_color=end_color[2],
-                                         alpha=alphas[2])
-                    img.alpha_composite(block, (width, 60 * (t + 2)))
-                elif interval[3] <= rtt < interval[4]:
-                    block = c_block_grad((_info_list_width[i], 60), color_value=colorvalue[3], end_color=end_color[3],
-                                         alpha=alphas[3])
-                    img.alpha_composite(block, (width, 60 * (t + 2)))
-                elif interval[4] <= rtt < interval[5]:
-                    block = c_block_grad((_info_list_width[i], 60), color_value=colorvalue[4], end_color=end_color[4],
-                                         alpha=alphas[4])
-                    img.alpha_composite(block, (width, 60 * (t + 2)))
-                elif interval[5] <= rtt < interval[6]:
-                    block = c_block_grad((_info_list_width[i], 60), color_value=colorvalue[5], end_color=end_color[5],
-                                         alpha=alphas[5])
-                    img.alpha_composite(block, (width, 60 * (t + 2)))
-                elif interval[6] <= rtt:
-                    block = c_block_grad((_info_list_width[i], 60), color_value=colorvalue[6], end_color=end_color[6],
-                                         alpha=alphas[6])
-                    img.alpha_composite(block, (width, 60 * (t + 2)))
-                elif rtt == 0:
-                    block = c_block_grad((_info_list_width[i], 60), color_value=colorvalue[7], end_color=end_color[7],
+                for colo_int in range(0, len(colorvalue)):
+                    if interval[colo_int] < rtt < interval[colo_int + 1]:
+                        block = c_block_grad((_info_list_width[i], 60), color_value=colorvalue[colo_int], end_color=end_color[colo_int],
+                                            alpha=alphas[0])
+                        img.alpha_composite(block, (width, 60 * (t + 2)))
+                        break
+                    elif rtt == 0:
+                        block = c_block_grad((_info_list_width[i], 60), color_value=colorvalue[len(colorvalue)], end_color=end_color[len(colorvalue)],
                                          alpha=alphas[7])
-                    img.alpha_composite(block, (width, 60 * (t + 2)))
+                        img.alpha_composite(block, (width, 60 * (t + 2)))
+                        break
 
     def draw_delay(self, img, t1: str, t: int, info_list_length, speedblock_height):
         pass
@@ -1245,6 +1224,7 @@ class ExportTopo(ExportResult):
             self.__init__(nodename, info)
         _default_slavename = self.config.getSlaveconfig().get('default-slave', {}).get('comment', 'Local')
         slavecomment = self.info.pop('slave', {}).get('comment', _default_slavename)
+        _ = self.info.pop('task', {})
         fnt = self.__font
         image_width, info_list_length = self.get_width(compare=img2_width)
 

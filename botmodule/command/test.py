@@ -1,11 +1,10 @@
 import asyncio
 import io
 import json
-from concurrent.futures import ThreadPoolExecutor
 from typing import Union
 
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
-from pyrogram import enums, Client
+from pyrogram import Client
 from pyrogram.errors import RPCError
 from loguru import logger
 
@@ -95,72 +94,72 @@ async def select_core(put_type: str, message: Message, **kwargs):
 
 
 @logger.catch()
-async def select_export(msg: Message, backmsg: Message, put_type: str, info: dict, **kwargs):
+async def select_export(app: "Client", msg_id: int, botmsg_id: int, chat_id: int, put_type: str, info: dict, **kwargs):
     try:
+        if not botmsg_id and not msg_id:
+            if chat_id:
+                await app.send_message(chat_id, "❌无效的消息id")
+        loop = asyncio.get_running_loop()
         if put_type.startswith("speed") or kwargs.get('coreindex', -1) == 1:
             if info:
                 wtime = info.get('wtime', "-1")
                 # stime = export.ExportSpeed(name=None, info=info).exportImage()
                 ex = export.ExportSpeed(name=None, info=info)
-                with ThreadPoolExecutor() as pool:
-                    loop = asyncio.get_running_loop()
-                    stime, img_size = await loop.run_in_executor(
-                        pool, ex.exportImage)
+                file_name, img_size = await loop.run_in_executor(None, ex.exportImage)
                 # 发送回TG
-                await msg.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
-                await check.check_photo(msg, backmsg, stime, wtime, img_size)
+                await check.check_photo(app, msg_id, botmsg_id, chat_id, file_name, wtime, img_size)
         elif put_type.startswith("analyze") or put_type.startswith("topo") or put_type.startswith("inbound") \
                 or put_type.startswith("outbound") or kwargs.get('coreindex', -1) == 2:
             info1 = info.get('inbound', {})
             info2 = info.get('outbound', {})
             info2['slave'] = info.get('slave', {})
+            info2['task'] = info.get('task', {})
             if info1:
                 if put_type.startswith("inbound"):
                     wtime = info1.get('wtime', "未知")
                     # stime = export.ExportTopo(name=None, info=info1).exportTopoInbound()
                     ex = export.ExportTopo(name=None, info=info1)
-                    with ThreadPoolExecutor() as pool:
-                        loop = asyncio.get_running_loop()
-                        stime, img_size = await loop.run_in_executor(
-                            pool, ex.exportTopoInbound)
-                    await check.check_photo(msg, backmsg, 'Topo' + stime, wtime, img_size)
+                    file_name, img_size = await loop.run_in_executor(None, ex.exportTopoInbound)
+                    await check.check_photo(app, msg_id, botmsg_id, chat_id, 'Topo' + file_name, wtime, img_size)
+                    # await check.check_photo(msg, backmsg, 'Topo' + stime, wtime, img_size)
                     return
                 if info2:
                     # 生成图片
                     wtime = info2.get('wtime', "未知")
                     clone_info2 = {}
                     clone_info2.update(info2)
-                    _, __, image_width2 = export.ExportTopo().exportTopoOutbound(nodename=None,
-                                                                                 info=clone_info2)
+                    pre_ex = export.ExportTopo()
+                    _, __, image_width2 = await loop.run_in_executor(None, pre_ex.exportTopoOutbound, None, clone_info2)
+                    # _, __, image_width2 = export.ExportTopo().exportTopoOutbound(nodename=None, info=clone_info2)
                     if put_type.startswith("outbound"):
                         # stime = export.ExportTopo(name=None, info=info2).exportTopoOutbound()
                         ex = export.ExportTopo(name=None, info=info2)
-                        with ThreadPoolExecutor() as pool:
-                            loop = asyncio.get_running_loop()
-                            stime, h, w = await loop.run_in_executor(
-                                pool, ex.exportTopoOutbound)
-                            img_size = (w, h)
+                        file_name, h, w = await loop.run_in_executor(None, ex.exportTopoOutbound)
+                        img_size = (w, h)
                     else:
-                        stime, img_size = export.ExportTopo(name=None, info=info1).exportTopoInbound(
-                            info2.get('节点名称', []), info2,
-                            img2_width=image_width2)
+                        ex = export.ExportTopo(name=None, info=info1)
+                        file_name, img_size = await loop.run_in_executor(None, ex.exportTopoInbound,
+                                                                         info2.get('节点名称', []), info2, image_width2)
+                        # file_name, img_size = export.ExportTopo(name=None, info=info1).exportTopoInbound(
+                        #     info2.get('节点名称', []), info2,
+                        #     img2_width=image_width2)
                     # 发送回TG
-                    await msg.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
-                    await check.check_photo(msg, backmsg, 'Topo' + stime, wtime, img_size)
+                    await check.check_photo(app, msg_id, botmsg_id, chat_id, 'Topo' + file_name, wtime, img_size)
+                    # await check.check_photo(msg, backmsg, 'Topo' + stime, wtime, img_size)
         elif put_type.startswith("test") or kwargs.get('coreindex', -1) == 3:
             if info:
                 wtime = info.get('wtime', "-1")
                 # 生成图片
-                file_name, img_size = export.ExportCommon(info.pop('节点名称', []), info).draw()
+                ex = export.ExportCommon(info.pop('节点名称', []), info)
+                file_name, img_size = await loop.run_in_executor(None, ex.draw)
+                # file_name, img_size = export.ExportCommon(info.pop('节点名称', []), info).draw()
                 # 发送回TG
-                await msg.reply_chat_action(enums.ChatAction.UPLOAD_DOCUMENT)
-                await check.check_photo(msg, backmsg, file_name, wtime, img_size)
+                await check.check_photo(app, msg_id, botmsg_id, chat_id, file_name, wtime, img_size)
+                # await check.check_photo(msg, backmsg, file_name, wtime, img_size)
         else:
             raise TypeError("Unknown export type, please input again.\n未知的绘图类型，请重新输入!")
     except RPCError as r:
         logger.error(str(r))
-    except Exception as e:
-        logger.error(str(e))
 
 
 @logger.catch()
@@ -201,7 +200,6 @@ async def process(app: Client, message: Message, **kwargs):
     if isinstance(subconfig, bool):
         logger.warning("获取订阅失败!")
         await back_message.edit_text("❌获取订阅失败！")
-        message_delete_queue.put_nowait((back_message.chat.id, back_message.id, 10))
         return
     pre_cl = cleaner.ClashCleaner(':memory:', subconfig)
     pre_cl.node_filter(include_text, exclude_text)
@@ -209,62 +207,72 @@ async def process(app: Client, message: Message, **kwargs):
     if await check.check_node(back_message, core, proxynum):
         return
     proxyinfo = pre_cl.getProxies()
-    info = await put_slave_task(app, message, proxyinfo, core=core, backmsg=back_message, **kwargs)
-    if isinstance(info, dict):
-        await select_export(message, back_message, put_type, info, **kwargs)
+    kwargs['include_text'] = include_text
+    kwargs['exclude_text'] = exclude_text
+    await put_slave_task(app, message, proxyinfo, core=core, backmsg=back_message, put_type=put_type, **kwargs)
 
 
 async def put_slave_task(app: Client, message: Message, proxyinfo: list, **kwargs):
     slaveid = kwargs.pop('slaveid', 'local')
-    raw_backmsg: Message = kwargs.get('backmsg', None)
-    if raw_backmsg is None:
+    put_type = kwargs.pop('put_type', '')
+    bot_msg: Message = kwargs.pop('backmsg', None)
+    if bot_msg is None:
         logger.warning("已丢失BOT消息！")
         return
     else:
-        logger.info(f"BOT进度条编辑的chat_id:{raw_backmsg.chat.id},message_id:{raw_backmsg.id}")
-        BOT_MESSAGE_LIST[str(raw_backmsg.chat.id) + ':' + str(raw_backmsg.id)] = raw_backmsg
+        logger.info(f"BOT进度条编辑的chat_id:{bot_msg.chat.id},message_id:{bot_msg.id}")
+        BOT_MESSAGE_LIST[str(bot_msg.chat.id) + ':' + str(bot_msg.id)] = bot_msg
     coreindex = kwargs.get('coreindex', 0)
+    include_text = kwargs.get('include_text', '')
+    exclude_text = kwargs.get('exclude_text', '')
     userbot_id = config.config.get('userbot', {}).get('id', '')
-    bot_info = await app.get_me()
+
     if slaveid == 'local':
         core = kwargs.pop('core', None)
         if core is None:
             await message.reply("找不到测试核心")
-            return None
+            return
         info = await core.core(proxyinfo, **kwargs)
-        return info
-    if not userbot_id:
-        backmsg = await message.reply("❌读取中继桥id错误")
-        message_delete_queue.put(backmsg)
+        await select_export(app, message.id, bot_msg.id, message.chat.id, put_type, info, **kwargs)
         return
     slaveconfig = config.getSlaveconfig()
-    key = slaveconfig.get(slaveid, {}).get('public-key', '')
-    key = sha256_32bytes(key)
-
+    slave = slaveconfig.get(slaveid, {})
+    rawkey = slave.get('public-key', '')
+    key = sha256_32bytes(str(rawkey))
+    slave_type = slave.get('type', 'bot')
+    bot_info = await app.get_me()
     payload = {
         'proxies': proxyinfo,
         'master': {'id': bot_info.id},
         'coreindex': coreindex,
-        'test-items': kwargs.get('test_items', None),
-        'edit-message-id': raw_backmsg.id,
-        'edit-chat-id': raw_backmsg.chat.id,
-        'edit-message': {'message-id': raw_backmsg.id, 'chat-id': raw_backmsg.chat.id},
+        'test-items': kwargs.get('test_items', None),  # 兼容写法，不推荐用
+        'script': kwargs.get('test_items', None) or kwargs.get('script', None),
+        'sort': kwargs.get('sort', '订阅原序'),
+        'edit-message-id': bot_msg.id,
+        'edit-chat-id': bot_msg.chat.id,
+        'edit-message': {'message-id': bot_msg.id, 'chat-id': bot_msg.chat.id},
         'origin-message': {'chat-id': message.chat.id, 'message-id': message.id},
         'slave': {
             'id': slaveid,
             'comment': slaveconfig.get(slaveid, {}).get('comment', '')
         },
-        'sort': kwargs.get('sort', '订阅原序')
+        'filter': {'include': include_text, 'exclude': exclude_text},
     }
-    # 设置指定的后端为测速状态
-    if coreindex == 1:
-        SPEEDTEST_LIST.append(slaveid)
-    data1 = json.dumps(payload)
-    cipherdata = cipher_chacha20(data1.encode(), key)
-    bytesio = io.BytesIO(cipherdata)
-    bytesio.name = "subinfo"
-    await app.send_document(userbot_id, bytesio, caption=f'/relay {slaveid} send')
-    return None
+
+    if slave_type == "bot":
+        if not userbot_id:
+            backmsg = await message.reply("❌读取中继桥id错误")
+            message_delete_queue.put(backmsg)
+            return
+        data1 = json.dumps(payload)
+        cipherdata = cipher_chacha20(data1.encode(), key)
+        bytesio = io.BytesIO(cipherdata)
+        bytesio.name = "subinfo"
+
+        await app.send_document(userbot_id, bytesio, caption=f'/relay {slaveid} send')
+    else:
+        await message.reply("❌未知的后端类型")
+    return
 
 
 @logger.catch()
@@ -300,13 +308,24 @@ async def stopspeed(app: Client, callback_query: CallbackQuery):
         await botmsg.edit_text("❌测速任务已取消")
         return
     slaveid = 0
+    btype = "bot"
+    # slave_addr = ''
+
     for k, v in slaveconfig.items():
         comment = v.get('comment', '')
         if comment == commenttext:
-            slaveid = int(k) if k != "default-slave" else 'local'
+            try:
+                slaveid = int(k) if k != "default-slave" else 'local'
+            except ValueError:
+                slaveid = str(k)
+            btype = v.get('type', "bot")
             break
+
     if slaveid:
-        await app.send_message(bridge, f'/relay {slaveid} stopspeed')
+        # slave = slaveconfig.get(slaveid, {})
+        # rawkey = slave.get('public-key', '')
+        if btype == "bot":
+            await app.send_message(bridge, f'/relay {slaveid} stopspeed')
         backmsg = await botmsg.edit_text("❌测速任务已取消")
         message_delete_queue.put(backmsg)
     logger.info("测速中止")

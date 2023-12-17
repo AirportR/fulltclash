@@ -129,7 +129,17 @@ apt install -y git && git clone https://github.com/AirportR/FullTclash.git && cd
    # 如果是在中国大陆地区使用，则程序需要代理才能连接上Telegram服务器。写入如下信息：
    proxy: 127.0.0.1:7890 #socks5 替换成自己的代理地址和端口
   ```
-  
+
+- 代理客户端路径配置
+ 
+  从3.6.5版本开始，不再默认提供代理客户端二进制文件，请自行前往以下网址获取: 
+  https://github.com/AirportR/FullTCore/releases \
+  下载解压后可以放到 ./bin/ 目录下，比如文件名为 FullTCore ，下面的配置文件这样写：
+  ```yaml
+  clash:
+   path: "./bin/FullTCore" #这里改成代理客户端文件路径
+  ```
+  Windows系统名字后缀名.exe要加上，其他类Unix系统不需要加后缀名。
 - 代理配置（可选）  
   
   如果是在中国大陆地区使用，可能部分订阅网址无法直接连接。可在config.yaml中写入如下信息： 
@@ -201,7 +211,7 @@ fulltclash-windows-amd64 为 Windows-amd64 所支持的
 
 编译完成覆盖原文件即可 ，如果操作难度太大，可以发起issue详谈。
 ### Docker启动
-教程文档待更新
+[./docker/ 目录](https://github.com/AirportR/FullTclash/tree/dev/docker)
 ### 为程序设置进程守护(Linux)
 由于Linux系统特性，关闭ssh连接后，前台程序会被关闭。您需要设置进程守护，才能在后台不间断地运行程序。具体方法Google搜索即可。
 ## 交流探讨

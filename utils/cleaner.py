@@ -1,8 +1,6 @@
 import asyncio
 import importlib
 import os
-import re
-import sys
 from typing import Union, List
 import socket
 
@@ -10,10 +8,10 @@ import yaml
 from loguru import logger
 
 try:
-    import re2
-
-    remodule = re2
+    import re2 as re
+    remodule = re
 except ImportError:
+    import re
     remodule = re
 
 
@@ -406,7 +404,8 @@ class ClashCleaner:
         if not isinstance(self.yaml, dict):
             self.yaml = {}
 
-    def notag(self, _config: Union[bytes, str]):
+    @staticmethod
+    def notag(_config: Union[bytes, str]):
         """
         去除制表符，yaml反序列化不允许制表符出现在标量以外的地方
         """
@@ -943,22 +942,9 @@ class ConfigManager:
         try:
             return self.config['clash']['path']
         except KeyError:
-            logger.warning("获取运行路径失败，将采用默认运行路径: ./bin\n自动识别windows,linux,macos系统。架构默认为amd64")
-            if sys.platform.startswith("linux"):
-                path = './bin/fulltclash-linux-amd64'
-            elif sys.platform.startswith("win32"):
-                path = r'.\bin\fulltclash-windows-amd64.exe'
-            elif 'darwin' in sys.platform:
-                path = './bin/fulltclash-macos-amd64'
-            else:
-                path = './bin/fulltclash-linux-amd64'
-            d = {'path': path}
-            try:
-                self.yaml['clash'].update(d)
-            except KeyError:
-                di = {'clash': d}
-                self.yaml.update(di)
-            return path
+            logger.warning("为减轻项目文件大小从3.6.5版本开始，不再默认提供代理客户端二进制文件，请自行前往以下网址获取: \n"
+                           "https://github.com/AirportR/FullTCore/releases")
+            raise ValueError("找不到代理客户端二进制文件")
 
     def get_sub(self, subname: str = None):
         """
@@ -1048,12 +1034,12 @@ class ConfigManager:
         if not self.reload():
             logger.error("重载失败")
 
-    def add_user(self, user: list or str or int):
+    def add_user(self, user: Union[list, str, int]):
         """
         添加授权用户
         """
         userlist = []
-        if type(user).__name__ == "list":
+        if isinstance(user, list):
             for li in user:
                 userlist.append(li)
         else:
@@ -1064,11 +1050,9 @@ class ConfigManager:
                 userlist.extend(old)
             newuserlist = list(set(userlist))  # 去重
             self.yaml['user'] = newuserlist
-            logger.info("添加成功")
         except KeyError:
             newuserlist = list(set(userlist))  # 去重
             self.yaml['user'] = newuserlist
-            logger.info("添加成功")
 
     @logger.catch
     def del_user(self, user: list or str or int):
@@ -1623,8 +1607,7 @@ def geturl(string: str, protocol_match: bool = False):
     :param: protocol_match: 是否匹配协议URI，并拼接成ubconverter形式
     """
     text = string
-    pattern = re.compile(
-        r"https?://(?:[a-zA-Z]|\d|[$-_@.&+]|[!*,]|[\w\u4e00-\u9fa5])+")  # 匹配订阅地址
+    pattern = re.compile("https?://(?:[a-zA-Z]|\d|[$-_@.&+]|[!*,]|[\w\u4e00-\u9fa5])+")  # 匹配订阅地址
     # 获取订阅地址
     try:
         url = pattern.findall(text)[0]  # 列表中第一个项为订阅地址

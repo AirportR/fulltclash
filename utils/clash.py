@@ -134,21 +134,9 @@ class ConfigManager:
         try:
             return self.config['clash']['path']
         except KeyError:
-            if sys.platform.startswith("linux"):
-                path = './bin/fulltclash-linux-amd64'
-            elif sys.platform.startswith("win32"):
-                path = r'.\bin\fulltclash-windows-amd64.exe'
-            elif 'darwin' in sys.platform:
-                path = './bin/fulltclash-macos-amd64'
-            else:
-                path = './bin/fulltclash-linux-amd64'
-            d = {'path': path}
-            try:
-                self.yaml['clash'].update(d)
-            except KeyError:
-                di = {'clash': d}
-                self.yaml.update(di)
-            return path
+            print("为减轻项目文件大小从3.6.5版本开始，不再默认提供的代理客户端二进制文件，请自行前往以下网址获取: \n"
+                  "https://github.com/AirportR/FullTCore/releases")
+            raise ValueError("找不到代理客户端二进制文件")
 
 
 config = ConfigManager()
@@ -202,7 +190,7 @@ def start_fulltclash(portlist: list):
     if not portlist:
         raise ValueError("空的端口列表")
     port2 = "|".join(portlist)
-    control_port = int(portlist[0])-1
+    control_port = int(portlist[0]) - 1
     _command = fr"{config.get_clash_path()} -c {control_port} -p {port2}"
     p = subprocess.Popen(_command.split(), encoding="utf-8")
     return p

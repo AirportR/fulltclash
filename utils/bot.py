@@ -4,8 +4,8 @@ from loguru import logger
 
 import botmodule
 from botmodule import init_bot
-from botmodule.cfilter import dynamic_data_filter as dyn_flt, allfilter, AccessCallback, prefix_filter, next_filter, \
-    exclude_text_filter as ex_flt
+from botmodule.cfilter import dynamic_data_filter as dyn_flt, pre_filter, AccessCallback, prefix_filter, next_filter, \
+    exclude_text_filter as ex_flt, sub_filter
 from botmodule.command.authority import get_url_from_invite
 from botmodule.command.leave import leavechat, set_anti_group
 from botmodule.command.logs import export_logs
@@ -81,24 +81,24 @@ def command_loader2(app: Client):
 def command_loader(app: Client):
     task_list = ["test", "testurl", "analyze", "topo", "analyzeurl", "topourl", "speed", "speedurl", "invite"]
 
-    @app.on_message(filters.command(task_list) & allfilter(1), group=1)
+    @app.on_message(filters.command(task_list) & pre_filter(1) & sub_filter(), group=1)
     @AccessCallback()
     async def task(client: Client, message: Message):
         await botmodule.task_handler(client, message, page=1)
 
-    @app.on_message(filters.command(["grant"]) & allfilter(2), group=2)
+    @app.on_message(filters.command(["grant"]) & pre_filter(2), group=2)
     async def grant(client, message):
         await botmodule.grant(client, message)
 
-    @app.on_message(filters.command(["ungrant"]) & allfilter(2), group=2)
+    @app.on_message(filters.command(["ungrant"]) & pre_filter(2), group=2)
     async def ungrant(client, message):
         await botmodule.ungrant(client, message)
 
-    @app.on_message(filters.command(["user"]) & allfilter(2), group=2)
+    @app.on_message(filters.command(["user"]) & pre_filter(2), group=2)
     async def user(client, message):
         await botmodule.user(client, message)
 
-    @app.on_message(filters.command(["new"]) & allfilter(1), group=1)
+    @app.on_message(filters.command(["new"]) & pre_filter(1), group=1)
     @AccessCallback()
     async def new(client, message):
         await botmodule.new(client, message)
@@ -121,13 +121,13 @@ def command_loader(app: Client):
     async def print_version(client, message):
         await botmodule.version(client, message)
 
-    @app.on_message(filters.command(["reload"]) & allfilter(2), group=2)
+    @app.on_message(filters.command(["reload"]) & pre_filter(2), group=2)
     async def reload_test_items(_, message):
         r1()
         r2()
         await message.reply("已重载配置")
 
-    @app.on_message(filters.command(["register", "baipiao"]) & allfilter(1), group=1)
+    @app.on_message(filters.command(["register", "baipiao"]) & pre_filter(1), group=1)
     @AccessCallback()
     async def regis(client, message):
         await botmodule.register.baipiao(client, message)
@@ -159,35 +159,35 @@ def command_loader(app: Client):
     async def share(client, message):
         await botmodule.sub_invite(client, message)
 
-    @app.on_message(filters.command(['rule']) & allfilter(1), group=1)
+    @app.on_message(filters.command(['rule']) & pre_filter(1), group=1)
     async def _(_: Client, message: Message):
         await message.reply("🚧开发中~🚧")
 
-    @app.on_message(filters.command(['install']) & allfilter(2), group=2)
+    @app.on_message(filters.command(['install']) & pre_filter(2), group=2)
     async def install_script(client, message):
         await botmodule.download_script(client, message)
 
-    @app.on_message(filters.command(['uninstall']) & allfilter(2), group=2)
+    @app.on_message(filters.command(['uninstall']) & pre_filter(2), group=2)
     async def uninstall_script(client, message):
         await botmodule.uninstall_script(client, message)
 
-    @app.on_message(filters.command(['setting']) & allfilter(2), group=2)
+    @app.on_message(filters.command(['setting']) & pre_filter(2), group=2)
     async def setting(client, message):
         await botmodule.home_setting(client, message)
 
-    @app.on_message(filters.command(['restart', 'reboot']) & allfilter(2), group=2)
+    @app.on_message(filters.command(['restart', 'reboot']) & pre_filter(2), group=2)
     async def restart(client, message):
         await botmodule.restart_or_killme(client, message)
 
-    @app.on_message(filters.command(['exit', 'killme']) & allfilter(2), group=2)
+    @app.on_message(filters.command(['exit', 'killme']) & pre_filter(2), group=2)
     async def killme(client, message):
         await botmodule.restart_or_killme(client, message, kill=True)
 
-    @app.on_message(filters.command(['connect']) & allfilter(2), group=2)
+    @app.on_message(filters.command(['connect']) & pre_filter(2), group=2)
     async def conn(client, message):
         await botmodule.conn_simple(client, message)
 
-    @app.on_message(filters.command(['logs']) & allfilter(2), group=2)
+    @app.on_message(filters.command(['logs']) & pre_filter(2), group=2)
     async def _(client, message):
         await export_logs(client, message)
 
@@ -200,7 +200,7 @@ def command_loader(app: Client):
         if message.caption.startswith('/result'):
             await botmodule.task_result(client, message)
 
-    @app.on_message(filters.command(["setantigroup"]) & allfilter(2), group=2)
+    @app.on_message(filters.command(["setantigroup"]) & pre_filter(2), group=2)
     async def setantigroup(client, message):
         await set_anti_group(client, message)
 
