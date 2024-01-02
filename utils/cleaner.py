@@ -331,8 +331,8 @@ allow-lan: false
 bind-address: '*'
 dns:
   default-nameserver:
-  - 119.29.29.29
-  - 223.5.5.5
+  - https://doh.pub/dns-query
+  - https://dns.alidns.com/dns-query
   enable: false
   enhanced-mode: fake-ip
   fallback:

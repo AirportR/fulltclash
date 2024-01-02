@@ -245,9 +245,8 @@ dns:
     geoip-code: CN
   listen: 0.0.0.0:53
   nameserver:
-  - 119.29.29.29
-  - 223.5.5.5
-  - 114.114.114.114
+  - https://doh.pub/dns-query
+  - https://dns.alidns.com/dns-query
 external-controller: 127.0.0.1:11230
 ipv6: true
 log-level: info
