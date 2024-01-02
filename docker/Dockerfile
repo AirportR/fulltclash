@@ -1,4 +1,4 @@
-FROM python:3.9.18-slim-bookworm AS compile-image
+FROM python:3.11.7-slim-bookworm AS compile-image
 
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
@@ -11,7 +11,7 @@ ADD https://raw.githubusercontent.com/AirportR/FullTclash/dev/requirements.txt .
 RUN pip3 install --no-cache-dir -r requirements.txt && \
     pip3 install --no-cache-dir supervisor
 
-FROM python:3.9.18-slim-bookworm
+FROM python:3.11.7-slim-bookworm
 
 ENV TZ=Asia/Shanghai
 ENV admin=12345678
