@@ -23,9 +23,31 @@ async def getSubInfo(_, message):
         status = False
         if not url:
             if arglen == 1:
-                await back_message.edit_text("使用方法: /traffic & /subinfo & /流量查询 + <订阅链接> & <订阅名>")
+                await back_message.edit_text("使用方法: /traffic & /subinfo & /流量查询 + <订阅链接> & <订阅名> & all [管理]获取所有流量信息")
                 await asyncio.sleep(5)
                 await back_message.delete()
+                return
+            elif "all" == arg[1]:
+                if await check_user(message, admin, isalert=False):
+                    # 管理员至高权限
+                    status = True
+                else:
+                    await back_message.edit_text("仅管理员可查")
+                    return
+                allsubinfo = config.get_sub()
+                item = list(allsubinfo.keys())
+                for subname in item:
+                    subinfo = config.get_sub(subname)
+                    if subinfo:
+                        sub_message = await message.reply("正在查询" + subname + "流量信息...")
+                        subpwd = subinfo.get('password', '')
+                        subowner = subinfo.get('owner', '')
+                        url = str(subinfo.get('url', ''))
+                        subcl = SubCollector(url)
+                        subcl.cvt_enable = False
+                        subinfo = await subcl.getSubTraffic()
+                    await printSubNameInfo(subname, subinfo, sub_message, call_time)
+                await back_message.edit_text("所有流量信息查询完毕")
                 return
             else:
                 pwd = arg[2] if len(arg) > 2 else arg[1]
@@ -54,11 +76,17 @@ async def getSubInfo(_, message):
         subcl.cvt_enable = False
         subinfo = await subcl.getSubTraffic()
         if status:
-            if subinfo:
-                rs = subinfo[3] - subinfo[2]  # 剩余流量
-                subname = arg[1]
-                subinfo_text = f"""
-                ☁️订阅名称：{subname}
+            await printSubNameInfo(arg[1], subinfo, back_message, call_time)
+        else:
+            await printUrlInfo(url, subinfo, back_message, call_time)
+    except RPCError as r:
+        logger.error(str(r))
+
+async def printSubNameInfo(subname, subinfo, back_message, call_time):
+    if subinfo:
+        rs = subinfo[3] - subinfo[2]  # 剩余流量
+        subinfo_text = f"""
+☁️订阅名称：{subname}
 ⬆️已用上行：{round(subinfo[0], 3)} GB
 ⬇️已用下行：{round(subinfo[1], 3)} GB
 🚗总共使用：{round(subinfo[2], 3)} GB
@@ -67,13 +95,14 @@ async def getSubInfo(_, message):
 ⏱️过期时间：{subinfo[4]}
 🔍查询时间：{call_time}
                     """
-                await back_message.edit_text(subinfo_text)
-            else:
-                await back_message.edit_text("此订阅无法获取流量信息")
-        else:
-            if subinfo:
-                rs = subinfo[3] - subinfo[2]  # 剩余流量
-                subinfo_text = f"""
+        await back_message.edit_text(subinfo_text)
+    else:
+        await back_message.edit_text("此订阅无法获取流量信息")
+
+async def printUrlInfo(url, subinfo, back_message, call_time):
+    if subinfo:
+        rs = subinfo[3] - subinfo[2]  # 剩余流量
+        subinfo_text = f"""
 ☁️订阅链接：{url}
 ⬆️已用上行：{round(subinfo[0], 3)} GB
 ⬇️已用下行：{round(subinfo[1], 3)} GB
@@ -82,9 +111,7 @@ async def getSubInfo(_, message):
 💧总流量：{round(subinfo[3], 3)} GB
 ⏱️过期时间：{subinfo[4]}
 🔍查询时间：{call_time}
-                    """
-                await back_message.edit_text(subinfo_text)
-            else:
-                await back_message.edit_text("此订阅无法获取流量信息")
-    except RPCError as r:
-        logger.error(str(r))
+            """
+        await back_message.edit_text(subinfo_text)
+    else:
+        await back_message.edit_text("此订阅无法获取流量信息")
