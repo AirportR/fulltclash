@@ -164,7 +164,8 @@ def sub_filter():
         string = str(message.text)
         arg = string.strip().split(' ')
         arg = [x for x in arg if x != '']
-        if arg[0].endswith("url") or 'invite' in arg[0]:
+        cmd = arg[0].split('@')[0]
+        if cmd.endswith("url") or 'invite' in arg[0]:
             return True
         if check.check_sub_name(arg[1]):
             return True
