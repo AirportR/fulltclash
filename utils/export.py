@@ -12,9 +12,8 @@ from pilmoji import Pilmoji
 from pilmoji.source import Twemoji
 
 from utils.cleaner import ConfigManager
+from utils import __version__
 import utils.emoji_custom as emoji_source
-
-__version__ = '3.6.5'
 
 # 这是将测试的结果输出为图片的模块。
 # 设计思路:
