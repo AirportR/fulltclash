@@ -1,6 +1,7 @@
 import bisect
 import math
 import time
+from collections import Counter
 from typing import Union, Tuple
 
 import PIL
@@ -13,8 +14,7 @@ from pilmoji.source import Twemoji
 
 from utils.cleaner import ConfigManager
 import utils.emoji_custom as emoji_source
-
-__version__ = '3.6.5'
+from utils import __version__
 
 # 这是将测试的结果输出为图片的模块。
 # 设计思路:
@@ -79,6 +79,24 @@ def c_block_grad(size: Tuple[int, int], color_value: str, end_color: str, alpha:
     return image
 
 
+def unlock_stats(raw: dict) -> dict:
+    temp_dict = {}
+    for k, v in raw.items():
+        if isinstance(v, list):
+            new_dict = {}
+            ct = Counter(v)
+            for k0, v0 in ct.items():
+                if isinstance(k0, str):
+                    if "待解" in k0:
+                        new_dict['待解'] = new_dict.get('待解', 0) + v0
+                    elif "解锁" in k0 or "允许" in k0 or "Low" in k0:
+                        new_dict['解锁'] = new_dict.get('解锁', 0) + v0
+                    else:
+                        new_dict[k0] = new_dict.get(k0, 0) + v0
+            temp_dict[k] = new_dict
+    return temp_dict
+
+
 class BaseExport:
     def __init__(self, primarykey: Union[list, tuple], allinfo: dict):
         """
@@ -135,14 +153,16 @@ class ExportCommon(BaseExport):
             'background': self.image_config.get('background', {}),
             'delay_color': self.color.get('delay', []),
             'watermark': self.watermark_config(),
+            'watermark2': self.non_commercial_wmk_config(),  # 防商用水印
             'height': self.get_height(),
             'widths': self.get_width(),  # 注意，这个键的值是个长度为3的元组，并非单个值。
             'ctofs': int(self.linespace / 2 - self.front_size / 2),  # 行间距改变时的补偿偏移量,Compensation offsets。
         }
         self.init_color_config()
 
-    def watermark_config(self) -> dict:
-        watermark_default_config = {
+    @staticmethod
+    def watermark_default_config() -> dict:
+        return {
             'enable': False,
             'text': '只是一个水印',
             'font_size': 64,
@@ -150,9 +170,22 @@ class ExportCommon(BaseExport):
             'alpha': 16,
             'angle': -16.0,
             'start_y': 0,
-            'row_spacing': 0
+            'row_spacing': 0,
+            'shadow': False,
+            'trace': False
         }
+
+    def watermark_config(self) -> dict:
+        watermark_default_config = self.watermark_default_config()
         new_watermark = self.image_config.get('watermark', {})
+        for key in watermark_default_config:
+            if key in new_watermark:
+                watermark_default_config[key] = new_watermark[key]
+        return watermark_default_config
+
+    def non_commercial_wmk_config(self):
+        watermark_default_config = self.watermark_default_config()
+        new_watermark = self.image_config.get('non-commercial-watermark', {})
         for key in watermark_default_config:
             if key in new_watermark:
                 watermark_default_config[key] = new_watermark[key]
@@ -320,7 +353,7 @@ class ExportCommon(BaseExport):
         获取图片高度
         :return: int
         """
-        return (self.nodenum + 4) * self.linespace
+        return (self.nodenum + 5) * self.linespace
 
     def get_width(self, compare: int = None):
         """
@@ -356,38 +389,74 @@ class ExportCommon(BaseExport):
         xpath = mid_xpath - strname_width / 2
         return xpath
 
+    @staticmethod
+    def inject_blind_watermark(img: Union[Image.Image, int], wm_text: str = "FullTClash") -> Image.Image:
+        """
+        注入盲水印
+
+        :param: wm_text 水印文本
+        """
+        try:
+            import cv2
+            import numpy as np
+            from blind_watermark import WaterMark, bw_notes
+            bw_notes.close()
+            cv2img = cv2.cvtColor(np.asarray(img), cv2.COLOR_RGBA2BGRA)
+
+            bwm1 = WaterMark(password_img=11230, password_wm=11230)
+            bwm1.bwm_core.read_img_arr(img=cv2img)
+            new_wm_text = wm_text[:64] if len(wm_text) > 64 else wm_text + ' ' * (64 - len(wm_text))  # 填充到16长度
+            bwm1.read_wm(new_wm_text, mode='str')
+            embed_img = bwm1.bwm_core.embed()
+            # bwm1.embed('output/embedded.png')
+
+            pil_img = Image.fromarray(cv2.cvtColor(embed_img.astype(np.uint8), cv2.COLOR_BGRA2RGBA))
+            logger.info(f'已注入盲水印: {wm_text}, 占用bit: {len(bwm1.wm_bit)}')
+            return pil_img
+        except ImportError:
+            return img
+
     def draw_watermark(self, original_image: Image.Image) -> Image.Image:
         """
         绘制水印
         """
+        watermark = self.image.get('watermark', {})
+        uid = self.allinfo.get('task', {}).get('initiator', '')
+        if uid and uid not in self.config.getuser():
+            watermark = self.image.get('watermark2', {})
         if not self.image['watermark']['enable']:
             return original_image
-        watermark = self.image.get('watermark', {})
         watermark_text = watermark['text']
-        font = ImageFont.truetype(self.config.getFont(), int(watermark['font_size']))
-        text_image = Image.new('RGBA', font.getsize(watermark_text), (255, 255, 255, 0))
-        text_draw = ImageDraw.Draw(text_image)
+        shadow = bool(watermark.get('shadow', False))  # 是否是盲水印
+        trace_enable = bool(watermark.get('trace', False))
+        if trace_enable:
+            watermark_text += f" UID:{uid}"
+        if not shadow:
+            font = ImageFont.truetype(self.config.getFont(), int(watermark['font_size']))
+            text_image = Image.new('RGBA', font.getsize(watermark_text), (255, 255, 255, 0))
+            text_draw = ImageDraw.Draw(text_image)
 
-        rgb = ImageColor.getrgb(watermark['color'])
-        rgba = (rgb[0], rgb[1], rgb[2], (int(watermark['alpha'])))
-        text_draw.text((0, 0), watermark_text, rgba, font=font)
+            rgb = ImageColor.getrgb(watermark['color'])
+            rgba = (rgb[0], rgb[1], rgb[2], (int(watermark['alpha'])))
+            text_draw.text((0, 0), watermark_text, rgba, font=font)
 
-        angle = float(watermark['angle'])
-        rotated_text_image = text_image.rotate(angle, expand=True, fillcolor=(0, 0, 0, 0),
-                                               resample=Image.BILINEAR)
-        watermarks_image = Image.new('RGBA', original_image.size, (255, 255, 255, 0))
-        x = original_image.size[0] // 2 - rotated_text_image.size[0] // 2
-        row_spacing = int(watermark['row_spacing'])
-        if row_spacing < 0:
-            row_spacing = 0
-        y = int(watermark['start_y'])
-        while True:
-            watermarks_image.paste(rotated_text_image, (x, y))
-            y += rotated_text_image.size[1] + row_spacing
-            if y >= original_image.size[1]:
-                break
-
-        return Image.alpha_composite(original_image, watermarks_image)
+            angle = float(watermark['angle'])
+            rotated_text_image = text_image.rotate(angle, expand=True, fillcolor=(0, 0, 0, 0),
+                                                   resample=Image.BILINEAR)
+            watermarks_image = Image.new('RGBA', original_image.size, (255, 255, 255, 0))
+            x = original_image.size[0] // 2 - rotated_text_image.size[0] // 2
+            row_spacing = int(watermark['row_spacing'])
+            if row_spacing < 0:
+                row_spacing = 0
+            y = int(watermark['start_y'])
+            while True:
+                watermarks_image.paste(rotated_text_image, (x, y))
+                y += rotated_text_image.size[1] + row_spacing
+                if y >= original_image.size[1]:
+                    break
+            return Image.alpha_composite(original_image, watermarks_image)
+        else:
+            return self.inject_blind_watermark(original_image, watermark_text)
 
     def draw_background(self) -> Image.Image:
         bkgcfg = self.image.get('background', {})
@@ -442,6 +511,10 @@ class ExportCommon(BaseExport):
         else:
             idraw.text((10, _height - (self.image['linespace'] - 4) * 2), _footer, font=self._font, fill=(0, 0, 0))
             idraw.text((10, _height - (self.image['linespace'] - 5)), _footer2, font=self._font, fill=(0, 0, 0))
+        _footer3 = "解锁占比:"
+        # _footer4 = "解锁排行Top5:"
+        idraw.text((10, _height - (self.image['linespace'] - 2) * 3), _footer3, font=self._font, fill=(0, 0, 0))
+        # idraw.text((10, _height - (self.image['linespace'] - 2) * 3), _footer4, font=self._font, fill=(0, 0, 0))
 
     def draw_label(self, idraw):
         """
@@ -494,6 +567,31 @@ class ExportCommon(BaseExport):
             logger.warning("绘图错误:" + str(e))
             draw.text(xy, ct, fill, font=self._font)
 
+    def draw_percent(self, img: Image.Image, idraw: Union[ImageDraw.ImageDraw, Pilmoji], start: Union[int, float]):
+        _info_list_width = list(self.image['widths'][2])
+        _ignore = self.allinfo.get('percent_ignore', ['类型', 'HTTP(S)延迟', 'TLS RTT', '延迟RTT', 'HTTP延迟'])
+        _key_list = self.get_key_list()
+        _stats = unlock_stats(self.info)
+        _height = self.get_height()
+        ls = self.image['linespace']
+        c_block = self.c_block
+        c_alpha = self.c_alpha
+        c_end_color = self.c_end_color
+        y = _height - (ls - 2) * 3
+        for _i, _k in enumerate(_key_list):
+            if _k in _ignore:
+                start += _info_list_width[_i]
+                continue
+            else:
+                raw_percent = _stats.get(_k, {}).get('解锁', 0) / self.nodenum if self.nodenum else 0
+                _percent = f"{(raw_percent * 100):.1f}%"
+                x = self.get_mid(start, start + _info_list_width[_i], _percent)
+                block = c_block_grad((_info_list_width[_i], int(raw_percent * ls)), color_value=c_block['成功'],
+                                     end_color=c_end_color['成功'], alpha=c_alpha['成功'])
+                img.alpha_composite(block, (start, y - 7))
+                idraw.text((x, y), str(_percent), fill=(0, 0, 0), font=self._font)
+                start += _info_list_width[_i]
+
     def draw_block(self, img: Image.Image, index: int, _nodename_width, _key_list, _info_list_width):
         """
         绘制颜色块
@@ -510,7 +608,7 @@ class ExportCommon(BaseExport):
         width = 100 + _nodename_width
         for i, t1 in enumerate(_key_list):
             content = self.info[t1][t]
-            if "RTT延迟" == t1 or "HTTP(S)延迟" == t1:
+            if "延迟RTT" == t1 or "HTTP(S)延迟" == t1 or t1 == "TLS RTT":
                 rtt = float(content[:-2])
                 # 使用了二分法（bisection）算法，它的时间复杂度是 O(log n)。j 这里是确定rtt比interval中的哪个值大
                 # bisect.bisect_right(interval, rtt) 减去1 就拿到了指定的值，最后max函数防止j为负
@@ -596,7 +694,7 @@ class ExportCommon(BaseExport):
         self.draw_info(pilmoji)  # 2.绘制标题栏与结尾栏，返回输出图片的时间,文件动态命名。
         _export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime()).replace(":", "-")
         self.draw_label(idraw)  # 3.绘制标签
-
+        self.draw_percent(img, idraw, 100 + _nodename_width)  # 绘制百分比
         # 在一个大循环里绘制，主要思路是按行绘制
         for t in range(self.nodenum):
             # 序号
@@ -614,6 +712,8 @@ class ExportCommon(BaseExport):
 
         self.draw_line(idraw)  # 绘制线条
         img = self.draw_watermark(img)  # 绘制水印
+        if self.config.config.get('image', {}).get('compress', False):
+            img = img.quantize(256, kmeans=1)  # 压缩图片
         if debug:
             img.show("debug image view")
         else:
@@ -670,13 +770,15 @@ class ExportSpeed2(ExportCommon):
                 rtt = float(self.info[t1][t][:-2])
                 for colo_int in range(0, len(colorvalue)):
                     if interval[colo_int] < rtt < interval[colo_int + 1]:
-                        block = c_block_grad((_info_list_width[i], 60), color_value=colorvalue[colo_int], end_color=end_color[colo_int],
-                                            alpha=alphas[0])
+                        block = c_block_grad((_info_list_width[i], 60), color_value=colorvalue[colo_int],
+                                             end_color=end_color[colo_int],
+                                             alpha=alphas[0])
                         img.alpha_composite(block, (width, 60 * (t + 2)))
                         break
                     elif rtt == 0:
-                        block = c_block_grad((_info_list_width[i], 60), color_value=colorvalue[len(colorvalue)], end_color=end_color[len(colorvalue)],
-                                         alpha=alphas[7])
+                        block = c_block_grad((_info_list_width[i], 60), color_value=colorvalue[len(colorvalue)],
+                                             end_color=end_color[len(colorvalue)],
+                                             alpha=alphas[7])
                         img.alpha_composite(block, (width, 60 * (t + 2)))
                         break
 
@@ -790,6 +892,7 @@ class ExportResult:
         self.title = self.image_config.get('title', 'FullTclash')
         self.background = self.image_config.get('background', {})
         self.watermark = self.image_config.get('watermark', {})
+        self.watermark2 = self.image_config.get('non-commercial-watermark', {})
         watermark_default_config = {
             'enable': False,
             'text': '只是一个水印',
@@ -803,6 +906,8 @@ class ExportResult:
         for key in watermark_default_config:
             if key not in self.watermark:
                 self.watermark[key] = watermark_default_config.get(key)
+            if key not in self.watermark2:
+                self.watermark2[key] = watermark_default_config.get(key)
 
     @property
     def interval(self):
@@ -935,26 +1040,31 @@ class ExportResult:
         xpath = mid_xpath - strname_width / 2
         return xpath
 
-    def draw_watermark(self, original_image):
-        watermark_text = self.watermark['text']
-        font = ImageFont.truetype(self.config.getFont(), int(self.watermark['font_size']))
+    def draw_watermark(self, original_image, taskinfo: dict = None):
+        watermark = self.watermark
+        uid = taskinfo.get('initiator', '') if taskinfo else ''
+        if uid and uid not in self.config.getuser():
+            watermark = self.watermark2
+        if not watermark['enable']:
+            return original_image
+        watermark_text = watermark['text']
+        font = ImageFont.truetype(self.config.getFont(), int(watermark['font_size']))
         text_image = Image.new('RGBA', font.getsize(watermark_text), (255, 255, 255, 0))
         text_draw = ImageDraw.Draw(text_image)
 
-        rgb = ImageColor.getrgb(self.watermark['color'])
-        rgba = (rgb[0], rgb[1], rgb[2], (int(self.watermark['alpha'])))
+        rgb = ImageColor.getrgb(watermark['color'])
+        rgba = (rgb[0], rgb[1], rgb[2], (int(watermark['alpha'])))
         text_draw.text((0, 0), watermark_text, rgba, font=font)
 
-        angle = float(self.watermark['angle'])
+        angle = float(watermark['angle'])
         rotated_text_image = text_image.rotate(angle, expand=True, fillcolor=(0, 0, 0, 0),
                                                resample=Image.BILINEAR)
         watermarks_image = Image.new('RGBA', original_image.size, (255, 255, 255, 0))
-
         x = original_image.size[0] // 2 - rotated_text_image.size[0] // 2
-        row_spacing = int(self.watermark['row_spacing'])
+        row_spacing = int(watermark['row_spacing'])
         if row_spacing < 0:
             row_spacing = 0
-        y = int(self.watermark['start_y'])
+        y = int(watermark['start_y'])
         while True:
             watermarks_image.paste(rotated_text_image, (x, y))
             y += rotated_text_image.size[1] + row_spacing
@@ -982,6 +1092,7 @@ class ExportTopo(ExportResult):
         self.wtime = self.info.pop('wtime', "未知")
         self.nodenum = len(self.basedata)
         self.front_size = 38
+        self.taskinfo = self.info.pop('task', {})
         self.__font = ImageFont.truetype(self.config.getFont(), self.front_size)
         # self.image_config = self.config.config.get('image', {})
         # self.title = self.image_config.get('title', 'FullTclash')
@@ -1205,15 +1316,13 @@ class ExportTopo(ExportResult):
             img3.paste(img, (0, 0))
             img3.paste(img2, (0, image_height - 120))
 
-            if self.watermark['enable']:
-                img3 = self.draw_watermark(img3.convert("RGBA"))
+            img3 = self.draw_watermark(img3.convert("RGBA"), self.taskinfo)
             print(export_time)
             # img3.show()
             img3.save(r"./results/Topo{}.png".format(export_time.replace(':', '-')))
             return export_time, img3.size
         else:
-            if self.watermark['enable']:
-                img = self.draw_watermark(img.convert("RGBA"))
+            img = self.draw_watermark(img.convert("RGBA"), self.taskinfo)
             print(export_time)
             img.save(r"./results/Topo{}.png".format(export_time.replace(':', '-')))
             return export_time, img.size
@@ -1224,7 +1333,7 @@ class ExportTopo(ExportResult):
             self.__init__(nodename, info)
         _default_slavename = self.config.getSlaveconfig().get('default-slave', {}).get('comment', 'Local')
         slavecomment = self.info.pop('slave', {}).get('comment', _default_slavename)
-        _ = self.info.pop('task', {})
+        taskinfo = self.info.pop('task', {})
         fnt = self.__font
         image_width, info_list_length = self.get_width(compare=img2_width)
 
@@ -1571,7 +1680,7 @@ class ExportTopo(ExportResult):
             start_x = end
         if nodename is None and info is None:
             if self.watermark['enable']:
-                img = self.draw_watermark(img.convert("RGBA"))
+                img = self.draw_watermark(img.convert("RGBA"), taskinfo)
             img.save(r"./results/Topo{}.png".format(export_time.replace(':', '-')))
             print(export_time)
             return export_time
@@ -1591,6 +1700,7 @@ class ExportSpeed(ExportResult):
         self.speed_end_colors = self.config.config.get('speed_end_colors_switch', False)
         if info is None:
             info = {}
+        self.taskinfo = info.pop('task', {})
         self.wtime = info.pop('wtime', "-1")
         self.filter = info.pop('filter', {})
         self.sort = info.pop('sort', "订阅原序")
@@ -1777,16 +1887,10 @@ class ExportSpeed(ExportResult):
         img.paste(bkg, (0, image_height - 120))
         idraw = ImageDraw.Draw(img)
         # 绘制标题栏与结尾栏
-        # emoji_time = get_clock_emoji()
-        # export_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())  # 输出图片的时间,文件动态命名
-        # system_timezone = datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo
         _default_slavename = self.config.getSlaveconfig().get('default-slave', {}).get('comment', 'Local')
         # slavecomment = self.slave.get('comment', _default_slavename)
         # export_time = export_time.replace(':', '-')
         title = f"{self.title} - 速度测试"
-        # footer1 = f"📊版本={__version__}  后端={slavecomment}  消耗流量={self.traffic}MB   线程={self.thread}  " \
-        #           f"排序={self.sort}  过滤器={self.filter_include} <-> {self.filter_exclude}"
-        # footer2 = f"{emoji_time}测试时间: {export_time} ({system_timezone}) 总共耗时: {self.wtime}s 测试结果仅供参考,以实际情况为准"
         idraw.text((self.get_mid(0, image_width, title), 5), title, font=fnt, fill=(0, 0, 0))  # 标题
         if self.emoji:
             pilmoji.text((10, image_height - 112), text=self.footer1, font=fnt, fill=(0, 0, 0),
@@ -1872,7 +1976,7 @@ class ExportSpeed(ExportResult):
                 end_color = ["#f5f3f2", "#beb1aa", "#f6bec8", "#dc6b82", "#c35c5d", "#8ba3c7", "#c8161d", '#8d8b8e']
             # 填充颜色块
             for t1 in key_list:
-                if "延迟RTT" == t1 or "HTTP(S)延迟" == t1:
+                if "延迟RTT" == t1 or "HTTP(S)延迟" == t1 or "TLS RTT" == t1:
                     rtt = float(self.info[t1][t][:-2])
                     if interval[0] < rtt < interval[1]:
                         block = c_block_grad((info_list_length[i], 60), color_value=colorvalue[0],
@@ -1979,9 +2083,7 @@ class ExportSpeed(ExportResult):
             idraw.line([(x, 60), (x, image_height - 120)], fill="#EAEAEA", width=2)
             start_x = end
         # 绘制水印
-        if self.watermark['enable']:
-            img = self.draw_watermark(img.convert("RGBA"))
-        # 保存结果
+        img = self.draw_watermark(img.convert("RGBA"), self.taskinfo)
         if debug:
             img.show(self.export_time.replace(':', '-'))
             return None, None

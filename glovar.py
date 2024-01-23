@@ -1,3 +1,4 @@
+import os
 import time
 
 import tzlocal
@@ -8,6 +9,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from utils import cron_delete_message as cdm
 from utils import cron_edit_message as cem
+from utils import __version__
 
 program_run_time = time.time()
 
@@ -15,8 +17,8 @@ bot_token = init_bot.bot_token
 bot_config = init_bot.config
 BUILD_TOKEN = init_bot.config.getBuildToken()
 userbot_config = bot_config.config.get('userbot', {})
-# 项目版本号
-__version__ = '3.6.5'
+HOME_DIR = os.getcwd()
+
 # 客户端
 app = Client("my_bot",
              api_id=init_bot.api_id,
@@ -37,10 +39,9 @@ if userbot_config.get('enable', False):
                   )
 scheduler = AsyncIOScheduler(timezone=str(tzlocal.get_localzone()))
 scheduler.start()
-print("""# --------------------------- [ Start bot AsyncIOScheduler Successful ] ---------------------------- # """)
-scheduler.add_job(cdm, IntervalTrigger(seconds=10, timezone=str(tzlocal.get_localzone())),
+scheduler.add_job(cdm, IntervalTrigger(seconds=10, timezone=str(tzlocal.get_localzone())), max_instances=10,
                   id='delete1', name="Delete the telegram message", args=(app,))
-scheduler.add_job(cem, IntervalTrigger(seconds=5, timezone=str(tzlocal.get_localzone())),
+scheduler.add_job(cem, IntervalTrigger(seconds=5, timezone=str(tzlocal.get_localzone())), max_instances=10,
                   id='edit1', name="Edit the telegram message", args=(app,))
 
 

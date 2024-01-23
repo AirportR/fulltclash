@@ -2,8 +2,13 @@ name: ci
 
 on:
   push:
+    paths-ignore:
+      - "resources/**"
+      - "README.md"
+      - "README-EN.md"
+      - ".github/ISSUE_TEMPLATE/**"
     branches:
-      - "dev"
+      - "master"
 
 jobs:
   docker:

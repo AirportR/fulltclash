@@ -22,8 +22,6 @@ bot:
 # path: './bin/fulltclash-linux-amd64' # 代理客户端的路径，默认为 ./bin/ 下。不会弄不要动这里，用默认的即可。本仓库默认仅提供win-amd64与linux-amd64两种(意味着如果为这两种架构，这里不用改。)，其他架构需要自行编译。
 # allow-caching: false  #是否缓存测试过程产生的订阅，若否，则测试完成后会自动删除测试订阅，以免造成空间浪费。（此配置暂不生效）
 # core: 4 # 核心数，数量越多测试速度越快，但代价是内存会大量占用(每个核心大概10M)，自己的机子多少内存自己平衡。默认值为1.
-# auto-start: false # bot启动时顺带启动,若为false则需要在 bot上输入/clash start 手动启动，默认false
-# startup: 1124 #起始端口。表示从此端口开始往下数占用数量，比如核心数为4，就会占用[1124,1126,1128,1130]共4个端口，遇到端口占用时可配置此项。推荐10000以上作为初始端口
 # branch: origin #clash内核上游分支，仅有两个有效值: [origin, meta], meta分支支持更多协议，比如vless、tuic等，但是使用上较为不可控，默认为origin原生内核。
 #proxy: "host:端口" # http配置代理(非socks5)，括号内可选用于下载获取订阅链接，订阅链接国内打不开可尝试开启（可选配置）,本机提供的代理可以这样填: '127.0.0.1:7890'
 #如果要http代理要验证，配置格式为: proxy: "用户名:密码@host:端口" 比如: user1:112233@127.0.0.1:7890
@@ -61,7 +59,7 @@ bot:
 #  default-slave: # 默认后端配置。
 #    comment: "本地测试后端" # 默认测试后端的备注。
 #    username: "local" # 默认测试后端的ID，此项请勿修改，会影响本地后端的运行。
-#    shadow: false # 3.6.5新增。是否隐藏后端，默认不隐藏，即 false ，想隐藏可以改为 true
+#    hidden: false # 3.6.5新增。是否隐藏后端，默认不隐藏，即 false ，想隐藏可以改为 true
 #  "slave1": #第一个后端，注意这里的名字是随便填的，是为了方便你该配置所标记的。
 #    address: 127.0.0.1:8765 #此项配置为websocket后端专属配置，当type为websocket时才有效。后端地址格式为 ip:port ，也可以是 域名:port。
 #    comment: "ws后端 [ws] [meta]" #后端备注，在测试图显示的。
@@ -82,6 +80,7 @@ bot:
 #----------------------------   以下为绘图相关配置   --------------------------------#
 
 #image:
+# compress: false  # 是否压缩图片，默认false，即以最清晰的图片输出。压缩后清晰度肉眼几乎看不出来，如果主端bot发送图片慢或者空间有限，可以考虑开启。坏处: 盲水印可能失效
 # title: 'FullTclash' # 绘图时的标题
 # 以下是颜色配置，其中speed是速度相关,name为颜色名字，value为颜色值，目前仅支持十六进制，label是颜色对应的速度区间（单位MB）,不用动，只需改value值，其他项是为了做区分。
 # color:
@@ -141,13 +140,26 @@ bot:
 #  warnend: '#fcc43c' #警告渐变结束色块
 # watermark: #水印
 #  enable: true #是否启用
-#  text: '只是一个水印' #水印文本
+#  text: '只是一个水印' #水印文本，请勿超过49个字符
 #  color: '#000000' #颜色值
 #  alpha: 16 # 透明度, 可用范围(0-255)
 #  font_size: 64 #字体大小
 #  angle: -16.0 #旋转角度
 #  row_spacing: 0 #行距
 #  start_y: 0 #纵坐标起始位置
+#  shadow: true #是否启用盲水印。注意，启用盲水印会导致绘图时间变长，机器性能不行慎用。
+#  trace: true  #是否在水印中追踪发起测试的Telegram用户UID
+# non-commercial-watermark: #防商用水印，invite测试将附上防商用水印
+#  enable: true #是否启用
+#  text: '请勿用于商业用途' #水印文本，请勿超过49个字符
+#  color: '#000000' #颜色值
+#  alpha: 16 # 透明度, 可用范围(0-255)
+#  font_size: 64 #字体大小
+#  angle: -16.0 #旋转角度
+#  row_spacing: 0 #行距
+#  start_y: 0 #纵坐标起始位置
+#  shadow: true #是否启用盲水印。注意，启用盲水印会导致绘图时间变长，机器性能不行慎用。
+#  trace: true  #是否在水印中追踪发起测试的Telegram用户UID
 # background: #背景颜色
 #  backgrounds: '#ffffff' #联通性测试背景色
 #  ins: '#ffffff' #拓扑测试入口topo背景色

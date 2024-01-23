@@ -9,8 +9,6 @@ from utils.cleaner import reload_config as r2, addon
 import botmodule
 from botmodule.command.test import convert_core_index
 
-# q = asyncio.Queue(maxsize=1)
-# task_num = 0
 SPEED_Q = asyncio.Queue(1)  # 速度测试队列。确保同一时间只有一个测速任务在占用带宽
 CONN_Q = asyncio.Queue(3)  # 连通性、拓扑测试队列，最大同时测试数量为10个任务，设置太高会影响到测速的带宽，进而影响结果。
 QUEUE_NUM_SPEED = 0  # 测速队列被阻塞的任务计数

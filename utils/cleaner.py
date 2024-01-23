@@ -1,6 +1,8 @@
 import asyncio
 import importlib
 import os
+import pathlib
+from copy import deepcopy
 from typing import Union, List
 import socket
 
@@ -331,8 +333,8 @@ allow-lan: false
 bind-address: '*'
 dns:
   default-nameserver:
-  - 119.29.29.29
-  - 223.5.5.5
+  - https://doh.pub/dns-query
+  - https://dns.alidns.com/dns-query
   enable: false
   enhanced-mode: fake-ip
   fallback:
@@ -757,17 +759,29 @@ class ConfigManager:
     def nospeed(self) -> bool:
         return bool(self.config.get('nospeed', False))
 
-    def speedconfig(self):
+    def speedConfig(self):
         try:
             return self.config['speedconfig']
         except KeyError:
             return {}
 
-    def speednodes(self):
+    def speednodes(self) -> int:
         try:
-            return self.config['speednodes']
-        except KeyError:
-            return int(300)
+            return int(self.config['speednodes'])
+        except (KeyError, ValueError):
+            return 300
+
+    def getConcurrency(self) -> int:
+        clashconf = self.config.get('clash', {})
+        max_workers = min(32, (os.cpu_count() or 1) + 14)
+        if isinstance(clashconf, dict):
+            num = clashconf.get('core', max_workers)
+            if isinstance(num, int):
+                return num
+            else:
+                return max_workers
+        else:
+            return max_workers
 
     def getClashBranch(self):
         """
@@ -963,14 +977,6 @@ class ConfigManager:
             except KeyError:
                 return {}
 
-    @logger.catch
-    def add(self, data: dict, key):
-        try:
-            self.yaml[key] = data[key]
-        except Exception as e:
-            print(e)
-
-    @logger.catch
     def add_admin(self, admin: Union[list, str, int]):
         """
         添加管理员
@@ -987,13 +993,10 @@ class ConfigManager:
                 adminlist.extend(old)
                 newadminlist = list(set(adminlist))  # 去重
                 self.yaml['admin'] = newadminlist
-                logger.info("添加成功")
         except KeyError:
             newadminlist = list(set(adminlist))  # 去重
             self.yaml['admin'] = newadminlist
-            logger.info("添加成功")
 
-    @logger.catch
     def del_admin(self, admin: list or str or int):
         """
         删除管理员
@@ -1442,11 +1445,22 @@ class ResultCleaner:
         if '每秒速度' in self.data:
             self.data['每秒速度'] = [[j / 1024 / 1024 for j in i] for i in self.data['每秒速度']]
 
+    def calc_used(self):
+        if '每秒速度' in self.data and '消耗流量' not in self.data:
+            traffic_used = 0
+            for node_res in self.data['每秒速度']:
+                if isinstance(node_res, list):
+                    traffic_used += sum(node_res)
+                elif isinstance(node_res, (float, int)):
+                    traffic_used += node_res
+            self.data['消耗流量'] = traffic_used
+
     def start(self, sort="订阅原序"):
         try:
             self.convert_proxy_typename()
             self.sort(sort)
             self.padding()
+            self.calc_used()
             return self.data
         except TypeError as t:
             logger.error(str(t))
@@ -1458,11 +1472,12 @@ class ResultCleaner:
         """
         if item not in self.data:
             return
-        item_list = self.data.get(item, [])
+        raw_item_list = self.data.get(item, [])
+        item_list = deepcopy(raw_item_list)
         if item == "HTTP(S)延迟" and not reverse:
             for i in range(len(item_list)):
                 if item_list[i] == 0:
-                    item_list[i] = 9999999
+                    item_list[i] = 999999
         temp_1 = [k for k, v in self.data.items()
                   if not isinstance(v, (list, tuple)) or len(v) != len(item_list)]
         temp_dict = {}
@@ -1484,7 +1499,7 @@ class ResultCleaner:
         if not reverse:
             for i in range(len(http_l)):
                 if http_l[i] == 0:
-                    http_l[i] = 9999999
+                    http_l[i] = 999999
         temp_1 = [k for k, v in self.data.items()
                   if not isinstance(v, (list, tuple)) or len(v) != len(http_l)]
         temp_dict = {}
@@ -1636,6 +1651,23 @@ def domain_to_ip(host: str):
             ips.add(result[4][0])
         ip = list(ips)
         return ip
+    except socket.gaierror:
+        return None
+
+
+async def async_domain_to_ip(host: str):
+    loop = asyncio.get_running_loop()
+    try:
+        results = await loop.getaddrinfo(
+            host,
+            None,
+            family=socket.AF_UNSPEC,
+            type=socket.SOCK_STREAM,
+        )
+        ips = set()
+        for result in results:
+            ips.add(result[4][0])
+        return list(ips)
     except socket.gaierror:
         return None
 

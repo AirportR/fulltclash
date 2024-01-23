@@ -58,7 +58,7 @@ class Basecore:
         return self._start_time
 
     @staticmethod
-    def core(*args, **kwargs) -> dict:
+    async def core(*args, **kwargs) -> dict:
         """
         您必须自主实现这里的方法，因为Basecore是一个基类
         :return:
@@ -290,35 +290,56 @@ class SpeedCore(Basecore):
             buffer: int,
             workers: int = 0,
     ) -> tuple:
-        download_semaphore = asyncio.Semaphore(workers if workers else Speedtest().thread)
-        async with download_semaphore:
-            st = Speedtest()
-            urls = st.speedurl
-            # logger.debug(f"Url: {url}")
-            thread = workers if workers else st.thread
-            logger.info(f"Running st_async, workers: {thread}.")
-            tasks = [
-                asyncio.create_task(SpeedCore.fetch(st, urls, proxy_host, proxy_port, buffer))
-                for _ in range(thread)
-            ]
-            await asyncio.wait(tasks)
-            st.show_progress_full()
-            spmean = st.total_red / st.time_used if st.time_used else 0
-            spmax = st.max_speed
-            if spmean > spmax:
-                spmean, spmax = spmax, spmean
-            if st.time_used:
-                return (
-                    spmean,
-                    spmax,
-                    st.speed_list[1:],
-                    st.total_red,
-                )
+        st = Speedtest()
+        try:
+            from ftclib import speed_test
+        except ImportError:
+            speed_test = None
+        if speed_test is not None:
+            pass
+            # workers = workers if workers else st.thread
+            # print("rust黑科技，启动!")
+            #
+            # res = await speed_test(proxy_host, proxy_port, st.speedurl, workers)
+            # spmean = sum(res) / len(res) if res else 0
+            # spmax = max(res) if res else 0
+            # if spmean > spmax:
+            #     spmean, spmax = spmax, spmean
+            # return (
+            #     spmean,
+            #     spmax,
+            #     res,
+            #     10,
+            # )
+        else:
+            download_semaphore = asyncio.Semaphore(workers if workers else Speedtest().thread)
+            async with download_semaphore:
+                urls = st.speedurl
+                # logger.debug(f"Url: {url}")
+                thread = workers if workers else st.thread
+                logger.info(f"Running st_async, workers: {thread}.")
+                tasks = [
+                    asyncio.create_task(SpeedCore.fetch(st, urls, proxy_host, proxy_port, buffer))
+                    for _ in range(thread)
+                ]
+                await asyncio.wait(tasks)
+                st.show_progress_full()
+                spmean = st.total_red / st.time_used if st.time_used else 0
+                spmax = st.max_speed
+                if spmean > spmax:
+                    spmean, spmax = spmax, spmean
+                if st.time_used:
+                    return (
+                        spmean,
+                        spmax,
+                        st.speed_list[1:],
+                        st.total_red,
+                    )
 
             return 0, 0, [], 0
 
     # 以下为 另一部分
-    async def batch_speed(self, nodelist: list, port: int = 11220, proxy_obj: Union[proxy.FullTClash] = None,
+    async def batch_speed(self, nodelist: list, port: int = 11220, proxy_obj: Union[proxy.FullTCore] = None,
                           udp_only: bool = False):
         """
         nodelist: 节点列表
@@ -340,28 +361,21 @@ class SpeedCore(Basecore):
 
         await self.progress(progress, nodenum)
         for node in nodelist:
-            await proxy.FullTClash.setproxy(node, 0, control_port)
-            delay = await proxy.FullTClash.urltest(port)
-            udptype, _, _, _, _ = self.nat_type_test('127.0.0.1', proxyport=port)
-            if udptype is None:
-                udptype = "Unknown"
+            await proxy.FullTCore.setproxy(node, 0, control_port)
+            delay = await proxy.FullTCore.urltest(port)
+            corotine_udp = asyncio.get_running_loop().run_in_executor(None, self.nat_type_test, '127.0.0.1', port)
+
             if udp_only:
+                udptype, _, _, _, _ = await corotine_udp
                 info['UDP类型'].append(udptype)
             else:
                 res = await self.speed_start("127.0.0.1", port, 4096)
+                udptype, _, _, _, _ = await corotine_udp
+                if udptype is None:
+                    udptype = "Unknown"
+                info['UDP类型'].append(udptype)
                 avgspeed = res[0]
                 maxspeed = res[1]
-                # avgspeed_mb = res[0] / 1024 / 1024
-                # if avgspeed_mb < 1:
-                #     avgspeed = "%.2f" % (res[0] / 1024) + "KB"
-                # else:
-                #     avgspeed = "%.2f" % avgspeed_mb + "MB"
-                # maxspeed_mb = res[1] / 1024 / 1024
-                # if maxspeed_mb < 1:
-                #     maxspeed = "%.2f" % (res[1] / 1024) + "KB"
-                # else:
-                #     maxspeed = "%.2f" % maxspeed_mb + "MB"
-                # speedresult = [v / 1024 / 1024 for v in res[2]]
                 speedresult = res[2]
                 traffic_used = float("%.2f" % (res[3] / 1024 / 1024))
                 info["消耗流量"] += traffic_used
@@ -374,10 +388,10 @@ class SpeedCore(Basecore):
                     break
                 progress += 1
                 cal = progress / nodenum * 100
-                # p_text = "%.2f" % cal
                 if cal >= sending_time:
                     sending_time += 10
                     await self.progress(progress, nodenum)
+
         return info
 
     async def core(self, proxyinfo: list, **kwargs):
@@ -393,19 +407,16 @@ class SpeedCore(Basecore):
             # 创建代理实例
             port_list = await proxy.get_available_port(2)
             control_port = port_list.pop(0)
-            fulltclash = proxy.FullTClash(control_port, port_list)
-            await fulltclash.start()
-            await asyncio.sleep(1)
-            # 预填充
-            info['节点名称'] = nodename
-            info['类型'] = nodetype
-            try:
-                speedinfo = await self.batch_speed(nodelist, port_list[0], fulltclash)
-                info.update(speedinfo)
-            except Exception as e:
-                logger.error(str(e))
-            finally:
-                fulltclash.close()
+            async with proxy.FullTCore(control_port, port_list) as fulltcore:
+                await asyncio.sleep(0.1)
+                # 预填充
+                info['节点名称'] = nodename
+                info['类型'] = nodetype
+                try:
+                    speedinfo = await self.batch_speed(nodelist, port_list[0], fulltcore)
+                    info.update(speedinfo)
+                except Exception as e:
+                    logger.error(str(e))
             # 排序
             sort_str = kwargs.get('sort', '订阅原序')
             info = cleaner.ResultCleaner(info).start(sort_str)
@@ -416,7 +427,8 @@ class SpeedCore(Basecore):
             # 过滤器
             flt = kwargs.get('filter', None)
             info['filter'] = flt if flt else {'include': self._include_text, 'exclude': self._exclude_text}
-            info['线程'] = collector.config.config.get('speedthread', 4)
+            info['线程'] = GCONFIG.config.get('speedthread', 4)
+            info['task'] = kwargs.get('task', {})
             if break_speed:
                 info.clear()
         except Exception as e:
@@ -452,7 +464,7 @@ class ScriptCore(Basecore):
         """
         info = []
         if "HTTP(S)延迟" in test_items:
-            delay = await proxy.FullTClash.urltest(port)
+            delay = await proxy.FullTCore.urltest(port)
             if delay == 0:
                 logger.warning("超时节点，跳过测试")
                 for t in test_items:
@@ -478,7 +490,7 @@ class ScriptCore(Basecore):
         return info
 
     async def batch_test_pro(self, proxyinfo: list, test_items: list, pool: dict,
-                             proxy_obj: Union[proxy.FullTClash] = None):
+                             proxy_obj: Union[proxy.FullTCore] = None):
         """
         nodename:
         """
@@ -505,7 +517,7 @@ class ScriptCore(Basecore):
 
         if nodenum < psize:
             for i in range(len(port[:nodenum])):
-                await proxy.FullTClash.setproxy(proxyinfo[i], i, control_port)
+                await proxy.FullTCore.setproxy(proxyinfo[i], i, control_port)
                 # proxys.switchProxy(nodename[i], i)
                 task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i]))
                 tasks.append(task)
@@ -526,7 +538,7 @@ class ScriptCore(Basecore):
                 tasks.clear()
 
                 for i in range(psize):
-                    await proxy.FullTClash.setproxy(proxyinfo[s * psize + i], i, control_port)
+                    await proxy.FullTCore.setproxy(proxyinfo[s * psize + i], i, control_port)
                     # proxys.switchProxy(nodename[s * psize + i], i)
                     task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i]))
                     tasks.append(task)
@@ -551,7 +563,7 @@ class ScriptCore(Basecore):
                 tasks.clear()
                 logger.info("最后批次: " + str(subbatch + 1))
                 for i in range(nodenum % psize):
-                    await proxy.FullTClash.setproxy(proxyinfo[subbatch * psize + i], i, control_port)
+                    await proxy.FullTCore.setproxy(proxyinfo[subbatch * psize + i], i, control_port)
                     # proxys.switchProxy(nodename[subbatch * psize + i], i)
                     task = asyncio.create_task(self.unit(test_items, host=host[i], port=port[i]))
                     tasks.append(task)
@@ -577,30 +589,28 @@ class ScriptCore(Basecore):
         # 先把节点信息写入文件
         self.join_proxy(proxyinfo)
         # 获取可供测试的测试端口
-        thread = GCONFIG.config.get('clash', {}).get('core', 1)
+        thread = GCONFIG.getConcurrency()
         # startup = GCONFIG.config.get('clash', {}).get('startup', 11220)
         port_list = await proxy.get_available_port(thread + 1)
         control_port = port_list.pop(0)
         # 设置代理端口
-        fulltclash = proxy.FullTClash(control_port, port_list)
-        await fulltclash.start()
-        pool = {'host': ['127.0.0.1' for _ in range(len(port_list))],
-                'port': port_list}
-        # 订阅加载
-        nodename, nodetype, nodenum, nodelist = self.getnodeinfo()
-        # 开始测试
-        s1 = time.time()
-        info['节点名称'] = nodename
-        info['类型'] = nodetype
-        try:
-            test_info = await self.batch_test_pro(nodelist, test_items, pool, fulltclash)
-        except Exception as e:
-            print(e)
-            logger.error(f"{str(e.__class__)}:{str(e)}")
-            return {}
-        finally:
-            fulltclash.close()
-            logger.info("子进程已关闭，回收资源。")
+        # fulltclash = proxy.FullTClash(control_port, port_list)
+        # await fulltclash.start()
+        async with proxy.FullTCore(control_port, port_list) as fulltcore:
+            pool = {'host': ['127.0.0.1' for _ in range(len(port_list))],
+                    'port': port_list}
+            # 订阅加载
+            nodename, nodetype, nodenum, nodelist = self.getnodeinfo()
+            # 开始测试
+            s1 = time.time()
+            info['节点名称'] = nodename
+            info['类型'] = nodetype
+            try:
+                test_info = await self.batch_test_pro(nodelist, test_items, pool, fulltcore)
+            except Exception as e:
+                print(e)
+                logger.error(f"{str(e.__class__)}:{str(e)}")
+                return {}
         if 'HTTP(S)延迟' in test_info:
             info['HTTP(S)延迟'] = test_info.pop('HTTP(S)延迟')
         info.update(test_info)
@@ -614,6 +624,8 @@ class ScriptCore(Basecore):
         # 过滤器
         flt = kwargs.get('filter', None)
         info['filter'] = flt if flt else {'include': self._include_text, 'exclude': self._exclude_text}
+        # 任务信息
+        info['task'] = kwargs.get('task', {})
         # 保存结果
         self.saveresult(info)
         return info
@@ -639,6 +651,10 @@ class TopoCore(Basecore):
         message_edit_queue.put((self.edit[0], self.edit[1], edit_text, 1))
 
     async def topo(self):
+        try:
+            from utils.geoip import get_region
+        except ImportError:
+            get_region = None
         if self.ip_choose == "ip":
             info = {'地区': [], 'AS编号': [], '组织': [], '栈': [], '入口ip段': []}
         elif self.ip_choose == "cluster":
@@ -646,6 +662,7 @@ class TopoCore(Basecore):
         else:
             info = {'地区': [], 'AS编号': [], '组织': [], '栈': []}
         cl = copy.deepcopy(self._config)
+
         _data = GCONFIG.config.get("localip", False)
         if not self.check_node():
             return info, [], cl
@@ -653,12 +670,24 @@ class TopoCore(Basecore):
         session = aiohttp.ClientSession()
         # node_addrs = cl.nodehost()
         nodename, inboundinfo, cl, ipstack_list, ipclu = sorter.sort_nodename_topo(cl)
+        nodes = cl.getProxies()
+        s = [node.get('server', '') for node in nodes if isinstance(node, dict)]
+        counter0 = Counter(s)
+        s = list(counter0.keys())
+        _p = []
+        for s0 in s:
+            for node in nodes:
+                if node.get('server', '') == s0:
+                    _p.append(node.get('port', 0))
+                    break
+        print(counter0)
         ipstack_lists = list(ipstack_list.values())
         ipclus = list(ipclu.values())
         info['栈'] = ipstack_lists
         if nodename and inboundinfo and cl:
             # 拿地址，已经转换了域名为ip,hosts变量去除了N/A
             hosts = list(inboundinfo.keys())
+
             if _data:
                 code = []
                 org = []
@@ -695,11 +724,9 @@ class TopoCore(Basecore):
                         info.update({'入口ip段': new_hosts})
                     elif self.ip_choose == "cluster":
                         info.update({'簇': ipclus})
-                return info, hosts, cl
             else:
                 co.create_tasks(session=session, hosts=hosts, proxy=proxies)
                 res = await co.start()
-                await session.close()
                 if res:
                     country_code = []
                     asn = []
@@ -736,9 +763,45 @@ class TopoCore(Basecore):
                         info.update({'入口ip段': new_hosts})
                     elif self.ip_choose == "cluster":
                         info.update({'簇': ipclus})
-                return info, hosts, cl
 
-    async def batch_topo(self, nodename: list, pool: dict, proxy_obj: Union[proxy.FullTClash] = None):
+            if get_region is not None and callable(get_region):
+                region_code = info["地区"]
+                tasks = []
+                for i, h in enumerate(hosts):
+                    if len(hosts) != len(_p):
+                        break
+                    if not str(region_code[i]):
+                        _t = asyncio.create_task(get_region("", session, proxy=proxies, timeout=6))
+                        tasks.append(_t)
+                    elif str(region_code[i]).lower() != "cn":
+                        _t = asyncio.create_task(get_region("fake", session, proxy=proxies, timeout=6))
+                        tasks.append(_t)
+                    else:
+                        _t = asyncio.create_task(get_region(h, session, proxy=proxies, timeout=6))
+                        tasks.append(_t)
+
+                region_plus = await asyncio.gather(*tasks) if tasks else ["_" for _ in range(len(hosts))]
+                region_plus2 = []
+                for reg in region_plus:
+                    if reg and isinstance(reg, str):
+                        reg = reg.replace('移通', '移动')
+                        region_plus2.append(reg)
+                    else:
+                        region_plus2.append("-")
+                if len(region_plus2) < len(hosts):
+                    for i in range(len(hosts) - len(region_plus2)):
+                        region_plus2.append('-')
+                info['详细地区'] = region_plus2
+            await session.close()
+            return info, hosts, cl
+
+    async def batch_topo(self, nodename: list, pool: dict, proxy_obj: Union[proxy.FullTCore] = None):
+        # 获取位置
+        try:
+            from utils.geo import get_region
+        except ImportError:
+            pass
+
         resdata = []
         ipstackes = []
         progress = 0
@@ -760,7 +823,7 @@ class TopoCore(Basecore):
         await self.progress(progress, nodenum)
         if nodenum < psize:
             for i in range(nodenum):
-                await proxy.FullTClash.setproxy(nodename[i], i, control_port)
+                await proxy.FullTCore.setproxy(nodename[i], i, control_port)
                 # proxys.switchProxy(nodename[i], i)
             ipcol = collector.IPCollector()
             sub_res = await ipcol.batch(proxyhost=host[:nodenum], proxyport=port[:nodenum])
@@ -776,7 +839,7 @@ class TopoCore(Basecore):
             for s in range(subbatch):
                 logger.info("当前批次: " + str(s + 1))
                 for i in range(psize):
-                    await proxy.FullTClash.setproxy(nodename[s * psize + i], i, control_port)
+                    await proxy.FullTCore.setproxy(nodename[s * psize + i], i, control_port)
                     # proxys.switchProxy(nodename[s * psize + i], i)
                 ipcol = collector.IPCollector()
                 sub_res = await ipcol.batch(proxyhost=host, proxyport=port)
@@ -797,7 +860,7 @@ class TopoCore(Basecore):
             if nodenum % psize != 0:
                 logger.info("最后批次: " + str(subbatch + 1))
                 for i in range(nodenum % psize):
-                    await proxy.FullTClash.setproxy(nodename[subbatch * psize + i], i, control_port)
+                    await proxy.FullTCore.setproxy(nodename[subbatch * psize + i], i, control_port)
                     # proxys.switchProxy(nodename[subbatch * psize + i], i)
                 ipcol = collector.IPCollector()
                 sub_res = await ipcol.batch(proxyhost=host[:nodenum % psize],
@@ -819,103 +882,103 @@ class TopoCore(Basecore):
         # info1 = {}  # 存放测试结果
         info2 = {}  # 存放测试结果
         test_type = kwargs.get('test_type', 'all')
+        taskinfo = kwargs.get('task', {})
         _data = GCONFIG.config.get("localip", False)
         # 先把节点信息写入文件
         self.join_proxy(proxyinfo)
         # 获取可供测试的测试端口
-        thread = GCONFIG.config.get('clash', {}).get('core', 1)
+        thread = GCONFIG.getConcurrency()
         port_list = await proxy.get_available_port(thread + 1)
         control_port = port_list.pop(0)
         # startup = GCONFIG.config.get('clash', {}).get('startup', 11220)
         # 创建代理实例
-        fulltclash = proxy.FullTClash(control_port, port_list)
-        await fulltclash.start()
-        pool = {'host': ['127.0.0.1' for _ in range(len(port_list))],
-                'port': port_list}
-        # 开始测试
-        s1 = time.time()
-        info1, _, cl = await self.topo()
-        nodelist = cl.getProxies()
-        nodename = cl.nodesName()
-        print("入口测试结束: ", info1)
-        if test_type == "inbound":
-            wtime = "%.1f" % float(time.time() - s1)
-            info1['wtime'] = wtime
-            return {'inbound': info1, 'outbound': info2}
-        # 启动链路拓扑测试
-        try:
-            info2.update({'入口': [], '地区': [], 'AS编号': [], '组织': [], '栈': [], '簇': [], '节点名称': []})
-            res, ras = await self.batch_topo(nodelist, pool, fulltclash)
+        # fulltclash = proxy.FullTCore(control_port, port_list)
+        # await fulltclash.start()
+        async with proxy.FullTCore(control_port, port_list) as fulltcore:
+            pool = {'host': ['127.0.0.1' for _ in range(len(port_list))],
+                    'port': port_list}
+            # 开始测试
+            s1 = time.time()
+            info1, _, cl = await self.topo()
+            nodelist = cl.getProxies()
+            nodename = cl.nodesName()
+            print("入口测试结束: ", info1)
+            if test_type == "inbound":
+                wtime = "%.1f" % float(time.time() - s1)
+                info1['wtime'] = wtime
+                return {'inbound': info1, 'outbound': info2}
+            # 启动链路拓扑测试
+            try:
+                info2.update({'入口': [], '地区': [], 'AS编号': [], '组织': [], '栈': [], '簇': [], '节点名称': []})
+                res, ras = await self.batch_topo(nodelist, pool, fulltcore)
 
-            if res:
-                country_code = []
-                asn = []
-                org = []
-                ipaddr = []
-                ipstackes = []
-                for j in res:
-                    ipcl = cleaner.IPCleaner(j)
-                    ip = ipcl.get_ip()
-                    ipaddr.append(ip)
-                    if not _data:
-                        country_code.append(ipcl.get_country_code())
-                        asn.append(str(ipcl.get_asn()))
-                        org.append(ipcl.get_org())
-                    else:
-                        pass
-                if _data:
-                    for ip in ipaddr:
-                        d, g, h = geoip.geo_info(ip)
-                        country_code.append(d)
-                        asn.append(h)
-                        org.append(g)
-                else:
-                    pass
-                for dictionary in ras:
-                    if 'ips' in dictionary:
-                        ipstackes.extend(dictionary['ips'])
-                out_num = info1.get('出口数量', [])
-                num_c = 1
-                d0 = []
-                for i in out_num:
-                    d0 += [num_c for _ in range(int(i))]
-                    num_c += 1
-                b6 = ipstackes
-                all_data = zip(d0, country_code, asn, org, ipaddr, nodename, b6)
-                sorted_data = sorted(all_data, key=itemgetter(4), reverse=True)
-                d0, d1, d2, d3, d4, d5, d6 = zip(*sorted_data)
-                for i, _ in enumerate(d6):
-                    if d6[i] == "N/A" and d4[i]:
-                        if ":" in d4[i]:
-                            d6 = d6[:i] + ("6",) + d6[i + 1:]
-                        elif "." in d4[i]:
-                            d6 = d6[:i] + ("4",) + d6[i + 1:]
+                if res:
+                    country_code = []
+                    asn = []
+                    org = []
+                    ipaddr = []
+                    ipstackes = []
+                    for j in res:
+                        ipcl = cleaner.IPCleaner(j)
+                        ip = ipcl.get_ip()
+                        ipaddr.append(ip)
+                        if not _data:
+                            country_code.append(ipcl.get_country_code())
+                            asn.append(str(ipcl.get_asn()))
+                            org.append(ipcl.get_org())
                         else:
                             pass
-                    elif d6[i] == "4" and ":" in d4[i]:
-                        d6 = d6[:i] + ("46",) + d6[i + 1:]
-                    elif d6[i] == "6" and "." in d4[i]:
-                        d6 = d6[:i] + ("46",) + d6[i + 1:]
+                    if _data:
+                        for ip in ipaddr:
+                            d, g, h = geoip.geo_info(ip)
+                            country_code.append(d)
+                            asn.append(h)
+                            org.append(g)
                     else:
                         pass
-                d4_count = Counter(d4)
-                results4 = [v for k, v in d4_count.items()]
-                info2.update({'入口': d0, '地区': d1, 'AS编号': d2, '组织': d3, '栈': d6, '簇': results4})
-                info2.update({'节点名称': d5})
-                if not GCONFIG.config.get('ipstack', False):
-                    info2.pop('栈', [])
-            # 计算测试消耗时间
-            wtime = "%.1f" % float(time.time() - s1)
-            info2.update({'wtime': wtime})
-            # info2['filter'] = {'include': self._include_text, 'exclude': self._exclude_text} #这里注释了，不然绘图会出错
-        except Exception as e:
-            logger.error(str(e))
-        finally:
-            fulltclash.close()
-            logger.info("子进程已关闭，回收资源。")
+                    for dictionary in ras:
+                        if 'ips' in dictionary:
+                            ipstackes.extend(dictionary['ips'])
+                    out_num = info1.get('出口数量', [])
+                    num_c = 1
+                    d0 = []
+                    for i in out_num:
+                        d0 += [num_c for _ in range(int(i))]
+                        num_c += 1
+                    b6 = ipstackes
+                    all_data = zip(d0, country_code, asn, org, ipaddr, nodename, b6)
+                    sorted_data = sorted(all_data, key=itemgetter(4), reverse=True)
+                    d0, d1, d2, d3, d4, d5, d6 = zip(*sorted_data)
+                    for i, _ in enumerate(d6):
+                        if d6[i] == "N/A" and d4[i]:
+                            if ":" in d4[i]:
+                                d6 = d6[:i] + ("6",) + d6[i + 1:]
+                            elif "." in d4[i]:
+                                d6 = d6[:i] + ("4",) + d6[i + 1:]
+                            else:
+                                pass
+                        elif d6[i] == "4" and ":" in d4[i]:
+                            d6 = d6[:i] + ("46",) + d6[i + 1:]
+                        elif d6[i] == "6" and "." in d4[i]:
+                            d6 = d6[:i] + ("46",) + d6[i + 1:]
+                        else:
+                            pass
+                    d4_count = Counter(d4)
+                    results4 = [v for k, v in d4_count.items()]
+                    info2.update({'入口': d0, '地区': d1, 'AS编号': d2, '组织': d3, '栈': d6, '簇': results4})
+                    info2.update({'节点名称': d5})
+                    if not GCONFIG.config.get('ipstack', False):
+                        info2.pop('栈', [])
+                # 计算测试消耗时间
+                wtime = "%.1f" % float(time.time() - s1)
+                info2.update({'wtime': wtime})
+                # info2['filter'] = {'include': self._include_text, 'exclude': self._exclude_text} #这里注释了，不然绘图会出错
+            except Exception as e:
+                logger.error(str(e))
         # 保存结果
-        self.saveresult({'inbound': info1, 'outbound': info2})
-        return {'inbound': info1, 'outbound': info2}
+        result = {'inbound': info1, 'outbound': info2, 'task': taskinfo}
+        self.saveresult(result)
+        return result
 
 
 def default_progress_text(corelabel: Union[int, str], progress: int, nodenum: int, slavecomment: str = "Local"):

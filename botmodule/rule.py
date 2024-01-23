@@ -27,8 +27,11 @@ def get_rule(rulename: str):
     if isinstance(script, list):
         script = addon.mix_script(script)
     elif isinstance(script, str):
-        if script == "全测" or script == "all":
+        if script == "全测" or script == "all" or script == "*":
             script = addon.global_test_item(True)
+        else:
+            new_script = [s for s in addon.global_test_item(True) if script in s]
+            script = new_script
     else:
         script = None
     return slaveid, sort, script
@@ -40,6 +43,8 @@ def new_rule(rulename: str, slaveid: str, sort: str, script: List[str]) -> str:
     """
     rule_conf = config.getUserconfig().get('rule', {})
     if isinstance(rule_conf, dict):
+        if sorted(addon.global_test_item(True)) == sorted(script):
+            script = "*"
         rule = {
             'enable': True,
             'slaveid': slaveid,

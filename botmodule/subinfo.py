@@ -2,6 +2,7 @@ import asyncio
 import hashlib
 import time
 from loguru import logger
+from pyrogram.enums import ParseMode
 from pyrogram.errors import RPCError
 from utils.cleaner import geturl
 from utils.collector import SubCollector
@@ -67,7 +68,7 @@ async def getSubInfo(_, message):
 ⏱️过期时间：{subinfo[4]}
 🔍查询时间：{call_time}
                     """
-                await back_message.edit_text(subinfo_text)
+                await back_message.edit_text(subinfo_text, parse_mode=ParseMode.DISABLED)
             else:
                 await back_message.edit_text("此订阅无法获取流量信息")
         else:
@@ -83,7 +84,7 @@ async def getSubInfo(_, message):
 ⏱️过期时间：{subinfo[4]}
 🔍查询时间：{call_time}
                     """
-                await back_message.edit_text(subinfo_text)
+                await back_message.edit_text(subinfo_text, parse_mode=ParseMode.DISABLED)
             else:
                 await back_message.edit_text("此订阅无法获取流量信息")
     except RPCError as r:

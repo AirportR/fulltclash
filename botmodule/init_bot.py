@@ -1,14 +1,11 @@
 import asyncio
 import os
 import sys
-# subprocess 模块用于启动子进程，并与其通信
-# 注意：使用 subprocess 时要小心不要执行不可信的输入
 from subprocess import check_output
 
 from loguru import logger
-from utils.cleaner import ConfigManager
+from utils.cleaner import config
 
-config = ConfigManager()  # 配置加载
 admin = config.getAdmin()  # 管理员
 config.add_user(admin)  # 管理员同时也是用户
 config.reload()

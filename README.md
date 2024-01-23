@@ -17,7 +17,7 @@
 
 ## 基本介绍
 
-FullTClash bot 是承载其测试任务的Telegram 机器人（以下简称bot）。\
+FullTClash名字来源于 Full Test base on Clash 。后端部分使用[Clash项目](https://github.com/Dreamacro/clash)(现在亦可称之为[mihomo](https://github.com/MetaCubeX/mihomo))相关代码作为出站代理，前端部分使用Telegram API作为交互界面，需配合Telegram使用，即为一个Telegram机器人(bot)， FullTClash bot 是承载其测试任务的Telegram 机器人（以下简称bot）。\
 目前支持以Clash配置文件为载体的**批量**连通性测试，支持以下测试条目:
 1. Netflix  
 2. Youtube 
@@ -43,7 +43,7 @@ FullTClash bot 是承载其测试任务的Telegram 机器人（以下简称bot�
 
 ## 支持协议
 
-| 客户端上游分支        | Clash | Clash.Meta |
+| 出站协议           | Clash | Clash.Meta |
 |----------------|-------|------------|
 | SOCKS (4/4a/5) | √     | √          |
 | HTTP(S)        | √     | √          |
@@ -52,7 +52,7 @@ FullTClash bot 是承载其测试任务的Telegram 机器人（以下简称bot�
 | Trojan         | √     | √          | 
 | Snell          | √     | √          | 
 | VLESS          |       | √          |
-| Tuic           |       | √          |
+| TUIC           |       | √          |
 | Hysteria       |       | √          |
 | Hysteria2      |       | √          |
 | Wireguard      |       | √          |
@@ -76,7 +76,7 @@ FullTClash bot 是承载其测试任务的Telegram 机器人（以下简称bot�
 
 要成功运行该Telegram 机器人，首先需要准备以下信息：
 
-- Telegram 的api_id 、api_hash [获取地址](https://my.telegram.org/apps) 不会请Google。(部分TG账号已被拉黑，无法正常使用)  
+- Telegram 的api_id 、api_hash [获取地址](https://my.telegram.org/apps) 不会请Google。(部分IP已被拉黑，无法正常申请成功，请尝试更换干净IP)  
 
 - 去 [@BotFather](https://t.me/BotFather) 那里创建一个机器人，获得该机器人的bot_token，应形如：  
   
@@ -157,7 +157,7 @@ apt install -y git && git clone https://github.com/AirportR/FullTclash.git && cd
   ```
 ### 获取session文件（可选）
 
-您需要在项目文件目录下，放置一个已经登陆好的.session后缀文件，这个文件是程序生成的，形如： my_bot.session
+您需要在项目文件目录下，放置一个已经登陆好的.session后缀文件，这个文件是程序生成的，是Telegram的登录凭据，形如： my_bot.session
 >方法1：可以直接在配置文件config.yaml中配置，这样程序启动后会自动读取配置文件里面的值来生成session文件(要求一定要正确)。
 ```yaml
 #配置文件示例，注意缩进要正确
@@ -213,22 +213,11 @@ fulltclash-windows-amd64 为 Windows-amd64 所支持的
 ### Docker启动
 [./docker/ 目录](https://github.com/AirportR/FullTclash/tree/dev/docker)
 ### 为程序设置进程守护(Linux)
-由于Linux系统特性，关闭ssh连接后，前台程序会被关闭。您需要设置进程守护，才能在后台不间断地运行程序。具体方法Google搜索即可。
+由于Linux系统特性，关闭ssh连接后，前台程序会被关闭。您需要设置进程守护，才能在后台不间断地持久化运行程序。具体方法Google搜索即可。
 ## 交流探讨
 我们欢迎各方朋友提出针对性的反馈：
 - [TG更新发布频道](https://t.me/FullTClash)  
-- 在项目页面提出issue  
-## 致谢
-
-- [流媒体解锁思路](https://github.com/lmc999/RegionRestrictionCheck)  
-- [Clash](https://github.com/Dreamacro/clash)  
-- [aiohttp](https://github.com/aio-libs/aiohttp)  
-- [pyrogram](https://github.com/pyrogram/pyrogram)  
-- [async-timeout](https://github.com/aio-libs/async-timeout)  
-- [Pillow](https://github.com/python-pillow/Pillow)  
-- [pilmoji](https://github.com/jay3332/pilmoji)  
-- [pyyaml](https://github.com/yaml/pyyaml)  
-- [requests](https://github.com/psf/requests)  
+- 在项目页面提出issue
 
 ## 如何给本项目做贡献：
 1、在本项目的主GitHub仓库进行fork，你可以只fork dev的分支。 \
@@ -236,10 +225,31 @@ fulltclash-windows-amd64 为 Windows-amd64 所支持的
 3、在下载后的本地仓库进行修改。\
 4、执行git add .（请不要忘记句号！！！）\
 5、执行git commit，并输入你做出的更改。\
-6、回到你的仓库，发起pr请求，等待下一步（通过/驳回/修改）。
+6、回到你的仓库，发起pr请求到dev分支，等待下一步（通过/驳回/修改）。
 
-如果不这样做可能会：
+## 答疑
+1. FullTClash测试原理\
+原理是在后台启动一个代理客户端，然后开启多个socks5入站端口，通过配置里的配置信息匹配代理客户端出站协议类型进行测试。代理客户端是基于上游的Clash项目改动得到的专属客户端，并将其命名为FullTCore。  
+2. 为什么不使用原版的Clash客户端二进制\
+自从FullTclash的3.5.8版本起，支持前后端模式，我们把后端部分单独分离，使之可以让前端的bot运行环境与后端运行的环境不在同一台机器上，在当时Clash并没有提供符合本项目的特性，再加上FullTClash仅仅只需要其中出站功能，所以不得已进行一些改动。事实上，FullTClash的old分支是依靠Clash提供的Restful API运行的，现在已不再维护。  
+3. 什么是Telegram UID\
+Telegram官方并没有承认UID的说法，但确实存在于Telegram中。每一个TG用户都存在一个唯一的身份ID，这个在官方的TG客户端是查询不到的。Bot依靠UID确定管理员身份，至于如何获取Google搜索即可。  
+4. 是否有一键部署脚本\
+目前只有Docker部署脚本，期待你的贡献！  
 
-1、仓库维护者看到的是一片绿色加号，根本不知道你改了什么。\
-2、你的操作会很麻烦，可能还会改错文件。\
-3、维护者很难看懂你都干了些什么。
+## 致谢
+
+- [流媒体解锁思路](https://github.com/lmc999/RegionRestrictionCheck)  
+- [Clash](https://github.com/Dreamacro/clash) ==> [mihomo](https://github.com/MetaCubeX/mihomo)  [GPLv3]
+- [aiohttp](https://github.com/aio-libs/aiohttp)  [Apache2]  
+- [pyrogram](https://github.com/pyrogram/pyrogram)  [LGPLv3]  
+- [async-timeout](https://github.com/aio-libs/async-timeout)  [Apache2]    
+- [Pillow](https://github.com/python-pillow/Pillow)  [HPND]  
+- [pilmoji](https://github.com/jay3332/pilmoji)  [MIT]  
+- [pyyaml](https://github.com/yaml/pyyaml)  [MIT]  
+- [APScheduler](https://github.com/agronholm/apscheduler)  [MIT]  
+- [loguru](https://github.com/Delgan/loguru)  [MIT]  
+- [geoip2](https://github.com/maxmind/GeoIP2-python)  [Apache2]  
+- [cryptography](https://github.com/pyca/cryptography)  [Apache2] [BSD3]  
+- [google-re2](https://github.com/google/re2)  [BSD3]
+- [aiohttp_socks](https://github.com/romis2012/aiohttp-socks)  [Apache2]

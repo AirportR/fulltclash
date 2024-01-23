@@ -1,5 +1,5 @@
 #!/bin/bash
-source ~/.bashrc
+. /etc/profile
 
 git_version=$(git --git-dir='/app/.git' --work-tree='/app' rev-parse HEAD)
 last_version=$(curl -Ls "https://api.github.com/repos/AirportR/FullTclash/commits/dev" | jq .sha | sed -E 's/.*"([^"]+)".*/\1/')

@@ -2,10 +2,11 @@ import asyncio
 import ssl
 import time
 from typing import List
+from urllib.parse import quote
 
 import aiohttp
 import async_timeout
-from urllib.parse import quote
+
 from aiohttp.client_exceptions import ClientConnectorError, ContentTypeError
 from aiohttp_socks import ProxyConnector, ProxyConnectionError
 from loguru import logger
@@ -339,85 +340,6 @@ class SubCollector(BaseCollector):
         except ClientConnectorError as c:
             logger.warning(c)
             return False
-
-
-class Miaospeed:
-    SlaveRequestMatrixType = ['TEST_PING_RTT', 'SPEED_AVERAGE', 'UDP_TYPE', 'SPEED_PER_SECOND', 'SPEED_MAX',
-                              'GEOIP_INBOUND', 'GEOIP_OUTBOUND',
-                              'TEST_SCRIPT', 'TEST_PING_CONN', 'TEST_PING_RTT']
-    SlaveRequestMatrixEntry = [{'Type': "SPEED_AVERAGE",
-                                'Params': str({1})},
-                               {'Type': "SPEED_MAX",
-                                'Params': str({"Name": "test01", "Address": "127.0.0.1:1111", "Type": "Socks5"})},
-                               {'Type': "SPEED_PER_SECOND",
-                                'Params': str({"Name": "test01", "Address": "127.0.0.1:1111", "Type": "Socks5"})},
-                               {'Type': "UDP_TYPE",
-                                'Params': str({"Name": "test01", "Address": "127.0.0.1:1111", "Type": "Socks5"})},
-                               ]
-    SlaveRequestBasics = {'ID': '114514',
-                          'Slave': '114514miao',
-                          'SlaveName': 'miao1',
-                          'Invoker': 'FullTclash',
-                          'Version': '1.0'}
-    SlaveRequestOptions = {'Filter': '',
-                           'Matrices': SlaveRequestMatrixEntry}
-    SlaveRequestConfigs = {
-        'DownloadURL': 'https://dl.google.com/dl/android/studio/install/3.4.1.0/' +
-                       'android-studio-ide-183.5522156-windows.exe',
-        'DownloadDuration': 10,
-        'DownloadThreading': 4,
-        'PingAverageOver': 3,
-        'PingAddress': 'http://www.gstatic.com/generate_204',
-        'TaskThreading': 4,
-        'TaskRetry': 2,
-        'DNSServers': ['119.29.29.29'],
-        'TaskTimeout': 5,
-        'Scripts': []}
-    VendorType = 'Clash'
-    start_token = ''
-    SlaveRequest = {'Basics': SlaveRequestBasics,
-                    'Options': SlaveRequestOptions,
-                    'Configs': SlaveRequestConfigs,
-                    'Vendor': VendorType,
-                    'RandomSequence': 'str1',
-                    'Challenge': start_token}
-
-    def __init__(self, proxyconfig: list, host: str = '127.0.0.1', port: int = 1112, ):
-        """
-        初始化miaospeed
-        :param proxyconfig: 订阅配置的路径
-        """
-        self.host = host
-        self.port = port
-        self.nodes = proxyconfig
-        self.slaveRequestNode = [{'Name': 'test01', 'Payload': str(i)} for i in self.nodes]
-        self.SlaveRequest['Nodes'] = self.slaveRequestNode
-
-    # async def start(self):
-    #     start_time = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime())
-    #     info = []
-    #     resdata = {start_time: {}}
-    #     from async_timeout import timeout
-    #     try:
-    #         async with timeout(len(self.nodes) * 10 + 1):
-    #             async with websockets.connect(f'ws://{self.host}:{self.port}') as websocket:
-    #                 payload = json.dumps(self.SlaveRequest)
-    #                 await websocket.send(payload)
-    #                 num = 0
-    #                 while True:
-    #                     response_str = await websocket.recv()
-    #                     num += 1
-    #                     logger.info(f"已接收第{num}次结果")
-    #                     res1 = json.loads(response_str)
-    #                     info.append(res1)
-    #
-    #     except asyncio.TimeoutError:
-    #         logger.info("本次测试已完成")
-    #     except KeyboardInterrupt:
-    #         pass
-    #     finally:
-    #         resdata.update({start_time: info})
-    #         return resdata, start_time
 
 
 class Collector:

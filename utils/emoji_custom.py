@@ -1,13 +1,14 @@
 import abc
 import contextlib
+import pathlib
 import re
 import os
 import shutil
+from pathlib import Path
 from io import BytesIO
 from typing import ClassVar, Optional
 from aiohttp import ClientSession
 import pilmoji
-import requests
 from emoji import demojize
 
 """
@@ -40,7 +41,7 @@ class EmojiPediaSource(pilmoji.source.DiscordEmojiSourceMixin):
         ).lstrip("-")
         url = self.BASE_EMOJIPEDIA_URL + self.STYLE + name + "_" + uni + ".png"
 
-        with contextlib.suppress(requests.HTTPError):
+        with contextlib.suppress(Exception):
             return BytesIO(self.request(url))
 
 
@@ -185,6 +186,9 @@ class TwemojiLocalSource(LocalSource):
                 os.rename(os.path.join(os.path.abspath('./resources/emoji/'), d),
                           os.path.join(os.path.abspath('./resources/emoji/'), 'twemoji'))
                 break
+        archive_file = Path(savepath).absolute()
+        archive_file.unlink()
+        print(f"解压成功，已删除原压缩包: {archive_file.name}")
         return os.path.isdir('./resources/emoji/twemoji')
 
     async def download_emoji(self, download_url: str = None, savepath='./resources/emoji/twemoji.zip', proxy=None):
@@ -196,14 +200,26 @@ class TwemojiLocalSource(LocalSource):
         print("Download URL:", _url)
         # 从网络上下载
         async with ClientSession(headers={'user-agent': 'FullTclash'}) as session:
-            async with session.get(_url, proxy=proxy, timeout=20) as resp:
+            async with session.get(_url, proxy=proxy) as resp:
                 if resp.status == 200:
+                    content_leagth = resp.content_length if resp.content_length else 10 * 1024 * 1024
+                    length = 0
                     with open(savepath, 'wb') as f:
                         while True:
-                            block = await resp.content.read(1024)
-                            if not block:
+                            chunk = await resp.content.read(1024)
+                            length += len(chunk)
+                            # 计算进度条长度
+                            percent = '=' * int(length * 100 / content_leagth)
+                            spaces = ' ' * (100 - len(percent))
+                            print(f"\r[{percent}{spaces}] {length} B", end="")
+                            if not chunk:
                                 break
-                            f.write(block)
+
+                            f.write(chunk)
+                        l2 = float(length) / 1024 / 1024
+                        l2 = round(l2, 2)
+                        print(f"\r[{'='*100}] 共下载{length}B ({l2}MB)"
+                              f"已保存到 {pathlib.Path(savepath).as_posix()}")
                 else:
                     raise Exception(f"NetworkError: {resp.status}==>\t{_url}")
 
