@@ -22,7 +22,7 @@ from botmodule.command.authority import (Invite, INVITE_SELECT_CACHE as ISC,
 
 dsc = default_slave_comment = config.getSlaveconfig().get('default-slave', {}).get('comment', "本地后端")
 dsi = default_slave_id = config.getSlaveconfig().get('default-slave', {}).get('username', "local")
-ds_shadow = bool(config.getSlaveconfig().get('default-slave', {}).get('shadow', False))  # 是否隐藏默认后端
+ds_shadow = bool(config.getSlaveconfig().get('default-slave', {}).get('hidden', False))  # 是否隐藏默认后端
 dbtn = default_button = {
     1: IKB("✅Netflix", callback_data='✅Netflix'),
     2: IKB("✅Youtube", callback_data='✅Youtube'),
@@ -41,7 +41,7 @@ dbtn = default_button = {
     'b_okpage': IKB("🔒完成本页选择", callback_data="ok_p"),
     'b_all': IKB("全测", callback_data="全测"),
     'b_origin': IKB("♾️订阅原序", callback_data="sort:订阅原序"),
-    'b_rhttp': IKB("⬇️HTTP倒序", callback_data="sort:HTTP倒序"),
+    'b_rhttp': IKB("⬇️HTTP降序", callback_data="sort:HTTP降序"),
     'b_http': IKB("⬆️HTTP升序", callback_data="sort:HTTP升序"),
     'b_aspeed': IKB("⬆️平均速度升序", callback_data="sort:平均速度升序"),
     'b_arspeed': IKB("⬇️平均速度降序", callback_data="sort:平均速度降序"),
@@ -155,14 +155,13 @@ async def test_setting(client: Client, callback_query: CallbackQuery, row=3, **k
     mess_id = callback_query.message.id
     chat_id = callback_query.message.chat.id
     origin_message = callback_query.message.reply_to_message
-    if origin_message is None:
-        logger.warning("⚠️无法获取发起该任务的源消息")
-        # await edit_mess.edit_text("⚠️无法获取发起该任务的源消息")
-        return test_items, origin_message, message, ''
     inline_keyboard = callback_query.message.reply_markup.inline_keyboard
 
+    if origin_message is None:
+        return test_items, origin_message, message, ''
     with contextlib.suppress(IndexError, ValueError):
-        test_type = origin_message.text.split(" ", maxsplit=1)[0].split("@", maxsplit=1)[0]
+        test_type = origin_message.text.split(" ", maxsplit=1)[0].split("@", maxsplit=1)[0] \
+            if origin_message is not None else ''
 
     try:
         if "✅" == callback_data[0]:
@@ -198,7 +197,7 @@ async def test_setting(client: Client, callback_query: CallbackQuery, row=3, **k
                         q = receiver[bot_key]
                         try:
                             if isinstance(q, asyncio.Queue):
-                                q.put_nowait(test_items)
+                                q.put_nowait("*")
                             else:
                                 await edit_mess.reply("运行发现逻辑错误，请联系管理员~")
                         except asyncio.queues.QueueFull:
@@ -482,7 +481,11 @@ async def task_handler(app: Client, message: Message, **kwargs):
 async def select_task(app: Client, originmsg: Message, slaveid: str, sort: str, script: list = None):
     if originmsg.text.startswith('/invite'):
         comment = config.getSlavecomment(slaveid)
-        scripttext = ",".join(script) if script is not None else ""
+        if script is not None:
+            tmp_script = deepcopy(script)[::-1]
+            scripttext = ",".join(tmp_script[:10]) + f"...共{len(script)}个脚本" if len(script) > 10 else ",".join(script)
+        else:
+            scripttext = ''
         invite_help_text = f"🤖选中后端: {comment}\n⛓️选中排序: {sort}\n🧵选中脚本: {scripttext}\n\n"
         botmsg = await originmsg.reply(invite_help_text)
         key = genkey(8)
@@ -528,6 +531,61 @@ async def select_slave_only_1(_: Client, call: Union[CallbackQuery, Message], **
         return await target.reply(f"请选择测试后端:\n", quote=True, reply_markup=IKM)
 
 
+async def select_slave_only(app: Client, call: Union[CallbackQuery, Message], timeout=60, **kwargs) -> tuple[str, str]:
+    """
+    高层级的选择后端api
+
+    return: (slaveid, comment)
+    """
+    if isinstance(call, Message):
+        botmsg = await select_slave_only_1(app, call, timeout=timeout, **kwargs)
+
+        recvkey = gen_msg_key(botmsg)
+        q = asyncio.Queue(1)
+        receiver[recvkey] = q
+
+        try:
+            async with async_timeout.timeout(timeout):
+                comment = await q.get()
+                slaveconfig = config.getSlaveconfig()
+                slaveid = ''
+
+                for k, v in slaveconfig.items():
+                    if v.get('comment', '') == comment:
+                        if str(k) == "default-slave":
+                            slaveid = 'local'
+                            break
+                        slaveid = str(k)
+                        break
+                if not slaveid and comment == "本地后端":
+                    slaveid = "local"
+                if slaveid and comment:
+                    return str(slaveid), comment
+                else:
+                    await botmsg.delete()
+                    return '', ''
+
+        except asyncio.exceptions.TimeoutError:
+            print("获取超时")
+            return '', ''
+        finally:
+            receiver.pop(recvkey, None)
+            await botmsg.delete(revoke=True)
+    else:
+        api_route = '/api/getSlaveId'
+        le = len(api_route) + len("?comment=")
+        key = gen_msg_key(call.message)
+        if key in receiver:
+            q = receiver[key]
+            try:
+                if isinstance(q, asyncio.Queue):
+                    q.put_nowait(str(call.data)[le:])
+            except asyncio.queues.QueueFull:
+                pass
+        else:
+            await call.answer("❌无法找到该消息与之对应的队列")
+
+
 async def select_script_only(_: "Client", call: Union["CallbackQuery", "Message"],
                              timeout: int = 120) -> Union[List[str], None]:
     """
@@ -561,6 +619,13 @@ async def select_script_only(_: "Client", call: Union["CallbackQuery", "Message"
                 script_list = await q.get()
                 if isinstance(script_list, list):
                     return script_list
+                elif isinstance(script_list, str):
+                    if script_list == "全测" or script_list == "all" or script_list == "*":
+                        script = addon.global_test_item(True)
+                    else:
+                        new_script = [s for s in addon.global_test_item(True) if script_list in s]
+                        script = new_script
+                    return script
                 else:
                     await botmsg.reply("❌数据类型接收错误")
                     return None
@@ -660,61 +725,6 @@ async def select_sort_only(_: "Client", call: Union["CallbackQuery", "Message"],
             try:
                 if isinstance(q, asyncio.Queue):
                     q.put_nowait(call.data[le:])
-            except asyncio.queues.QueueFull:
-                pass
-        else:
-            await call.answer("❌无法找到该消息与之对应的队列")
-
-
-async def select_slave_only(app: Client, call: Union[CallbackQuery, Message], timeout=60, **kwargs) -> tuple[str, str]:
-    """
-    高层级的选择后端api
-
-    return: (slaveid, comment)
-    """
-    if isinstance(call, Message):
-        botmsg = await select_slave_only_1(app, call, timeout=timeout, **kwargs)
-
-        recvkey = gen_msg_key(botmsg)
-        q = asyncio.Queue(1)
-        receiver[recvkey] = q
-
-        try:
-            async with async_timeout.timeout(timeout):
-                comment = await q.get()
-                slaveconfig = config.getSlaveconfig()
-                slaveid = ''
-
-                for k, v in slaveconfig.items():
-                    if v.get('comment', '') == comment:
-                        if str(k) == "default-slave":
-                            slaveid = 'local'
-                            break
-                        slaveid = str(k)
-                        break
-                if not slaveid and comment == "本地后端":
-                    slaveid = "local"
-                if slaveid and comment:
-                    return str(slaveid), comment
-                else:
-                    await botmsg.delete()
-                    return '', ''
-
-        except asyncio.exceptions.TimeoutError:
-            print("获取超时")
-            return '', ''
-        finally:
-            receiver.pop(recvkey, None)
-            await botmsg.delete(revoke=True)
-    else:
-        api_route = '/api/getSlaveId'
-        le = len(api_route) + len("?comment=")
-        key = gen_msg_key(call.message)
-        if key in receiver:
-            q = receiver[key]
-            try:
-                if isinstance(q, asyncio.Queue):
-                    q.put_nowait(str(call.data)[le:])
             except asyncio.queues.QueueFull:
                 pass
         else:

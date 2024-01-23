@@ -200,7 +200,7 @@ class TwemojiLocalSource(LocalSource):
         print("Download URL:", _url)
         # 从网络上下载
         async with ClientSession(headers={'user-agent': 'FullTclash'}) as session:
-            async with session.get(_url, proxy=proxy, timeout=20) as resp:
+            async with session.get(_url, proxy=proxy) as resp:
                 if resp.status == 200:
                     content_leagth = resp.content_length if resp.content_length else 10 * 1024 * 1024
                     length = 0

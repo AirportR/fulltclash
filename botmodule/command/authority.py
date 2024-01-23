@@ -18,7 +18,7 @@ from botmodule.command.test import convert_core_index
 b1 = InlineKeyboardMarkup(
     [
         [  # 第一行
-            InlineKeyboardButton("📺 联通性测试", callback_data='test', url='')
+            InlineKeyboardButton("📺 连通性测试", callback_data='test', url='')
         ],
         [  # 第二行
             InlineKeyboardButton("🔗 链路拓扑测试", callback_data='analyze')
@@ -182,8 +182,10 @@ async def invite_pass(client: Client, message: Message):
                 await asyncio.sleep(3)
                 await bot_mes.delete()
                 test_item = test_type_select
+                initiator = str(message.from_user.id) if message.from_user else ''
                 await bot_put(client, mes, task_type_select, test_items=test_item,
-                              include_text=in_text, exclude_text=ex_text, url=suburl)
+                              include_text=in_text, exclude_text=ex_text, url=suburl,
+                              name="邀请测试", initiator=initiator)
             else:
                 invite_list.pop(key2, '')
         else:

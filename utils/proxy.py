@@ -37,7 +37,7 @@ async def is_port_in_use(host='127.0.0.1', port=80):
         return False
 
 
-async def get_available_port(portnum: int, retry: int = 10, startup: int = 10000):
+async def get_available_port(portnum: int, retry: int = 10, startup: int = 40000):
     """
     获取随机可用端口，无可以端口抛出 OSError 异常
     portnum: 要获取的端口数
@@ -56,7 +56,7 @@ async def get_available_port(portnum: int, retry: int = 10, startup: int = 10000
     raise OSError("No free ports are available")
 
 
-class FullTClash:
+class FullTCore:
     def __init__(self, control_port: Union[str, int] = None, proxy_portlist: List[Union[str, int]] = None):
         """
         control_port: 控制端口
@@ -65,6 +65,21 @@ class FullTClash:
         self.cport = control_port
         self.port = [str(pro) for pro in proxy_portlist]
         self._p = None
+        self._started = False
+
+    async def __aenter__(self):
+        if not self._started:
+            await self.start()
+        else:
+            logger.warning("FullTCore has been started!")
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if self._started:
+            self.close()
+        else:
+            logger.warning("The FullTCore server hasn't started yet.")
+        logger.info("子进程已关闭，回收资源。")
 
     async def start(self):
         """
@@ -93,11 +108,13 @@ class FullTClash:
                 break
             else:
                 await asyncio.sleep(1)
+        self._started = True
         return self.cport, self.port
 
     def close(self):
         if self._p is not None and isinstance(self._p, subprocess.Popen):
             self._p.kill()
+            self._started = False
         else:
             logger.warning("没有进程可供停止!")
 
@@ -124,7 +141,7 @@ class FullTClash:
         norecv: 仅发送不接受数据
         """
         _loop = asyncio.get_running_loop()
-        s = await FullTClash.connect(controlport)
+        s = await FullTCore.connect(controlport)
         if s is None:
             logger.warning("socket连接失败！")
             return
@@ -190,8 +207,8 @@ class FullTClash:
     @staticmethod
     async def setproxy(proxyinfo: dict, index: int, controlport: int):
         logger.info(f"设置代理: {proxyinfo.get('name', '')}, index: {index}")
-        data = yaml.dump({'proxies': proxyinfo, 'index': index, 'command': 'setproxy'})
-        await FullTClash.sock_send(data, BUILD_TOKEN, controlport)
+        data = yaml.safe_dump({'proxies': proxyinfo, 'index': index, 'command': 'setproxy'})
+        await FullTCore.sock_send(data, BUILD_TOKEN, controlport)
 
 
 if __name__ == "__main__":

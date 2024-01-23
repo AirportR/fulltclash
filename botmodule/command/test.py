@@ -18,7 +18,6 @@ SPEEDTESTIKM = InlineKeyboardMarkup(
         [InlineKeyboardButton("👋中止测速", callback_data='stop')],
     ]
 )
-SPEEDTEST_LIST = []
 BOT_MESSAGE_LIST = {}
 
 
@@ -103,7 +102,6 @@ async def select_export(app: "Client", msg_id: int, botmsg_id: int, chat_id: int
         if put_type.startswith("speed") or kwargs.get('coreindex', -1) == 1:
             if info:
                 wtime = info.get('wtime', "-1")
-                # stime = export.ExportSpeed(name=None, info=info).exportImage()
                 ex = export.ExportSpeed(name=None, info=info)
                 file_name, img_size = await loop.run_in_executor(None, ex.exportImage)
                 # 发送回TG
@@ -111,17 +109,16 @@ async def select_export(app: "Client", msg_id: int, botmsg_id: int, chat_id: int
         elif put_type.startswith("analyze") or put_type.startswith("topo") or put_type.startswith("inbound") \
                 or put_type.startswith("outbound") or kwargs.get('coreindex', -1) == 2:
             info1 = info.get('inbound', {})
+            info1['task'] = info.get('task', {})
             info2 = info.get('outbound', {})
             info2['slave'] = info.get('slave', {})
             info2['task'] = info.get('task', {})
             if info1:
                 if put_type.startswith("inbound"):
                     wtime = info1.get('wtime', "未知")
-                    # stime = export.ExportTopo(name=None, info=info1).exportTopoInbound()
                     ex = export.ExportTopo(name=None, info=info1)
                     file_name, img_size = await loop.run_in_executor(None, ex.exportTopoInbound)
                     await check.check_photo(app, msg_id, botmsg_id, chat_id, 'Topo' + file_name, wtime, img_size)
-                    # await check.check_photo(msg, backmsg, 'Topo' + stime, wtime, img_size)
                     return
                 if info2:
                     # 生成图片
@@ -130,9 +127,7 @@ async def select_export(app: "Client", msg_id: int, botmsg_id: int, chat_id: int
                     clone_info2.update(info2)
                     pre_ex = export.ExportTopo()
                     _, __, image_width2 = await loop.run_in_executor(None, pre_ex.exportTopoOutbound, None, clone_info2)
-                    # _, __, image_width2 = export.ExportTopo().exportTopoOutbound(nodename=None, info=clone_info2)
                     if put_type.startswith("outbound"):
-                        # stime = export.ExportTopo(name=None, info=info2).exportTopoOutbound()
                         ex = export.ExportTopo(name=None, info=info2)
                         file_name, h, w = await loop.run_in_executor(None, ex.exportTopoOutbound)
                         img_size = (w, h)
@@ -140,9 +135,6 @@ async def select_export(app: "Client", msg_id: int, botmsg_id: int, chat_id: int
                         ex = export.ExportTopo(name=None, info=info1)
                         file_name, img_size = await loop.run_in_executor(None, ex.exportTopoInbound,
                                                                          info2.get('节点名称', []), info2, image_width2)
-                        # file_name, img_size = export.ExportTopo(name=None, info=info1).exportTopoInbound(
-                        #     info2.get('节点名称', []), info2,
-                        #     img2_width=image_width2)
                     # 发送回TG
                     await check.check_photo(app, msg_id, botmsg_id, chat_id, 'Topo' + file_name, wtime, img_size)
                     # await check.check_photo(msg, backmsg, 'Topo' + stime, wtime, img_size)
@@ -152,7 +144,6 @@ async def select_export(app: "Client", msg_id: int, botmsg_id: int, chat_id: int
                 # 生成图片
                 ex = export.ExportCommon(info.pop('节点名称', []), info)
                 file_name, img_size = await loop.run_in_executor(None, ex.draw)
-                # file_name, img_size = export.ExportCommon(info.pop('节点名称', []), info).draw()
                 # 发送回TG
                 await check.check_photo(app, msg_id, botmsg_id, chat_id, file_name, wtime, img_size)
                 # await check.check_photo(msg, backmsg, file_name, wtime, img_size)
@@ -275,7 +266,6 @@ async def put_slave_task(app: Client, message: Message, proxyinfo: list, **kwarg
     return
 
 
-@logger.catch()
 async def process_slave(app: Client, message: Message, putinfo: dict, **kwargs):
     masterconfig = config.getMasterconfig()
     master_id = putinfo.get('master', {}).get('id', 1)
