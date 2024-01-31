@@ -107,7 +107,7 @@ async def websocket_handler(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
     KEY = GCONFIG.config.get('websocket', {}).get('token', '')
-    logger.debug(f'当前数据加密密钥: {KEY}')
+    # logger.debug(f'当前数据加密密钥: {KEY}')
     if not KEY and not isinstance(KEY, str):
         logger.error("websocket通信token值读取错误，程序退出")
         sys.exit()
@@ -148,7 +148,9 @@ async def websocket_handler(request):
 
 async def server(host: str = '127.0.0.1', port: int = 8765):
     app = web.Application()
-    app.add_routes([web.get('/', websocket_handler)])
+    ws_path = str(GCONFIG.config.get('websocket', {}).get('path', '/'))
+    ws_path = websocket.parse_wspath(ws_path)
+    app.add_routes([web.get(ws_path, websocket_handler)])
 
     runner = web.AppRunner(app)
     await runner.setup()
@@ -165,6 +167,7 @@ def check_args():
     parser = argparse.ArgumentParser(description="FullTClash-纯后端命令行快速启动")
     parser.add_argument("-b", "--bind", required=False, type=str, help="覆写绑定的外部地址端口，默认为127.0.0.1:8765")
     parser.add_argument("-t", "--token", required=True, type=str, help="Websocket通信Token，也叫做密码，防止不合法的请求。")
+    parser.add_argument("-p", "--path", required=False, type=str, help="Websocket连接路径，不设置默认为根路径/ 例： --path YaPyu>hwy<[")
     parser.add_argument("-f", "--buildtoken", required=False, type=str, help="FullTCore代理客户端的buildtoken，不填则为默认值")
 
     args = parser.parse_args()
@@ -183,6 +186,14 @@ def check_args():
         GCONFIG.yaml['websocket'] = wsconf
         GCONFIG.reload()
         logger.info(f"已覆写Websocket通信Token")
+    if args.path:
+        ws_path = str(args.path)
+        wsconf = GCONFIG.config.get('websocket', {})
+        wsconf['path'] = ws_path
+        GCONFIG.yaml['websocket'] = wsconf
+        GCONFIG.reload()
+        ws_path2 = websocket.parse_wspath(ws_path)
+        logger.info(f"已设置Websocket连接路径为：{ws_path}\r运行时为MD5[ws连接路径]: {ws_path2}")
     if args.buildtoken:
         buildtoken = str(args.buildtoken)
         GCONFIG.yaml['buildtoken'] = buildtoken
