@@ -10,6 +10,7 @@ from utils import cleaner
 def sort_nodename_topo(_cleaner: cleaner.ClashCleaner):
     """
     排序节点，将一个配置文件里面的节点进行排序，排序规则是相同入口的节点都是相邻的，方便节点分析。这个排序函数专为节点分析设计的。
+
     :param _cleaner: 一个clash配置清洗器
     :return: list,dict,cleaner.ClashCleaner 返回排序好的节点名,以及入口ip对应的出口数量。此外第三个返回值返回修改过的clashcleaner
     """

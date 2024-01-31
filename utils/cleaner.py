@@ -1,18 +1,19 @@
 import asyncio
 import importlib
 import os
-import re
-import sys
+
 from copy import deepcopy
 from typing import Union, List
 import socket
+
 import yaml
 from loguru import logger
 
 try:
-    import re2
-    remodule = re2
+    import re2 as re
+    remodule = re
 except ImportError:
+    import re
     remodule = re
 
 
@@ -25,7 +26,7 @@ class IPCleaner:
     def get(self, key, _default=None):
         try:
             if self._data is None:
-                return {}
+                return ""
             return self._data[key]
         except KeyError:
             return _default
@@ -332,8 +333,8 @@ allow-lan: false
 bind-address: '*'
 dns:
   default-nameserver:
-  - 119.29.29.29
-  - 223.5.5.5
+  - https://doh.pub/dns-query
+  - https://dns.alidns.com/dns-query
   enable: false
   enhanced-mode: fake-ip
   fallback:
@@ -405,16 +406,28 @@ class ClashCleaner:
         if not isinstance(self.yaml, dict):
             self.yaml = {}
 
-    def load(self, _config, _config2: Union[str, bytes]):
-        if type(_config).__name__ == 'str':
+    @staticmethod
+    def notag(_config: Union[bytes, str]):
+        """
+        去除制表符，yaml反序列化不允许制表符出现在标量以外的地方
+        """
+        return _config.replace(b'\t', b'  ')
+
+    def load(self, _config, _config2: Union[str, bytes] = None):
+        if isinstance(_config, str):
             if _config == ':memory:':
                 try:
                     if _config2 is None:
                         self.yaml = yaml.safe_load(preTemplate())
                     else:
-                        self.yaml = yaml.safe_load(_config2)
+                        try:
+                            self.yaml = yaml.safe_load(_config2)
+                        except yaml.MarkedYAMLError:
+                            _config2 = self.notag(_config2)
+                            self.yaml = yaml.safe_load(_config2)
                         self.check_type()
                     return
+
                 except Exception as e:
                     logger.error(str(e))
                     self.yaml = {}
@@ -643,17 +656,9 @@ class ClashCleaner:
 
         try:
             if include:
-                if len(include) < 32:
-                    pattern1 = remodule.compile(include)
-                else:
-                    pattern1 = None
-                    logger.warning(f"包含过滤器的文本: {include} 大于32个长度，无法生效！")
+                pattern1 = remodule.compile(include)
             if exclude:
-                if len(exclude) < 32:
-                    pattern2 = remodule.compile(exclude)
-                else:
-                    pattern2 = None
-                    logger.warning(f"排除过滤器的文本: {exclude} 大于32个长度，无法生效！")
+                pattern2 = remodule.compile(exclude)
         except remodule.error:
             logger.error("正则错误！请检查正则表达式！")
             return self.nodesName()
@@ -702,7 +707,7 @@ class ClashCleaner:
     @logger.catch
     def save(self, savePath: str = "./sub.yaml"):
         with open(savePath, "w", encoding="UTF-8") as fp:
-            yaml.dump(self.yaml, fp)
+            yaml.safe_dump(self.yaml, fp, encoding='utf-8')
 
 
 class ConfigManager:
@@ -754,17 +759,29 @@ class ConfigManager:
     def nospeed(self) -> bool:
         return bool(self.config.get('nospeed', False))
 
-    def speedconfig(self):
+    def speedConfig(self):
         try:
             return self.config['speedconfig']
         except KeyError:
             return {}
 
-    def speednodes(self):
+    def speednodes(self) -> int:
         try:
-            return self.config['speednodes']
-        except KeyError:
-            return int(300)
+            return int(self.config['speednodes'])
+        except (KeyError, ValueError):
+            return 300
+
+    def getConcurrency(self) -> int:
+        clashconf = self.config.get('clash', {})
+        max_workers = min(32, (os.cpu_count() or 1) + 14)
+        if isinstance(clashconf, dict):
+            num = clashconf.get('core', max_workers)
+            if isinstance(num, int):
+                return num
+            else:
+                return max_workers
+        else:
+            return max_workers
 
     def getClashBranch(self):
         """
@@ -914,6 +931,23 @@ class ConfigManager:
             # logger.error("获取测试项失败，将采用默认测试项：[Netflix,Youtube,Disney,Bilibili,Dazn]")
             return ['Netflix', 'Youtube', 'Disney', 'Bilibili', 'Dazn']
 
+    def get_clash_work_path(self):
+        """
+        clash工作路径
+        :return:
+        """
+        try:
+            return self.config['clash']['workpath']
+        except KeyError:
+            logger.warning("获取工作路径失败，将采用默认工作路径 ./clash")
+            try:
+                d = {'workpath': './clash'}
+                self.yaml['clash'].update(d)
+            except KeyError:
+                di = {'clash': {'workpath': './clash'}}
+                self.yaml.update(di)
+            return './clash'
+
     def get_clash_path(self):
         """
         clash 核心的运行路径,包括文件名
@@ -922,22 +956,9 @@ class ConfigManager:
         try:
             return self.config['clash']['path']
         except KeyError:
-            logger.warning("获取运行路径失败，将采用默认运行路径: ./bin\n自动识别windows,linux,macos系统。架构默认为amd64")
-            if sys.platform.startswith("linux"):
-                path = './bin/fulltclash-linux-amd64'
-            elif sys.platform.startswith("win32"):
-                path = r'.\bin\fulltclash-windows-amd64.exe'
-            elif 'darwin' in sys.platform:
-                path = './bin/fulltclash-macos-amd64'
-            else:
-                path = './bin/fulltclash-linux-amd64'
-            d = {'path': path}
-            try:
-                self.yaml['clash'].update(d)
-            except KeyError:
-                di = {'clash': d}
-                self.yaml.update(di)
-            return path
+            logger.warning("为减轻项目文件大小从3.6.5版本开始，不再默认提供代理客户端二进制文件，请自行前往以下网址获取: \n"
+                           "https://github.com/AirportR/FullTCore/releases")
+            raise ValueError("找不到代理客户端二进制文件")
 
     def get_sub(self, subname: str = None):
         """
@@ -956,14 +977,6 @@ class ConfigManager:
             except KeyError:
                 return {}
 
-    @logger.catch
-    def add(self, data: dict, key):
-        try:
-            self.yaml[key] = data[key]
-        except Exception as e:
-            print(e)
-
-    @logger.catch
     def add_admin(self, admin: Union[list, str, int]):
         """
         添加管理员
@@ -980,13 +993,10 @@ class ConfigManager:
                 adminlist.extend(old)
                 newadminlist = list(set(adminlist))  # 去重
                 self.yaml['admin'] = newadminlist
-                logger.info("添加成功")
         except KeyError:
             newadminlist = list(set(adminlist))  # 去重
             self.yaml['admin'] = newadminlist
-            logger.info("添加成功")
 
-    @logger.catch
     def del_admin(self, admin: list or str or int):
         """
         删除管理员
@@ -1027,12 +1037,12 @@ class ConfigManager:
         if not self.reload():
             logger.error("重载失败")
 
-    def add_user(self, user: list or str or int):
+    def add_user(self, user: Union[list, str, int]):
         """
         添加授权用户
         """
         userlist = []
-        if type(user).__name__ == "list":
+        if isinstance(user, list):
             for li in user:
                 userlist.append(li)
         else:
@@ -1043,11 +1053,9 @@ class ConfigManager:
                 userlist.extend(old)
             newuserlist = list(set(userlist))  # 去重
             self.yaml['user'] = newuserlist
-            logger.info("添加成功")
         except KeyError:
             newuserlist = list(set(userlist))  # 去重
             self.yaml['user'] = newuserlist
-            logger.info("添加成功")
 
     @logger.catch
     def del_user(self, user: list or str or int):
@@ -1437,11 +1445,22 @@ class ResultCleaner:
         if '每秒速度' in self.data:
             self.data['每秒速度'] = [[j / 1024 / 1024 for j in i] for i in self.data['每秒速度']]
 
+    def calc_used(self):
+        if '每秒速度' in self.data and '消耗流量' not in self.data:
+            traffic_used = 0
+            for node_res in self.data['每秒速度']:
+                if isinstance(node_res, list):
+                    traffic_used += sum(node_res)
+                elif isinstance(node_res, (float, int)):
+                    traffic_used += node_res
+            self.data['消耗流量'] = traffic_used
+
     def start(self, sort="订阅原序"):
         try:
             self.convert_proxy_typename()
             self.sort(sort)
             self.padding()
+            self.calc_used()
             return self.data
         except TypeError as t:
             logger.error(str(t))
@@ -1603,8 +1622,7 @@ def geturl(string: str, protocol_match: bool = False):
     :param: protocol_match: 是否匹配协议URI，并拼接成ubconverter形式
     """
     text = string
-    pattern = re.compile(
-        r"https?://(?:[a-zA-Z]|\d|[$-_@.&+]|[!*,]|[\w\u4e00-\u9fa5])+")  # 匹配订阅地址
+    pattern = re.compile("https?://(?:[a-zA-Z]|\d|[$-_@.&+]|[!*,]|[\w\u4e00-\u9fa5])+")  # 匹配订阅地址
     # 获取订阅地址
     try:
         url = pattern.findall(text)[0]  # 列表中第一个项为订阅地址

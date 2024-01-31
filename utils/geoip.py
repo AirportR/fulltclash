@@ -17,12 +17,12 @@ def geo_info(ip):
     try:
         with geoip2.database.Reader(f"resources/databases/{citys}") as reader:
             if "." in ip or ":" in ip:
-              country_info = reader.city(ip).country
-              country_code = country_info.iso_code
-              if country_code == None:
-                 country_code = ''
+                country_info = reader.city(ip).country
+                country_code = country_info.iso_code
+                if country_code is None:
+                    country_code = ''
             else:
-              country_code = " "
+                country_code = " "
 
     except AddressNotFoundError as e:
         print(e)
@@ -34,26 +34,25 @@ def geo_info(ip):
         with geoip2.database.Reader(f"resources/databases/{orgs}") as reader:
 
             if "." in ip or ":" in ip:
-              organization = reader.asn(ip).autonomous_system_organization
-              if organization == None:
-                  organization = ''
+                organization = reader.asn(ip).autonomous_system_organization
+                if organization is None:
+                    organization = ''
             else:
-              organization = " "
-              
+                organization = " "
 
     except AddressNotFoundError as e:
         print(e)
-        
+
     try:
         with geoip2.database.Reader(f"resources/databases/{asns}") as reader:
             if "." in ip or ":" in ip:
-              asm = reader.asn(ip).autonomous_system_number
-              asma = "AS"+repr(asm)
+                asm = reader.asn(ip).autonomous_system_number
+                asma = "AS" + repr(asm)
             else:
-              asma = " "
+                asma = " "
     except AddressNotFoundError as e:
         print(e)
-        
+
     return country_code, organization, asma
 
 
