@@ -31,6 +31,9 @@ jobs:
           IMG=fulltclash
           echo "IMG=${IMG}" >> $GITHUB_ENV
           echo "IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/${IMG}" >> $GITHUB_ENV
+      - name: Get version
+        id: get_version
+        run: echo "version=$(git describe --tags --always)" >> $GITHUB_OUTPUT
       - name: Build Latest Image
         if: ${{ github.ref_name == 'dev' }}
         uses: docker/build-push-action@v5
@@ -42,6 +45,7 @@ jobs:
           tags: |
             ${{ env.IMAGE }}:latest
             ${{ env.IMAGE }}:debian-${{ github.ref_name }}
+            ${{ env.IMAGE }}:${{ steps.get_version.outputs.version }}
           build-args: |
             GIT_Branch=${{ github.ref_name }}
       - name: Build Debian Image
@@ -54,6 +58,7 @@ jobs:
           push: true
           tags: |
             ${{ env.IMAGE }}:debian-${{ github.ref_name }}
+            ${{ env.IMAGE }}:${{ steps.get_version.outputs.version }}
       - name: Build Alpine Image
         uses: docker/build-push-action@v5
         with:
@@ -63,5 +68,6 @@ jobs:
           push: true
           tags: |
             ${{ env.IMAGE }}:alpine-${{ github.ref_name }}
+            ${{ env.IMAGE }}:${{ steps.get_version.outputs.version }}
           build-args: |
             GIT_Branch=${{ github.ref_name }}
