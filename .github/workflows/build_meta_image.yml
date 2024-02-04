@@ -5,6 +5,7 @@ on:
     paths:
       - 'docker/Metafile'
       - 'docker/Metafile.alpine'
+      - 'requirements.txt'
     branches:
       - "dev"
 
