@@ -1,11 +1,7 @@
 name: ci
 
 on:
-  workflow_dispatch:
   push:
-  # run only against tags
-    tags:
-      - 'v*'
     paths-ignore:
       - "resources/**"
       - "README.md"
@@ -13,6 +9,8 @@ on:
       - ".github/ISSUE_TEMPLATE/**"
     branches:
       - "master"
+      - "dev"
+      - "backend"
 
 jobs:
   docker:
@@ -29,18 +27,10 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Set Environment Variables
         run: |
           IMG=fulltclash
-        #  OWNER="$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')"
           echo "IMG=${IMG}" >> $GITHUB_ENV
-        #  echo "IMAGE=ghcr.io/${OWNER}/${IMG}" >> $GITHUB_ENV
           echo "IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/${IMG}" >> $GITHUB_ENV
       - name: Build Latest Image
         if: ${{ github.ref_name == 'dev' }}
