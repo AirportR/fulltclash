@@ -2,11 +2,9 @@ name: build_meta_image
 
 on:
   push:
-    paths-ignore:
-      - "resources/**"
-      - "README.md"
-      - "README-EN.md"
-      - ".github/ISSUE_TEMPLATE/**"
+    paths:
+      - 'docker/Metafile'
+      - 'docker/Metafile.alpine'
     branches:
       - "dev"
 
