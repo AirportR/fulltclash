@@ -9,3 +9,10 @@ ENV PATH="/opt/venv/bin:$PATH"
 ADD https://raw.githubusercontent.com/AirportR/FullTclash/dev/requirements.txt .
 RUN pip3 install --no-cache-dir -r requirements.txt && \
     pip3 install --no-cache-dir supervisor
+
+FROM python:3.11.7-alpine3.19
+
+COPY --from=compile-image /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=compile-image /opt/venv /opt/venv
+
+ENV PATH="/opt/venv/bin:$PATH"
