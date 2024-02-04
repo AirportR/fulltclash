@@ -13,6 +13,8 @@ RUN pip3 install --no-cache-dir -r requirements.txt && \
 
 FROM python:3.11.7-slim-bookworm
 
+ARG GIT_Branch
+ENV GIT_Branch=$GIT_Branch
 ENV TZ=Asia/Shanghai
 ENV admin=12345678
 ENV api_id=123456
@@ -30,7 +32,7 @@ WORKDIR /app
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
     git tzdata curl wget jq bash nano cron && \
-    git clone -b dev --single-branch --depth=1 https://github.com/AirportR/FullTclash.git /app && \
+    git clone -b $GIT_Branch --single-branch --depth=1 https://github.com/AirportR/FullTclash.git /app && \
     git clone --single-branch --depth=1 https://github.com/twitter/twemoji.git /app/resources/emoji/twemoji && \
     ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
     echo $TZ > /etc/timezone && \
