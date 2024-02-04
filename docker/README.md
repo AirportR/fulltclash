@@ -40,7 +40,7 @@ docker pull airportr/fulltclash:latest
 - debian-dev
 - alpine-dev
 - debian-master
-- debian-master
+- alpine-master
 
 ### docker
 
@@ -59,7 +59,7 @@ docker run -idt \
    -e core=4 \
    -e startup=1124 \
    -e speedthread=4 \
-   -e nospeed=true \
+   -e nospeed=false \
    -e s5_proxy=127.0.0.1:7890 \
    -e http_proxy=127.0.0.1:7890 \
    --network=host \

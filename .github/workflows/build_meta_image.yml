@@ -1,7 +1,12 @@
 name: build_meta_image
 
 on:
-  workflow_dispatch:
+  push:
+    paths:
+      - 'docker/Metafile'
+      - 'docker/Metafile.alpine'
+    branches:
+      - "dev"
 
 jobs:
   docker:
