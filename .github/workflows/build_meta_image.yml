@@ -1,7 +1,14 @@
 name: build_meta_image
 
 on:
-  workflow_dispatch:
+  push:
+    paths-ignore:
+      - "resources/**"
+      - "README.md"
+      - "README-EN.md"
+      - ".github/ISSUE_TEMPLATE/**"
+    branches:
+      - "dev"
 
 jobs:
   docker:
