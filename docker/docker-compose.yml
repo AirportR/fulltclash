@@ -2,7 +2,7 @@ version: '3.9'
 
 services:
   fulltclash:
-      image: ghcr.io/airportr/fulltclash:dev
+      image: airportr/fulltclash:latest
       restart: always
       network_mode: host
       container_name: fulltclash
