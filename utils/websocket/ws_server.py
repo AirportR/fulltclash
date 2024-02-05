@@ -6,7 +6,7 @@ import sys
 from aiohttp import web
 from loguru import logger
 
-from utils import websocket
+from utils import websocket, generate_random_string
 from utils.backend import select_core, GCONFIG, break_speed
 from utils.safe import cipher_chacha20, sha256_32bytes, plain_chahcha20
 
@@ -166,7 +166,7 @@ def check_args():
     import argparse
     parser = argparse.ArgumentParser(description="FullTClash-纯后端命令行快速启动")
     parser.add_argument("-b", "--bind", required=False, type=str, help="覆写绑定的外部地址端口，默认为127.0.0.1:8765")
-    parser.add_argument("-t", "--token", required=True, type=str, help="Websocket通信Token，也叫做密码，防止不合法的请求。")
+    parser.add_argument("-t", "--token", required=False, type=str, help="Websocket通信Token，也叫做密码，防止不合法的请求。")
     parser.add_argument("-p", "--path", required=False, type=str, help="Websocket连接路径，不设置默认为根路径/ 例： --path YaPyu>hwy<[")
     parser.add_argument("-f", "--buildtoken", required=False, type=str, help="FullTCore代理客户端的buildtoken，不填则为默认值")
 
@@ -179,13 +179,17 @@ def check_args():
         GCONFIG.yaml['websocket'] = wsconf
         GCONFIG.reload()
         logger.info(f"已覆写监听地址：{bindaddr}")
+    wsconf = GCONFIG.config.get('websocket', {})
     if args.token:
         wstoken = str(args.token)
-        wsconf = GCONFIG.config.get('websocket', {})
-        wsconf['token'] = wstoken
-        GCONFIG.yaml['websocket'] = wsconf
-        GCONFIG.reload()
-        logger.info(f"已覆写Websocket通信Token")
+    else:
+        wstoken = wsconf.get('token', '')
+        if not wstoken:
+            wstoken = generate_random_string()
+    wsconf['token'] = wstoken
+    GCONFIG.yaml['websocket'] = wsconf
+    GCONFIG.reload()
+    logger.info(f"已覆写Websocket通信Token为: {wstoken}")
     if args.path:
         ws_path = str(args.path)
         wsconf = GCONFIG.config.get('websocket', {})
