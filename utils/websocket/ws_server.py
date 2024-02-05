@@ -179,11 +179,13 @@ def check_args():
         GCONFIG.yaml['websocket'] = wsconf
         GCONFIG.reload()
         logger.info(f"已覆写监听地址：{bindaddr}")
+    wsconf = GCONFIG.config.get('websocket', {})
     if args.token:
         wstoken = str(args.token)
     else:
-        wstoken = generate_random_string()
-    wsconf = GCONFIG.config.get('websocket', {})
+        wstoken = wsconf.get('token', '')
+        if not wstoken:
+            wstoken = generate_random_string()
     wsconf['token'] = wstoken
     GCONFIG.yaml['websocket'] = wsconf
     GCONFIG.reload()
