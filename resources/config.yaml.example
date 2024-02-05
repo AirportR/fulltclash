@@ -5,6 +5,11 @@ bot:
  api_id: 123456 # Telegram的api_id
  api_hash: ABCDEFG # Telegram的api_hash
  bot_token: 123456:ABCDEFG #bot的token
+clash:
+ path: './bin/FullTCore' # 代理客户端的路径，默认为 ./bin/ 下。下载地址: https://github.com/AirportR/FullTCore/releases
+# allow-caching: false  #是否缓存测试过程产生的订阅，若否，则测试完成后会自动删除测试订阅，以免造成空间浪费。（此配置暂不生效）
+# core: 4 # 核心数，数量越多测试速度越快，但代价是内存会大量占用(每个核心大概10M)，自己的机子多少内存自己平衡。默认值为1.
+# branch: origin #clash内核上游分支，仅有两个有效值: [origin, meta], meta分支支持更多协议，比如vless、tuic等，但是使用上较为不可控，默认为origin原生内核。
 # ====================以上为必填项，否则无法启动成功========================
 # proxy: host:端口:用户名:密码 #socks5代理，用户名和密码为可选配置，已和下面的proxy单独分离，请勿混用
 # strictmode: false # 严格模式，代表测试的时侯，bot内联按钮只有发起测试的主人才能按，否则所有用户用户权限都可以按。默认false，目前未适配，敬请期待。
@@ -18,11 +23,6 @@ bot:
 # command: ['mycommand1', 'mycommand2'] #自定义指令，用于适配权限回调。高级用法，不会无需配置。
 #以下是fulltclash的buildtoken，可以用默认的，但是安全性得不到保障，具体原因详见文档
 #buildtoken: c7004ded9db897e538405c67e50e0ef0c3dbad717e67a92d02f6ebcfd1022a5ad1d2c4419541f538ff623051759ec000d2f426e03f9709a6608570c5b9141a6b
-#clash:
-# path: './bin/fulltclash-linux-amd64' # 代理客户端的路径，默认为 ./bin/ 下。不会弄不要动这里，用默认的即可。本仓库默认仅提供win-amd64与linux-amd64两种(意味着如果为这两种架构，这里不用改。)，其他架构需要自行编译。
-# allow-caching: false  #是否缓存测试过程产生的订阅，若否，则测试完成后会自动删除测试订阅，以免造成空间浪费。（此配置暂不生效）
-# core: 4 # 核心数，数量越多测试速度越快，但代价是内存会大量占用(每个核心大概10M)，自己的机子多少内存自己平衡。默认值为1.
-# branch: origin #clash内核上游分支，仅有两个有效值: [origin, meta], meta分支支持更多协议，比如vless、tuic等，但是使用上较为不可控，默认为origin原生内核。
 #proxy: "host:端口" # http配置代理(非socks5)，括号内可选用于下载获取订阅链接，订阅链接国内打不开可尝试开启（可选配置）,本机提供的代理可以这样填: '127.0.0.1:7890'
 #如果要http代理要验证，配置格式为: proxy: "用户名:密码@host:端口" 比如: user1:112233@127.0.0.1:7890
 #geoip-api: "ip-api.com" # GEOIP 测试api，取二级域名,目前支持 ip-api.com ip.sb ipleak.net ipdata.co ipapi.co 五种，其中 ipdata 需要配置下面的geoip-key
@@ -73,6 +73,7 @@ bot:
 #      slaveid: local  #slaveid的有效值参照配置里的 slaveconfig下的所有键。
 #      script: ["Netflix", "Youtube", "Disney+", "维基百科"] #script的有效值参照连通性测试绘图结果中显示的名称（大小写敏感）。
 #      sort: "HTTP升序"
+#  usage-ranking: #后端使用排行，这里记录者用户使用的后端次数，以便测试选择后端时把最常用的后端显示在第一页，这个配置是bot自动生成的，不用手动修改，你也不需要去管它。
 # 查看你的机器人的所有可用测试项的python变量:
 # from utils.cleaner import addon
 # print(addon.global_test_item)

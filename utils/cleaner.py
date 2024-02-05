@@ -11,9 +11,11 @@ from loguru import logger
 
 try:
     import re2 as re
+
     remodule = re
 except ImportError:
     import re
+
     remodule = re
 
 
@@ -770,6 +772,27 @@ class ConfigManager:
             return int(self.config['speednodes'])
         except (KeyError, ValueError):
             return 300
+
+    def get_slave_ranking(self, ID: Union[str, int] = None):
+        """
+        获取后端使用排行
+        """
+        userconf = self.getUserconfig()
+        usage_ranking = userconf.get('usage-ranking', {})
+        if not isinstance(usage_ranking, dict):
+            usage_ranking = {}
+        if ID is None:
+            # 返回全部用户的排行
+            return usage_ranking
+        else:
+            user_ranking = usage_ranking.get(ID, {})
+            if not isinstance(user_ranking, dict):
+                return {}
+            if not user_ranking:
+                return user_ranking
+            sorted_ranking = sorted(user_ranking.items(), key=lambda x: x[1], reverse=True)
+            sorted_ranking = {item: c for item, c in sorted_ranking}
+            return sorted_ranking
 
     def getConcurrency(self) -> int:
         clashconf = self.config.get('clash', {})

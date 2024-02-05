@@ -1349,7 +1349,7 @@ class ExportTopo(ExportResult):
         export_time = export_time.replace(':', '-')
         title = "出口分析"
 
-        footer1 = f"📊版本:{__version__}  后端:{slavecomment}  概要:{max_entrance}->{cuk}"
+        footer1 = f"📊版本={__version__}  后端={slavecomment}  概要={max_entrance}->{cuk}"
         footer2 = f"{emoji_time}测试时间: {export_time}({system_timezone}) 总共耗时: {self.wtime}s {tips}"
         maxwidth = max(self.text_width(footer1, True), self.text_width(footer2, True), image_width) + 15
         info_list_length[-1] += maxwidth - image_width
