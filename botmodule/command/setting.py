@@ -427,7 +427,8 @@ async def select_slave_page(_: Client, call: Union[CallbackQuery, Message], cont
     content_prefix: 后端的回调按钮数据的前缀，默认为slave:
     """
     slaveconfig = config.getSlaveconfig()
-    slaveconfig.pop("default-slave")
+    if "default-slave" in slaveconfig:
+        slaveconfig.pop("default-slave")
     usermsg = call.message.reply_to_message if isinstance(call, CallbackQuery) else call
     user_ranking = get_slave_ranking(getID(usermsg))
     slaveconfig = get_ranked_slave_list(slaveconfig, user_ranking)
@@ -526,7 +527,8 @@ async def select_slave_only_1(_: Client, call: Union[CallbackQuery, Message], **
     api_route = '/api/getSlaveId'
     page = 1 if isinstance(call, Message) else call.data[len(page_prefix):]
     slaveconfig = config.getSlaveconfig()
-    slaveconfig.pop("default-slave")
+    if "default-slave" in slaveconfig:
+        slaveconfig.pop("default-slave")
     usermsg = call.message.reply_to_message if isinstance(call, CallbackQuery) else call
     user_ranking = get_slave_ranking(getID(usermsg))
     slaveconfig = get_ranked_slave_list(slaveconfig, user_ranking)
