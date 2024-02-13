@@ -1,11 +1,11 @@
 import aiohttp
 
 from utils.cron import *
-from typing import Callable, Any
+from typing import Callable, Any, Union, Coroutine
 
 __version__ = "3.6.7"  # 项目版本号
 __all__ = ["cron_delete_message", "cron_edit_message", "message_delete_queue", "message_edit_queue", "__version__",
-           "retry"]
+           "retry", "script_demo"]
 
 
 def default_breakfunc(ret_val: bool) -> bool:
@@ -37,3 +37,20 @@ def retry(count=5, break_func: Callable[[Any], bool] = None):
         return inner
 
     return wrapper
+
+
+async def script_demo(script_func: Union[Callable, Coroutine], *arg, **kwargs):
+    class FakeColl:
+        def __init__(self):
+            self.info = {}
+            self.data = self.info
+
+    fakecl = FakeColl()
+
+    session = aiohttp.ClientSession()
+    if asyncio.iscoroutine(script_func):
+        await script_func
+    else:
+        await script_func(fakecl, session, *arg, **kwargs)
+    print(fakecl.info)
+    await session.close()

@@ -1,7 +1,8 @@
 import asyncio
 import ssl
 import time
-from typing import List
+from asyncio import coroutine
+from typing import List, Callable, Union, Coroutine
 from urllib.parse import quote
 
 import aiohttp
@@ -503,137 +504,6 @@ class Collector:
         except Exception as e:
             logger.error(str(e))
             return self.info
-
-
-async def delay(session: aiohttp.ClientSession, proxyname, testurl, hostname, port, timeout):
-    url = 'http://{}:{}/proxies/{}/delay?timeout={}&url={}'.format(hostname, port, proxyname, timeout, testurl)
-    async with session.get(url) as r:
-        try:
-            if r.status == 200:
-                text = await r.json()
-                return text['delay']
-            else:
-                logger.info(proxyname + ":" + str(await r.json()) + str(r.status))
-                return -1
-        except ClientConnectorError as c:
-            logger.warning("连接失败:", c)
-            return -1
-
-
-async def delay_providers(providername, hostname='127.0.0.1', port=11230, session: aiohttp.ClientSession = None):
-    healthcheckurl = 'http://{}:{}/providers/proxies/{}/healthcheck'.format(hostname, port, providername)
-    url = 'http://{}:{}/providers/proxies/{}/'.format(hostname, port, providername)
-    if session is None:
-        session = aiohttp.ClientSession()
-    try:
-        await session.get(healthcheckurl)
-        async with session.get(url) as r:
-            if r.status == 200:
-                text = await r.json()
-                # 拿到延迟数据
-                delays = []
-                node = text['proxies']
-                for n in node:
-                    s = n['history'].pop()
-                    de = s['delay']
-                    delays.append(de)
-                await session.close()
-                return delays
-            else:
-                logger.warning("延迟测试出错:" + str(r.status))
-                await session.close()
-                return 0
-    except ClientConnectorError as c:
-        logger.warning("连接失败:", c)
-        await session.close()
-        return 0
-
-
-async def batch_delay(proxyname: list, session: aiohttp.ClientSession = None,
-                      testurl=config.getGstatic(),
-                      hostname='127.0.0.1', port=11230, timeout='5000'):
-    """
-    批量测试延迟，仅适用于不含providers的订阅
-    :param timeout:
-    :param port: 外部控制器端口
-    :param hostname: 主机名
-    :param testurl: 测试网址
-    :param session: 一个连接session
-    :param proxyname: 一组代理名
-    :return: list: 延迟
-    """
-    try:
-        if session is None:
-            async with aiohttp.ClientSession() as session:
-                tasks = []
-                for name in proxyname:
-                    task = asyncio.create_task(
-                        delay(session, name, testurl=testurl, hostname=hostname, port=port, timeout=timeout))
-                    tasks.append(task)
-                done = await asyncio.gather(*tasks)
-                return done
-        else:
-            tasks = []
-            for name in proxyname:
-                task = asyncio.create_task(
-                    delay(session, name, testurl=testurl, hostname=hostname, port=port, timeout=timeout))
-                tasks.append(task)
-            done = await asyncio.gather(*tasks)
-            return done
-    except Exception as e:
-        logger.error(e)
-        return None
-
-
-async def delay_https(session: aiohttp.ClientSession, proxy=None, testurl=config.getGstatic(),
-                      timeout=10):
-    # _headers = {
-    #     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
-    #                   'Chrome/102.0.5005.63 Safari/537.36'
-    # }
-    _headers2 = {'User-Agent': 'clash'}
-    try:
-        s1 = time.time()
-        async with session.get(url=testurl, proxy=proxy, headers=_headers2,
-                               timeout=timeout) as r:
-            if r.status == 502:
-                pass
-                # logger.error("dual stack tcp shake hands failed")
-            if r.status == 204 or r.status == 200:
-                delay1 = time.time() - s1
-                # print(delay1)
-                return delay1
-            else:
-                return 0
-    except Exception as e:
-        logger.error(str(e))
-        return 0
-
-
-async def delay_https_task(session: aiohttp.ClientSession = None, collector=None, proxy=None, times=5):
-    if session is None:
-        async with aiohttp.ClientSession() as session:
-            tasks = [asyncio.create_task(delay_https(session=session, proxy=proxy)) for _ in range(times)]
-            result = await asyncio.gather(*tasks)
-            sum_num = [r for r in result if r != 0]
-            http_delay = sum(sum_num) / len(sum_num) if len(sum_num) else 0
-            http_delay = "%.0fms" % (http_delay * 1000)
-            # print("http平均延迟:", http_delay)
-            http_delay = int(http_delay[:-2])
-            if collector is not None:
-                collector.info['HTTP(S)延迟'] = http_delay
-            return http_delay
-    else:
-        tasks = [asyncio.create_task(delay_https(session=session, proxy=proxy)) for _ in range(times)]
-        result = await asyncio.gather(*tasks)
-        sum_num = [r for r in result if r != 0]
-        http_delay = sum(sum_num) / len(sum_num) if len(sum_num) else 0
-        http_delay = "%.0fms" % (http_delay * 1000)
-        http_delay = int(http_delay[:-2])
-        # print("http平均延迟:", http_delay)
-        if collector is not None:
-            collector.info['HTTP(S)延迟'] = http_delay
-        return http_delay
 
 
 if __name__ == "__main__":

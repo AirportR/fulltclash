@@ -28,7 +28,7 @@ async def fetch_openai(collector, session: aiohttp.ClientSession, proxy=None):
     :param proxy:
     :return:
     """
-    resp1 = await session.get('https://api.openai.com/compliance/cookie_requirements', headers={
+    h1 = {
         'authority': 'api.openai.com',
         'accept': '*/*',
         'accept-language': 'zh-CN,zh;q=0.9',
@@ -44,10 +44,8 @@ async def fetch_openai(collector, session: aiohttp.ClientSession, proxy=None):
         'sec-fetch-site': 'same-site',
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ' +
                       'Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0'
-    }, proxy=proxy, timeout=5)
-    if resp1.status != 200:
-        return True
-    resp2 = await session.get('https://ios.chat.openai.com/', headers={
+    }
+    h2 = {
         'authority': 'ios.chat.openai.com',
         'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/' +
                   'signed-exchange;v=b3;q=0.7',
@@ -62,7 +60,11 @@ async def fetch_openai(collector, session: aiohttp.ClientSession, proxy=None):
         'upgrade-insecure-requests': '1',
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ' +
                       'Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0'
-    }, proxy=proxy, timeout=5)
+    }
+    resp1 = await session.get('https://api.openai.com/compliance/cookie_requirements', headers=h1,
+                              proxy=proxy, timeout=5)
+    resp2 = await session.get('https://ios.chat.openai.com/', headers=h2,
+                              proxy=proxy, timeout=5)
     # 获取响应的文本内容
     text1 = await resp1.text()
     text2 = await resp2.text()
@@ -114,17 +116,19 @@ SCRIPT = {
 
 
 async def demo():
-    class FakeColl:
-        def __init__(self):
-            self.info = {}
-            self.data = self.info
-
-    fakecl = FakeColl()
-
-    session = aiohttp.ClientSession()
-    await fetch_openai(fakecl, session, proxy='http://127.0.0.1:11112')
-    print(get_openai_info(fakecl))
-    await session.close()
+    # class FakeColl:
+    #     def __init__(self):
+    #         self.info = {}
+    #         self.data = self.info
+    #
+    # fakecl = FakeColl()
+    #
+    # session = aiohttp.ClientSession()
+    # await fetch_openai(fakecl, session, proxy='http://127.0.0.1:11112')
+    # print(get_openai_info(fakecl))
+    # await session.close()
+    from utils import script_demo
+    await script_demo(fetch_openai, proxy='http://127.0.0.1:11112')
 
 if __name__ == "__main__":
     asyncio.run(demo())
