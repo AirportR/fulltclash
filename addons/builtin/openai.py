@@ -61,10 +61,19 @@ async def fetch_openai(collector, session: aiohttp.ClientSession, proxy=None):
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ' +
                       'Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0'
     }
+    region = ""
     resp1 = await session.get('https://api.openai.com/compliance/cookie_requirements', headers=h1,
                               proxy=proxy, timeout=5)
     resp2 = await session.get('https://ios.chat.openai.com/', headers=h2,
                               proxy=proxy, timeout=5)
+    resp3 = await session.get(openaiurl2, proxy=proxy, timeout=5)
+    if resp3.status == 200:
+        text3 = await resp3.text()
+        index3 = text3.find("loc=")
+        if index3 > 0:
+            region = text3[index3 + 4:index3 + 6].upper()
+    if region:
+        region = f"({region})"
     # 获取响应的文本内容
     text1 = await resp1.text()
     text2 = await resp2.text()
@@ -75,13 +84,13 @@ async def fetch_openai(collector, session: aiohttp.ClientSession, proxy=None):
     result2 = re.search('VPN', text2)
     # 根据结果输出不同的信息
     if not result2 and not result1:
-        collector.info['openai'] = "完全解锁"
+        collector.info['openai'] = f"解锁{region}"
     elif result2 and result1:
         collector.info['openai'] = "失败"
     elif not result1 and result2:
-        collector.info['openai'] = "仅Web解锁"
+        collector.info['openai'] = f"仅网页{region}"
     elif result1 and not result2:
-        collector.info['openai'] = "仅APP解锁"
+        collector.info['openai'] = f"仅APP{region}"
     else:
         collector.info['openai'] = "N/A"
     return True
