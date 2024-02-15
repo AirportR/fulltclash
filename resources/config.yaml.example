@@ -1,15 +1,15 @@
 # 注意，yaml配置文件对缩进敏感，请不要强迫症删掉#号之间的空格。
 admin:
 - 12345678 #管理员，此处写你的账户id或用户名，必须配置该项，否则程序会自动退出
-bot:
- api_id: 123456 # Telegram的api_id
- api_hash: ABCDEFG # Telegram的api_hash
- bot_token: 123456:ABCDEFG #bot的token
 clash:
  path: './bin/FullTCore' # 代理客户端的路径，默认为 ./bin/ 下。下载地址: https://github.com/AirportR/FullTCore/releases
 # allow-caching: false  #是否缓存测试过程产生的订阅，若否，则测试完成后会自动删除测试订阅，以免造成空间浪费。（此配置暂不生效）
 # core: 4 # 核心数，数量越多测试速度越快，但代价是内存会大量占用(每个核心大概10M)，自己的机子多少内存自己平衡。默认值为1.
 # branch: origin #clash内核上游分支，仅有两个有效值: [origin, meta], meta分支支持更多协议，比如vless、tuic等，但是使用上较为不可控，默认为origin原生内核。
+bot:
+ api_id: 123456 # Telegram的api_id
+ api_hash: ABCDEFG # Telegram的api_hash
+ bot_token: 123456:ABCDEFG #bot的token
 # ====================以上为必填项，否则无法启动成功========================
 # proxy: host:端口:用户名:密码 #socks5代理，用户名和密码为可选配置，已和下面的proxy单独分离，请勿混用
 # strictmode: false # 严格模式，代表测试的时侯，bot内联按钮只有发起测试的主人才能按，否则所有用户用户权限都可以按。默认false，目前未适配，敬请期待。
@@ -30,6 +30,7 @@ clash:
 #subconverter: #订阅转换(此配置主要开发者已无心维护，能用但不稳定)
 # enable: true #是否启用
 # host: '127.0.0.1:25500' #域名或者ip加端口
+# tls: false #是否启用了tls，决定拼接的转换地址URL前缀是http还是https，默认false
 # remoteconfig: "https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online.ini" #远程配置
 #pingurl: http://www.gstatic.com/generate_204  #自定义延迟测试URL
 #netflixurl: "https://www.netflix.com/title/80113701"  #自定义奈飞非自制剧检测网页，注意在更换此链接时请确保是非自制的链接。
