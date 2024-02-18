@@ -47,3 +47,18 @@ options:
 ```shell
 python3 main.py -t fulltclash -b 0.0.0.0:8765
 ```
+
+### Docker启动
+> Docker镜像是基于alpine构建的
+
+```bash
+docker run -idt \
+   --name fulltclash-ws \
+   -e branch=origin \
+   -e core=4 \
+   -e token=114514 \
+   -e buildtoken=BUILDTOKEN \
+   -p 8765:8765 \
+   --restart always \
+   airportr/fulltclash:ws
+```
