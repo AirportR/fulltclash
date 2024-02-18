@@ -347,7 +347,7 @@ class SpeedCore(Basecore):
                 udptype, _, _, _, _ = await corotine_udp
                 info['UDP类型'].append(udptype)
             else:
-                res = await self.speed_start("127.0.0.1", port, 4096)
+                res = await self.speed_start("127.0.0.1", port, 32768)
                 udptype, _, _, _, _ = await corotine_udp
                 if udptype is None:
                     udptype = "Unknown"
