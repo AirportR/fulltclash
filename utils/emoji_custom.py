@@ -218,8 +218,9 @@ class TwemojiLocalSource(LocalSource):
                             f.write(chunk)
                         l2 = float(length) / 1024 / 1024
                         l2 = round(l2, 2)
+                        spath = str(pathlib.Path(savepath).absolute())
                         print(f"\r[{'='*100}] 共下载{length}B ({l2}MB)"
-                              f"已保存到 {pathlib.Path(savepath).as_posix()}")
+                              f"已保存到 {spath}")
                 else:
                     raise Exception(f"NetworkError: {resp.status}==>\t{_url}")
 
