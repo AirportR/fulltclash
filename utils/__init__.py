@@ -29,7 +29,7 @@ def retry(count=5, break_func: Callable[[Any], bool] = None):
                         result = await func(*args, **kwargs)
                     else:
                         result = func(*args, **kwargs)
-                except aiohttp.ClientError:
+                except (aiohttp.ClientError, asyncio.exceptions.TimeoutError, ConnectionResetError, Exception):
                     continue
                 if break_func(result):
                     break
