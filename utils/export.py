@@ -526,6 +526,9 @@ class ExportCommon(BaseExport):
         _nodename_width = self.image['widths'][1]
         _info_list_width = list(self.image['widths'][2])
         _key_list = self.get_key_list()
+        if "HTTP(S)延迟" in _key_list:
+            new_text = "HTTPS延迟" if self.config.getGstatic().startswith("https") else "HTTP延迟"
+            _key_list[_key_list.index("HTTP(S)延迟")] = new_text
         text_list = [('序号', 20), ('节点名称', self.get_mid(100, _nodename_width + 100, '节点名称'))]
         start_x = 100 + _nodename_width
         for i, info_width in enumerate(_info_list_width):
@@ -608,7 +611,7 @@ class ExportCommon(BaseExport):
         width = 100 + _nodename_width
         for i, t1 in enumerate(_key_list):
             content = self.info[t1][t]
-            if "延迟RTT" == t1 or "HTTP(S)延迟" == t1 or t1 == "TLS RTT":
+            if "延迟" in t1 or "RTT" in t1:
                 rtt = float(content[:-2])
                 # 使用了二分法（bisection）算法，它的时间复杂度是 O(log n)。j 这里是确定rtt比interval中的哪个值大
                 # bisect.bisect_right(interval, rtt) 减去1 就拿到了指定的值，最后max函数防止j为负
