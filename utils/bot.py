@@ -138,7 +138,7 @@ def command_loader(app: Client):
 
     @app.on_message(filters.command(["start"]), group=0)
     async def start(client, message):
-        await botmodule.invite_pass2(client, message)
+        await botmodule.invite_pass(client, message)
 
     @app.on_message(next_filter() & filters.private, group=-1)
     async def _(client: Client, message: Message):

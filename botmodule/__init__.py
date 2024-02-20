@@ -16,7 +16,7 @@ from botmodule.record import init_memory_ranking
 init_memory_ranking()
 __all__ = ['grant', 'ungrant', 'user', 'restart_or_killme',
            'sub_invite', 'sub', 'new', 'remove',
-           'process', 'invite', 'invite_pass2',
+           'process', 'invite', 'invite_pass',
            'version', 'helps',
            'test_setting', 'select_page', 'get_sort_str', 'select_sort', 'home_setting',
            'download_script', 'reload_addon_from_telegram', 'uninstall_script',
