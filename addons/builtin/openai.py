@@ -7,10 +7,10 @@ from loguru import logger
 try:
     from utils import retry
 except ImportError:
-    def retry(count=5):
+    def retry():
         def wrapper(func):
             async def inner(*args, **kwargs):
-                await func(*args, count=count, **kwargs)
+                await func(*args, **kwargs)
 
             return inner
 
