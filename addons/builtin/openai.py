@@ -1,103 +1,99 @@
 import asyncio
+import re
+
 import aiohttp
-from aiohttp import ClientConnectorError
 from loguru import logger
 
-# collector section
-from pyrogram.types import InlineKeyboardButton
+try:
+    from utils import retry
+except ImportError:
+    def retry():
+        def wrapper(func):
+            async def inner(*args, **kwargs):
+                await func(*args, **kwargs)
 
-openaiurl = "https://chat.openai.com/favicon.ico"
+            return inner
 
-# openaiurl = "https://chat.openai.com"
+        return wrapper
+
 openaiurl2 = "https://chat.openai.com/cdn-cgi/trace"
-SUPPORT_REGION = ['AL', 'DZ', 'AD', 'AO', 'AG', 'AR', 'AM', 'AU', 'AT', 'AZ', 'BS', 'BD', 'BB', 'BE', 'BZ', 'BJ', 'BT',
-                  'BA', 'UA',
-                  'BW', 'BR', 'BG', 'BF', 'CV', 'CA', 'CL', 'CO', 'KM', 'CR', 'HR', 'CY', 'DK', 'DJ', 'DM', 'DO', 'EC',
-                  'SV',
-                  'EE', 'FJ', 'FI', 'FR', 'GA', 'GM', 'GE', 'DE', 'GH', 'GR', 'GD', 'GT', 'GN', 'GW', 'GY', 'HT', 'HN',
-                  'HU',
-                  'IS', 'IN', 'ID', 'IQ', 'IE', 'IL', 'JM', 'JP', 'JO', 'KZ', 'KE', 'KI', 'KW', 'KG', 'LV', 'LB',
-                  'LS',
-                  'LR', 'LI', 'LT', 'LU', 'MG', 'MW', 'MY', 'MV', 'ML', 'MT', 'MH', 'MR', 'MU', 'MX', 'MC', 'MN', 'ME',
-                  'MA',
-                  'MZ', 'MM', 'NA', 'NR', 'NP', 'NL', 'NZ', 'NI', 'NE', 'NG', 'MK', 'NO', 'OM', 'PK', 'PW', 'PA', 'PG',
-                  'PE',
-                  'PH', 'PL', 'PT', 'QA', 'RO', 'RW', 'KN', 'LC', 'VC', 'WS', 'SM', 'ST', 'SN', 'RS', 'SC', 'SL', 'SG',
-                  'SK',
-                  'SI', 'SB', 'ZA', 'ES', 'LK', 'SR', 'SE', 'CH', 'TH', 'TG', 'TO', 'TT', 'TN', 'TR', 'TV', 'UG', 'AE',
-                  'US',
-                  'UY', 'VU', 'ZM', 'BO', 'BN', 'CG', 'CZ', 'VA', 'FM', 'MD', 'PS', 'KR', 'TW', 'TZ', 'TL', 'GB']
 
 
-async def fetch_openai(Collector, session: aiohttp.ClientSession, proxy=None, reconnection=2):
+@retry(3)
+async def fetch_openai(collector, session: aiohttp.ClientSession, proxy=None):
     """
     openai封锁检测
-    :param Collector: 采集器
+    :param collector: 采集器
     :param session:
     :param proxy:
-    :param reconnection: 重连次数
     :return:
     """
-    # openaiurl1 = "https://chat.openai.com"  # openaiurl
-    # openaiurl2 = "https://chat.openai.com/cdn-cgi/trace"
-    try:
-        _headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ' +
-                          'Chrome/102.0.5005.63 Safari/537.36',
-        }
-        async with session.get(openaiurl, headers=_headers, proxy=proxy, timeout=10) as res:
-            res1_status = res.status
-            if res.status == 403:
-                # ct = res.headers.get('Content-Type', 'None')
-                # if 'text/html' in ct:
-                #     Collector.info['OpenAI'] = "失败"
-                #     return
-                text = await res.text()
-                if text.find('Please stand by, while we are checking your browser') > 0:
-                    logger.info("OpenAI检测到CloudFlare拦截")
-                    Collector.info['OpenAI'] = "CloudFlare拦截"
-
-                index = text.find("Sorry, you have been blocked")
-                index2 = text.find("Unable to load site")
-                if index > 0 or index2 > 0:
-                    Collector.info['OpenAI'] = "失败"
-                    return
-                index2 = text.find("You do not have access to chat.openai.com.")
-                if index2 > 0:
-                    Collector.info['OpenAI'] = "失败"
-                    return
-
-            else:
-                Collector.info['OpenAI'] = "未知"
-        async with session.get(openaiurl2, headers=_headers, proxy=proxy, timeout=10) as res2:
-            if res2.status == 200 and (res1_status == 200 or res1_status == 403):
-                text2 = await res2.text()
-                index2 = text2.find("loc=")
-                if index2 > 0:
-                    region = text2[index2 + 4:index2 + 6]
-                    if region in SUPPORT_REGION:
-                        Collector.info['OpenAI'] = f"解锁({region})"
-                    else:
-                        Collector.info['OpenAI'] = f"待解({region})"
-                else:
-                    Collector.info['OpenAI'] = "未知"
-            else:
-                Collector.info['OpenAI'] = "N/A"
-
-    except ClientConnectorError as c:
-        logger.warning("OpenAI请求发生错误:" + str(c))
-        if reconnection != 0:
-            await fetch_openai(Collector, session, proxy=proxy, reconnection=reconnection - 1)
-        else:
-            Collector.info['OpenAI'] = "连接错误"
-            return
-    except asyncio.exceptions.TimeoutError:
-        if reconnection != 0:
-            logger.warning("OpenAI请求超时，正在重新发送请求......")
-            await fetch_openai(Collector, session, proxy=proxy, reconnection=reconnection - 1)
-        else:
-            Collector.info['OpenAI'] = "超时"
-            return
+    h1 = {
+        'authority': 'api.openai.com',
+        'accept': '*/*',
+        'accept-language': 'zh-CN,zh;q=0.9',
+        'authorization': 'Bearer null',
+        'content-type': 'application/json',
+        'origin': 'https://platform.openai.com',
+        'referer': 'https://platform.openai.com/',
+        'sec-ch-ua': '"Microsoft Edge";v="119", "Chromium";v="119", "Not?A_Brand";v="24"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"Windows"',
+        'sec-fetch-dest': 'empty',
+        'sec-fetch-mode': 'cors',
+        'sec-fetch-site': 'same-site',
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ' +
+                      'Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0'
+    }
+    h2 = {
+        'authority': 'ios.chat.openai.com',
+        'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/' +
+                  'signed-exchange;v=b3;q=0.7',
+        'accept-language': 'zh-CN,zh;q=0.9',
+        'sec-ch-ua': '"Microsoft Edge";v="119", "Chromium";v="119", "Not?A_Brand";v="24"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"Windows"',
+        'sec-fetch-dest': 'document',
+        'sec-fetch-mode': 'navigate',
+        'sec-fetch-site': 'none',
+        'sec-fetch-user': '?1',
+        'upgrade-insecure-requests': '1',
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ' +
+                      'Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0'
+    }
+    region = ""
+    resp1 = await session.get('https://api.openai.com/compliance/cookie_requirements', headers=h1,
+                              proxy=proxy, timeout=5)
+    resp2 = await session.get('https://ios.chat.openai.com/', headers=h2,
+                              proxy=proxy, timeout=5)
+    resp3 = await session.get(openaiurl2, proxy=proxy, timeout=5)
+    if resp3.status == 200:
+        text3 = await resp3.text()
+        index3 = text3.find("loc=")
+        if index3 > 0:
+            region = text3[index3 + 4:index3 + 6].upper()
+    if region:
+        region = f"({region})"
+    # 获取响应的文本内容
+    text1 = await resp1.text()
+    text2 = await resp2.text()
+    resp1.close()
+    resp2.close()
+    # 检查是否包含特定的字符串
+    result1 = re.search('unsupported_country', text1)
+    result2 = re.search('VPN', text2)
+    # 根据结果输出不同的信息
+    if not result2 and not result1:
+        collector.info['openai'] = f"解锁{region}"
+    elif result2 and result1:
+        collector.info['openai'] = "失败"
+    elif not result1 and result2:
+        collector.info['openai'] = f"仅网页{region}"
+    elif result1 and not result2:
+        collector.info['openai'] = f"仅APP{region}"
+    else:
+        collector.info['openai'] = "N/A"
+    return True
 
 
 def task(Collector, session, proxy):
@@ -112,18 +108,15 @@ def get_openai_info(ReCleaner):
     :return: str: 解锁信息: [解锁、失败、N/A]
     """
     try:
-        if 'OpenAI' not in ReCleaner.data:
-            logger.warning("采集器内无数据")
+        if 'openai' not in ReCleaner.data:
             return "N/A"
         else:
-            # logger.info("OpenAI解锁：" + str(ReCleaner.data.get('OpenAI', "N/A")))
-            return ReCleaner.data.get('OpenAI', "N/A")
+            return ReCleaner.data.get('openai', "N/A")
     except Exception as e:
         logger.error(e)
         return "N/A"
 
 
-button = InlineKeyboardButton("✅OpenAI", callback_data='✅OpenAI')
 SCRIPT = {
     "MYNAME": "OpenAI",
     "TASK": task,
@@ -132,19 +125,19 @@ SCRIPT = {
 
 
 async def demo():
-    class FakeColl:
-        def __init__(self):
-            self.info = {}
-            self.data = self.info
-
-    fakecl = FakeColl()
-
-    session = aiohttp.ClientSession()
-    await fetch_openai(fakecl, session, proxy='http://127.0.0.1:1112')
-    print(get_openai_info(fakecl))
-    await session.close()
-
+    # class FakeColl:
+    #     def __init__(self):
+    #         self.info = {}
+    #         self.data = self.info
+    #
+    # fakecl = FakeColl()
+    #
+    # session = aiohttp.ClientSession()
+    # await fetch_openai(fakecl, session, proxy='http://127.0.0.1:11112')
+    # print(get_openai_info(fakecl))
+    # await session.close()
+    from utils import script_demo
+    await script_demo(fetch_openai, proxy='http://127.0.0.1:11112')
 
 if __name__ == "__main__":
-    loop = asyncio.new_event_loop()
-    loop.run_until_complete(demo())
+    asyncio.run(demo())

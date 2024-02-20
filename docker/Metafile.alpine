@@ -1,0 +1,18 @@
+FROM python:3.11.7-alpine3.19 AS compile-image
+
+RUN apk add --no-cache \
+    gcc g++ make libffi-dev libstdc++ gcompat libgcc build-base py3-pybind11-dev abseil-cpp-dev re2-dev ca-certificates
+
+RUN python -m venv /opt/venv
+
+ENV PATH="/opt/venv/bin:$PATH"
+ADD https://raw.githubusercontent.com/AirportR/FullTclash/dev/requirements.txt .
+RUN pip3 install --no-cache-dir -r requirements.txt && \
+    pip3 install --no-cache-dir supervisor
+
+FROM python:3.11.7-alpine3.19
+
+COPY --from=compile-image /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=compile-image /opt/venv /opt/venv
+
+ENV PATH="/opt/venv/bin:$PATH"

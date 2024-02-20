@@ -2,12 +2,13 @@ import asyncio
 from loguru import logger
 from pyrogram import Client
 from pyrogram.types import Message
+
 from utils.collector import reload_config as r1
 from utils.cleaner import reload_config as r2, addon
-# from utils import message_edit_queue
-
 import botmodule
 from botmodule.command.test import convert_core_index
+from botmodule.record import record_ranking
+
 
 SPEED_Q = asyncio.Queue(1)  # 速度测试队列。确保同一时间只有一个测速任务在占用带宽
 CONN_Q = asyncio.Queue(3)  # 连通性、拓扑测试队列，最大同时测试数量为10个任务，设置太高会影响到测速的带宽，进而影响结果。
@@ -54,6 +55,7 @@ async def bot_put(client: Client, message: Message, put_type: str, test_items: l
             test_items = []
         logger.info("任务测试项为: " + str(test_items))
         slaveid = kwargs.get('slaveid', 'local')
+        record_ranking(message, slaveid)
         if slaveid != 'local':
             await botmodule.process(client, message, put_type=put_type, test_items=test_items, **kwargs)
             return

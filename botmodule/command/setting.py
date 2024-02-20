@@ -15,6 +15,7 @@ from utils.myqueue import bot_put
 from utils.check import get_telegram_id_from_message as getID
 from utils import message_delete_queue as mdq
 from glovar import __version__
+from botmodule.record import get_slave_ranking
 from botmodule.rule import get_rule, new_rule
 from botmodule.init_bot import latest_version_hash as v_hash, config
 from botmodule.command.authority import (Invite, INVITE_SELECT_CACHE as ISC,
@@ -411,18 +412,31 @@ def page_frame(pageprefix: str, contentprefix: str, content: List[str], split: s
     return content_keyboard
 
 
+def get_ranked_slave_list(slaveconf: dict, sorted_ranking: dict):
+    new_dict = {}
+    slaveconf_copy = deepcopy(slaveconf)
+    for k, _ in sorted_ranking.items():
+        if k in slaveconf_copy:
+            new_dict[k] = slaveconf_copy.pop(k)
+    new_dict.update(slaveconf_copy)
+    return new_dict
+
+
 async def select_slave_page(_: Client, call: Union[CallbackQuery, Message], content_prefix: str = "slave:", **kwargs):
     """
     选择后端页面的入口
     content_prefix: 后端的回调按钮数据的前缀，默认为slave:
     """
-    slaveconfig = config.getSlaveconfig()
+    slaveconfig = config.getSlaveconfig().copy()
+    if "default-slave" in slaveconfig:
+        slaveconfig.pop("default-slave")
+    usermsg = call.message.reply_to_message if isinstance(call, CallbackQuery) else call
+    user_ranking = get_slave_ranking(getID(usermsg))
+    slaveconfig = get_ranked_slave_list(slaveconfig, user_ranking)
+    comment = [i.get('comment', None) for k, i in slaveconfig.items() if i.get('comment', None)]
 
-    comment = [i.get('comment', None) for k, i in slaveconfig.items() if
-               i.get('comment', None) and k != "default-slave"]
-
-    page = kwargs.get('page', 1)
-    row = kwargs.get('row', 5)
+    page = int(kwargs.get('page', 1))
+    row = int(kwargs.get('row', 5))
     max_page = int(len(comment) / row) + 1
     pre_page_text = page - 1 if page - 1 > 0 else 1
     next_page_text = page + 1 if page < max_page else max_page
@@ -512,10 +526,14 @@ async def select_slave_only_1(_: Client, call: Union[CallbackQuery, Message], **
     """
     page_prefix = '/api/slave/page/'
     api_route = '/api/getSlaveId'
-    page = 1 if isinstance(call, Message) else call.data[len(page_prefix):]
-    slaveconfig = config.getSlaveconfig()
-    comment = [i.get('comment', None) for k, i in slaveconfig.items() if
-               i.get('comment', None) and k != "default-slave"]
+    page = 1 if isinstance(call, Message) else int(call.data[len(page_prefix):])
+    slaveconfig = config.getSlaveconfig().copy()
+    if "default-slave" in slaveconfig:
+        slaveconfig.pop("default-slave")
+    usermsg = call.message.reply_to_message if isinstance(call, CallbackQuery) else call
+    user_ranking = get_slave_ranking(getID(usermsg))
+    slaveconfig = get_ranked_slave_list(slaveconfig, user_ranking)
+    comment = [i.get('comment', None) for k, i in slaveconfig.items() if i.get('comment', None)]
     content_keyboard = page_frame(page_prefix, api_route, comment, split='?comment=', page=page, **kwargs)
     if page == 1:
         if not ds_shadow:

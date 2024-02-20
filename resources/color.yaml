@@ -1,46 +1,50 @@
 #Group1 中国传统色 蓝色系
-#color:
-# speed: # 刚刚好有七个颜色，多一个少一个可能会有奇怪的效果。注意缩进。
-#  - { label: 0, name: '云水', value: '#B4C3D0' }
-#  - { label: 1, name: '晴山', value: '#91AEC4' }
-#  - { label: 5, name: '秋波', value: '#8BB8CB' }
-#  - { label: 10, name: '天韵', value: '#5796B3' }
-#  - { label: 20, name: '鸢尾', value: '#1988AE' }
-#  - { label: 60, name: '甸子', value: '#238BBC' }
-#  - { label: 100, name: '景泰', value: '#2A73AC' }
+#image:
+# color:
+#  speed: # 刚刚好有七个颜色，多一个少一个可能会有奇怪的效果。注意缩进。
+#   - { label: 0, name: '云水', value: '#B4C3D0' }
+#   - { label: 1, name: '晴山', value: '#91AEC4' }
+#   - { label: 5, name: '秋波', value: '#8BB8CB' }
+#   - { label: 10, name: '天韵', value: '#5796B3' }
+#   - { label: 20, name: '鸢尾', value: '#1988AE' }
+#   - { label: 60, name: '甸子', value: '#238BBC' }
+#   - { label: 100, name: '景泰', value: '#2A73AC' }
 
 #Group2 憨批作者乱配版
-#color:
-# speed: # 刚刚好有七个颜色，多一个少一个可能会有奇怪的效果。注意缩进。
-#  - { label: 0, name: '山矾', value: '#f5f3f2' }
-#  - { label: 1, name: '葭灰', value: '#beb1aa' }
-#  - { label: 5, name: '桃夭', value: '#f6bec8' }
-#  - { label: 10, name: '长春', value: '#dc6b82' }
-#  - { label: 20, name: '牙绯', value: '#c35c5d' }
-#  - { label: 60, name: '东方既白', value: '#8ba3c7' }
-#  - { label: 100, name: '丹雘', value: '#c8161d' }
+#image:
+# color:
+#  speed: # 刚刚好有七个颜色，多一个少一个可能会有奇怪的效果。注意缩进。
+#   - { label: 0, name: '山矾', value: '#f5f3f2' }
+#   - { label: 1, name: '葭灰', value: '#beb1aa' }
+#   - { label: 5, name: '桃夭', value: '#f6bec8' }
+#   - { label: 10, name: '长春', value: '#dc6b82' }
+#   - { label: 20, name: '牙绯', value: '#c35c5d' }
+#   - { label: 60, name: '东方既白', value: '#8ba3c7' }
+#   - { label: 100, name: '丹雘', value: '#c8161d' }
 
 #Group3 SSRSpeedN origin彩虹
-#color:
-# speed: # 刚刚好有七个颜色，多一个少一个可能会有奇怪的效果。注意缩进。
-#  - { label: 4, name: '绿', value: '#66ff66' }
-#  - { label: 8, name: '黄', value: '#ffff66' }
-#  - { label: 16, name: '橙', value: '#ffb266' }
-#  - { label: 24, name: '红', value: '#ff6666' }
-#  - { label: 32, name: '紫', value: '#e28cff' }
-#  - { label: 40, name: '蓝', value: '#66ccff' }
-#  - { label: 50, name: '深蓝', value: '#6666ff' }
+#image:
+# color:
+#  speed: # 刚刚好有七个颜色，多一个少一个可能会有奇怪的效果。注意缩进。
+#   - { label: 4, name: '绿', value: '#66ff66' }
+#   - { label: 8, name: '黄', value: '#ffff66' }
+#   - { label: 16, name: '橙', value: '#ffb266' }
+#   - { label: 24, name: '红', value: '#ff6666' }
+#   - { label: 32, name: '紫', value: '#e28cff' }
+#   - { label: 40, name: '蓝', value: '#66ccff' }
+#   - { label: 50, name: '深蓝', value: '#6666ff' }
 
 #Group3 SSRSpeedN poor
-#color:
-# speed: # 刚刚好有七个颜色，多一个少一个可能会有奇怪的效果。注意缩进。
-#  - { label: 4, name: '黄', value: '#ffd700' }
-#  - { label: 8, name: '橙', value: '#ffb201' }
-#  - { label: 16, name: '桃红', value: '#fc6972' }
-#  - { label: 24, name: '紫1', value: '#e982d9' }
-#  - { label: 32, name: '紫2', value: '#c26cff' }
-#  - { label: 40, name: '天蓝', value: '#66c0ff' }
-#  - { label: 50, name: '蓝', value: '#666fff' }
+#image:
+# color:
+#  speed: # 刚刚好有七个颜色，多一个少一个可能会有奇怪的效果。注意缩进。
+#   - { label: 4, name: '黄', value: '#ffd700' }
+#   - { label: 8, name: '橙', value: '#ffb201' }
+#   - { label: 16, name: '桃红', value: '#fc6972' }
+#   - { label: 24, name: '紫1', value: '#e982d9' }
+#   - { label: 32, name: '紫2', value: '#c26cff' }
+#   - { label: 40, name: '天蓝', value: '#66c0ff' }
+#   - { label: 50, name: '蓝', value: '#666fff' }
 
 #Group4 杰尼龟测速频道miaoko配色
 #color:

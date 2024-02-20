@@ -1,6 +1,7 @@
 import asyncio
 import ssl
 import time
+
 from typing import List
 from urllib.parse import quote
 
@@ -26,7 +27,7 @@ from utils import cleaner
 如果你想自己添加一个流媒体测试项，建议查看 ./resources/dos/新增流媒体测试项指南.md
 """
 
-config = cleaner.ConfigManager()
+config = cleaner.config
 addon = cleaner.addon
 media_items = config.get_media_item()
 proxies = config.get_proxy()  # 代理
@@ -204,21 +205,21 @@ class SubCollector(BaseCollector):
         super().__init__()
         self.text = None
         self._headers = {'User-Agent': 'clash'}  # 这个请求头是获取流量信息的关键
-        self.subconverter = config.config.get('subconverter', {})
-        self.cvt_enable = self.subconverter.get('enable', False)
+        self.subcvt_conf = config.config.get('subconverter', {})
+        self.cvt_enable = self.subcvt_conf.get('enable', False)
         self.url = suburl
         self.include = include
         self.exclude = exclude
         self.codeurl = quote(suburl, encoding='utf-8')
         self.code_include = quote(include, encoding='utf-8')
         self.code_exclude = quote(exclude, encoding='utf-8')
-        self.cvt_host = str(self.subconverter.get('host', '127.0.0.1:25500'))
+        self.cvt_host = str(self.subcvt_conf.get('host', '127.0.0.1:25500'))
         self.cvt_scheme = self.parse_cvt_scheme()
         self.cvt_url = f"{self.cvt_scheme}://{self.cvt_host}/sub?target=clash&new_name=true&url={self.codeurl}" \
                        + f"&include={self.code_include}&exclude={self.code_exclude}"
-        self.sub_remote_config = self.subconverter.get('remoteconfig', '')
-        self.config_include = quote(self.subconverter.get('include', ''), encoding='utf-8')  # 这两个
-        self.config_exclude = quote(self.subconverter.get('exclude', ''), encoding='utf-8')
+        self.sub_remote_config = self.subcvt_conf.get('remoteconfig', '')
+        self.config_include = quote(self.subcvt_conf.get('include', ''), encoding='utf-8')  # 这两个
+        self.config_exclude = quote(self.subcvt_conf.get('exclude', ''), encoding='utf-8')
         # print(f"配置文件过滤,包含：{self.config_include} 排除：{self.config_exclude}")
         if self.config_include or self.config_exclude:
             self.cvt_url = f"{self.cvt_scheme}://{self.cvt_host}/sub?target=clash&new_name=true&url={self.cvt_url}" \
@@ -231,13 +232,10 @@ class SubCollector(BaseCollector):
                 self.cvt_url = self.url
 
     def parse_cvt_scheme(self) -> str:
-        temp_cvt = self.cvt_host.split(":")
-        cvt_scheme = 'http'
-        if len(temp_cvt) == 2:
-            hostname = temp_cvt[0]
-            if hostname != "127.0.0.1":
-                cvt_scheme = 'https'
-        return cvt_scheme
+        if not bool(self.subcvt_conf.get('tls', False)):
+            return "http"
+        else:
+            return "https"
 
     async def start(self, proxy=None):
         try:
@@ -503,137 +501,6 @@ class Collector:
         except Exception as e:
             logger.error(str(e))
             return self.info
-
-
-async def delay(session: aiohttp.ClientSession, proxyname, testurl, hostname, port, timeout):
-    url = 'http://{}:{}/proxies/{}/delay?timeout={}&url={}'.format(hostname, port, proxyname, timeout, testurl)
-    async with session.get(url) as r:
-        try:
-            if r.status == 200:
-                text = await r.json()
-                return text['delay']
-            else:
-                logger.info(proxyname + ":" + str(await r.json()) + str(r.status))
-                return -1
-        except ClientConnectorError as c:
-            logger.warning("连接失败:", c)
-            return -1
-
-
-async def delay_providers(providername, hostname='127.0.0.1', port=11230, session: aiohttp.ClientSession = None):
-    healthcheckurl = 'http://{}:{}/providers/proxies/{}/healthcheck'.format(hostname, port, providername)
-    url = 'http://{}:{}/providers/proxies/{}/'.format(hostname, port, providername)
-    if session is None:
-        session = aiohttp.ClientSession()
-    try:
-        await session.get(healthcheckurl)
-        async with session.get(url) as r:
-            if r.status == 200:
-                text = await r.json()
-                # 拿到延迟数据
-                delays = []
-                node = text['proxies']
-                for n in node:
-                    s = n['history'].pop()
-                    de = s['delay']
-                    delays.append(de)
-                await session.close()
-                return delays
-            else:
-                logger.warning("延迟测试出错:" + str(r.status))
-                await session.close()
-                return 0
-    except ClientConnectorError as c:
-        logger.warning("连接失败:", c)
-        await session.close()
-        return 0
-
-
-async def batch_delay(proxyname: list, session: aiohttp.ClientSession = None,
-                      testurl=config.getGstatic(),
-                      hostname='127.0.0.1', port=11230, timeout='5000'):
-    """
-    批量测试延迟，仅适用于不含providers的订阅
-    :param timeout:
-    :param port: 外部控制器端口
-    :param hostname: 主机名
-    :param testurl: 测试网址
-    :param session: 一个连接session
-    :param proxyname: 一组代理名
-    :return: list: 延迟
-    """
-    try:
-        if session is None:
-            async with aiohttp.ClientSession() as session:
-                tasks = []
-                for name in proxyname:
-                    task = asyncio.create_task(
-                        delay(session, name, testurl=testurl, hostname=hostname, port=port, timeout=timeout))
-                    tasks.append(task)
-                done = await asyncio.gather(*tasks)
-                return done
-        else:
-            tasks = []
-            for name in proxyname:
-                task = asyncio.create_task(
-                    delay(session, name, testurl=testurl, hostname=hostname, port=port, timeout=timeout))
-                tasks.append(task)
-            done = await asyncio.gather(*tasks)
-            return done
-    except Exception as e:
-        logger.error(e)
-        return None
-
-
-async def delay_https(session: aiohttp.ClientSession, proxy=None, testurl=config.getGstatic(),
-                      timeout=10):
-    # _headers = {
-    #     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
-    #                   'Chrome/102.0.5005.63 Safari/537.36'
-    # }
-    _headers2 = {'User-Agent': 'clash'}
-    try:
-        s1 = time.time()
-        async with session.get(url=testurl, proxy=proxy, headers=_headers2,
-                               timeout=timeout) as r:
-            if r.status == 502:
-                pass
-                # logger.error("dual stack tcp shake hands failed")
-            if r.status == 204 or r.status == 200:
-                delay1 = time.time() - s1
-                # print(delay1)
-                return delay1
-            else:
-                return 0
-    except Exception as e:
-        logger.error(str(e))
-        return 0
-
-
-async def delay_https_task(session: aiohttp.ClientSession = None, collector=None, proxy=None, times=5):
-    if session is None:
-        async with aiohttp.ClientSession() as session:
-            tasks = [asyncio.create_task(delay_https(session=session, proxy=proxy)) for _ in range(times)]
-            result = await asyncio.gather(*tasks)
-            sum_num = [r for r in result if r != 0]
-            http_delay = sum(sum_num) / len(sum_num) if len(sum_num) else 0
-            http_delay = "%.0fms" % (http_delay * 1000)
-            # print("http平均延迟:", http_delay)
-            http_delay = int(http_delay[:-2])
-            if collector is not None:
-                collector.info['HTTP(S)延迟'] = http_delay
-            return http_delay
-    else:
-        tasks = [asyncio.create_task(delay_https(session=session, proxy=proxy)) for _ in range(times)]
-        result = await asyncio.gather(*tasks)
-        sum_num = [r for r in result if r != 0]
-        http_delay = sum(sum_num) / len(sum_num) if len(sum_num) else 0
-        http_delay = "%.0fms" % (http_delay * 1000)
-        http_delay = int(http_delay[:-2])
-        # print("http平均延迟:", http_delay)
-        if collector is not None:
-            collector.info['HTTP(S)延迟'] = http_delay
-        return http_delay
 
 
 if __name__ == "__main__":
