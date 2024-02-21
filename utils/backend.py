@@ -658,10 +658,24 @@ class TopoCore(Basecore):
         print(counter0)
         ipstack_lists = list(ipstack_list.values())
         ipclus = list(ipclu.values())
+        hosts = list(inboundinfo.keys())
+        for i, t in enumerate(hosts):
+            if ipstack_lists[i] == "N/A" and hosts[i]:
+                if ":" in hosts[i]:
+                    ipstack_lists[i] = "6"
+                elif "." in hosts[i]:
+                    ipstack_lists[i] = "4"
+                else:
+                    pass
+            elif ipstack_lists[i] == "4" and ":" in hosts[i]:
+                ipstack_lists[i] = "46"
+            elif ipstack_lists[i] == "6" and "." in hosts[i]:
+                ipstack_lists[i] = "46"
+            else:
+                pass
         info['栈'] = ipstack_lists
         if nodename and inboundinfo and cl:
             # 拿地址，已经转换了域名为ip,hosts变量去除了N/A
-            hosts = list(inboundinfo.keys())
 
             if _data:
                 code = []
