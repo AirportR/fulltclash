@@ -663,17 +663,17 @@ class TopoCore(Basecore):
         ipstack_lists = list(ipstack_list.values())
         ipclus = list(ipclu.values())
         hosts = list(inboundinfo.keys())
-        for i in range(len(hosts)):
-            if ipstack_lists[i] == "N/A" and hosts[i]:
-                if ":" in hosts[i]:
+        for i, t in enumerate(hosts):
+            if ipstack_lists[i] == "N/A" and t:
+                if ":" in t:
                     ipstack_lists[i] = "6"
-                elif "." in hosts[i]:
+                elif "." in t:
                     ipstack_lists[i] = "4"
                 else:
                     pass
-            elif ipstack_lists[i] == "4" and ":" in hosts[i]:
+            elif ipstack_lists[i] == "4" and ":" in t:
                 ipstack_lists[i] = "46"
-            elif ipstack_lists[i] == "6" and "." in hosts[i]:
+            elif ipstack_lists[i] == "6" and "." in t:
                 ipstack_lists[i] = "46"
             else:
                 pass
