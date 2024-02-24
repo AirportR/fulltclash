@@ -27,6 +27,7 @@ bot:
 #如果要http代理要验证，配置格式为: proxy: "用户名:密码@host:端口" 比如: user1:112233@127.0.0.1:7890
 #geoip-api: "ip-api.com" # GEOIP 测试api，取二级域名,目前支持 ip-api.com ip.sb ipleak.net ipdata.co ipapi.co 五种，其中 ipdata 需要配置下面的geoip-key
 #geoip-key: xxxxxxx #ipdata 的 apikey，如果使用其他api则无需填写
+#test_sort: ['类型', 'HTTP(s)排序', 'Netflix', 'Youtube', 'Disney+'] #联通性测试条目自定义排序
 #subconverter: #订阅转换(此配置主要开发者已无心维护，能用但不稳定)
 # enable: true #是否启用
 # host: '127.0.0.1:25500' #域名或者ip加端口
