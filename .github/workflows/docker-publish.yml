@@ -45,7 +45,6 @@ jobs:
           tags: |
             ${{ env.IMAGE }}:latest
             ${{ env.IMAGE }}:debian-${{ github.ref_name }}
-            ${{ env.IMAGE }}:${{ steps.get_version.outputs.version }}
           build-args: |
             GIT_Branch=${{ github.ref_name }}
       - name: Build Debian Image
@@ -58,7 +57,8 @@ jobs:
           push: true
           tags: |
             ${{ env.IMAGE }}:debian-${{ github.ref_name }}
-            ${{ env.IMAGE }}:${{ steps.get_version.outputs.version }}
+          build-args: |
+            GIT_Branch=${{ github.ref_name }}
       - name: Build Alpine Image
         uses: docker/build-push-action@v5
         with:
