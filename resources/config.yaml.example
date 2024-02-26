@@ -13,7 +13,7 @@ bot:
 # ====================以上为必填项，否则无法启动成功========================
 # proxy: host:端口:用户名:密码 #socks5代理，用户名和密码为可选配置，已和下面的proxy单独分离，请勿混用
 # strictmode: false # 严格模式，代表测试的时侯，bot内联按钮只有发起测试的主人才能按，否则所有用户用户权限都可以按。默认false，目前未适配，敬请期待。
-# scripttext: "⏳联通性测试进行中..."  # 解锁脚本测试进度条自定义文本
+# scripttext: "⏳连通性测试进行中..."  # 解锁脚本测试进度条自定义文本
 # analyzetext: "⏳节点测试拓扑进行中..."  # 拓扑测试进度条自定义文本
 # speedtext: "⏳速度测试进行中..."  # 速度测试进度条自定义文本
 # bar: "=" #进度条自定义文本
@@ -27,7 +27,7 @@ bot:
 #如果要http代理要验证，配置格式为: proxy: "用户名:密码@host:端口" 比如: user1:112233@127.0.0.1:7890
 #geoip-api: "ip-api.com" # GEOIP 测试api，取二级域名,目前支持 ip-api.com ip.sb ipleak.net ipdata.co ipapi.co 五种，其中 ipdata 需要配置下面的geoip-key
 #geoip-key: xxxxxxx #ipdata 的 apikey，如果使用其他api则无需填写
-#test_sort: ['类型', 'HTTP(s)排序', 'Netflix', 'Youtube', 'Disney+'] #联通性测试条目自定义排序
+#test_sort: ['类型', 'HTTP(s)排序', 'Netflix', 'Youtube', 'Disney+'] #连通性测试条目自定义排序
 #subconverter: #订阅转换(此配置主要开发者已无心维护，能用但不稳定)
 # enable: true #是否启用
 # host: '127.0.0.1:25500' #域名或者ip加端口
