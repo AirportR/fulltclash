@@ -21,10 +21,14 @@ async def fetch_ip_risk(Collector, session: aiohttp.ClientSession, proxy=None, r
     """
     try:
         ip = ""
-        async with session.get('http://ip-api.com/json/', proxy=proxy, timeout=5) as ipres:
+        async with session.get('http://ip.sb', proxy=proxy, timeout=5, headers={'user-agent': "curl"}) as ipres:
             if ipres.status == 200:
-                ipdata = await ipres.json()
-                ip = ipdata.get('query', '')
+                ip = await ipres.text()
+        if not ip:
+            async with session.get('http://ip-api.com/json/', proxy=proxy, timeout=5) as ipres:
+                if ipres.status == 200:
+                    ipdata = await ipres.json()
+                    ip = ipdata.get('query', '')
         if ip != '':
             url = baseurl + ip
         else:
