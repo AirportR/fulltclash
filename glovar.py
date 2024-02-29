@@ -1,4 +1,3 @@
-import os
 import time
 
 import tzlocal
@@ -17,7 +16,6 @@ bot_token = init_bot.bot_token
 bot_config = init_bot.config
 BUILD_TOKEN = init_bot.config.getBuildToken()
 userbot_config = bot_config.config.get('userbot', {})
-HOME_DIR = os.getcwd()
 
 # 客户端
 app = Client("my_bot",
