@@ -21,25 +21,33 @@ async def fetch_ip_risk(Collector, session: aiohttp.ClientSession, proxy=None, r
     """
     try:
         ip = ""
-        async with session.get('http://ip.sb', proxy=proxy, timeout=5, headers={'user-agent': "curl"}) as ipres:
-            if ipres.status == 200:
-                ip = await ipres.text()
-        if not ip:
-            async with session.get('http://ip-api.com/json/', proxy=proxy, timeout=5) as ipres:
+        conn = session.connector
+        if type(conn).__name__ == 'ProxyConnector':
+            proxy = "http://" + conn._proxy_host + ":" + str(conn._proxy_port)
+        async with aiohttp.ClientSession() as s:
+            async with s.get('http://ip.sb', proxy=proxy, timeout=5,
+                             headers={'user-agent': "curl"}) as ipres:
+                # ipres = await session.get('http://ip.sb', proxy='http://127.0.0.1:11112', timeout=5,
+                #                           headers={'user-agent': "curl"})
                 if ipres.status == 200:
-                    ipdata = await ipres.json()
-                    ip = ipdata.get('query', '')
-        if ip != '':
-            url = baseurl + ip
-        else:
-            Collector.info['iprisk'] = "N/A"
-            return
-        async with session.get(url, proxy=proxy, timeout=5) as res:
-            if res.status == 200:
-                data = await res.text()
-                Collector.info['iprisk'] = data
+                    ip = await ipres.text()
+            ipres.close()
+            if not ip:
+                async with s.get('http://ip-api.com/json/', proxy=proxy, timeout=5) as ipres:
+                    if ipres.status == 200:
+                        ipdata = await ipres.json()
+                        ip = ipdata.get('query', '')
+            if ip != '':
+                url = baseurl + ip
             else:
                 Collector.info['iprisk'] = "N/A"
+                return
+            async with s.get(url, proxy=proxy, timeout=5) as res:
+                if res.status == 200:
+                    data = await res.text()
+                    Collector.info['iprisk'] = data
+                else:
+                    Collector.info['iprisk'] = "N/A"
     except ClientConnectorError as c:
         logger.warning("IP风险检测请求发生错误:" + str(c))
         if reconnection != 0:
