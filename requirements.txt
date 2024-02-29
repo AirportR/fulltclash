@@ -1,6 +1,6 @@
 aiohttp>=3.8.5
 async_timeout>=4.0.2
-Pillow==9.5.0
+Pillow>=9.5.0
 pilmoji>=2.0.1
 Pyrogram==2.0.106
 PyYAML>=6.0
@@ -9,7 +9,7 @@ tgcrypto>=1.2.3
 APScheduler==3.6.3
 emoji==1.7.0
 loguru>=0.6.0
-aiohttp_socks==0.7.1
+aiohttp_socks>=0.8.4
 tzlocal==4.1
 geoip2==4.6.0
 cryptography==40.0.2
