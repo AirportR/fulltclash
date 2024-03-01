@@ -1,8 +1,12 @@
 import asyncio
+import gzip
 import importlib
 import os
+import tarfile
+import shutil
 
 from copy import deepcopy
+from pathlib import Path
 from typing import Union, List
 import socket
 
@@ -979,9 +983,7 @@ class ConfigManager:
         try:
             return self.config['clash']['path']
         except KeyError:
-            logger.warning("为减轻项目文件大小从3.6.5版本开始，不再默认提供代理客户端二进制文件，请自行前往以下网址获取: \n"
-                           "https://github.com/AirportR/FullTCore/releases")
-            raise ValueError("找不到代理客户端二进制文件")
+            return None
 
     def get_sub(self, subname: str = None):
         """
@@ -1810,3 +1812,41 @@ def batch_ipcu(host: list):
             else:
                 ipcu.append("N/A")
     return ipcu
+
+
+def unzip_targz(input_file: str | Path, output_path: str | Path) -> List[str]:
+    """解压 tar.gz 文件, 返回解压后的文件名称列表"""
+    unzip_files = []
+    try:
+        temp_path = input_file.rstrip(".gz")
+        path = Path(input_file)
+        path2 = Path(output_path)
+        with gzip.open(path, 'rb') as f_in, open(temp_path, 'wb') as f_out:
+            f_out.write(f_in.read())
+
+        with tarfile.open(temp_path) as tar:
+            for member in tar.getmembers():
+                member_path = path2.joinpath(member.name)
+                logger.info("正在解压: " + str(member_path))
+                f = tar.extractfile(member)
+                with open(member_path, 'wb') as ff:
+                    ff.write(f.read())
+                f.close()
+                unzip_files.append(str(member_path))
+        archive_file = Path(temp_path).absolute()
+        archive_file.unlink()
+
+    except Exception as e:
+        logger.error(str(e))
+    finally:
+        return unzip_files
+
+
+def unzip(input_file: str | Path, output_path: str | Path):
+    """解压zip文件"""
+    try:
+        output_path = Path(output_path) if isinstance(output_path, Path) else output_path
+        shutil.unpack_archive(str(input_file), output_path, format='zip')
+        return True
+    except shutil.Error:
+        return False

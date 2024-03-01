@@ -1,25 +1,17 @@
 import asyncio
 import os
 import sys
+from pathlib import Path
 from subprocess import check_output
 
 from loguru import logger
-from utils.cleaner import config
+from utils.cleaner import config, unzip_targz, unzip
 from utils import HOME_DIR
+from utils.collector import get_latest_tag, Download, DownloadError
 
 admin = config.getAdmin()  # 管理员
 config.add_user(admin)  # 管理员同时也是用户
 config.reload()
-
-
-# def check_permission():
-#     if sys.platform != "win32":
-#         try:
-#             status = os.system(f"chmod +x {clash_path}")
-#             if status != 0:
-#                 raise OSError(f"Failed to execute command: chmod +x {clash_path}")
-#         except OSError as o:
-#             print(o)
 
 
 def check_args():
@@ -76,6 +68,11 @@ def check_args():
 
 
 class Init:
+    repo_owner = "AirportR"
+    repo_name = "FullTclash"
+    ftcore_owner = repo_owner
+    ftcore_name = "FullTCore"
+
     @staticmethod
     def init_emoji():
         emoji_source = config.config.get('emoji', {}).get('emoji-source', 'TwemojiLocalSource')
@@ -128,6 +125,66 @@ class Init:
             _latest_version_hash = "Unknown"
         return _latest_version_hash
 
+    @staticmethod
+    def init_proxy_client():
+        """
+        自动下载代理客户端FullTCore
+        """
+        if config.get_clash_path() is not None:
+            return
+        import platform
+        loop = asyncio.get_event_loop()
+        tag = loop.run_until_complete(get_latest_tag(Init.ftcore_owner, Init.ftcore_name))
+        tag2 = tag[1:] if tag[0] == "v" else tag
+        arch = platform.machine().lower()
+        suffix = ".tar.gz"
+        if sys.platform.startswith('linux'):
+            pf = "linux"
+        elif sys.platform.startswith('darwin'):
+            pf = "darwin"
+        elif sys.platform.startswith('win32'):
+            pf = "windows"
+            suffix = ".zip"
+        else:
+            logger.info("无法找到FullTCore在当前平台的预编译文件，请自行下载。")
+            return
+
+        # https://github.com/AirportR/FullTCore/releases/download/v1.3-meta/FullTCore_1.3-meta_windows_amd64.zip
+        base_url = f"https://github.com/{Init.ftcore_owner}/{Init.ftcore_name}"
+
+        download_url = base_url + f"/releases/download/{tag}/FullTCore_{tag2}_{pf}_{arch}{suffix}"
+        savename = download_url.split("/")[-1]
+        logger.info(f"正在自动为您下载最新版本({tag})的FullTCore: {download_url}")
+        savepath = Path(HOME_DIR).joinpath("bin").absolute()
+        saved_file = savepath.joinpath(savename)
+
+        try:
+            loop.run_until_complete(Download(download_url, savepath, savename).dowload(proxy=config.get_proxy()))
+        except DownloadError:
+            logger.info("无法找到FullTCore在当前平台的预编译文件，请自行下载。")
+            return
+        except (OSError, Exception) as e:
+            logger.info(str(e))
+            return
+
+        if suffix.endswith("zip"):
+            unzip_result = unzip(saved_file, savepath)
+        elif suffix.endswith("tar.gz"):
+            unzip_result = unzip_targz(saved_file, savepath)
+        else:
+            unzip_result = False
+        if unzip_result:
+            if pf == "windows":
+                corename = Init.ftcore_name + ".exe"
+            else:
+                corename = Init.ftcore_name
+            proxy_path = str(savepath.joinpath(corename).as_posix())
+            clash_cfg = config.config.get('clash', {})
+            clash_cfg = clash_cfg if isinstance(clash_cfg, dict) else {}
+            clash_cfg['path'] = proxy_path
+            config.yaml['clash'] = clash_cfg
+            config.reload()
+
 
 def check_init():
     if config.getClashBranch() == 'meta':
@@ -135,6 +192,7 @@ def check_init():
     Init.init_emoji()
     Init.init_dir()
     Init.init_permission()
+    Init.init_proxy_client()
 
 
 def check_version() -> str:
