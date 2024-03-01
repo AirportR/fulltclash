@@ -1439,6 +1439,17 @@ class ResultCleaner:
         elif sort_str == '最大速度降序':
             self.sort_by_item("最大速度", reverse=True)
 
+    @staticmethod
+    def format_size(size: Union[int, float]):
+        import math
+        SIZE_UNIT = ["B", "KB", "MB", "GB", "TB", "PB"]
+        if size < 1:
+            return "0KB"
+        i = int(math.floor(math.log(size, 1024)))
+        power = math.pow(1024, i)
+        size = round(size / power, 2)
+        return f"{size}{SIZE_UNIT[i]}"
+
     def padding(self):
         """
         填充字符
@@ -1447,28 +1458,34 @@ class ResultCleaner:
             rtt = self.data['HTTP(S)延迟']
             new_rtt = []
             for r in rtt:
-                new_rtt.append(str(r) + 'ms')
+                n_r = str(r).lower()
+                n_r = n_r if n_r.endswith("ms") else n_r + "ms"
+                new_rtt.append(n_r)
             self.data['HTTP(S)延迟'] = new_rtt
 
         if '平均速度' in self.data:
             new_list = []
             for a in self.data['平均速度']:
-                avgspeed_mb = a / 1024 / 1024
-                if avgspeed_mb < 1:
-                    avgspeed = a / 1024
-                    new_list.append(f"{avgspeed:.2f}KB")
-                else:
-                    new_list.append(f"{avgspeed_mb:.2f}MB")
+                avgspeed = self.format_size(a)
+                new_list.append(avgspeed)
+                # avgspeed_mb = float(a) / 1024 / 1024
+                # if avgspeed_mb < 1:
+                #     avgspeed = a / 1024
+                #     new_list.append(f"{avgspeed:.2f}KB")
+                # else:
+                #     new_list.append(f"{avgspeed_mb:.2f}MB")
             self.data['平均速度'] = new_list
         if '最大速度' in self.data:
             new_list = []
             for a in self.data['最大速度']:
-                maxspeed_mb = a / 1024 / 1024
-                if maxspeed_mb < 1:
-                    maxspeed = a / 1024
-                    new_list.append(f"{maxspeed:.2f}KB")
-                else:
-                    new_list.append(f"{maxspeed_mb:.2f}MB")
+                maxspeed = self.format_size(a)
+                new_list.append(maxspeed)
+                # maxspeed_mb = a / 1024 / 1024
+                # if maxspeed_mb < 1:
+                #     maxspeed = a / 1024
+                #     new_list.append(f"{maxspeed:.2f}KB")
+                # else:
+                #     new_list.append(f"{maxspeed_mb:.2f}MB")
             self.data['最大速度'] = new_list
         if '每秒速度' in self.data:
             self.data['每秒速度'] = [[j / 1024 / 1024 for j in i] for i in self.data['每秒速度']]
