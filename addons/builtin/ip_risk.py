@@ -80,13 +80,21 @@ def get_iprisk_info(ReCleaner):
             if info_str == "N/A":
                 return "N/A"
             index = info_str.find('IP Fraud Risk API')
-            info_pre = info_str[index + 96:index + 180] if index > 0 else "{}"
+            info_pre = info_str[index + 96:index + 205] if index > 0 else "{}"
             index2 = info_pre.find("}")
             info_str2 = info_pre[:index2 + 1] if index2 > 0 else "{}"
             info = json.loads(info_str2)
-            score = info.get('score', '无')
-            risk = info.get('risk', '无').capitalize()
-            return risk + f"({score})"
+            ip = info.get('ip', '')
+            if len(ip) > 15:
+                iptype = "v6"
+            else:
+                iptype = "v4"
+            score = info.get('score', '')
+            risk = info.get('risk', '').capitalize()
+            if score and risk:
+                return risk + f"({score})({iptype})"
+            return ""
+
     except Exception as e:
         logger.error(e)
         return "N/A"
