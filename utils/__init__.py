@@ -4,7 +4,7 @@ import aiohttp
 from utils.cron import *
 from typing import Callable, Any, Union, Coroutine
 
-__version__ = "3.6.7"  # 项目版本号
+__version__ = "3.6.8"  # 项目版本号
 HOME_DIR = getcwd()
 __all__ = [
     "cron_delete_message",
