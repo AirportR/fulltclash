@@ -406,7 +406,7 @@ class ClashCleaner:
         :param _config: 传入一个文件对象，或者一个字符串,文件对象需指向 yaml/yml 后缀文件
         """
         self.path = ''
-        self.unsupport_type = [] if config.getClashBranch() == 'meta' else ['wireguard', 'hysteria', 'tuic', 'vless']
+        self.unsupport_type = []
         self.yaml = {}
         self.load(_config, _config2)
         if not isinstance(self.yaml, dict):
