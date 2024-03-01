@@ -1410,14 +1410,17 @@ class ResultCleaner:
     def convert_proxy_typename(self):
         if '类型' in self.data:
             new_type = []
-            type1 = self.data['类型']
+            type1: List[str] = self.data['类型']
             if not isinstance(type1, list):
                 return
             for t in type1:
-                if t == 'ss':
+                tt = t.lower()
+                if tt == 'ss':
                     new_type.append("Shadowsocks")
-                elif t == "ssr":
+                elif tt == "ssr":
                     new_type.append("ShadowsocksR")
+                elif tt == 'tuic':
+                    new_type.append("TUIC")
                 else:
                     new_type.append(t.capitalize())
             self.data['类型'] = new_type
