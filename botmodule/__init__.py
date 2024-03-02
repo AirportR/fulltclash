@@ -6,6 +6,7 @@ from botmodule.command.basic import *
 from botmodule.command.setting import *
 from botmodule.command.download import *
 from botmodule.command.connect import *
+from botmodule.command.reboot import *
 from botmodule.command import common_command
 from botmodule.command.edit import *
 from botmodule import register

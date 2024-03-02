@@ -8,6 +8,9 @@
     <a href="https://app.codacy.com/gh/AirportR/FullTclash/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade"><img src="https://app.codacy.com/project/badge/Grade/389b2787eb7647dfad486ccaa70eabf4"></a>
     <a href="https://github.com/AirportR/FullTclash/issues"><img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat"></a>
     <br>
+    <img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/airportr/fulltclash">
+    <img alt="Docker Image Size" src="https://img.shields.io/docker/image-size/airportr/fulltclash">
+    <br>
     <a href="https://github.com/AirportR/FullTclash/"><img src="https://img.shields.io/github/stars/AirportR/FullTclash?style=social"></a>
 	<a href = "https://t.me/FullTclash"><img src="https://img.shields.io/static/v1?style=social&logo=telegram&label=channel&message=channel" ></a>
 	<br>
@@ -58,7 +61,7 @@ FullTClash名字来源于 Full Test base on Clash 。后端部分使用[Clash项
 | Wireguard      |       | √          |
 | ShadowsocksR   | √     | √          |
 ----------------------
-本项目默认使用Clash原生内核，需要Clash.Meta支持请参阅代理客户端编译一栏。
+本项目默认使用mihomo内核。
 ## 使用文档
 
 可以在 [这里](https://fulltclash.gitbook.io/fulltclash-doc) 找到FullTclash的使用文档。
@@ -127,12 +130,14 @@ apt install -y git && git clone https://github.com/AirportR/FullTclash.git && cd
    api_hash: 123456ABCDefg #改成自己的api_hash
    bot_token: 123456:ABCDefgh123455  # bot_token, 从 @BotFather 获取
    # 如果是在中国大陆地区使用，则程序需要代理才能连接上Telegram服务器。写入如下信息：
-   proxy: 127.0.0.1:7890 #socks5 替换成自己的代理地址和端口
+   proxy: 127.0.0.1:7890 #必须是socks5类型 替换成自己的代理地址和端口
   ```
 
 - 代理客户端路径配置
- 
-  从3.6.5版本开始，不再默认提供代理客户端二进制文件，请自行前往以下网址获取: 
+  
+  从3.6.8开始，初次启动将自动下载以下(Windows,MacOS,Linux)(x86_64,arm64)的二进制文件，无需配置。
+  
+  当然如果您想手动下载， 请自行前往以下网址获取: 
   https://github.com/AirportR/FullTCore/releases \
   下载解压后可以放到 ./bin/ 目录下，比如文件名为 FullTCore ，下面的配置文件这样写：
   ```yaml
@@ -140,45 +145,49 @@ apt install -y git && git clone https://github.com/AirportR/FullTclash.git && cd
    path: "./bin/FullTCore" #这里改成代理客户端文件路径
   ```
   Windows系统名字后缀名.exe要加上，其他类Unix系统不需要加后缀名。
-- 代理配置（可选）  
+- HTTP代理配置（可选）  
   
-  如果是在中国大陆地区使用，可能部分订阅网址无法直接连接。可在config.yaml中写入如下信息： 
+  如果是在中国大陆地区使用，可能部分网址无法直接连接。可在config.yaml中写入如下信息，下载资源文件时将自动应用该项配置： 
   
   ```
   # 获取订阅时使用代理（可选）
-  proxy: 127.0.0.1:7890 #http 替换成自己的代理地址和端口,注意，此配置与上面的独立分开。
+  proxy: 127.0.0.1:7890 #http代理类型 替换成自己的代理地址和端口,注意，此配置与上面的独立分开。
   ```
   
 - 自定义buildtoken(可选)
-  
-  buildtoken是构建 ./bin/fulltclash(.exe) 代理客户端二进制文件的编译Token，此token为数据加密密钥，一般来说，用项目自带的编译token在本地运行不会有任何问题，但是如果以前后端模式运行，则主端需要自行编译代理后端的二进制文件，以此用到编译token，这个token需要写入到配置文件里，供主端加密信息。
+
+  **个人使用请直接跳过这条**
+
+  buildtoken是构建 ./bin/FullTCore(.exe) 代理客户端二进制文件的编译Token，此token为数据加密密钥，一般来说，用项目自带的编译token在本地运行不会有任何问题，但是如果您选择自己编译并且更改了 build.key文件，则主端需要改变默认配置，以此用到编译token，这个token需要写入到配置文件里，供Bot加密信息。
   ```yaml
   buildtoken: 12345678ABCDEFG
   ```
 ### 获取session文件（可选）
 
 您需要在项目文件目录下，放置一个已经登陆好的.session后缀文件，这个文件是程序生成的，是Telegram的登录凭据，形如： my_bot.session
->方法1：可以直接在配置文件config.yaml中配置，这样程序启动后会自动读取配置文件里面的值来生成session文件(要求一定要正确)。
-```yaml
-#配置文件示例，注意缩进要正确
-bot:
- api_id: 123456
- api_hash: 123456ABCDefg
- bot_token: 123456:ABCDefgh123455
-```
->方法2： 您可以参阅[这篇文档](https://docs.pyrogram.org/start/auth)，以快速获得后缀为 .session 的文件
+* 方法1：
 
->方法3： 项目的 ./utils/tool/ 目录下有一个文件名为 login.py ，可以通过指令运行它：
->```
->python .\login.py
->```
+  可以直接在配置文件config.yaml中配置，这样程序启动后会自动读取配置文件里面的值来生成session文件(要求一定要正确)。
+  ```yaml
+  #配置文件示例，注意缩进要正确
+  bot:
+   api_id: 123456
+   api_hash: 123456ABCDefg
+   bot_token: 123456:ABCDefgh123455
+  ```
+* 方法2： 您可以参阅[这篇文档](https://docs.pyrogram.org/start/auth)，以快速获得后缀为 .session 的文件
 
-当程序退出后即可自动生成一个名为 my_bot.session 的文件 ，之后将它移动到项目根目录。
-运行后它会尝试给你输入的用户名的目标发送消息，当接收到：嗨, 我在正常工作哦！
+* 方法3： 项目的 ./utils/tool/ 目录下有一个文件名为 login.py ，可以通过指令运行它：
+  ```
+  python login.py
+  ```
 
-这句话时，即可说明该session文件有效，否则无效。
+  当程序退出后即可自动生成一个名为 my_bot.session 的文件 ，之后将它移动到项目根目录。
+  运行后它会尝试给你输入的用户名的目标发送消息，当接收到：**嗨, 我在正常工作哦！**
 
-如果启动后无法验证，请删除生成的mybot.session文件，此时的文件是坏的，不可用，如果不删除程序会一直使用坏的文件，不会重新生成。
+  这句话时，即可说明该session文件有效，否则无效。
+
+如果启动后无法验证，请删除生成的mybot.session文件，此时的session登录令牌是不可用的，如果不删除程序会一直使用坏的文件，不会重新生成。
 ### 开始启动
 配置好后，在项目目录下运行以下指令
 
@@ -194,17 +203,18 @@ bot:
 
 等待初始化操作，出现“程序已启动!”字样就说明在运行了。
 运行之后和bot私聊指令：
->/testurl <订阅地址>(clash配置格式)即可开始测试
-
 >/help 可查看所有命令说明
-### 代理客户端编译(高级)
-FullTclash有专用的代理客户端，存放在 ./bin/下。其中:
 
-fulltclash-linux-amd64为 Linux-amd64 所支持\
-fulltclash-windows-amd64 为 Windows-amd64 所支持的
+>/testurl <订阅地址> (Clash配置格式) 即可开始测试
+
+
+### 代理客户端编译(高级)
+FullTClash有专用的代理客户端，存放在 ./bin/下。初次启动会自动帮您下载（仅限win、linux、darwin）对应平台的二进制文件。
+
+文件的压缩包格式为: **FullTCore\_{版本号}\_{平台}\_{CPU架构}.{压缩包后缀}**
 
 没有所用架构？
-如果没有您所用架构的二进制文件，比如arm64，或者您担心仓库自带的有安全隐患，那么您可以自行编译。
+如果发现没有自动下载，说明没有在仓库中找到您所用架构的二进制文件，比如mips架构，那么您需要自行编译。
 
 在 [此仓库](https://github.com/AirportR/FullTCore) 下有一源码文件为 fulltclash.go ，您需要将该文件自行用Golang编译器编译成二进制文件。
 
@@ -219,7 +229,7 @@ fulltclash-windows-amd64 为 Windows-amd64 所支持的
 - [TG更新发布频道](https://t.me/FullTClash)  
 - 在项目页面提出issue
 
-## 如何给本项目做贡献：
+## 项目贡献：
 1、在本项目的主GitHub仓库进行fork，你可以只fork dev的分支。 \
 2、在你的计算机上使用git clone来下载你fork后的仓库。 \
 3、在下载后的本地仓库进行修改。\

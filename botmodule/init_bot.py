@@ -1,24 +1,17 @@
 import asyncio
 import os
 import sys
+from pathlib import Path
 from subprocess import check_output
 
 from loguru import logger
-from utils.cleaner import config
+from utils.cleaner import config, unzip_targz, unzip
+from utils import HOME_DIR
+from utils.collector import get_latest_tag, Download, DownloadError
 
 admin = config.getAdmin()  # 管理员
 config.add_user(admin)  # 管理员同时也是用户
 config.reload()
-
-
-def check_permission():
-    if sys.platform != "win32":
-        try:
-            status = os.system(f"chmod +x {clash_path}")
-            if status != 0:
-                raise OSError(f"Failed to execute command: chmod +x {clash_path}")
-        except OSError as o:
-            print(o)
 
 
 def check_args():
@@ -74,47 +67,136 @@ def check_args():
         logger.warning("覆写配置失败！")
 
 
+class Init:
+    repo_owner = "AirportR"
+    repo_name = "FullTclash"
+    ftcore_owner = repo_owner
+    ftcore_name = "FullTCore"
+
+    @staticmethod
+    def init_emoji():
+        emoji_source = config.config.get('emoji', {}).get('emoji-source', 'TwemojiLocalSource')
+        if config.config.get('emoji', {}).get('enable', True) and emoji_source == 'TwemojiLocalSource':
+            from utils.emoji_custom import TwemojiLocalSource
+            if not os.path.isdir('./resources/emoji/twemoji'):
+                twemoji = TwemojiLocalSource()
+                logger.info("检测到未安装emoji资源包，正在初始化本地emoji...")
+                asyncio.get_event_loop().run_until_complete(twemoji.download_emoji(proxy=config.get_proxy()))
+                if twemoji.init_emoji(twemoji.savepath):
+                    logger.info("初始化emoji成功")
+                else:
+                    logger.warning("初始化emoji失败")
+
+    @staticmethod
+    def init_dir():
+        dirs = os.listdir(HOME_DIR)
+        if "logs" in dirs and "results" in dirs:
+            return
+        logger.info("检测到初次使用，正在初始化...")
+        if not os.path.isdir('logs'):
+            os.mkdir("logs")
+            logger.info("创建文件夹: logs 用于保存日志")
+        if not os.path.isdir('results'):
+            os.mkdir("results")
+            logger.info("创建文件夹: results 用于保存测试结果")
+
+    @staticmethod
+    def init_permission():
+        if sys.platform != "win32":
+            try:
+                status = os.system(f"chmod +x {CLASH_PATH}")
+                if status != 0:
+                    raise OSError(f"Failed to execute command: chmod +x {CLASH_PATH}")
+            except OSError as o:
+                print(o)
+
+    @staticmethod
+    def init_commit_string():
+        _latest_version_hash = ""
+        try:
+            output = check_output(['git', 'log'], shell=False, encoding="utf-8").strip()
+            # 解析输出，提取最新提交的哈希值
+            for line in output.split("\n"):
+                if "commit" in line:
+                    _latest_version_hash = line.split()[1][:7]
+                    break
+        except Exception as e:
+            logger.info(f"可能不是通过git拉取源码，因此version将无法查看提交哈希。{str(e)}")
+            _latest_version_hash = "Unknown"
+        return _latest_version_hash
+
+    @staticmethod
+    def init_proxy_client():
+        """
+        自动下载代理客户端FullTCore
+        """
+        if config.get_clash_path() is not None:
+            return
+        import platform
+        loop = asyncio.get_event_loop()
+        tag = loop.run_until_complete(get_latest_tag(Init.ftcore_owner, Init.ftcore_name))
+        tag2 = tag[1:] if tag[0] == "v" else tag
+        arch = platform.machine().lower()
+        suffix = ".tar.gz"
+        if sys.platform.startswith('linux'):
+            pf = "linux"
+        elif sys.platform.startswith('darwin'):
+            pf = "darwin"
+        elif sys.platform.startswith('win32'):
+            pf = "windows"
+            suffix = ".zip"
+        else:
+            logger.info("无法找到FullTCore在当前平台的预编译文件，请自行下载。")
+            return
+
+        # https://github.com/AirportR/FullTCore/releases/download/v1.3-meta/FullTCore_1.3-meta_windows_amd64.zip
+        base_url = f"https://github.com/{Init.ftcore_owner}/{Init.ftcore_name}"
+
+        download_url = base_url + f"/releases/download/{tag}/FullTCore_{tag2}_{pf}_{arch}{suffix}"
+        savename = download_url.split("/")[-1]
+        logger.info(f"正在自动为您下载最新版本({tag})的FullTCore: {download_url}")
+        savepath = Path(HOME_DIR).joinpath("bin").absolute()
+        saved_file = savepath.joinpath(savename)
+
+        try:
+            loop.run_until_complete(Download(download_url, savepath, savename).dowload(proxy=config.get_proxy()))
+        except DownloadError:
+            logger.info("无法找到FullTCore在当前平台的预编译文件，请自行下载。")
+            return
+        except (OSError, Exception) as e:
+            logger.info(str(e))
+            return
+
+        if suffix.endswith("zip"):
+            unzip_result = unzip(saved_file, savepath)
+        elif suffix.endswith("tar.gz"):
+            unzip_result = unzip_targz(saved_file, savepath)
+        else:
+            unzip_result = False
+        if unzip_result:
+            if pf == "windows":
+                corename = Init.ftcore_name + ".exe"
+            else:
+                corename = Init.ftcore_name
+            proxy_path = str(savepath.joinpath(corename).as_posix())
+            clash_cfg = config.config.get('clash', {})
+            clash_cfg = clash_cfg if isinstance(clash_cfg, dict) else {}
+            clash_cfg['path'] = proxy_path
+            config.yaml['clash'] = clash_cfg
+            config.reload()
+
+
 def check_init():
     if config.getClashBranch() == 'meta':
-        logger.info('✅检测到启用clash.meta系内核配置，请自行配置更换成fulltclash-meta代理客户端（默认为原生clash内核）。')
-    emoji_source = config.config.get('emoji', {}).get('emoji-source', 'TwemojiLocalSource')
-    if config.config.get('emoji', {}).get('enable', True) and emoji_source == 'TwemojiLocalSource':
-        from utils.emoji_custom import TwemojiLocalSource
-        if not os.path.isdir('./resources/emoji/twemoji'):
-            twemoji = TwemojiLocalSource()
-            logger.info("检测到未安装emoji资源包，正在初始化本地emoji...")
-            asyncio.get_event_loop().run_until_complete(twemoji.download_emoji(proxy=config.get_proxy()))
-            if twemoji.init_emoji(twemoji.savepath):
-                logger.info("初始化emoji成功")
-            else:
-                logger.warning("初始化emoji失败")
-    dirs = os.listdir()
-    if "logs" in dirs and "results" in dirs:
-        return
-    logger.info("检测到初次使用，正在初始化...")
-    if not os.path.isdir('logs'):
-        os.mkdir("logs")
-        logger.info("创建文件夹: logs 用于保存日志")
-    if not os.path.isdir('results'):
-        os.mkdir("results")
-        logger.info("创建文件夹: results 用于保存测试结果")
-    check_permission()
+        logger.info('✅检测到启用clash.meta系内核配置')
+    Init.init_emoji()
+    Init.init_dir()
+    Init.init_permission()
+    Init.init_proxy_client()
 
 
 def check_version() -> str:
-    _latest_version_hash = ""
-    try:
-        output = check_output(['git', 'log'], shell=False, encoding="utf-8").strip()
-        # 解析输出，提取最新提交的哈希值
-        for line in output.split("\n"):
-            if "commit" in line:
-                _latest_version_hash = line.split()[1][:7]
-                break
-    except Exception as e0:
-        logger.info("可能不是通过git拉取源码，因此version将无法查看提交哈希。")
-        logger.warning(str(e0))
-        _latest_version_hash = "Unavailable"
-    return _latest_version_hash
+    return Init.init_commit_string()
 
 
 def parse_proxy():
@@ -154,7 +236,7 @@ def parse_proxy():
 
 
 # 获取远程仓库的最新提交哈希
-latest_version_hash = check_version()
+latest_version_hash = Init.init_commit_string()
 
 logger.add("./logs/fulltclash_{time}.log", rotation='7 days')
 
@@ -162,9 +244,7 @@ botconfig = config.getBotconfig()
 api_id = botconfig.get('api_id', None)
 api_hash = botconfig.get('api_hash', None)
 bot_token = botconfig.get('bot_token', None)
-clash_path = config.get_clash_path()  # 为代理客户端运行路径
-# clash_work_path = config.get_clash_work_path()  # clash工作路径
-corenum = min(config.config.get('clash', {}).get('core', 1), 128)
+CLASH_PATH = config.get_clash_path()  # 为代理客户端运行路径
 
 USER_TARGET = config.getuser()  # 这是用户列表，从配置文件读取
 logger.info("管理员名单加载:" + str(admin))

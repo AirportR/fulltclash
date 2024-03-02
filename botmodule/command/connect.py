@@ -9,10 +9,9 @@ from pyrogram.errors import PeerIdInvalid, RPCError
 from pyrogram import Client
 
 from botmodule.init_bot import config
-from botmodule import restart_or_killme, select_export
+from botmodule import select_export
 from utils import message_delete_queue, safe
 from utils.cleaner import ArgCleaner
-# from utils.clash import new_batch_start, check_port
 from utils.myqueue import bot_put_slave
 from glovar import app2
 
@@ -116,7 +115,7 @@ async def conn_simple(app: Client, message: Message):
 
 
 @logger.catch()
-async def simple_conn_resp(app: Client, message: Message):
+async def simple_conn_resp(_, message: Message):
     """
     后端bot专属
     """
@@ -133,7 +132,6 @@ async def simple_conn_resp(app: Client, message: Message):
     config.reload()
     logger.info("master连接配置已保存")
     await message.reply("已收到master请求，配置已保存，重启生效", quote=True)
-    await restart_or_killme(app, message)
 
 
 async def recvtask(app: Client, message: Message):
@@ -152,7 +150,6 @@ async def recvtask(app: Client, message: Message):
     plaindata = await plain_data(message, key)
     await message.reply("Get data success!\nplease wait.", quote=True)
     putinfo: dict = json.loads(plaindata)
-    # coreindex = putinfo.get('coreindex', 0)
     await bot_put_slave(app, message, putinfo, master_id=master_id)
 
 

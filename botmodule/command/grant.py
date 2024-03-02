@@ -1,15 +1,12 @@
-import os
-import signal
-import sys
-import pyrogram.types
 from loguru import logger
 from pyrogram import Client
 from pyrogram.errors import RPCError
+from pyrogram.types import Message
 from botmodule.init_bot import admin, config, reloadUser
 from utils.cron.utils import message_delete_queue
 
 
-async def grant(client: Client, message: pyrogram.types.Message):
+async def grant(client: "Client", message: "Message"):
     try:
         if int(message.from_user.id) not in admin and str(
                 message.from_user.username) not in admin:  # 如果不在USER_TARGET名单是不会有权限的
@@ -51,7 +48,7 @@ async def grant(client: Client, message: pyrogram.types.Message):
         print(r)
 
 
-async def ungrant(_, message: pyrogram.types.Message):
+async def ungrant(_, message: "Message"):
     try:
         if int(message.from_user.id) not in admin and str(
                 message.from_user.username) not in admin:  # 如果不在USER_TARGET名单是不会有权限的
@@ -91,7 +88,7 @@ async def ungrant(_, message: pyrogram.types.Message):
         logger.error(str(r))
 
 
-async def user(_, message):
+async def user(_, message: "Message"):
     try:
         if int(message.from_user.id) not in admin and str(
                 message.from_user.username) not in admin:
@@ -104,20 +101,3 @@ async def user(_, message):
     USER_TARGET = config.getuser()
     text = "当前用户有:" + str(set(USER_TARGET)) + "\n共{}个".format(len(USER_TARGET))
     await message.reply(text)
-
-
-async def restart_or_killme(_, message, kill=False):
-    try:
-        if kill:
-            await message.reply("再见~")
-            os.kill(os.getpid(), signal.SIGINT)
-        else:
-            await message.reply("开始重启(大约等待五秒)")
-            # p = sys.executable
-            # 用 main.py 替换当前进程，传递 sys.argv 中的参数
-            # 注意：这个函数不会返回，除非出现错误
-            os.execlp(sys.executable, "main.py", *sys.argv)
-            # os.execl(p, p, *sys.argv)
-            sys.exit()
-    except RPCError as r:
-        logger.error(str(r))

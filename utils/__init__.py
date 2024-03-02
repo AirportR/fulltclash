@@ -1,11 +1,21 @@
+from os import getcwd
 import aiohttp
 
 from utils.cron import *
 from typing import Callable, Any, Union, Coroutine
 
-__version__ = "3.6.7"  # 项目版本号
-__all__ = ["cron_delete_message", "cron_edit_message", "message_delete_queue", "message_edit_queue", "__version__",
-           "retry", "script_demo"]
+__version__ = "3.6.8"  # 项目版本号
+HOME_DIR = getcwd()
+__all__ = [
+    "cron_delete_message",
+    "cron_edit_message",
+    "message_delete_queue",
+    "message_edit_queue",
+    "__version__",
+    "retry",
+    "script_demo",
+    "HOME_DIR"
+]
 
 
 def default_breakfunc(ret_val: bool) -> bool:
