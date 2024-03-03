@@ -137,6 +137,14 @@ class Init:
         tag = loop.run_until_complete(get_latest_tag(Init.ftcore_owner, Init.ftcore_name))
         tag2 = tag[1:] if tag[0] == "v" else tag
         arch = platform.machine().lower()
+        if arch == "x86_64":
+            arch = "amd64"
+        elif arch == "aarch64" or arch == "armv8":
+            arch = "arm64"
+        elif arch == "x86":
+            arch = "i386"
+        elif arch == "arm":
+            arch = "armv7l"
         suffix = ".tar.gz"
         if sys.platform.startswith('linux'):
             pf = "linux"
