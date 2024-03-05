@@ -107,9 +107,9 @@ class Init:
     def init_permission():
         if sys.platform != "win32":
             try:
-                status = os.system(f"chmod +x {CLASH_PATH}")
+                status = os.system(f"chmod +x {config.get_clash_path()}")
                 if status != 0:
-                    raise OSError(f"Failed to execute command: chmod +x {CLASH_PATH}")
+                    raise OSError(f"Failed to execute command: chmod +x {config.get_clash_path()}")
             except OSError as o:
                 print(o)
 
