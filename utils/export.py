@@ -424,7 +424,7 @@ class ExportCommon(BaseExport):
         uid = self.allinfo.get('task', {}).get('initiator', '')
         if uid and uid not in self.config.getuser():
             watermark = self.image.get('watermark2', {})
-        if not self.image['watermark']['enable']:
+        if not watermark['enable']:
             return original_image
         watermark_text = watermark['text']
         shadow = bool(watermark.get('shadow', False))  # 是否是盲水印
@@ -433,7 +433,8 @@ class ExportCommon(BaseExport):
             watermark_text += f" UID:{uid}"
         if not shadow:
             font = ImageFont.truetype(self.config.getFont(), int(watermark['font_size']))
-            text_image = Image.new('RGBA', font.getsize(watermark_text), (255, 255, 255, 0))
+            _, __, wm_width, wm_height = font.getbbox(watermark_text)
+            text_image = Image.new('RGBA', (wm_width, wm_width), (255, 255, 255, 0))
             text_draw = ImageDraw.Draw(text_image)
 
             rgb = ImageColor.getrgb(watermark['color'])
@@ -978,6 +979,8 @@ class ExportResult:
         if emoji:
             img = Image.new("RGBA", (1, 1), (255, 255, 255, 255))
             pm = Pilmoji(img, source=emoji_source.TwemojiLocalSource)
+            # https://www.osgeo.cn/pillow/releasenotes/10.0.0.html#font-size-and-offset-methods，此方法为pilmoji特别优化。
+            # 请勿在正常的PIL中使用此方法。
             x, _ = pm.getsize(text, font=self.__font)
             return x
         else:
@@ -1052,7 +1055,8 @@ class ExportResult:
             return original_image
         watermark_text = watermark['text']
         font = ImageFont.truetype(self.config.getFont(), int(watermark['font_size']))
-        text_image = Image.new('RGBA', font.getsize(watermark_text), (255, 255, 255, 0))
+        _, __, wm_width, wm_height = font.getbbox(watermark_text)
+        text_image = Image.new('RGBA', (wm_width, wm_height), (255, 255, 255, 0))
         text_draw = ImageDraw.Draw(text_image)
 
         rgb = ImageColor.getrgb(watermark['color'])
