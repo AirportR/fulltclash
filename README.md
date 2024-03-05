@@ -97,7 +97,7 @@ apt install -y git && git clone https://github.com/AirportR/FullTclash.git && cd
 此方法在中国大陆可能需要代理加速，请自行解决。
 ### 环境准备
 
-- Python 3.9 以上  
+- Python 3.10 以上  
 - 以及各种相关包依赖  
 
 您可以用以下命令，在当前项目目录下运行以快速安装环境：
