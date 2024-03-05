@@ -22,7 +22,7 @@ app = Client("my_bot",
              api_id=init_bot.api_id,
              api_hash=init_bot.api_hash,
              bot_token=bot_token,
-             proxy=init_bot.proxies,
+             proxy=init_bot.BOT_PROXY,
              app_version=__version__,
              ipv6=False
              )
@@ -31,7 +31,7 @@ if userbot_config.get('enable', False):
     app2 = Client("my_user",
                   api_id=init_bot.api_id,
                   api_hash=init_bot.api_hash,
-                  proxy=init_bot.proxies,
+                  proxy=init_bot.BOT_PROXY,
                   app_version=__version__,
                   ipv6=False
                   )

@@ -194,7 +194,20 @@ class Init:
             config.reload()
 
 
+def check_version() -> str:
+    return Init.init_commit_string()
+
+
+def check_py_version() -> None:
+    if sys.version_info < (3, 9):
+        py_url = "https://www.python.org/downloads/"
+        logger.info(f"您的Python版本为{sys.version}。\n至少需要Python3.9才能运行此程序。前往: {py_url}下载新版本。")
+        sys.exit()
+
+
 def check_init():
+    check_py_version()
+    check_args()
     if config.getClashBranch() == 'meta':
         logger.info('✅检测到启用clash.meta系内核配置')
     Init.init_emoji()
@@ -203,11 +216,7 @@ def check_init():
     Init.init_proxy_client()
 
 
-def check_version() -> str:
-    return Init.init_commit_string()
-
-
-def parse_proxy():
+def parse_bot_proxy():
     _proxies = None
     try:
         _proxy = config.get_bot_proxy(isjoint=False).split(':')
@@ -243,22 +252,19 @@ def parse_proxy():
         return _proxies
 
 
+logger.add("./logs/fulltclash_{time}.log", rotation='7 days')
+check_init()
+
 # 获取远程仓库的最新提交哈希
 latest_version_hash = Init.init_commit_string()
-
-logger.add("./logs/fulltclash_{time}.log", rotation='7 days')
-
 botconfig = config.getBotconfig()
 api_id = botconfig.get('api_id', None)
 api_hash = botconfig.get('api_hash', None)
 bot_token = botconfig.get('bot_token', None)
 CLASH_PATH = config.get_clash_path()  # 为代理客户端运行路径
-
 USER_TARGET = config.getuser()  # 这是用户列表，从配置文件读取
-logger.info("管理员名单加载:" + str(admin))
-check_args()
-check_init()
-proxies = parse_proxy()
+BOT_PROXY = parse_bot_proxy()
+
 logger.info("配置已加载, Telegram bot程序开始运行...")
 
 
