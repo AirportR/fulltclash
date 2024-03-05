@@ -434,7 +434,7 @@ class ExportCommon(BaseExport):
         if not shadow:
             font = ImageFont.truetype(self.config.getFont(), int(watermark['font_size']))
             _, __, wm_width, wm_height = font.getbbox(watermark_text)
-            text_image = Image.new('RGBA', (wm_width, wm_width), (255, 255, 255, 0))
+            text_image = Image.new('RGBA', (wm_width, wm_height), (255, 255, 255, 0))
             text_draw = ImageDraw.Draw(text_image)
 
             rgb = ImageColor.getrgb(watermark['color'])
