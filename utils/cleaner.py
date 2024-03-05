@@ -1834,7 +1834,7 @@ def batch_ipcu(host: list):
     return ipcu
 
 
-def unzip_targz(input_file: str | Path, output_path: str | Path) -> List[str]:
+def unzip_targz(input_file: Union[str, Path], output_path: Union[str, Path]) -> List[str]:
     """解压 tar.gz 文件, 返回解压后的文件名称列表"""
     unzip_files = []
     try:
@@ -1862,7 +1862,7 @@ def unzip_targz(input_file: str | Path, output_path: str | Path) -> List[str]:
         return unzip_files
 
 
-def unzip(input_file: str | Path, output_path: str | Path):
+def unzip(input_file: Union[str, Path], output_path: Union[str, Path]):
     """解压zip文件"""
     try:
         output_path = Path(output_path) if isinstance(output_path, Path) else output_path
