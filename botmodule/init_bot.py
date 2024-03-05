@@ -10,8 +10,6 @@ from utils import HOME_DIR
 from utils.collector import get_latest_tag, Download, DownloadError
 
 admin = config.getAdmin()  # 管理员
-config.add_user(admin)  # 管理员同时也是用户
-config.reload()
 
 
 def check_args():
@@ -72,6 +70,11 @@ class Init:
     repo_name = "FullTclash"
     ftcore_owner = repo_owner
     ftcore_name = "FullTCore"
+
+    @staticmethod
+    def init_user():
+        config.add_user(admin)  # 管理员同时也是用户
+        config.reload()
 
     @staticmethod
     def init_emoji():
@@ -206,14 +209,13 @@ def check_py_version() -> None:
 
 
 def check_init():
-    check_py_version()
     check_args()
-    if config.getClashBranch() == 'meta':
-        logger.info('✅检测到启用clash.meta系内核配置')
+    check_py_version()
     Init.init_emoji()
     Init.init_dir()
-    Init.init_permission()
     Init.init_proxy_client()
+    Init.init_permission()
+    Init.init_user()
 
 
 def parse_bot_proxy():
