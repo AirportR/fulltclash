@@ -35,10 +35,8 @@ fi
 if [ ! -z "${git_proxy}" ]; then
 mkdir /root/.ssh
 cat > /root/.ssh/config <<EOF
-Host github.com
-    Hostname ssh.github.com
-    Port 443
-    User git
+Host github.com 
+User git
 ProxyCommand connect -S ${git_proxy} %h %p
 EOF
 fi
