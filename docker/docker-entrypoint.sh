@@ -32,6 +32,17 @@ fi
 
 fi
 
+if [ ! -z "${git_proxy}" ]; then
+mkdir /root/.ssh
+cat > /root/.ssh/config <<EOF
+Host github.com
+    Hostname ssh.github.com
+    Port 443
+    User git
+ProxyCommand connect -S ${git_proxy} %h %p
+EOF
+fi
+
 supervisord -c /etc/supervisord.conf
 
 if [[ -f "/etc/debian_version" ]]; then
