@@ -26,7 +26,6 @@ update() {
     git --git-dir='/app/.git' --work-tree='/app' reset --hard origin/$git_branch
     git --git-dir='/app/.git' --work-tree='/app' pull
     git_version=$(git --git-dir='/app/.git' --work-tree='/app' rev-parse HEAD)
-    chmod -R 755 /app
 }
 
 if [[ $last_version ==  "$git_version" ]]; then

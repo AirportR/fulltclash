@@ -15,8 +15,6 @@ ENV startup=1124
 ENV speednodes=300
 ENV speedthread=4
 ENV nospeed=true
-ENV SHELL=/bin/bash
-ENV LANG C.UTF-8
 
 WORKDIR /app
 
@@ -37,7 +35,6 @@ RUN apt-get update && \
     /usr/bin/crontab /etc/cron.d/crontab && \
     chmod +x /app/docker/update.sh && \
     chmod +x /app/docker/docker-entrypoint.sh && \
-    usermod -s /bin/bash root && \
     rm -rf /var/lib/apt/lists/*
 
 COPY --from=compile-image /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
@@ -45,4 +42,4 @@ COPY --from=compile-image /opt/venv /opt/venv
 
 ENV PATH="/opt/venv/bin:$PATH"
 
-ENTRYPOINT ["bash", "/app/docker/docker-entrypoint.sh"]
+ENTRYPOINT ["/app/docker/docker-entrypoint.sh"]
