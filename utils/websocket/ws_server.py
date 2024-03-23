@@ -208,16 +208,7 @@ def check_args():
 
 async def main():
     await check_init()
-    check_args()
     wsconf = GCONFIG.config.get('websocket', {})
-    clash_path = GCONFIG.get_clash_path()
-    if sys.platform != "win32":
-        try:
-            status = os.system(f"chmod +x {clash_path}")
-            if status != 0:
-                raise OSError(f"Failed to execute command: chmod +x {clash_path}")
-        except OSError as o:
-            print(o)
     bindaddr = wsconf.get('bindAddress', '0.0.0.0:8765')
     if not isinstance(bindaddr, str):
         logger.error("绑定地址解析错误，请重试!")
