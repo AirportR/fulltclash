@@ -43,13 +43,13 @@ async def fetch_netflix(Collector, session: aiohttp.ClientSession, flag=1, proxy
                         locate = text.find("preferredLocale")  # 定位到关键标签
                         if locate > 0:
                             region = text[locate + 29:locate + 31]
-                            Collector.info['netflix_new'] = f"解锁({region})"
+                            Collector.info['netflix'] = f"解锁({region})"
                         else:
                             region = "未知"
-                            Collector.info['netflix_new'] = f"解锁({region})"
+                            Collector.info['netflix'] = f"解锁({region})"
                     except IndexError as e:
                         logger.error(e)
-                        Collector.info['netflix_new'] = "N/A"
+                        Collector.info['netflix'] = "N/A"
                 elif res.status == 403:
                     if reconnection == 0:
                         logger.info("不支持非自制剧，正在检测自制剧...")
@@ -66,17 +66,17 @@ async def fetch_netflix(Collector, session: aiohttp.ClientSession, flag=1, proxy
         elif flag == 2:
             async with session.get(netflix_url2, proxy=proxy, timeout=5) as res:
                 if res.status == 200:  # 解锁自制
-                    Collector.info['netflix_new'] = "自制"
+                    Collector.info['netflix'] = "自制"
                 elif res.status == 403:
                     if reconnection == 0:
-                        Collector.info['netflix_new'] = "失败"
+                        Collector.info['netflix'] = "失败"
                         return
                     await fetch_netflix(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection - 1)
                 elif res.status == 503:
-                    Collector.info['netflix_new'] = "-"
+                    Collector.info['netflix'] = "-"
                     return
                 else:
-                    Collector.info['netflix_new'] = "失败"
+                    Collector.info['netflix'] = "失败"
         else:
             return
     except ClientConnectorError as c:
@@ -84,20 +84,20 @@ async def fetch_netflix(Collector, session: aiohttp.ClientSession, flag=1, proxy
         if reconnection != 0:
             await fetch_netflix(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection - 1)
         else:
-            Collector.info['netflix_new'] = "连接错误"
+            Collector.info['netflix'] = "连接错误"
     except ServerDisconnectedError as s:
         logger.warning("Netflix请求发生错误:" + str(s))
         if reconnection != 0:
             await fetch_netflix(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection - 1)
         else:
-            Collector.info['netflix_new'] = "-"
+            Collector.info['netflix'] = "-"
 
     except asyncio.exceptions.TimeoutError:
         logger.warning("Netflix请求超时，正在重新发送请求......")
         if reconnection != 0:
             await fetch_netflix(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection - 1)
         else:
-            Collector.info['netflix_new'] = "超时"
+            Collector.info['netflix'] = "超时"
     except ProxyConnectionError as p:
         logger.warning("似乎目标端口未开启监听")
         logger.warning(str(p))
@@ -133,40 +133,37 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
                         locate = text.find("preferredLocale")  # 定位到关键标签
                         if locate > 0:
                             region = text[locate + 29:locate + 31]
-                            Collector.info['netflix_new'] = f"解锁({region})"
+                            Collector.info['netflix'] = f"解锁({region})"
                         else:
                             region = "未知"
-                            Collector.info['netflix_new'] = f"解锁({region})"
+                            Collector.info['netflix'] = f"解锁({region})"
                     except IndexError as e:
                         logger.error(e)
-                        Collector.info['netflix_new'] = "N/A"
+                        Collector.info['netflix'] = "N/A"
                 elif res.status == 403:
                     if reconnection == 0:
-                        logger.info("不支持非自制剧，正在检测自制剧...")
                         await fetch_netflix_new(Collector, session, flag=flag + 1, proxy=proxy, reconnection=5)
                         return
                     await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection - 1)
                 elif res.status == 503:
-                    logger.info("非自制剧服务不可用（被banIP），正在检测自制剧...")
                     await fetch_netflix_new(Collector, session, flag=flag + 1, proxy=proxy, reconnection=5)
                     return
                 else:
-                    logger.info("不支持非自制剧，正在检测自制剧...")
                     await fetch_netflix_new(Collector, session, flag=flag + 1, proxy=proxy, reconnection=reconnection)
         elif flag == 2:
             async with session.get(netflix_url2, proxy=proxy, timeout=5, ssl=_myssl) as res:
                 if res.status == 200:  # 解锁自制
-                    Collector.info['netflix_new'] = "自制"
+                    Collector.info['netflix'] = "自制"
                 elif res.status == 403:
                     if reconnection == 0:
-                        Collector.info['netflix_new'] = "失败"
+                        Collector.info['netflix'] = "失败"
                         return
                     await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection - 1)
                 elif res.status == 503:
-                    Collector.info['netflix_new'] = "-"
+                    Collector.info['netflix'] = "-"
                     return
                 else:
-                    Collector.info['netflix_new'] = "失败"
+                    Collector.info['netflix'] = "失败"
         else:
             return
     except ClientConnectorError as c:
@@ -174,22 +171,19 @@ async def fetch_netflix_new(Collector, session: aiohttp.ClientSession, flag=1, p
         if reconnection != 0:
             await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection - 1)
         else:
-            Collector.info['netflix_new'] = "连接错误"
-    except ServerDisconnectedError as s:
-        logger.warning("Netflix请求发生错误:" + str(s))
+            Collector.info['netflix'] = "连接错误"
+    except ServerDisconnectedError:
         if reconnection != 0:
             await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection - 1)
         else:
-            Collector.info['netflix_new'] = "-"
+            Collector.info['netflix'] = "-"
 
     except asyncio.exceptions.TimeoutError:
-        logger.warning("Netflix请求超时，正在重新发送请求......")
         if reconnection != 0:
             await fetch_netflix_new(Collector, session, flag=flag, proxy=proxy, reconnection=reconnection - 1)
         else:
-            Collector.info['netflix_new'] = "超时"
+            Collector.info['netflix'] = "超时"
     except ProxyConnectionError as p:
-        logger.warning("似乎目标端口未开启监听")
         logger.warning(str(p))
 
 
@@ -214,12 +208,12 @@ def get_netflix_info(ReCleaner):
     :return: str: 解锁信息: [解锁(地区代码)、失败、N/A]
     """
     try:
-        if 'netflix_new' not in ReCleaner.data:
+        if 'netflix' not in ReCleaner.data:
             logger.warning("采集器内无数据")
             return "N/A"
         else:
-            logger.info("netflix解锁：" + str(ReCleaner.data.get('netflix_new', "N/A")))
-            return ReCleaner.data.get('netflix_new', "N/A")
+            logger.info("netflix解锁：" + str(ReCleaner.data.get('netflix', "N/A")))
+            return ReCleaner.data.get('netflix', "N/A")
     except Exception as e:
         logger.error(e)
         return "N/A"
@@ -249,24 +243,9 @@ async def test():
         def __init__(self):
             self.info = {}
 
-    CHECK_URL = "https://tls.browserleaks.com/json"
     coll = FakeColl()
-    # proxies = {'http': 'http://localhost:1112', 'https': 'http://localhost:1112'} # 记得设置代理
-    # fetch_netflix_old(coll, proxy=proxies)  # 这个是request请求客户端，正常访问
-    # print(coll.info)
-    # sc = ssl.create_default_context()
-    # connector = aiohttp.TCPConnector(ssl=myssl())
-
-    # 下面注释的这一个，将一个自定义的sslcontext传入，成功检测
-    # async with aiohttp.ClientSession(connector=connector) as session:
-    # 下面用aiohttp进行请求在某些系统将抛出 Server Disconnected 异常。
     async with aiohttp.ClientSession(connector=None) as session:
-        # 注释的这个请求是查看ja3_hash的，它是一种TLS指纹算法
-        async with session.get(CHECK_URL, proxy="http://127.0.0.1:1112") as resp:
-            print(await resp.text())
-
-        await fetch_netflix(coll, session, proxy="http://127.0.0.1:1112")  # 记得设置代理
-        # 2023-09-08 19:39:19.021 | WARNING  | __main__:fetch_netflix:88 - Netflix请求发生错误:Server disconnected
+        await fetch_netflix(coll, session, proxy="http://127.0.0.1:11112")
     print(coll.info)
     await asyncio.sleep(2)
 
