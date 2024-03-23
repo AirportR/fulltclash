@@ -607,7 +607,8 @@ class ScriptCore(Basecore):
         sorted_dict = OrderedDict()
         for key in test_sort:
             if key in info:
-                sorted_dict[key] = info[key]   
+                sorted_dict[key] = info[key]
+
         for key in info:
             if key not in sorted_dict:
                 sorted_dict[key] = info[key]
@@ -1031,49 +1032,4 @@ def select_core(index: Union[int, str], progress_func: Tuple[Union[Callable, Cor
 
 
 if __name__ == '__main__':
-    import sys
-    import getopt
-
-    check_init()
-    # os.chdir(os.path.abspath(os.path.join(os.getcwd(), os.pardir)))
-    # sys.path.append(os.path.abspath(os.path.join(os.getcwd(), os.pardir)))
-    help_text = """
-Usage(使用帮助):
- -h, --help     Display the help info.
-                输出帮助
- -f, --file     Subscription file path
-                订阅文件路径
- -c, --core     Select the test type(speed,topo,script)
-                测试类型(speed,topo,script)
-"""
-    config_path = ''
-    core = None
-    try:
-        opts, _args = getopt.getopt(sys.argv[1:], "hf:c:", ["help", "file=", "core="])
-    except getopt.GetoptError:
-        print(help_text)
-        sys.exit(1)
-    for opt, arg in opts:
-        if opt in ('-h', '--help'):
-            print(help_text)
-            sys.exit()
-        elif opt in ("-c", "--core"):
-            if arg == 'speed':
-                core = SpeedCore()
-            elif arg == 'script':
-                core = ScriptCore()
-            elif arg == 'topo':
-                core = TopoCore()
-            else:
-                raise TypeError("Unknown test type, please input again.\n未知的测试类型，请重新输入!")
-        elif opt in ("-f", "--file"):
-            config_path = arg
-    if core is None and not config_path:
-        raise ValueError("Unable start the tasks,please input the config path.\n请输入配置文件路径")
-    with open(config_path, 'r', encoding='utf-8') as fp:
-        data = cleaner.ClashCleaner(fp)
-        my_proxies = data.getProxies()
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    resd = loop.run_until_complete(core.core(my_proxies))
-    print(resd)
+    pass

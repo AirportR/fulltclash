@@ -249,6 +249,13 @@ def check_init():
     if not os.path.isdir('results'):
         os.mkdir("results")
         logger.info("创建文件夹: results 用于保存测试结果")
+    check_args()
+    check_py_version()
+    Init.init_emoji()
+    Init.init_dir()
+    Init.init_proxy_client()
+    Init.init_permission()
+    Init.init_user()
 
 
 if __name__ == '__main__':

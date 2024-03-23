@@ -1,8 +1,12 @@
 import asyncio
+import gzip
 import importlib
 import os
+import tarfile
+import shutil
 
 from copy import deepcopy
+from pathlib import Path
 from typing import Union, List
 import socket
 
@@ -11,9 +15,11 @@ from loguru import logger
 
 try:
     import re2 as re
+
     remodule = re
 except ImportError:
     import re
+
     remodule = re
 
 
@@ -399,7 +405,7 @@ class ClashCleaner:
         :param _config: 传入一个文件对象，或者一个字符串,文件对象需指向 yaml/yml 后缀文件
         """
         self.path = ''
-        self.unsupport_type = [] if config.getClashBranch() == 'meta' else ['wireguard', 'hysteria', 'tuic', 'vless']
+        self.unsupport_type = []
         self.yaml = {}
         self.load(_config, _config2)
         if not isinstance(self.yaml, dict):
@@ -955,9 +961,7 @@ class ConfigManager:
         try:
             return self.config['clash']['path']
         except KeyError:
-            logger.warning("为减轻项目文件大小从3.6.5版本开始，不再默认提供代理客户端二进制文件，请自行前往以下网址获取: \n"
-                           "https://github.com/AirportR/FullTCore/releases")
-            raise ValueError("找不到代理客户端二进制文件")
+            return None
 
     def get_sub(self, subname: str = None):
         """
@@ -1384,14 +1388,17 @@ class ResultCleaner:
     def convert_proxy_typename(self):
         if '类型' in self.data:
             new_type = []
-            type1 = self.data['类型']
+            type1: List[str] = self.data['类型']
             if not isinstance(type1, list):
                 return
             for t in type1:
-                if t == 'ss':
+                tt = t.lower()
+                if tt == 'ss':
                     new_type.append("Shadowsocks")
-                elif t == "ssr":
+                elif tt == "ssr":
                     new_type.append("ShadowsocksR")
+                elif tt == 'tuic':
+                    new_type.append("TUIC")
                 else:
                     new_type.append(t.capitalize())
             self.data['类型'] = new_type
@@ -1410,6 +1417,17 @@ class ResultCleaner:
         elif sort_str == '最大速度降序':
             self.sort_by_item("最大速度", reverse=True)
 
+    @staticmethod
+    def format_size(size: Union[int, float]):
+        import math
+        SIZE_UNIT = ["B", "KB", "MB", "GB", "TB", "PB"]
+        if size < 1:
+            return "0KB"
+        i = int(math.floor(math.log(size, 1024)))
+        power = math.pow(1024, i)
+        size = round(size / power, 2)
+        return f"{size}{SIZE_UNIT[i]}"
+
     def padding(self):
         """
         填充字符
@@ -1418,28 +1436,34 @@ class ResultCleaner:
             rtt = self.data['HTTP(S)延迟']
             new_rtt = []
             for r in rtt:
-                new_rtt.append(str(r) + 'ms')
+                n_r = str(r).lower()
+                n_r = n_r if n_r.endswith("ms") else n_r + "ms"
+                new_rtt.append(n_r)
             self.data['HTTP(S)延迟'] = new_rtt
 
         if '平均速度' in self.data:
             new_list = []
             for a in self.data['平均速度']:
-                avgspeed_mb = a / 1024 / 1024
-                if avgspeed_mb < 1:
-                    avgspeed = a / 1024
-                    new_list.append(f"{avgspeed:.2f}KB")
-                else:
-                    new_list.append(f"{avgspeed_mb:.2f}MB")
+                avgspeed = self.format_size(a)
+                new_list.append(avgspeed)
+                # avgspeed_mb = float(a) / 1024 / 1024
+                # if avgspeed_mb < 1:
+                #     avgspeed = a / 1024
+                #     new_list.append(f"{avgspeed:.2f}KB")
+                # else:
+                #     new_list.append(f"{avgspeed_mb:.2f}MB")
             self.data['平均速度'] = new_list
         if '最大速度' in self.data:
             new_list = []
             for a in self.data['最大速度']:
-                maxspeed_mb = a / 1024 / 1024
-                if maxspeed_mb < 1:
-                    maxspeed = a / 1024
-                    new_list.append(f"{maxspeed:.2f}KB")
-                else:
-                    new_list.append(f"{maxspeed_mb:.2f}MB")
+                maxspeed = self.format_size(a)
+                new_list.append(maxspeed)
+                # maxspeed_mb = a / 1024 / 1024
+                # if maxspeed_mb < 1:
+                #     maxspeed = a / 1024
+                #     new_list.append(f"{maxspeed:.2f}KB")
+                # else:
+                #     new_list.append(f"{maxspeed_mb:.2f}MB")
             self.data['最大速度'] = new_list
         if '每秒速度' in self.data:
             self.data['每秒速度'] = [[j / 1024 / 1024 for j in i] for i in self.data['每秒速度']]
@@ -1786,3 +1810,41 @@ def batch_ipcu(host: list):
             else:
                 ipcu.append("N/A")
     return ipcu
+
+
+def unzip_targz(input_file: Union[str, Path], output_path: Union[str, Path]) -> List[str]:
+    """解压 tar.gz 文件, 返回解压后的文件名称列表"""
+    unzip_files = []
+    try:
+        temp_path = str(input_file).rstrip(".gz")
+        path = Path(input_file)
+        path2 = Path(output_path)
+        with gzip.open(path, 'rb') as f_in, open(temp_path, 'wb') as f_out:
+            f_out.write(f_in.read())
+
+        with tarfile.open(temp_path) as tar:
+            for member in tar.getmembers():
+                member_path = path2.joinpath(member.name)
+                logger.info("正在解压: " + str(member_path))
+                f = tar.extractfile(member)
+                with open(member_path, 'wb') as ff:
+                    ff.write(f.read())
+                f.close()
+                unzip_files.append(str(member_path))
+        archive_file = Path(temp_path).absolute()
+        archive_file.unlink()
+
+    except Exception as e:
+        logger.error(str(e))
+    finally:
+        return unzip_files
+
+
+def unzip(input_file: Union[str, Path], output_path: Union[str, Path]):
+    """解压zip文件"""
+    try:
+        output_path = Path(output_path) if isinstance(output_path, Path) else output_path
+        shutil.unpack_archive(str(input_file), output_path, format='zip')
+        return True
+    except shutil.Error:
+        return False

@@ -1,17 +1,22 @@
 import asyncio
 import ssl
 import time
-from typing import List
+from datetime import datetime
+from pathlib import Path
+
+from typing import List, Union
 from urllib.parse import quote
 
 import aiohttp
 import async_timeout
+from aiohttp import ClientSession
 
 from aiohttp.client_exceptions import ClientConnectorError, ContentTypeError
 from aiohttp_socks import ProxyConnector, ProxyConnectionError
 from loguru import logger
 
 from utils import cleaner
+from utils.cleaner import config
 
 """
 这是整个项目最为核心的功能模块之一 —> 采集器。它负责从网络上采集想要的数据。到现在，已经设计了：
@@ -26,7 +31,6 @@ from utils import cleaner
 如果你想自己添加一个流媒体测试项，建议查看 ./resources/dos/新增流媒体测试项指南.md
 """
 
-config = cleaner.ConfigManager()
 addon = cleaner.addon
 media_items = config.get_media_item()
 proxies = config.get_proxy()  # 代理
@@ -34,7 +38,7 @@ netflix_url = config.config.get('netflixurl', "https://www.netflix.com/title/701
 
 
 def reload_config(media: list = None):
-    global config, proxies, media_items
+    global proxies, media_items
     config.reload(issave=False)
     proxies = config.get_proxy()
     media_items = config.get_media_item()
@@ -55,10 +59,72 @@ class BaseCollector:
                     return response.status
 
     async def fetch(self, url, proxy=None):
-        with async_timeout.timeout(10):
+        async with async_timeout.timeout(10):
             async with aiohttp.ClientSession(headers=self._headers) as session:
                 async with session.get(url, proxy=proxy) as response:
                     return await response.content.read()
+
+
+class DownloadError(aiohttp.ClientError):
+    """下载出错抛出的异常"""
+
+
+class Download(BaseCollector):
+    def __init__(self, url: str = None, savepath: Union[str, Path] = None, savename: str = None):
+        _formatted_now = f'{datetime.now():%Y-%m-%dT%H-%M-%S}'
+        self.url = url
+        self.savepath = savepath
+        self.savename = savename if savename is not None else f"download-{_formatted_now}"
+        super().__init__()
+
+    async def download_common(self, url: str = None, savepath: Union[str, Path] = None, **kwargs) -> bool:
+        """
+        通用下载函数
+        """
+        url = url or self.url
+        savepath = savepath or self.savepath or "."
+        savepath = str(savepath)
+        savepath = savepath if savepath.endswith("/") else savepath + "/"
+        savename = self.savename.lstrip("/")
+        write_path = savepath + savename
+        from utils.cleaner import geturl
+        url = geturl(url)
+        if not url:
+            raise DownloadError(f"这不是有效的URL: {url}")
+        try:
+            async with ClientSession(headers=self._headers) as session:
+                async with session.get(url, **kwargs) as resp:
+                    if resp.status == 200:
+                        content_leagth = resp.content_length if resp.content_length else 10 * 1024 * 1024
+                        length = 0
+                        with open(write_path, 'wb') as f:
+                            while True:
+                                chunk = await resp.content.read(1024)
+                                length += len(chunk)
+                                # 计算进度条长度
+                                percent = '=' * int(length * 100 / content_leagth)
+                                spaces = ' ' * (100 - len(percent))
+                                print(f"\r[{percent}{spaces}] {length} B", end="")
+                                if not chunk:
+                                    break
+
+                                f.write(chunk)
+                            l2 = float(length) / 1024 / 1024
+                            l2 = round(l2, 2)
+                            spath = str(Path(savepath).absolute())
+                            print(f"\r[{'=' * 100}] 共下载{length}B ({l2}MB)"
+                                  f"已保存到 {spath}")
+                    elif resp.status == 404:
+                        raise DownloadError(f"找不到资源: {resp.status}==>\t{url}")
+            return True
+        except (aiohttp.ClientError, OSError) as e:
+            raise DownloadError("Download failed") from e
+
+    async def dowload(self, url: str = None, savepath: Union[str, Path] = None, **kwargs) -> bool:
+        """
+        执行下载操作
+        """
+        return await self.download_common(url, savepath, **kwargs)
 
 
 class IPCollector:
@@ -204,21 +270,21 @@ class SubCollector(BaseCollector):
         super().__init__()
         self.text = None
         self._headers = {'User-Agent': 'clash'}  # 这个请求头是获取流量信息的关键
-        self.subconverter = config.config.get('subconverter', {})
-        self.cvt_enable = self.subconverter.get('enable', False)
+        self.subcvt_conf = config.config.get('subconverter', {})
+        self.cvt_enable = self.subcvt_conf.get('enable', False)
         self.url = suburl
         self.include = include
         self.exclude = exclude
         self.codeurl = quote(suburl, encoding='utf-8')
         self.code_include = quote(include, encoding='utf-8')
         self.code_exclude = quote(exclude, encoding='utf-8')
-        self.cvt_host = str(self.subconverter.get('host', '127.0.0.1:25500'))
+        self.cvt_host = str(self.subcvt_conf.get('host', '127.0.0.1:25500'))
         self.cvt_scheme = self.parse_cvt_scheme()
         self.cvt_url = f"{self.cvt_scheme}://{self.cvt_host}/sub?target=clash&new_name=true&url={self.codeurl}" \
                        + f"&include={self.code_include}&exclude={self.code_exclude}"
-        self.sub_remote_config = self.subconverter.get('remoteconfig', '')
-        self.config_include = quote(self.subconverter.get('include', ''), encoding='utf-8')  # 这两个
-        self.config_exclude = quote(self.subconverter.get('exclude', ''), encoding='utf-8')
+        self.sub_remote_config = self.subcvt_conf.get('remoteconfig', '')
+        self.config_include = quote(self.subcvt_conf.get('include', ''), encoding='utf-8')  # 这两个
+        self.config_exclude = quote(self.subcvt_conf.get('exclude', ''), encoding='utf-8')
         # print(f"配置文件过滤,包含：{self.config_include} 排除：{self.config_exclude}")
         if self.config_include or self.config_exclude:
             self.cvt_url = f"{self.cvt_scheme}://{self.cvt_host}/sub?target=clash&new_name=true&url={self.cvt_url}" \
@@ -231,13 +297,10 @@ class SubCollector(BaseCollector):
                 self.cvt_url = self.url
 
     def parse_cvt_scheme(self) -> str:
-        temp_cvt = self.cvt_host.split(":")
-        cvt_scheme = 'http'
-        if len(temp_cvt) == 2:
-            hostname = temp_cvt[0]
-            if hostname != "127.0.0.1":
-                cvt_scheme = 'https'
-        return cvt_scheme
+        if not bool(self.subcvt_conf.get('tls', False)):
+            return "http"
+        else:
+            return "https"
 
     async def start(self, proxy=None):
         try:
@@ -503,6 +566,19 @@ class Collector:
         except Exception as e:
             logger.error(str(e))
             return self.info
+
+
+async def get_latest_tag(username, repo):
+    import re
+    url = f'https://github.com/{username}/{repo}/tags'
+    async with ClientSession() as session:
+        async with session.get(url, proxy=config.get_proxy(), timeout=10) as r:
+            text = await r.text()
+            tags = re.findall(r'/.*?/tag/(.*?)"', text)
+            if tags:
+                return tags[0]
+            else:
+                return None
 
 
 if __name__ == "__main__":
