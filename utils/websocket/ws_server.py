@@ -207,7 +207,7 @@ def check_args():
 
 
 async def main():
-    check_init()
+    await check_init()
     check_args()
     wsconf = GCONFIG.config.get('websocket', {})
     clash_path = GCONFIG.get_clash_path()
