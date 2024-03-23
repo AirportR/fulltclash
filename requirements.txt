@@ -3,7 +3,7 @@ async_timeout>=4.0.2
 PyYAML>=6.0
 requests>=2.26.0
 loguru>=0.6.0
-aiohttp_socks==0.7.1
+aiohttp_socks>=0.8.4
 geoip2==4.6.0
 cryptography==40.0.2
 PySocks==1.7.1

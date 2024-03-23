@@ -1,7 +1,7 @@
 import random
 from aiohttp import http
 
-__version__ = "4.1.3"
+__version__ = "4.1.4"
 APP_VERSION = __version__
 __all__ = [__version__, APP_VERSION]
 
