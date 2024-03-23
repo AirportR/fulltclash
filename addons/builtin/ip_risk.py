@@ -21,21 +21,33 @@ async def fetch_ip_risk(Collector, session: aiohttp.ClientSession, proxy=None, r
     """
     try:
         ip = ""
-        async with session.get('http://ip-api.com/json/', proxy=proxy, timeout=5) as ipres:
-            if ipres.status == 200:
-                ipdata = await ipres.json()
-                ip = ipdata.get('query', '')
-        if ip != '':
-            url = baseurl + ip
-        else:
-            Collector.info['iprisk'] = "N/A"
-            return
-        async with session.get(url, proxy=proxy, timeout=5) as res:
-            if res.status == 200:
-                data = await res.text()
-                Collector.info['iprisk'] = data
+        conn = session.connector
+        if type(conn).__name__ == 'ProxyConnector':
+            proxy = "http://" + conn._proxy_host + ":" + str(conn._proxy_port)
+        async with aiohttp.ClientSession() as s:
+            async with s.get('http://ip.sb', proxy=proxy, timeout=5,
+                             headers={'user-agent': "curl"}) as ipres:
+                # ipres = await session.get('http://ip.sb', proxy='http://127.0.0.1:11112', timeout=5,
+                #                           headers={'user-agent': "curl"})
+                if ipres.status == 200:
+                    ip = await ipres.text()
+            ipres.close()
+            if not ip:
+                async with s.get('http://ip-api.com/json/', proxy=proxy, timeout=5) as ipres:
+                    if ipres.status == 200:
+                        ipdata = await ipres.json()
+                        ip = ipdata.get('query', '')
+            if ip != '':
+                url = baseurl + ip
             else:
                 Collector.info['iprisk'] = "N/A"
+                return
+            async with s.get(url, proxy=proxy, timeout=5) as res:
+                if res.status == 200:
+                    data = await res.text()
+                    Collector.info['iprisk'] = data
+                else:
+                    Collector.info['iprisk'] = "N/A"
     except ClientConnectorError as c:
         logger.warning("IP风险检测请求发生错误:" + str(c))
         if reconnection != 0:
@@ -68,13 +80,21 @@ def get_iprisk_info(ReCleaner):
             if info_str == "N/A":
                 return "N/A"
             index = info_str.find('IP Fraud Risk API')
-            info_pre = info_str[index + 96:index + 180] if index > 0 else "{}"
+            info_pre = info_str[index + 96:index + 205] if index > 0 else "{}"
             index2 = info_pre.find("}")
             info_str2 = info_pre[:index2 + 1] if index2 > 0 else "{}"
             info = json.loads(info_str2)
-            score = info.get('score', '无')
-            risk = info.get('risk', '无').capitalize()
-            return risk + f"({score})"
+            ip = info.get('ip', '')
+            if len(ip) > 15:
+                iptype = "v6"
+            else:
+                iptype = "v4"
+            score = info.get('score', '')
+            risk = info.get('risk', '').capitalize()
+            if score and risk:
+                return risk + f"({score})({iptype})"
+            return ""
+
     except Exception as e:
         logger.error(e)
         return "N/A"
@@ -103,4 +123,5 @@ async def demo():
 
 if __name__ == "__main__":
     loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     loop.run_until_complete(demo())

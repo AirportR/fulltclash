@@ -8,6 +8,7 @@ from loguru import logger
 
 from utils import websocket, generate_random_string
 from utils.backend import select_core, GCONFIG, break_speed
+from utils.init import check_init
 from utils.safe import cipher_chacha20, sha256_32bytes, plain_chahcha20
 
 SPEED_Q = asyncio.Queue(1)  # 速度测试队列。确保同一时间只有一个测速任务在占用带宽
@@ -206,17 +207,8 @@ def check_args():
 
 
 async def main():
-    check_init()
-    check_args()
+    await check_init()
     wsconf = GCONFIG.config.get('websocket', {})
-    clash_path = GCONFIG.get_clash_path()
-    if sys.platform != "win32":
-        try:
-            status = os.system(f"chmod +x {clash_path}")
-            if status != 0:
-                raise OSError(f"Failed to execute command: chmod +x {clash_path}")
-        except OSError as o:
-            print(o)
     bindaddr = wsconf.get('bindAddress', '0.0.0.0:8765')
     if not isinstance(bindaddr, str):
         logger.error("绑定地址解析错误，请重试!")
@@ -236,20 +228,6 @@ async def main():
     from utils.cleaner import addon
     addon.init_addons('./addons')
     await server(host, port)
-
-
-def check_init():
-    dirs = os.listdir()
-    if "logs" in dirs and "results" in dirs:
-        return
-    logger.info("检测到初次使用，正在初始化...")
-    if not os.path.isdir('logs'):
-        os.mkdir("logs")
-        logger.info("创建文件夹: logs 用于保存日志")
-    if not os.path.isdir('results'):
-        os.mkdir("results")
-        logger.info("创建文件夹: results 用于保存测试结果")
-
 
 if __name__ == '__main__':
     os.chdir('../..')
