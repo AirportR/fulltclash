@@ -4,7 +4,7 @@ import copy
 import socket
 import time
 
-from collections import Counter
+from collections import Counter, OrderedDict
 from operator import itemgetter
 from typing import Union, Callable, Coroutine, Tuple
 
@@ -559,6 +559,7 @@ class ScriptCore(Basecore):
 
     async def core(self, proxyinfo: list, **kwargs):
         info = {}  # 存放测试结果
+        test_sort = GCONFIG.config.get('test_sort', ["0", "1"])
         media_items = kwargs.get('script', None) or kwargs.get('test_items', None) or kwargs.get('media_items', None)
         test_items = collector.media_items if media_items is None else media_items
         test_items = cleaner.addon.mix_script(test_items, False)
@@ -603,6 +604,14 @@ class ScriptCore(Basecore):
         # 任务信息
         info['task'] = kwargs.get('task', {})
         # 保存结果
+        sorted_dict = OrderedDict()
+        for key in test_sort:
+            if key in info:
+                sorted_dict[key] = info[key]   
+        for key in info:
+            if key not in sorted_dict:
+                sorted_dict[key] = info[key]
+        info = dict(sorted_dict)
         self.saveresult(info)
         return info
 
@@ -658,10 +667,24 @@ class TopoCore(Basecore):
         print(counter0)
         ipstack_lists = list(ipstack_list.values())
         ipclus = list(ipclu.values())
+        hosts = list(inboundinfo.keys())
+        for i, t in enumerate(hosts):
+            if ipstack_lists[i] == "N/A" and t:
+                if ":" in t:
+                    ipstack_lists[i] = "6"
+                elif "." in t:
+                    ipstack_lists[i] = "4"
+                else:
+                    pass
+            elif ipstack_lists[i] == "4" and ":" in t:
+                ipstack_lists[i] = "46"
+            elif ipstack_lists[i] == "6" and "." in t:
+                ipstack_lists[i] = "46"
+            else:
+                pass
         info['栈'] = ipstack_lists
         if nodename and inboundinfo and cl:
             # 拿地址，已经转换了域名为ip,hosts变量去除了N/A
-            hosts = list(inboundinfo.keys())
 
             if _data:
                 code = []
