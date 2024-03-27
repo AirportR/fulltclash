@@ -48,6 +48,18 @@ options:
 python3 main.py -t fulltclash -b 0.0.0.0:8765
 ```
 
+## 一键启动
+**前提**: 类Unix系统需要安装git，python3（python3.9以上），pip3。Windows系统安装python并添加环境变量，以及git。
+* powershell
+```powershell
+git clone -b backend https://github.com/AirportR/FullTclash.git; cd FullTclash;pip install -r requirements.txt; $randomString = -join ((48..57) + (65..90) + (97..122) | Get-Random -Count 10 | ForEach-Object { [char]$_ });python main.py -t ${randomString} -b 0.0.0.0:8765 --path ${randomString}
+```
+
+* bash等
+```bash
+git clone -b backend https://github.com/AirportR/FullTclash.git && cd FullTclash && pip3 install -r requirements.txt && randomString=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 10 | head -n 1) && python3 main.py -t $randomString -b 0.0.0.0:8765 --path $randomString
+```
+
 ### Docker启动
 > Docker镜像是基于alpine构建的
 
