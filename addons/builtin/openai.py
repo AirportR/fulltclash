@@ -1,13 +1,18 @@
 import asyncio
-import re
+from typing import List
 
 import aiohttp
+from aiohttp import ClientResponse
 from loguru import logger
 
 try:
+    import re2 as re
+except ImportError:
+    import re
+try:
     from utils import retry
 except ImportError:
-    def retry():
+    def retry(count=5):
         def wrapper(func):
             async def inner(*args, **kwargs):
                 await func(*args, **kwargs)
@@ -16,6 +21,7 @@ except ImportError:
 
         return wrapper
 
+openaiurl = "https://chat.openai.com/favicon.ico"
 openaiurl2 = "https://chat.openai.com/cdn-cgi/trace"
 
 
@@ -61,12 +67,46 @@ async def fetch_openai(collector, session: aiohttp.ClientSession, proxy=None):
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ' +
                       'Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0'
     }
+    _headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ' +
+                      'Chrome/102.0.5005.63 Safari/537.36',
+    }
     region = ""
-    resp1 = await session.get('https://api.openai.com/compliance/cookie_requirements', headers=h1,
-                              proxy=proxy, timeout=5)
-    resp2 = await session.get('https://ios.chat.openai.com/', headers=h2,
-                              proxy=proxy, timeout=5)
-    resp3 = await session.get(openaiurl2, proxy=proxy, timeout=5)
+    # resp1 = await session.get('https://api.openai.com/compliance/cookie_requirements', headers=h1,
+    #                           proxy=proxy, timeout=5)
+    # resp2 = await session.get('https://ios.chat.openai.com/', headers=h2,
+    #                           proxy=proxy, timeout=5)
+    # resp3 = await session.get(openaiurl2, proxy=proxy, timeout=5)
+    # resp4 = await session.get(openaiurl, proxy=proxy, timeout=5)
+    task1 = asyncio.create_task(session.get('https://api.openai.com/compliance/cookie_requirements', headers=h1,
+                                            proxy=proxy, timeout=5))
+    task2 = asyncio.create_task(session.get('https://ios.chat.openai.com/', headers=h2,
+                                            proxy=proxy, timeout=5))
+    task3 = asyncio.create_task(session.get(openaiurl2, headers=_headers, proxy=proxy, timeout=5))
+    task4 = asyncio.create_task(session.get(openaiurl, headers=_headers, proxy=proxy, timeout=5))
+    resp: List["ClientResponse"] = await asyncio.gather(*[task1, task2, task3, task4])
+
+    resp1 = resp[0]
+    resp2 = resp[1]
+    resp3 = resp[2]
+    resp4 = resp[3]
+
+    if resp4.status == 403:
+        text4 = await resp4.text()
+        if text4.find('Please stand by, while we are checking your browser') > 0:
+            collector.info['OpenAI'] = "-"
+            return
+        if text4.find('Unable to load site') > 0:
+            collector.info['OpenAI'] = "失败1"
+            return
+        index = text4.find("Sorry, you have been blocked")
+        if index > 0:
+            collector.info['OpenAI'] = "失败2"
+            return
+        index2 = text4.find("You do not have access to chat.openai.com.")
+        if index2 > 0:
+            collector.info['OpenAI'] = "失败2"
+            return
     if resp3.status == 200:
         text3 = await resp3.text()
         index3 = text3.find("loc=")
@@ -79,6 +119,8 @@ async def fetch_openai(collector, session: aiohttp.ClientSession, proxy=None):
     text2 = await resp2.text()
     resp1.close()
     resp2.close()
+    resp3.close()
+    resp4.close()
     # 检查是否包含特定的字符串
     result1 = re.search('unsupported_country', text1)
     result2 = re.search('VPN', text2)
@@ -125,19 +167,11 @@ SCRIPT = {
 
 
 async def demo():
-    # class FakeColl:
-    #     def __init__(self):
-    #         self.info = {}
-    #         self.data = self.info
-    #
-    # fakecl = FakeColl()
-    #
-    # session = aiohttp.ClientSession()
-    # await fetch_openai(fakecl, session, proxy='http://127.0.0.1:11112')
-    # print(get_openai_info(fakecl))
-    # await session.close()
     from utils import script_demo
     await script_demo(fetch_openai, proxy='http://127.0.0.1:11112')
 
+
 if __name__ == "__main__":
-    asyncio.run(demo())
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(demo())
