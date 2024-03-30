@@ -1,5 +1,7 @@
 import asyncio
+import contextlib
 import ssl
+import sys
 import time
 from datetime import datetime
 from pathlib import Path
@@ -75,6 +77,9 @@ class Download(BaseCollector):
         self.url = url
         self.savepath = savepath
         self.savename = savename if savename is not None else f"download-{_formatted_now}"
+        self._start_time = 0
+        self._current_time = 0
+        self._pause = 0.01
         super().__init__()
 
     async def download_common(self, url: str = None, savepath: Union[str, Path] = None, **kwargs) -> bool:
@@ -91,34 +96,51 @@ class Download(BaseCollector):
         url = geturl(url)
         if not url:
             raise DownloadError(f"这不是有效的URL: {url}")
+        print(f"Download URL: {url}")
         try:
-            async with ClientSession(headers=self._headers) as session:
-                async with session.get(url, **kwargs) as resp:
-                    if resp.status == 200:
-                        content_leagth = resp.content_length if resp.content_length else 10 * 1024 * 1024
-                        length = 0
-                        with open(write_path, 'wb') as f:
-                            while True:
+            from async_timeout import timeout
+            async with ClientSession(headers=self._headers) as session, session.get(url, **kwargs) as resp:
+                # async with session.get(url, **kwargs) as resp:
+                if 300 > resp.status >= 200:
+                    content_leagth = resp.content_length if resp.content_length else 10 * 1024 * 1024
+                    length = 0
+                    self._start_time = time.time()
+                    self._current_time = self._start_time
+                    if sys.platform.startswith("win"):
+                        self._pause = 0.03
+                    with open(write_path, 'wb') as f, contextlib.suppress(StopIteration):
+                        while True:
+                            async with timeout(20):
                                 chunk = await resp.content.read(1024)
-                                length += len(chunk)
-                                # 计算进度条长度
-                                percent = '=' * int(length * 100 / content_leagth)
-                                spaces = ' ' * (100 - len(percent))
-                                print(f"\r[{percent}{spaces}] {length} B", end="")
-                                if not chunk:
-                                    break
+                            length += len(chunk)
+                            # 计算进度条长度
+                            percent = int(length * 100 / content_leagth)
+                            p_text = '=' * int(length * 100 / content_leagth)
+                            spaces = ' ' * (100 - percent)
+                            _current_time = time.time()
+                            _time_used = round(_current_time - self._start_time, 2)
+                            if _current_time - self._current_time > self._pause:
+                                print(f"\r[{p_text}>{spaces}]{percent}% {length} B 已用时间={_time_used}s", end="")
+                            self._current_time = _current_time
+                            if not chunk:
+                                break
 
-                                f.write(chunk)
-                            l2 = float(length) / 1024 / 1024
-                            l2 = round(l2, 2)
-                            spath = str(Path(savepath).absolute())
-                            print(f"\r[{'=' * 100}] 共下载{length}B ({l2}MB)"
-                                  f"已保存到 {spath}")
-                    elif resp.status == 404:
-                        raise DownloadError(f"找不到资源: {resp.status}==>\t{url}")
+                            f.write(chunk)
+                        l2 = float(length) / 1024 / 1024
+                        l2 = round(l2, 2)
+                        spath = str(Path(savepath).absolute())
+                        per_second_speed = round(l2 / (self._current_time - self._start_time), 2)
+                        print(f"\r[{p_text}>{spaces}]{percent}% {length} B({l2}MB) {' '*10}"
+                              f"\n已用时间={_time_used}s 速度={per_second_speed}MB/s 保存路径={spath}")
+                elif resp.status == 404:
+                    raise DownloadError(f"Resources not found: {resp.status}==>\t{url}")
+                else:
+                    raise DownloadError("Error Status:" + str(resp.status))
             return True
         except (aiohttp.ClientError, OSError) as e:
             raise DownloadError("Download failed") from e
+        except asyncio.exceptions.TimeoutError as e:
+            raise DownloadError(f"Download timeout: {url}") from e
 
     async def dowload(self, url: str = None, savepath: Union[str, Path] = None, **kwargs) -> bool:
         """
