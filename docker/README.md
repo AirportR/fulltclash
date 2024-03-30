@@ -8,7 +8,7 @@
 下载并编辑配置文件
 
 ```bash
-wget -O /etc/fulltclash/config.yaml https://raw.githubusercontent.com/AirportR/FullTclash/dev/resources/config.yaml.example
+wget -O /etc/fulltclash/config.yaml https://raw.githubusercontent.com/AirportR/fulltclash/dev/resources/config.yaml.example
 ```
 
 修改 config.yaml (path是必须修改的配置,不能使用默认的)
@@ -84,7 +84,7 @@ docker run -itd \
 # 安装 docker-compose
 # curl -L https://github.com/docker/compose/releases/latest/download/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
 # chmod +x /usr/local/bin/docker-compose
-wget -N https://raw.githubusercontent.com/AirportR/FullTclash/dev/docker/docker-compose.yml
+wget -N https://raw.githubusercontent.com/AirportR/fulltclash/dev/docker/docker-compose.yml
 
 # 启动
 docker-compose up -d
