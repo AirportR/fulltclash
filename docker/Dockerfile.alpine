@@ -15,6 +15,8 @@ ENV startup=1124
 ENV speednodes=300
 ENV speedthread=4
 ENV nospeed=true
+ENV SHELL=/bin/bash
+ENV LANG C.UTF-8
 
 WORKDIR /app
 
@@ -31,6 +33,7 @@ RUN apk add --no-cache \
     chmod +x /app/docker/fulltcore.sh && \
     bash /app/docker/fulltcore.sh && \
     chmod +x /app/docker/update.sh && \
+    sed -i 's/ash/bash/g' /etc/passwd && \
     chmod +x /app/docker/docker-entrypoint.sh
 
 COPY --from=compile-image /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
@@ -38,4 +41,4 @@ COPY --from=compile-image /opt/venv /opt/venv
 
 ENV PATH="/opt/venv/bin:$PATH"
 
-ENTRYPOINT ["/app/docker/docker-entrypoint.sh"]
+ENTRYPOINT ["bash", "/app/docker/docker-entrypoint.sh"]
