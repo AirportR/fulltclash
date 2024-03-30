@@ -13,11 +13,11 @@ from utils.collector import get_latest_tag, Download, DownloadError
 GCONFIG = cleaner.config
 
 
-def check_init():
+async def check_init():
     check_args()
     check_py_version()
     Init.init_dir()
-    Init.init_proxy_client()
+    await Init.init_proxy_client()
     Init.init_permission()
 
 
@@ -116,15 +116,14 @@ class Init:
         return _latest_version_hash
 
     @staticmethod
-    def init_proxy_client():
+    async def init_proxy_client():
         """
         自动下载代理客户端FullTCore
         """
         if GCONFIG.get_clash_path() is not None:
             return
         import platform
-        loop = asyncio.get_event_loop()
-        tag = loop.run_until_complete(get_latest_tag(Init.ftcore_owner, Init.ftcore_name))
+        tag = await get_latest_tag(Init.ftcore_owner, Init.ftcore_name)
         tag2 = tag[1:] if tag[0] == "v" else tag
         arch = platform.machine().lower()
         if arch == "x86_64":
@@ -157,7 +156,7 @@ class Init:
         saved_file = savepath.joinpath(savename)
 
         try:
-            loop.run_until_complete(Download(download_url, savepath, savename).dowload(proxy=GCONFIG.get_proxy()))
+            await Download(download_url, savepath, savename).dowload(proxy=GCONFIG.get_proxy())
         except DownloadError:
             logger.info("无法找到FullTCore在当前平台的预编译文件，请自行下载。")
             return
