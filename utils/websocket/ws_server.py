@@ -207,6 +207,7 @@ def check_args():
 
 
 async def main():
+    check_args()
     await check_init()
     wsconf = GCONFIG.config.get('websocket', {})
     bindaddr = wsconf.get('bindAddress', '0.0.0.0:8765')

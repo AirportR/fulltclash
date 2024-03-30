@@ -1,6 +1,6 @@
 from loguru import logger
 from utils.cleaner import config
-from utils.init import check_init, Init
+from utils.init import check_init, Init, check_args
 
 admin = config.getAdmin()  # 管理员
 
@@ -42,6 +42,7 @@ def parse_bot_proxy():
 
 
 logger.add("./logs/fulltclash_{time}.log", rotation='7 days')
+check_args()
 check_init()
 
 # 获取远程仓库的最新提交哈希
