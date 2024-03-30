@@ -18,13 +18,12 @@ change_cwd()
 if __name__ == "__main__":
     import argparse
     from utils import cleaner
-    from utils.backend import check_init, SpeedCore, ScriptCore, TopoCore
+    from utils.init import check_init
+    from utils.backend import SpeedCore, ScriptCore, TopoCore
 
+    check_init()
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    check_init()
-
-    config_path = ''
     core = None
 
 
