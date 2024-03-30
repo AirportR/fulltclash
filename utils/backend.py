@@ -1012,11 +1012,11 @@ def check_init():
     if "logs" in dirs and "results" in dirs:
         return
     logger.info("检测到初次使用，正在初始化...")
-    if not os.path.isdir('../logs'):
-        os.mkdir("../logs")
+    if not os.path.isdir('./logs'):
+        os.mkdir("./logs")
         logger.info("创建文件夹: logs 用于保存日志")
-    if not os.path.isdir('../results'):
-        os.mkdir("../results")
+    if not os.path.isdir('./results'):
+        os.mkdir("./results")
         logger.info("创建文件夹: results 用于保存测试结果")
 
 

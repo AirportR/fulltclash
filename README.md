@@ -1,7 +1,7 @@
 
 <div align="center">
     <h1> FullTClash</h1>
-    <p>🤖 A Telegram bot that operates based on the Clash core </p>
+    <p>🤖 节点质量检测的Telegram机器人 </p>
     <p><a href="https://github.com/AirportR/fulltclash/blob/dev/README-EN.md">English</a>&nbsp &nbsp 简体中文</p>
     <a href="https://fulltclash.gitbook.io/fulltclash-doc"><img src="https://img.shields.io/static/v1?message=doc&color=blue&logo=micropython&label=FullTClash"></a> 
     <img src="https://img.shields.io/github/license/AirportR/fulltclash">
@@ -38,6 +38,22 @@ FullTClash名字来源于 Full Test base on Clash 。后端部分使用[Clash项
 2. 链路拓扑测试（节点出入口分析）。
 3. 下行速度测试
 
+## 主要功能
+
+* asyncio异步支持
+* 订阅管理
+* 测试结果绘图
+* 权限控制
+* 文档支持
+* 基于Pyrogram框架
+* 规则系统
+* 支持Docker
+* 命令行支持
+* 日志输出
+* 插件扩展
+* 自由定制化配置
+
+
 ## 分支说明
 * [master](https://github.com/AirportR/fulltclash/tree/master) 主分支，主打稳定。  
 * [backend](https://github.com/AirportR/fulltclash/tree/backend) 纯后端代码，无前端BOT，意味着需要额外的bot作主端。  
@@ -46,20 +62,20 @@ FullTClash名字来源于 Full Test base on Clash 。后端部分使用[Clash项
 
 ## 支持协议
 
-| 出站协议           | Clash | Clash.Meta |
-|----------------|-------|------------|
-| SOCKS (4/4a/5) | √     | √          |
-| HTTP(S)        | √     | √          |
-| Shadowsocks    | √     | √          |
-| VMess          | √     | √          |
-| Trojan         | √     | √          | 
-| Snell          | √     | √          | 
-| VLESS          |       | √          |
-| TUIC           |       | √          |
-| Hysteria       |       | √          |
-| Hysteria2      |       | √          |
-| Wireguard      |       | √          |
-| ShadowsocksR   | √     | √          |
+| 出站协议           | Clash | Mihomo(Clash.Meta) |
+|----------------|-------|--------------------|
+| SOCKS (4/4a/5) | √     | √                  |
+| HTTP(S)        | √     | √                  |
+| Shadowsocks    | √     | √                  |
+| VMess          | √     | √                  |
+| Trojan         | √     | √                  | 
+| Snell          | √     | √                  | 
+| VLESS          |       | √                  |
+| TUIC           |       | √                  |
+| Hysteria       |       | √                  |
+| Hysteria2      |       | √                  |
+| Wireguard      |       | √                  |
+| ShadowsocksR   | √     | √                  |
 ----------------------
 本项目默认使用mihomo内核。
 ## 使用文档
@@ -102,15 +118,9 @@ apt install -y git && git clone https://github.com/AirportR/fulltclash.git && cd
 
 您可以用以下命令，在当前项目目录下运行以快速安装环境：
 
->Windows:
->```shell
->pip install -r requirements.txt
->```
-
->Linux:
->```shell
->pip3 install -r requirements.txt
->```
+```shell
+pip install -r requirements.txt
+```
 ### 为bot进行相关配置
 以下为启动bot的最低要求（如果您是新手，建议先以最低要求把bot跑起来，否则自己乱改配置容易出现不可预知的错误。）
 - 管理员配置  
@@ -188,25 +198,17 @@ apt install -y git && git clone https://github.com/AirportR/fulltclash.git && cd
   这句话时，即可说明该session文件有效，否则无效。
 
 如果启动后无法验证，请删除生成的mybot.session文件，此时的session登录令牌是不可用的，如果不删除程序会一直使用坏的文件，不会重新生成。
+
 ### 开始启动
 配置好后，在项目目录下运行以下指令
+```shell
+python3 main.py
+```
 
->Windows:
->```shell
->python main.py
->```
-
->Ubuntu(Linux):
->```shell
->python3 main.py
->```
-
-等待初始化操作，出现“程序已启动!”字样就说明在运行了。
-运行之后和bot私聊指令：
+等待初始化操作， 等待初始化完毕后进入运行状态了，运行之后和bot私聊指令：
 >/help 可查看所有命令说明
 
 >/testurl <订阅地址> (Clash配置格式) 即可开始测试
-
 
 ### 代理客户端编译(高级)
 FullTClash有专用的代理客户端，存放在 ./bin/下。初次启动会自动帮您下载（仅限win、linux、darwin）对应平台的二进制文件。
@@ -222,8 +224,13 @@ FullTClash有专用的代理客户端，存放在 ./bin/下。初次启动会自
 编译完成覆盖原文件即可 ，如果操作难度太大，可以发起issue详谈。
 ### Docker启动
 [./docker/ 目录](https://github.com/AirportR/fulltclash/tree/dev/docker)
-### 为程序设置进程守护(Linux)
-由于Linux系统特性，关闭ssh连接后，前台程序会被关闭。您需要设置进程守护，才能在后台不间断地持久化运行程序。具体方法Google搜索即可。
+### 持久化运行
+自行Google搜索即可
+### 控制台测试
+您可以在本机的控制台使用命令行的方式进行测试，但仅支持基本测试功能：
+```shell
+python ./utils/tool/console.py -h
+```
 ## 交流探讨
 我们欢迎各方朋友提出针对性的反馈：
 - [TG更新发布频道](https://t.me/FullTClash)  

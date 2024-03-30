@@ -73,8 +73,9 @@ if __name__ == "__main__":
 
 
     parser = argparse.ArgumentParser(description="FullTClash命令行简易测试，不用启动bot。")
-    parser.add_argument("-f", "--file", required=True, type=str, help="订阅文件路径")
-    parser.add_argument("-c", "--core", required=True, type=str, help="订阅文件路径，支持本地路径和URL路径")
+    parser.add_argument("-f", "--file", required=True, type=str, help="订阅文件路径，支持本地路径和URL路径")
+    parser.add_argument("-c", "--core", required=True, type=str, help="测试类型有三种：[script,topo,speed],"
+                                                                      "分别为连通性、拓扑、速度测试")
     parser.add_argument("-i", "--include", required=False, type=str, help="包含过滤器")
     parser.add_argument("-e", "--exclude", required=False, type=str, help="排除过滤器")
     parser.add_argument("--temp", action='store_true', help="临时输出测试结果，将自动打开测试结果图片(仅对script类型有效)，"
