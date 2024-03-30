@@ -730,6 +730,7 @@ class ConfigManager:
         """
         self.yaml = {}
         self.config = None
+        self._data = data
         self._path = configpath
         self._old_path = "./config.yaml"
         if configpath == ':memory:':
@@ -764,7 +765,7 @@ class ConfigManager:
             self.yaml = data
 
     def find_path(self) -> str:
-        if os.path.exists(self._path):
+        if os.path.exists(self._path) or self._data:
             return self._path
         elif os.path.exists(self._old_path):
             return self._old_path
