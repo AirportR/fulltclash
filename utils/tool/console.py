@@ -107,7 +107,8 @@ if __name__ == "__main__":
             print("未找到核心")
             sys.exit()
         my_proxies = get_proxies(file_path)
-        resd: dict = loop.run_until_complete(core.core(my_proxies))
+        scripts = cleaner.addon.global_test_item(True)
+        resd: dict = loop.run_until_complete(core.core(my_proxies, script=scripts))
     except Exception as e:
         print(e)
         sys.exit()
