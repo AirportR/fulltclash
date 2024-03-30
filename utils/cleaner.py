@@ -741,19 +741,6 @@ class ConfigManager:
         with contextlib.suppress(FileNotFoundError), open(cfg_path, "r", encoding="UTF-8") as fp:
             self.config = yaml.safe_load(fp)
             self.yaml.update(self.config)
-
-            # if flag == 0 and cfg_path == "./resources/config.yaml":
-            #     flag += 1
-            #     logger.warning("无法在 ./resources/ 下找到 config.yaml 配置文件，正在尝试寻找旧目录 ./config.yaml")
-            #     try:
-            #         with open('./config.yaml', "r", encoding="UTF-8") as fp1:
-            #             self.config = yaml.safe_load(fp1)
-            #             self.yaml.update(self.config)
-            #     except FileNotFoundError:
-            #         self.config = {}
-            #         self.yaml = {}
-            # elif flag > 1:
-            #     logger.warning("无法找到配置文件，正在初始化...")
         if self.config is None:
             di = {'loader': "Success"}
             with open(cfg_path, "w+", encoding="UTF-8") as fp:
