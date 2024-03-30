@@ -199,7 +199,7 @@ class TwemojiLocalSource(LocalSource):
         _url = self.download_url if download_url is None else download_url  # 如果没有提供下载地址则用默认的
         print("Download URL:", _url)
         # 从网络上下载
-        async with ClientSession(headers={'user-agent': 'FullTclash'}) as session:
+        async with ClientSession(headers={'user-agent': 'FullTClash'}) as session:
             async with session.get(_url, proxy=proxy) as resp:
                 if resp.status == 200:
                     content_leagth = resp.content_length if resp.content_length else 10 * 1024 * 1024

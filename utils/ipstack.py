@@ -30,7 +30,7 @@ async def get_ips(proxyhost: list, proxyport: list):
     length = min(len(proxyhost), len(proxyport))
     for i in range(length):
         conn = ProxyConnector(host=proxyhost[i], port=proxyport[i], limit=0)
-        session = aiohttp.ClientSession(connector=conn, headers={'user-agent': 'FullTclash'})
+        session = aiohttp.ClientSession(connector=conn, headers={'user-agent': 'FullTClash'})
         session_pool.append(session)
     for j in range(length):
         tasks.append(asyncio.create_task(get_ip(v4url, session=session_pool[j])))

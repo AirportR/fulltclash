@@ -255,7 +255,7 @@ class SpeedCore(Basecore):
     async def fetch(self: Speedtest, urls: list, host: str, port: int, buffer: int):
         try:
             async with aiohttp.ClientSession(
-                    headers={"User-Agent": "FullTclash"},
+                    headers={"User-Agent": "FullTClash"},
                     connector=ProxyConnector(host=host, port=port),
             ) as session:
                 flag = 0

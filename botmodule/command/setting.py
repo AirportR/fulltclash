@@ -826,7 +826,7 @@ async def select_sort(app: Client, call: CallbackQuery):
 
 
 async def home_setting(_: Client, call: Union[Message, CallbackQuery]):
-    text = config.config.get('bot', {}).get('description', f"🛠️FullTclash bot管理总枢🛠️\n\n版本: {__version__}({v_hash})")
+    text = config.config.get('bot', {}).get('description', f"🛠️FullTClash bot管理总枢🛠️\n\n版本: {__version__}({v_hash})")
     addon_button = IKB("🧩插件管理(开发中)", callback_data="blank")
     config_button = IKB("⚙️配置管理", callback_data="/api/config/home")
     sub_button = IKB("🌐订阅管理(开发中)", callback_data="blank")

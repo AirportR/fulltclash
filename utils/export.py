@@ -149,7 +149,7 @@ class ExportCommon(BaseExport):
             'sort': self.allinfo.get('sort', '订阅原序'),
             'front_size': self.front_size,  # 字体大小
             'linespace': self.linespace,  # 行距,约定60行间距为标准行间距
-            'title': self.image_config.get('title', 'FullTclash'),
+            'title': self.image_config.get('title', 'FullTClash'),
             'background': self.image_config.get('background', {}),
             'delay_color': self.color.get('delay', []),
             'watermark': self.watermark_config(),
@@ -893,7 +893,7 @@ class ExportResult:
         self.image_config = self.config.config.get('image', {})
         self.delay_color = self.color.get('delay', [])
         self.__font = ImageFont.truetype(self.config.getFont(), self.front_size)
-        self.title = self.image_config.get('title', 'FullTclash')
+        self.title = self.image_config.get('title', 'FullTClash')
         self.background = self.image_config.get('background', {})
         self.watermark = self.image_config.get('watermark', {})
         self.watermark2 = self.image_config.get('non-commercial-watermark', {})
@@ -1102,7 +1102,7 @@ class ExportTopo(ExportResult):
         self.taskinfo = self.info.pop('task', {})
         self.__font = ImageFont.truetype(self.config.getFont(), self.front_size)
         # self.image_config = self.config.config.get('image', {})
-        # self.title = self.image_config.get('title', 'FullTclash')
+        # self.title = self.image_config.get('title', 'FullTClash')
 
     def get_width(self, compare: int = None):
         """

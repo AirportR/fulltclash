@@ -67,7 +67,7 @@ def check_args():
 
 class Init:
     repo_owner = "AirportR"
-    repo_name = "FullTclash"
+    repo_name = "fulltclash"
     ftcore_owner = repo_owner
     ftcore_name = "FullTCore"
 
