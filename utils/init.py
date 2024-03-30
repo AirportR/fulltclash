@@ -1,4 +1,3 @@
-import asyncio
 import os
 import sys
 from pathlib import Path
@@ -6,19 +5,23 @@ from subprocess import check_output
 
 from loguru import logger
 
-from utils import cleaner, generate_random_string, websocket, HOME_DIR
+from utils import cleaner, HOME_DIR, async_runtime
 from utils.cleaner import unzip, unzip_targz
 from utils.collector import get_latest_tag, Download, DownloadError
 
 GCONFIG = cleaner.config
 
 
+@async_runtime()
 async def check_init():
     check_args()
     check_py_version()
     Init.init_dir()
-    await Init.init_proxy_client()
+    Init.init_user()
+    await Init.init_emoji()
+    await Init.init_proxy_client()  # init_permission 的顺序和这里不能调换
     Init.init_permission()
+    return True
 
 
 def check_py_version() -> None:
@@ -30,52 +33,69 @@ def check_py_version() -> None:
 
 def check_args():
     import argparse
-    parser = argparse.ArgumentParser(description="FullTClash-纯后端命令行快速启动")
-    parser.add_argument("-b", "--bind", required=False, type=str, help="覆写绑定的外部地址端口，默认为127.0.0.1:8765")
-    parser.add_argument("-t", "--token", required=False, type=str, help="Websocket通信Token，也叫做密码，防止不合法的请求。")
-    parser.add_argument("-p", "--path", required=False, type=str, help="Websocket连接路径，不设置默认为根路径/ 例： --path YaPyu>hwy<[")
-    parser.add_argument("-f", "--buildtoken", required=False, type=str, help="FullTCore代理客户端的buildtoken，不填则为默认值")
+    help_text_socks5 = "设置socks5代理，bot代理使用的这个\n格式--> host:端口:用户名:密码\t用户名和密码可省略"
+    help_text_http = "设置HTTP代理,拉取订阅用的。\n格式--> 用户名:密码@host:端口\t@符号前面的用户名和密码如果不设置可省略"
+    help_f = "强制覆盖原先的mybot.session文件，重新生成"
+    parser = argparse.ArgumentParser(description="FullTClash命令行快速启动，其中api_id,api_hash,bot_token要么不填，要么全部填完")
+    parser.add_argument("-r", action='store_true', help=help_f)
+    parser.add_argument("-ah", "--api-hash", required=False, type=str, help="自定义api-hash")
+    parser.add_argument("-ai", "--api-id", required=False, type=int, help="自定义api-id")
+    parser.add_argument("-b", "--bot-token", required=False, type=str, help="自定义bot-token")
+    parser.add_argument("-ps5", "--proxy-socks5", required=False, type=str, help=help_text_socks5)
+    parser.add_argument("-http", "--proxy-http", required=False, type=str, help=help_text_http)
+    parser.add_argument("-su", "--admin", required=False, help="设置bot的管理员，多个管理员以 , 分隔")
+    parser.add_argument("-d", "--path", required=False, type=str, help="设置代理客户端路径")
 
     args = parser.parse_args()
-
-    if args.bind:
-        bindaddr = str(args.bind)
-        wsconf = GCONFIG.config.get('websocket', {})
-        wsconf['bindAddress'] = bindaddr
-        GCONFIG.yaml['websocket'] = wsconf
-        GCONFIG.reload()
-        logger.info(f"已覆写监听地址：{bindaddr}")
-    wsconf = GCONFIG.config.get('websocket', {})
-    if args.token:
-        wstoken = str(args.token)
-    else:
-        wstoken = wsconf.get('token', '')
-        if not wstoken:
-            wstoken = generate_random_string()
-    wsconf['token'] = wstoken
-    GCONFIG.yaml['websocket'] = wsconf
-    GCONFIG.reload()
-    logger.info(f"已覆写Websocket通信Token为: {wstoken}")
+    if args.r:
+        if os.path.exists("./my_bot.session"):
+            logger.info("检测到启用session文件覆写选项")
+            try:
+                os.remove("my_bot.session")
+                logger.info("已移除my_bot.session")
+            except Exception as e2:
+                logger.error(f"session文件移除失败：{e2}")
     if args.path:
-        ws_path = str(args.path)
-        wsconf = GCONFIG.config.get('websocket', {})
-        wsconf['path'] = ws_path
-        GCONFIG.yaml['websocket'] = wsconf
-        GCONFIG.reload()
-        ws_path2 = websocket.parse_wspath(ws_path)
-        logger.info(f"已设置Websocket连接路径为：{ws_path}\r运行时为MD5[ws连接路径]: {ws_path2}")
-    if args.buildtoken:
-        buildtoken = str(args.buildtoken)
-        GCONFIG.yaml['buildtoken'] = buildtoken
-        GCONFIG.reload()
-        logger.info("已覆写FullTCore编译Token")
+        GCONFIG.yaml['clash'] = GCONFIG.config.get('clash', {}).setdefault('path', str(args.d))
+    if args.admin:
+        adminlist = str(args.admin).split(",")
+        logger.info(f"即将添加管理员：{adminlist}")
+        GCONFIG.add_admin(adminlist)
+    if args.proxy_http:
+        GCONFIG.yaml['proxy'] = str(args.proxy_http)
+        logger.info("从命令行参数中设置HTTP代理")
+    if args.api_hash and args.api_id and args.bot_token:
+        tempconf = {
+            "api_hash": args.api_hash,
+            "api_id": args.api_id,
+            "bot_token": args.bot_token,
+            "proxy": args.proxy_socks5,
+        }
+        bot_conf = GCONFIG.getBotconfig()
+        bot_conf.update(tempconf)
+        GCONFIG.yaml['bot'] = bot_conf
+        logger.info("从命令行参数中设置api_hash,api_id,bot_token")
+        if args.proxy_socks5:
+            logger.info("从命令行参数中设置bot的socks5代理")
+    i = GCONFIG.reload()
+    if i:
+        if GCONFIG.yaml != GCONFIG.config:
+            logger.info("已覆写配置文件。")
+    else:
+        logger.warning("覆写配置失败！")
 
 
 class Init:
     repo_owner = "AirportR"
-    repo_name = "FullTclash"
+    repo_name = "fulltclash"
     ftcore_owner = repo_owner
     ftcore_name = "FullTCore"
+
+    @staticmethod
+    def init_user():
+        admin = GCONFIG.getAdmin()  # 管理员
+        GCONFIG.add_user(admin)  # 管理员同时也是用户
+        GCONFIG.reload()
 
     @staticmethod
     def init_dir():
@@ -89,6 +109,20 @@ class Init:
         if not os.path.isdir('results'):
             os.mkdir("results")
             logger.info("创建文件夹: results 用于保存测试结果")
+
+    @staticmethod
+    async def init_emoji():
+        emoji_source = GCONFIG.config.get('emoji', {}).get('emoji-source', 'TwemojiLocalSource')
+        if GCONFIG.config.get('emoji', {}).get('enable', True) and emoji_source == 'TwemojiLocalSource':
+            from utils.emoji_custom import TwemojiLocalSource
+            if not os.path.isdir('./resources/emoji/twemoji'):
+                twemoji = TwemojiLocalSource()
+                logger.info("检测到未安装emoji资源包，正在初始化本地emoji...")
+                await twemoji.download_emoji(proxy=GCONFIG.get_proxy())
+                if twemoji.init_emoji(twemoji.savepath):
+                    logger.info("初始化emoji成功")
+                else:
+                    logger.warning("初始化emoji失败")
 
     @staticmethod
     def init_permission():
@@ -149,7 +183,7 @@ class Init:
         # https://github.com/AirportR/FullTCore/releases/download/v1.3-meta/FullTCore_1.3-meta_windows_amd64.zip
         base_url = f"https://github.com/{Init.ftcore_owner}/{Init.ftcore_name}"
 
-        download_url = base_url + f"/releases/download/{tag}/FullTCore_{tag2}_{pf}_{arch}{suffix}"
+        download_url = base_url + f"/releases/download/{tag}/{Init.ftcore_name}_{tag2}_{pf}_{arch}{suffix}"
         savename = download_url.split("/")[-1]
         logger.info(f"正在自动为您下载最新版本({tag})的FullTCore: {download_url}")
         savepath = Path(HOME_DIR).joinpath("bin").absolute()

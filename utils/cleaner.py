@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import gzip
 import importlib
 import os
@@ -729,37 +730,46 @@ class ConfigManager:
         """
         self.yaml = {}
         self.config = None
-        flag = 0
+        self._path = configpath
+        self._old_path = "./config.yaml"
         if configpath == ':memory:':
             self.config = yaml.safe_load(preTemplate())
             self.yaml.update(self.config)
             return
-        try:
-            with open(configpath, "r", encoding="UTF-8") as fp:
-                self.config = yaml.safe_load(fp)
-                self.yaml.update(self.config)
-        except FileNotFoundError:
-            if flag == 0 and configpath == "./resources/config.yaml":
-                flag += 1
-                logger.warning("无法在 ./resources/ 下找到 config.yaml 配置文件，正在尝试寻找旧目录 ./config.yaml")
-                try:
-                    with open('./config.yaml', "r", encoding="UTF-8") as fp1:
-                        self.config = yaml.safe_load(fp1)
-                        self.yaml.update(self.config)
-                except FileNotFoundError:
-                    self.config = {}
-                    self.yaml = {}
-            elif flag > 1:
-                logger.warning("无法找到配置文件，正在初始化...")
+        cfg_path = self.find_path()
+        with contextlib.suppress(FileNotFoundError), open(cfg_path, "r", encoding="UTF-8") as fp:
+            self.config = yaml.safe_load(fp)
+            self.yaml.update(self.config)
+
+            # if flag == 0 and cfg_path == "./resources/config.yaml":
+            #     flag += 1
+            #     logger.warning("无法在 ./resources/ 下找到 config.yaml 配置文件，正在尝试寻找旧目录 ./config.yaml")
+            #     try:
+            #         with open('./config.yaml', "r", encoding="UTF-8") as fp1:
+            #             self.config = yaml.safe_load(fp1)
+            #             self.yaml.update(self.config)
+            #     except FileNotFoundError:
+            #         self.config = {}
+            #         self.yaml = {}
+            # elif flag > 1:
+            #     logger.warning("无法找到配置文件，正在初始化...")
         if self.config is None:
             di = {'loader': "Success"}
-            with open(configpath, "w+", encoding="UTF-8") as fp:
-                yaml.dump(di, fp)
-            self.config = {}
+            with open(cfg_path, "w+", encoding="UTF-8") as fp:
+                yaml.safe_dump(di, fp)
+            self.config = di
         if data:
-            with open(configpath, "w+", encoding="UTF-8") as fp:
+            with open(cfg_path, "w+", encoding="UTF-8") as fp:
                 yaml.dump(data, fp)
             self.yaml = data
+
+    def find_path(self) -> str:
+        if os.path.exists(self._path):
+            return self._path
+        elif os.path.exists(self._old_path):
+            return self._old_path
+        else:
+            return "./resources/config.yaml"
 
     @property
     def nospeed(self) -> bool:
