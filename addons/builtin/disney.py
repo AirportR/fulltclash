@@ -4,9 +4,7 @@ import aiohttp
 import json
 import asyncio
 
-from aiohttp import ClientConnectorError
 from loguru import logger
-
 from utils import retry
 
 cookie = 'grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Atoken-exchange&latitude=0&longitude=0&' \
@@ -21,79 +19,80 @@ gql = '{"query":"mutation refreshToken($input: RefreshTokenInput!) {refreshToken
 
 @retry(2)
 async def fetch_disney(collector, session: aiohttp.ClientSession, proxy=None):
-    headers = {
-        'User-Agent': ua,
-        'Authorization': authbear,
-        'Content-Type': 'application/json',
-    }
-    assertion_token = await fetch(session, 'https://disney.api.edge.bamgrid.com/devices', headers=headers,
-                                  data=assertion, proxy=proxy)
-    assertion_token_json = json.loads(assertion_token)
-    assertion_cookie = cookie.replace('DISNEYASSERTION', assertion_token_json.get('assertion', ''))
-
-    headers = {
-        'User-Agent': ua,
-        'Authorization': authbear,
-        'Content-Type': 'application/x-www-form-urlencoded',
-    }
-    token_response = await fetch(session, 'https://disney.api.edge.bamgrid.com/token', headers=headers,
-                                 data=assertion_cookie, proxy=proxy)
-    token_json = json.loads(token_response)
-    if token_json.get('error_description') == 'forbidden-location':
-        collector.info["disney"] = '失败'
-        return True
-
-    elif not token_json:
-        collector.info["disney"] = 'N/A'
-        return True
-
-    elif not token_json.get('refresh_token'):
-        collector.info["disney"] = 'N/A'
-        return True
-    else:
-        payload = gql.replace('ILOVEDISNEY', token_json['refresh_token'])
+    conn = session.connector
+    if type(conn).__name__ == 'ProxyConnector':
+        proxy = "http://" + conn._proxy_host + ":" + str(conn._proxy_port)
+    async with aiohttp.ClientSession() as session:
         headers = {
             'User-Agent': ua,
             'Authorization': authbear,
+            'Content-Type': 'application/json',
         }
-        content = await fetch(session, 'https://disney.api.edge.bamgrid.com/graph/v1/device/graphql',
-                              headers=headers, data=payload, proxy=proxy)
+        assertion_token = await fetch(session, 'https://disney.api.edge.bamgrid.com/devices', headers=headers,
+                                      data=assertion, proxy=proxy, ssl=myssl())
+        assertion_token_json = json.loads(assertion_token)
+        assertion_cookie = cookie.replace('DISNEYASSERTION', assertion_token_json.get('assertion', ''))
 
         headers = {
             'User-Agent': ua,
+            'Authorization': authbear,
+            'Content-Type': 'application/x-www-form-urlencoded',
         }
-        url1 = "https://disneyplus.com"
-        try:
+        token_response = await fetch(session, 'https://disney.api.edge.bamgrid.com/token', headers=headers,
+                                     data=assertion_cookie, proxy=proxy, ssl=myssl())
+        token_json = json.loads(token_response)
+        if token_json.get('error_description') == 'forbidden-location':
+            collector.info["disney"] = '失败'
+            return True
+
+        elif not token_json:
+            collector.info["disney"] = 'N/A'
+            return True
+
+        elif not token_json.get('refresh_token'):
+            collector.info["disney"] = 'N/A'
+            return True
+        else:
+            payload = gql.replace('ILOVEDISNEY', token_json['refresh_token'])
+            headers = {
+                'User-Agent': ua,
+                'Authorization': authbear,
+            }
+            content = await fetch(session, 'https://disney.api.edge.bamgrid.com/graph/v1/device/graphql',
+                                  headers=headers, data=payload, proxy=proxy, ssl=myssl())
+
+            headers = {
+                'User-Agent': ua,
+            }
+            url1 = "https://disneyplus.com"
             async with session.get(url1, headers=headers, proxy=proxy, timeout=5,
                                    allow_redirects=False, ssl=myssl()) as resp:
                 unavailable_response = await resp.text()
-        except ClientConnectorError:
-            unavailable_response = ""
-        preview_check = 'preview' in unavailable_response
-        unavailable = 'unavailable' in unavailable_response if preview_check else False
+            preview_check = 'preview' in unavailable_response
+            unavailable = 'unavailable' in unavailable_response if preview_check else False
 
-        content_data = json.loads(content)
-        region = (content_data.get('extensions', {}).get('sdk', {}).get('session', {}).get('location', {}).get(
-            'countryCode', '').upper() or '')
-        in_supported_location = content_data.get('extensions', {}).get('sdk', {}).get('session', {}).get(
-            'inSupportedLocation', False)
+            content_data = json.loads(content)
+            region = (content_data.get('extensions', {}).get('sdk', {}).get('session', {}).get('location', {}).get(
+                'countryCode', '').upper() or '')
+            in_supported_location = content_data.get('extensions', {}).get('sdk', {}).get('session', {}).get(
+                'inSupportedLocation', False)
 
-        if region == 'JP':
-            collector.info["disney"] = '解锁(JP)'
-        elif region and not in_supported_location and not unavailable:
-            collector.info["disney"] = f'待解锁({region})'
-        elif region and unavailable:
-            collector.info["disney"] = f'失败({region})'
-        elif region and in_supported_location:
-            collector.info["disney"] = f'解锁({region})'
-        else:
-            collector.info["disney"] = '未知'
-        return True
+            if region == 'JP':
+                collector.info["disney"] = '解锁(JP)'
+            elif region and not in_supported_location and not unavailable:
+                collector.info["disney"] = f'待解锁({region})'
+            elif region and unavailable:
+                collector.info["disney"] = f'失败({region})'
+            elif region and in_supported_location:
+                collector.info["disney"] = f'解锁({region})'
+            else:
+                collector.info["disney"] = '未知'
+            return True
 
 
-async def fetch(session, url, headers=None, data=None, proxy=None, timeout=5):
-    async with session.request(method='POST', url=url, headers=headers, data=data, proxy=proxy, timeout=timeout) as \
-            resp:
+async def fetch(session, url, *, headers=None, data=None, proxy=None, timeout=5, **kwargs):
+    async with session.request(method='POST', url=url, headers=headers, data=data, proxy=proxy, timeout=timeout,
+                               **kwargs) as resp:
         return await resp.text()
 
 
