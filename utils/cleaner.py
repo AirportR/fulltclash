@@ -260,7 +260,6 @@ class AddonCleaner:
             except (FileNotFoundError, NotImplementedError, OSError):
                 continue
         self._script = dict(sorted(self._script.items(), key=lambda x: x[1][2]))
-        print(self._script)
         logger.info(f"外接测试脚本成功导入数量: {num}")
 
     @staticmethod
