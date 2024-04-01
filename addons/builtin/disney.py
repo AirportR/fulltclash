@@ -22,13 +22,13 @@ async def fetch_disney(collector, session: aiohttp.ClientSession, proxy=None):
     conn = session.connector
     if type(conn).__name__ == 'ProxyConnector':
         proxy = "http://" + conn._proxy_host + ":" + str(conn._proxy_port)
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession() as session2:
         headers = {
             'User-Agent': ua,
             'Authorization': authbear,
             'Content-Type': 'application/json',
         }
-        assertion_token = await fetch(session, 'https://disney.api.edge.bamgrid.com/devices', headers=headers,
+        assertion_token = await fetch(session2, 'https://disney.api.edge.bamgrid.com/devices', headers=headers,
                                       data=assertion, proxy=proxy, ssl=myssl())
         assertion_token_json = json.loads(assertion_token)
         assertion_cookie = cookie.replace('DISNEYASSERTION', assertion_token_json.get('assertion', ''))
@@ -38,7 +38,7 @@ async def fetch_disney(collector, session: aiohttp.ClientSession, proxy=None):
             'Authorization': authbear,
             'Content-Type': 'application/x-www-form-urlencoded',
         }
-        token_response = await fetch(session, 'https://disney.api.edge.bamgrid.com/token', headers=headers,
+        token_response = await fetch(session2, 'https://disney.api.edge.bamgrid.com/token', headers=headers,
                                      data=assertion_cookie, proxy=proxy, ssl=myssl())
         token_json = json.loads(token_response)
         if token_json.get('error_description') == 'forbidden-location':
@@ -58,16 +58,20 @@ async def fetch_disney(collector, session: aiohttp.ClientSession, proxy=None):
                 'User-Agent': ua,
                 'Authorization': authbear,
             }
-            content = await fetch(session, 'https://disney.api.edge.bamgrid.com/graph/v1/device/graphql',
+            content = await fetch(session2, 'https://disney.api.edge.bamgrid.com/graph/v1/device/graphql',
                                   headers=headers, data=payload, proxy=proxy, ssl=myssl())
 
             headers = {
                 'User-Agent': ua,
             }
             url1 = "https://disneyplus.com"
-            async with session.get(url1, headers=headers, proxy=proxy, timeout=5,
-                                   allow_redirects=False, ssl=myssl()) as resp:
-                unavailable_response = await resp.text()
+            try:
+                # 这个请求有个奇怪的问题，有些节点无法请求成功，可能是py请求库的问题，留待以后解决。如果抛异常，那么检测结果的准确度有所下降。
+                async with session2.get(url1, headers=headers, proxy=proxy, timeout=5,
+                                        allow_redirects=False, ssl=myssl()) as resp:
+                    unavailable_response = await resp.text()
+            except Exception as e:
+                unavailable_response = str(e)
             preview_check = 'preview' in unavailable_response
             unavailable = 'unavailable' in unavailable_response if preview_check else False
 
