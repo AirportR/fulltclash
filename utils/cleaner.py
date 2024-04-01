@@ -1236,12 +1236,9 @@ class ReCleaner:
                     from addons.builtin import youtube
                     you = youtube.get_youtube_info(self)
                     info['Youtube'] = you
-                elif i == "Disney":
-                    dis = self.getDisneyinfo()
-                    info['Disney'] = dis
-                elif i == "Disney+":
-                    dis = self.getDisneyinfo()
-                    info['Disney+'] = dis
+                elif i.lower().startswith("disney"):
+                    from addons.builtin import disney
+                    info['Disney+'] = disney.get_disney_info(self)
                 elif i == "Dazn":
                     dazn = self.get_dazn_info()
                     info['Dazn'] = dazn

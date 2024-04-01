@@ -430,6 +430,7 @@ class SubCollector(BaseCollector):
 class Collector:
     def __init__(self, script: List[str] = None):
         self.tasks = []
+        self.start = self.collect
         self._script = script
         self._headers = {
             'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -450,124 +451,124 @@ class Collector:
         :return: tasks: []
         """
         items = media_items if self._script is None else self._script
+        if len(items) == 0 or not isinstance(items, list):
+            return self.tasks
         try:
-            if len(items) and isinstance(items, list):
-                for item in items:
-                    i = item
-                    if i in addon.script:
-                        task = addon.script[i][0]
-                        self.tasks.append(task(self, session, proxy=proxy))
-                        continue
-                    if i == "Youtube":
-                        from addons.builtin import youtube
-                        self.tasks.append(youtube.task(self, session, proxy=proxy))
-                    elif i == "Disney" or i == "Disney+":
-                        task5 = asyncio.create_task(self.fetch_dis(session, proxy=proxy))
-                        self.tasks.append(task5)
-                    elif i == "Netflix":
-                        from addons.builtin import netflix
-                        self.tasks.append(netflix.task(self, session, proxy=proxy, netflixurl=netflix_url))
-                    elif i == "TVB":
-                        from addons.builtin import tvb
-                        self.tasks.append(tvb.task(self, session, proxy=proxy))
-                    elif i == "Viu":
-                        from addons.builtin import viu
-                        self.tasks.append(viu.task(self, session, proxy=proxy))
-                    elif i == "Iprisk" or i == "落地IP风险":
-                        from addons.builtin import ip_risk
-                        self.tasks.append(ip_risk.task(self, session, proxy=proxy))
-                    elif i == "steam货币":
-                        from addons.builtin import steam
-                        self.tasks.append(steam.task(self, session, proxy=proxy))
-                    elif i == "维基百科":
-                        from addons.builtin import wikipedia
-                        self.tasks.append(wikipedia.task(self, session, proxy=proxy))
-                    elif item == "OpenAI":
-                        from addons.builtin import openai
-                        self.tasks.append(openai.task(self, session, proxy=proxy))
-                    else:
-                        pass
+            for item in items:
+                i = item
+                if i in addon.script:
+                    task = addon.script[i][0]
+                    self.tasks.append(task(self, session, proxy=proxy))
+                    continue
+                if i == "Youtube":
+                    from addons.builtin import youtube
+                    self.tasks.append(youtube.task(self, session, proxy=proxy))
+                elif i == "Disney" or i == "Disney+":
+                    from addons.builtin import disney
+                    self.tasks.append(disney.task(self, session, proxy=proxy))
+                elif i == "Netflix":
+                    from addons.builtin import netflix
+                    self.tasks.append(netflix.task(self, session, proxy=proxy, netflixurl=netflix_url))
+                elif i == "TVB":
+                    from addons.builtin import tvb
+                    self.tasks.append(tvb.task(self, session, proxy=proxy))
+                elif i == "Viu":
+                    from addons.builtin import viu
+                    self.tasks.append(viu.task(self, session, proxy=proxy))
+                elif i == "Iprisk" or i == "落地IP风险":
+                    from addons.builtin import ip_risk
+                    self.tasks.append(ip_risk.task(self, session, proxy=proxy))
+                elif i == "steam货币":
+                    from addons.builtin import steam
+                    self.tasks.append(steam.task(self, session, proxy=proxy))
+                elif i == "维基百科":
+                    from addons.builtin import wikipedia
+                    self.tasks.append(wikipedia.task(self, session, proxy=proxy))
+                elif item == "OpenAI":
+                    from addons.builtin import openai
+                    self.tasks.append(openai.task(self, session, proxy=proxy))
+                else:
+                    pass
             return self.tasks
         except Exception as e:
             logger.error(e)
             return []
 
-    async def fetch_dis(self, session: aiohttp.ClientSession, proxy=None, reconnection=2):
+    # async def fetch_dis(self, session: aiohttp.ClientSession, proxy=None, reconnection=2):
+    #     """
+    #     Disney+ 解锁检测
+    #     :param reconnection:
+    #     :param session:
+    #     :param proxy:
+    #     :return:
+    #     """
+    #     try:
+    #         if reconnection == 0:
+    #             dis1 = await session.get(self.disneyurl1, proxy=proxy, timeout=5)
+    #             text1 = await dis1.text()
+    #             dis1.close()
+    #             if dis1.status == 200:
+    #                 # text1 = await dis1.text()
+    #                 index = str(text1).find('Region', 0, 400)
+    #                 region = text1[index + 8:index + 10]
+    #                 if index == -1:
+    #                     self.info['disney'] = "待解锁"
+    #                 elif dis1.history:
+    #                     if 300 <= dis1.history[0].status <= 399:
+    #                         self.info['disney'] = "待解({})".format(region)
+    #                     else:
+    #                         self.info['disney'] = "未知"
+    #                 else:
+    #                     self.info['disney'] = "解锁({})".format(region)
+    #             elif 399 < dis1.status:
+    #                 self.info['disney'] = "N/A"
+    #                 logger.info(f"disney+ 访问错误 {dis1.status}")
+    #             else:
+    #                 self.info['disney'] = "失败"
+    #         else:
+    #             dis1 = await session.get(self.disneyurl1, proxy=proxy, timeout=5)
+    #             text1 = await dis1.text()
+    #             dis1.close()
+    #             dis2 = await session.get(self.disneyurl2, proxy=proxy, timeout=5)
+    #             if dis1.status == 200 and dis2.status != 403:
+    #                 # text1 = await dis1.text()
+    #                 index = str(text1).find('Region', 0, 400)
+    #                 region = text1[index + 8:index + 10]
+    #                 if index == -1:
+    #                     self.info['disney'] = "待解锁"
+    #                 elif dis1.history:
+    #                     if 300 <= dis1.history[0].status <= 399:
+    #                         self.info['disney'] = "待解({})".format(region)
+    #                     else:
+    #                         self.info['disney'] = "未知"
+    #                 else:
+    #                     self.info['disney'] = "解锁({})".format(region)
+    #             else:
+    #                 self.info['disney'] = "失败"
+    #             dis2.close()
+    #     except ssl.SSLError:
+    #         if reconnection != 0:
+    #             await self.fetch_dis(session=session, proxy=proxy, reconnection=reconnection - 1)
+    #         else:
+    #             self.info['disney'] = '证书错误'
+    #     except ClientConnectorError as c:
+    #         logger.warning("disney+请求发生错误:" + str(c))
+    #         if reconnection != 0:
+    #             await self.fetch_dis(session=session, proxy=proxy, reconnection=reconnection - 1)
+    #         else:
+    #             self.info['disney'] = '连接错误'
+    #     except asyncio.exceptions.TimeoutError:
+    #         logger.warning("disney+请求超时，正在重新发送请求......")
+    #         if reconnection != 0:
+    #             await self.fetch_dis(session=session, proxy=proxy, reconnection=reconnection - 1)
+    #     except ConnectionResetError:
+    #         self.info['disney'] = '未知'
+    #     except ProxyConnectionError as p:
+    #         logger.warning("似乎目标端口未开启监听")
+    #         logger.warning(str(p))
+    async def collect(self, host: str, port: int, proxy=None):
         """
-        Disney+ 解锁检测
-        :param reconnection:
-        :param session:
-        :param proxy:
-        :return:
-        """
-        try:
-            if reconnection == 0:
-                dis1 = await session.get(self.disneyurl1, proxy=proxy, timeout=5)
-                text1 = await dis1.text()
-                dis1.close()
-                if dis1.status == 200:
-                    # text1 = await dis1.text()
-                    index = str(text1).find('Region', 0, 400)
-                    region = text1[index + 8:index + 10]
-                    if index == -1:
-                        self.info['disney'] = "待解锁"
-                    elif dis1.history:
-                        if 300 <= dis1.history[0].status <= 399:
-                            self.info['disney'] = "待解({})".format(region)
-                        else:
-                            self.info['disney'] = "未知"
-                    else:
-                        self.info['disney'] = "解锁({})".format(region)
-                elif 399 < dis1.status:
-                    self.info['disney'] = "N/A"
-                    logger.info(f"disney+ 访问错误 {dis1.status}")
-                else:
-                    self.info['disney'] = "失败"
-            else:
-                dis1 = await session.get(self.disneyurl1, proxy=proxy, timeout=5)
-                text1 = await dis1.text()
-                dis1.close()
-                dis2 = await session.get(self.disneyurl2, proxy=proxy, timeout=5)
-                if dis1.status == 200 and dis2.status != 403:
-                    # text1 = await dis1.text()
-                    index = str(text1).find('Region', 0, 400)
-                    region = text1[index + 8:index + 10]
-                    if index == -1:
-                        self.info['disney'] = "待解锁"
-                    elif dis1.history:
-                        if 300 <= dis1.history[0].status <= 399:
-                            self.info['disney'] = "待解({})".format(region)
-                        else:
-                            self.info['disney'] = "未知"
-                    else:
-                        self.info['disney'] = "解锁({})".format(region)
-                else:
-                    self.info['disney'] = "失败"
-                dis2.close()
-        except ssl.SSLError:
-            if reconnection != 0:
-                await self.fetch_dis(session=session, proxy=proxy, reconnection=reconnection - 1)
-            else:
-                self.info['disney'] = '证书错误'
-        except ClientConnectorError as c:
-            logger.warning("disney+请求发生错误:" + str(c))
-            if reconnection != 0:
-                await self.fetch_dis(session=session, proxy=proxy, reconnection=reconnection - 1)
-            else:
-                self.info['disney'] = '连接错误'
-        except asyncio.exceptions.TimeoutError:
-            logger.warning("disney+请求超时，正在重新发送请求......")
-            if reconnection != 0:
-                await self.fetch_dis(session=session, proxy=proxy, reconnection=reconnection - 1)
-        except ConnectionResetError:
-            self.info['disney'] = '未知'
-        except ProxyConnectionError as p:
-            logger.warning("似乎目标端口未开启监听")
-            logger.warning(str(p))
-
-    async def start(self, host: str, port: int, proxy=None):
-        """
-        启动采集器，采用并发操作
+        等待采集器工作完成
         :param host:
         :param port:
         :param proxy: using proxy
