@@ -126,9 +126,10 @@ def myssl() -> ssl.SSLContext:
 
 
 SCRIPT = {
-    "MYNAME": "OpenAI",
+    "MYNAME": "Disney+",
     "TASK": task,
-    "GET": get_disney_info
+    "GET": get_disney_info,
+    "RANK": 0.2
 }
 
 

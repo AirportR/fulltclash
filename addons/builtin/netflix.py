@@ -222,7 +222,8 @@ def myssl() -> ssl.SSLContext:
 SCRIPT = {
     "MYNAME": "Netflix",
     "TASK": task,
-    "GET": get_netflix_info
+    "GET": get_netflix_info,
+    "RANK": 0
 }
 
 
