@@ -114,7 +114,7 @@ class Init:
     async def init_emoji():
         emoji_source = GCONFIG.config.get('emoji', {}).get('emoji-source', 'TwemojiLocalSource')
         if GCONFIG.config.get('emoji', {}).get('enable', True) and emoji_source == 'TwemojiLocalSource':
-            from utils.emoji_custom import TwemojiLocalSource
+            from utils.myemoji import TwemojiLocalSource
             if not os.path.isdir('./resources/emoji/twemoji'):
                 twemoji = TwemojiLocalSource()
                 logger.info("检测到未安装emoji资源包，正在初始化本地emoji...")
