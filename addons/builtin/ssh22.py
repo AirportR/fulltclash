@@ -1,6 +1,8 @@
 import asyncio
 
 import socket
+
+import async_timeout
 import socks
 import aiohttp
 from loguru import logger
@@ -51,21 +53,21 @@ async def fetch_ssh(collector, session: aiohttp.ClientSession, proxy: str = None
             mysocket.set_proxy(socks.PROXY_TYPE_SOCKS5, addr=paddr, port=pport)
 
             mysocket.settimeout(10)
-            mysocket.connect((_host, _sport))
-            reader, writer = await asyncio.open_connection(sock=mysocket)
 
-            # a = mysocket.recv(1024)
-            a = await reader.read(1024)
-            if a:
-                writer.close()
-                await writer.wait_closed()
-                if b"ssh" in a or b"SSH" in a:
-                    collector.info['ssh'] = "允许访问"
+            async with async_timeout.timeout(10):
+                mysocket.connect((_host, _sport))
+                reader, writer = await asyncio.open_connection(sock=mysocket)
+                a = await reader.read(1024)
+                if a:
+                    writer.close()
+                    await writer.wait_closed()
+                    if b"ssh" in a or b"SSH" in a:
+                        collector.info['ssh'] = "允许访问"
+                    else:
+                        collector.info['ssh'] = "-"
                 else:
-                    collector.info['ssh'] = "-"
-            else:
-                collector.info['ssh'] = "无法访问"
-            return True
+                    collector.info['ssh'] = "无法访问"
+                return True
 
         try:
             res = await check()
