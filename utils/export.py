@@ -1,11 +1,13 @@
 import bisect
 import math
+import os
 import time
 from collections import Counter
 from typing import Union, Tuple
 
 import PIL
 import datetime
+import threading
 
 from loguru import logger
 from PIL import Image, ImageDraw, ImageFont, ImageColor
@@ -25,6 +27,7 @@ from utils import __version__
 #     基础数据决定了生成图片的高度（Height），它是列表，列表里面的数据一般是一组节点名，有多少个节点就对应了info键值中的长度。
 
 _clock_emoji_list = ["🕛", "🕐", "🕑", "🕒", "🕓", "🕔", "🕕", "🕖", "🕗", "🕘", "🕙", "🕚"]
+IMAGE_LOCK = threading.Lock()
 
 
 def get_clock_emoji() -> str:
@@ -857,9 +860,10 @@ class ExportSpeed2(ExportCommon):
             self.draw_block(img, t, _nodename_width, _key_list, _info_list_width)
         self.draw_line(idraw)  # 绘制线条
         img = self.draw_watermark(img)  # 绘制水印
-        # img.show("coffee")
-        img.save(r"./results/{}.png".format(_export_time))
-        print(_export_time)
+        save_path = r"./results/{}.png".format(_export_time)
+        save_path = check_path(save_path)
+        img.save(save_path)
+        print(f"Image exported at: {save_path}")
         return _export_time
 
 
@@ -1324,14 +1328,19 @@ class ExportTopo(ExportResult):
             img3.paste(img2, (0, image_height - 120))
 
             img3 = self.draw_watermark(img3.convert("RGBA"), self.taskinfo)
-            print(export_time)
             # img3.show()
-            img3.save(r"./results/Topo{}.png".format(export_time.replace(':', '-')))
+            # img3.save(r"./results/Topo{}.png".format(export_time.replace(':', '-')))
+            save_path = r"./results/Topo{}.png".format(export_time.replace(':', '-'))
+            save_path = check_path(save_path)
+            img3.save(save_path)
+            print(f"Image exported at: {save_path}")
             return export_time, img3.size
         else:
             img = self.draw_watermark(img.convert("RGBA"), self.taskinfo)
-            print(export_time)
-            img.save(r"./results/Topo{}.png".format(export_time.replace(':', '-')))
+            save_path = r"./results/Topo{}.png".format(export_time.replace(':', '-'))
+            save_path = check_path(save_path)
+            img.save(save_path)
+            print(f"Image exported at: {save_path}")
             return export_time, img.size
 
     @logger.catch
@@ -1688,9 +1697,10 @@ class ExportTopo(ExportResult):
         if nodename is None and info is None:
             if self.watermark['enable']:
                 img = self.draw_watermark(img.convert("RGBA"), taskinfo)
-            img.save(r"./results/Topo{}.png".format(export_time.replace(':', '-')))
-            print(export_time)
-            return export_time
+            save_path = r"./results/{}.png".format(export_time.replace(':', '-'))
+            save_path = check_path(save_path)
+            img.save(save_path)
+            print(f"Image exported at: {save_path}")
         return img, image_height, image_width
 
 
@@ -2095,6 +2105,15 @@ class ExportSpeed(ExportResult):
             img.show(self.export_time.replace(':', '-'))
             return None, None
         else:
-            img.save(r"./results/{}.png".format(self.export_time.replace(':', '-')))
-            print(self.export_time)
+            save_path = r"./results/{}.png".format(self.export_time.replace(':', '-'))
+            save_path = check_path(save_path)
+            img.save(save_path)
+            print(f"Image exported at: {save_path}")
             return self.export_time.replace(':', '-'), img.size
+
+
+def check_path(maybe_path: str, num: int = 1) -> str:
+    if os.path.exists(maybe_path):
+        new_path = maybe_path.rstrip(".png").rstrip(f"({num-1})") + f"({num})" + ".png"
+        return check_path(new_path, num+1)
+    return maybe_path
