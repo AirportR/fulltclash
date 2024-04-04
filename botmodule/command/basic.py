@@ -6,7 +6,7 @@ from botmodule import init_bot
 from glovar import __version__
 
 tourist_text = f"""
-    欢迎使用FullTclash bot,目前可用指令有:
+    欢迎使用FullTClash bot,目前可用指令有:
 
 /help & /start [游客]获取帮助菜单
 /version [游客]输出版本信息({__version__})
@@ -15,7 +15,7 @@ tourist_text = f"""
 如有使用问题前往github发起issue
 """
 user_text = f"""
-    欢迎使用FullTclash bot,目前可用指令有:
+    欢迎使用FullTClash bot,目前可用指令有:
 
 基础指令
 /help & /start [游客]获取帮助菜单
@@ -40,7 +40,7 @@ user_text = f"""
 """
 
 admin_text = f"""
-    欢迎使用FullTclash bot,目前可用指令有:
+    欢迎使用FullTClash bot,目前可用指令有:
 
 基础指令
 /help & /start [游客]获取帮助菜单
@@ -82,7 +82,7 @@ killme [管理]杀死bot的自身进程(慎用！)
 async def version(_, message):
     try:
         version_hash = init_bot.latest_version_hash
-        back_message = await message.reply(f"FullTclash版本: {__version__} (__{version_hash}__)")
+        back_message = await message.reply(f"FullTClash版本: {__version__} (__{version_hash}__)")
         message_delete_queue.put_nowait((back_message.chat.id, back_message.id, 30))
     except RPCError as r:
         logger.error(str(r))

@@ -1,3 +1,4 @@
+import hashlib
 import json
 from asyncio import Queue
 from dataclasses import dataclass
@@ -43,4 +44,12 @@ class WebSocketQueue(Queue):
         return super().get_nowait()
 
 
-wsqueue = WebSocketQueue(100)
+def parse_wspath(path: str) -> str:
+    if path == '/':
+        print("以根路径作为websocket连接入口是不推荐的，建议启动时设置 -path 参数")
+        return path
+    if path.startswith('/'):
+        path = path[1:]
+    path = hashlib.md5(path.encode()).hexdigest()
+    path = '/' + path
+    return path

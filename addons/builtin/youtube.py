@@ -98,9 +98,10 @@ def get_youtube_info(self):
 
 
 SCRIPT = {
-    "MYNAME": "Youtube(新)",
+    "MYNAME": "Youtube",
     "TASK": task,
-    "GET": get_youtube_info
+    "GET": get_youtube_info,
+    "RANK": 0.1
 }
 
 

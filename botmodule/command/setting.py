@@ -57,7 +57,8 @@ dbtn = default_button = {
     8: IKB("👌完成选择", "/api/script/ok")
 }
 
-buttons = [dbtn[1], dbtn[2], dbtn[3], dbtn[25], dbtn[15], dbtn[18], dbtn[20], dbtn[21], dbtn[19]]
+# buttons = [dbtn[1], dbtn[2], dbtn[3], dbtn[25], dbtn[15], dbtn[18], dbtn[20], dbtn[21], dbtn[19]]
+buttons = []
 buttons.extend(addon.init_button(isreload=True))
 max_page_g = int(len(buttons) / 9) + 1
 blank_g = IKB(f"{1}/{max_page_g}", callback_data="blank")
@@ -86,7 +87,8 @@ receiver: Dict[str, asyncio.Queue] = {}  # 临时数据接收器
 
 def reload_button():
     global buttons
-    buttons = [dbtn[1], dbtn[2], dbtn[3], dbtn[25], dbtn[15], dbtn[18], dbtn[20], dbtn[21], dbtn[19]]
+    buttons = []
+    # buttons = [dbtn[1], dbtn[2], dbtn[3], dbtn[25], dbtn[15], dbtn[18], dbtn[20], dbtn[21], dbtn[19]]
     buttons.extend(addon.init_button())
 
 
@@ -808,10 +810,10 @@ async def select_sort(app: Client, call: CallbackQuery):
         [
             # 第一行
             [dbtn['b_okpage']],
-            [dbtn[1], dbtn[2], dbtn[3]],
+            [*buttons[:3]],
             # 第二行
-            [dbtn[20], dbtn[25], dbtn[18]],
-            [dbtn[15], dbtn[21], dbtn[19]],
+            [*buttons[3:6]],
+            [*buttons[6:9]],
             [dbtn['b_all'], blank_g, next_page_g],
             [dbtn['yusanjia'], dbtn['b_alive']],
             [dbtn['b_cancel'], dbtn['b_reverse']],
@@ -826,7 +828,7 @@ async def select_sort(app: Client, call: CallbackQuery):
 
 
 async def home_setting(_: Client, call: Union[Message, CallbackQuery]):
-    text = config.config.get('bot', {}).get('description', f"🛠️FullTclash bot管理总枢🛠️\n\n版本: {__version__}({v_hash})")
+    text = config.config.get('bot', {}).get('description', f"🛠️FullTClash bot管理总枢🛠️\n\n版本: {__version__}({v_hash})")
     addon_button = IKB("🧩插件管理(开发中)", callback_data="blank")
     config_button = IKB("⚙️配置管理", callback_data="/api/config/home")
     sub_button = IKB("🌐订阅管理(开发中)", callback_data="blank")

@@ -1,10 +1,11 @@
+import random
 from os import getcwd
 import aiohttp
 
 from utils.cron import *
-from typing import Callable, Any, Union, Coroutine
+from typing import Callable, Any, Union, Coroutine, Optional
 
-__version__ = "3.6.8"  # 项目版本号
+__version__ = "3.6.10"  # 项目版本号
 HOME_DIR = getcwd()
 __all__ = [
     "cron_delete_message",
@@ -14,8 +15,25 @@ __all__ = [
     "__version__",
     "retry",
     "script_demo",
-    "HOME_DIR"
+    "HOME_DIR",
+    "generate_random_string",
+    "async_runtime"
 ]
+
+
+def generate_random_string():
+    length = random.randint(10, 30)
+    rand_str = ''
+    range_start = 48
+    range_end = 122
+
+    for _ in range(length):
+        random_integer = random.randint(range_start, range_end)
+        # Validate ascii range
+        if random_integer <= 57 or random_integer >= 65:
+            rand_str += chr(random_integer)
+
+    return rand_str
 
 
 def default_breakfunc(ret_val: bool) -> bool:
@@ -64,3 +82,24 @@ async def script_demo(script_func: Union[Callable, Coroutine], *arg, **kwargs):
         await script_func(fakecl, session, *arg, **kwargs)
     print(fakecl.info)
     await session.close()
+
+
+def async_runtime(loop: Optional[asyncio.AbstractEventLoop] = None):
+    """
+    临时的异步运行时，适用于只有一两个异步函数的情况
+    :param: loop: 事件循环
+    :param: break_func: 触发的回调中止函数，参数为调用函数的返回值，返回值为bool，
+    """
+    if loop is None:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+    def wrapper(func):
+        def inner(*args, **kwargs):
+            result = loop.run_until_complete(func(*args, **kwargs))
+            return result
+
+        return inner
+
+    return wrapper
+

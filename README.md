@@ -1,17 +1,17 @@
 
 <div align="center">
     <h1> FullTClash</h1>
-    <p>🤖 A Telegram bot that operates based on the Clash core </p>
-    <p><a href="https://github.com/AirportR/FullTclash/blob/dev/README-EN.md">English</a>&nbsp &nbsp 简体中文</p>
+    <p>🤖 节点质量检测的Telegram机器人 </p>
+    <p><a href="https://github.com/AirportR/fulltclash/blob/dev/README-EN.md">English</a>&nbsp &nbsp 简体中文</p>
     <a href="https://fulltclash.gitbook.io/fulltclash-doc"><img src="https://img.shields.io/static/v1?message=doc&color=blue&logo=micropython&label=FullTClash"></a> 
-    <img src="https://img.shields.io/github/license/AirportR/FullTclash">
-    <a href="https://app.codacy.com/gh/AirportR/FullTclash/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade"><img src="https://app.codacy.com/project/badge/Grade/389b2787eb7647dfad486ccaa70eabf4"></a>
-    <a href="https://github.com/AirportR/FullTclash/issues"><img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat"></a>
+    <img src="https://img.shields.io/github/license/AirportR/fulltclash">
+    <a href="https://app.codacy.com/gh/AirportR/fulltclash/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade"><img src="https://app.codacy.com/project/badge/Grade/389b2787eb7647dfad486ccaa70eabf4"></a>
+    <a href="https://github.com/AirportR/fulltclash/issues"><img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat"></a>
     <br>
     <img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/airportr/fulltclash">
     <img alt="Docker Image Size" src="https://img.shields.io/docker/image-size/airportr/fulltclash">
     <br>
-    <a href="https://github.com/AirportR/FullTclash/"><img src="https://img.shields.io/github/stars/AirportR/FullTclash?style=social"></a>
+    <a href="https://github.com/AirportR/fulltclash/"><img src="https://img.shields.io/github/stars/AirportR/fulltclash?style=social"></a>
 	<a href = "https://t.me/FullTclash"><img src="https://img.shields.io/static/v1?style=social&logo=telegram&label=channel&message=channel" ></a>
 	<br>
 	<br>
@@ -38,33 +38,49 @@ FullTClash名字来源于 Full Test base on Clash 。后端部分使用[Clash项
 2. 链路拓扑测试（节点出入口分析）。
 3. 下行速度测试
 
+## 主要功能
+
+* asyncio异步支持
+* 订阅管理
+* 测试结果绘图
+* 权限控制
+* 文档支持
+* 基于Pyrogram框架
+* 规则系统
+* 支持Docker
+* 命令行支持
+* 日志输出
+* 插件扩展
+* 自由定制化配置
+
+
 ## 分支说明
-* [master](https://github.com/AirportR/FullTclash/tree/master) 主分支，主打稳定。  
-* [backend](https://github.com/AirportR/FullTclash/tree/backend) 纯后端代码，无前端BOT，意味着需要额外的bot作主端。  
-* [dev](https://github.com/AirportR/FullTclash/tree/dev) 开发进度最前沿。  
-* [old](https://github.com/AirportR/FullTclash/tree/dev) 依靠调用原版Clash Restful API进行测试。可随意更换内核，但已停止新功能开发。  
+* [master](https://github.com/AirportR/fulltclash/tree/master) 主分支，主打稳定。  
+* [backend](https://github.com/AirportR/fulltclash/tree/backend) 纯后端代码，无前端BOT，意味着需要额外的bot作主端。  
+* [dev](https://github.com/AirportR/fulltclash/tree/dev) 开发进度最前沿。  
+* [old](https://github.com/AirportR/fulltclash/tree/dev) 依靠调用原版Clash Restful API进行测试。可随意更换内核，但已停止新功能开发。  
 
 ## 支持协议
 
-| 出站协议           | Clash | Clash.Meta |
-|----------------|-------|------------|
-| SOCKS (4/4a/5) | √     | √          |
-| HTTP(S)        | √     | √          |
-| Shadowsocks    | √     | √          |
-| VMess          | √     | √          |
-| Trojan         | √     | √          | 
-| Snell          | √     | √          | 
-| VLESS          |       | √          |
-| TUIC           |       | √          |
-| Hysteria       |       | √          |
-| Hysteria2      |       | √          |
-| Wireguard      |       | √          |
-| ShadowsocksR   | √     | √          |
+| 出站协议           | Clash | Mihomo(Clash.Meta) |
+|----------------|-------|--------------------|
+| SOCKS (4/4a/5) | √     | √                  |
+| HTTP(S)        | √     | √                  |
+| Shadowsocks    | √     | √                  |
+| VMess          | √     | √                  |
+| Trojan         | √     | √                  | 
+| Snell          | √     | √                  | 
+| VLESS          |       | √                  |
+| TUIC           |       | √                  |
+| Hysteria       |       | √                  |
+| Hysteria2      |       | √                  |
+| Wireguard      |       | √                  |
+| ShadowsocksR   | √     | √                  |
 ----------------------
 本项目默认使用mihomo内核。
 ## 使用文档
 
-可以在 [这里](https://fulltclash.gitbook.io/fulltclash-doc) 找到FullTclash的使用文档。
+可以在 [这里](https://fulltclash.gitbook.io/fulltclash-doc) 找到fulltclash的使用文档。
 ## 效果预览
 
 流媒体测试:
@@ -92,7 +108,7 @@ FullTClash名字来源于 Full Test base on Clash 。后端部分使用[Clash项
 方法1：直接下载（不会有人不知道在哪下吧？）\
 方法2：使用git（Linux推荐，方便更新），首先安装git，然后拉取仓库。以下指令为 Ubuntu 发行版作示例，Windows自行解决。
 ```shell
-apt install -y git && git clone https://github.com/AirportR/FullTclash.git && cd FullTclash
+apt install -y git && git clone https://github.com/AirportR/fulltclash.git && cd fulltclash
 ```
 此方法在中国大陆可能需要代理加速，请自行解决。
 ### 环境准备
@@ -102,15 +118,9 @@ apt install -y git && git clone https://github.com/AirportR/FullTclash.git && cd
 
 您可以用以下命令，在当前项目目录下运行以快速安装环境：
 
->Windows:
->```shell
->pip install -r requirements.txt
->```
-
->Linux:
->```shell
->pip3 install -r requirements.txt
->```
+```shell
+pip install -r requirements.txt
+```
 ### 为bot进行相关配置
 以下为启动bot的最低要求（如果您是新手，建议先以最低要求把bot跑起来，否则自己乱改配置容易出现不可预知的错误。）
 - 管理员配置  
@@ -188,25 +198,17 @@ apt install -y git && git clone https://github.com/AirportR/FullTclash.git && cd
   这句话时，即可说明该session文件有效，否则无效。
 
 如果启动后无法验证，请删除生成的mybot.session文件，此时的session登录令牌是不可用的，如果不删除程序会一直使用坏的文件，不会重新生成。
+
 ### 开始启动
 配置好后，在项目目录下运行以下指令
+```shell
+python3 main.py
+```
 
->Windows:
->```shell
->python main.py
->```
-
->Ubuntu(Linux):
->```shell
->python3 main.py
->```
-
-等待初始化操作，出现“程序已启动!”字样就说明在运行了。
-运行之后和bot私聊指令：
+等待初始化操作， 等待初始化完毕后进入运行状态了，运行之后和bot私聊指令：
 >/help 可查看所有命令说明
 
 >/testurl <订阅地址> (Clash配置格式) 即可开始测试
-
 
 ### 代理客户端编译(高级)
 FullTClash有专用的代理客户端，存放在 ./bin/下。初次启动会自动帮您下载（仅限win、linux、darwin）对应平台的二进制文件。
@@ -221,9 +223,14 @@ FullTClash有专用的代理客户端，存放在 ./bin/下。初次启动会自
 
 编译完成覆盖原文件即可 ，如果操作难度太大，可以发起issue详谈。
 ### Docker启动
-[./docker/ 目录](https://github.com/AirportR/FullTclash/tree/dev/docker)
-### 为程序设置进程守护(Linux)
-由于Linux系统特性，关闭ssh连接后，前台程序会被关闭。您需要设置进程守护，才能在后台不间断地持久化运行程序。具体方法Google搜索即可。
+[./docker/ 目录](https://github.com/AirportR/fulltclash/tree/dev/docker)
+### 持久化运行
+自行Google搜索即可
+### 控制台测试
+您可以在本机的控制台使用命令行的方式进行测试，但仅支持基本测试功能：
+```shell
+python ./utils/tool/console.py -h
+```
 ## 交流探讨
 我们欢迎各方朋友提出针对性的反馈：
 - [TG更新发布频道](https://t.me/FullTClash)  
@@ -241,7 +248,7 @@ FullTClash有专用的代理客户端，存放在 ./bin/下。初次启动会自
 1. FullTClash测试原理\
 原理是在后台启动一个代理客户端，然后开启多个socks5入站端口，通过配置里的配置信息匹配代理客户端出站协议类型进行测试。代理客户端是基于上游的Clash项目改动得到的专属客户端，并将其命名为FullTCore。  
 2. 为什么不使用原版的Clash客户端二进制\
-自从FullTclash的3.5.8版本起，支持前后端模式，我们把后端部分单独分离，使之可以让前端的bot运行环境与后端运行的环境不在同一台机器上，在当时Clash并没有提供符合本项目的特性，再加上FullTClash仅仅只需要其中出站功能，所以不得已进行一些改动。事实上，FullTClash的old分支是依靠Clash提供的Restful API运行的，现在已不再维护。  
+自从FullTClash的3.5.8版本起，支持前后端模式，我们把后端部分单独分离，使之可以让前端的bot运行环境与后端运行的环境不在同一台机器上，在当时Clash并没有提供符合本项目的特性，再加上FullTClash仅仅只需要其中出站功能，所以不得已进行一些改动。事实上，FullTClash的old分支是依靠Clash提供的Restful API运行的，现在已不再维护。  
 3. 什么是Telegram UID\
 Telegram官方并没有承认UID的说法，但确实存在于Telegram中。每一个TG用户都存在一个唯一的身份ID，这个在官方的TG客户端是查询不到的。Bot依靠UID确定管理员身份，至于如何获取Google搜索即可。  
 4. 是否有一键部署脚本\

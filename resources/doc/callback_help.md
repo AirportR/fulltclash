@@ -1,6 +1,6 @@
-# FullTclash回调功能
+# FullTClash回调功能
 
-FullTclash拥有回调函数的抽象接口，可以让使用者对bot二次开发出拓展功能。
+FullTClash拥有回调函数的抽象接口，可以让使用者对bot二次开发出拓展功能。
 
 ## 什么是回调函数？
 
