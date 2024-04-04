@@ -1,7 +1,9 @@
 import asyncio
+import contextlib
 import gzip
 import importlib
 import os
+import pathlib
 import tarfile
 import shutil
 
@@ -165,9 +167,9 @@ class AddonCleaner:
         经过去重并支持黑名单一并去除。最后返回一个新列表
         :return:
         """
-        base_item = ['Netflix', 'Youtube', 'Disney+', 'OpenAI', 'Viu', 'steam货币', 'TVB',
-                     '维基百科', '落地IP风险']
-        base_item = base_item + list(self._script.keys())
+        # base_item = ['Netflix', 'Youtube', 'Disney+', 'OpenAI', 'Viu', 'steam货币', 'TVB',
+        #              '维基百科', '落地IP风险', 'SSH']
+        base_item = list(self._script.keys())
         new_item = sorted(set(base_item) - set(self.blacklist), key=base_item.index)
         if httptest:
             new_item.insert(0, "HTTP(S)延迟")
@@ -213,103 +215,91 @@ class AddonCleaner:
             logger.warning("script_name is empty")
             return success_list
 
-    def init_addons(self, path: str, package: str = "addons"):
+    def init_addons(self, package: Union[str, List[str]] = "addons"):
         """
         动态加载测速脚本
         """
-        module_suffix = ["py", "pyd", "so", "dll"]
+        self._script.clear()
+        module_suffixes = [".py", ".pyd", ".so", ".dll"]
+        packages = [package] if isinstance(package, str) else package
+        num = 0
+
+        def unsafe_load(name: str, pkg: str) -> bool:
+            try:
+                mod = importlib.import_module(str(pathlib.Path(pkg).joinpath(name).as_posix().replace('/', '.')))
+            except (ModuleNotFoundError, NameError, Exception):
+                mod = None
+            if mod is None:
+                return False
+            script = getattr(mod, 'SCRIPT', None)
+            if script is None or not isinstance(script, dict):
+                return False
+            sname = script.get('MYNAME', None)
+            stask = script.get("TASK", None)
+            sget = script.get("GET", None)
+            srank = script.get("RANK", 1)
+            if callable(stask) and isinstance(sname, str) and callable(sget) and isinstance(srank, (int, float)):
+                self._script[sname] = (stask, sget, srank)
+                logger.info(f"已成功加载测试脚本：{sname}")
+            else:
+                logger.warning("测试脚本导入格式错误")
+
+            return True
+
+        for _pkg in packages:
+            try:
+                for entry in os.listdir(_pkg):
+                    if entry == "__init__.py":
+                        continue
+                    _name, _ext = os.path.splitext(entry)
+                    if _ext not in module_suffixes:
+                        continue
+                    is_loaded = unsafe_load(_name, _pkg)
+                    if is_loaded:
+                        num += 1
+            except (FileNotFoundError, NotImplementedError, OSError):
+                continue
+        self._script = dict(sorted(self._script.items(), key=lambda x: x[1][2]))
+        logger.info(f"外接测试脚本成功导入数量: {num}")
+
+    @staticmethod
+    def init_callback() -> list:
+        path = os.path.join(os.getcwd(), "addons", "callback")
         try:
-            # path = os.path.abspath(path)
             di = os.listdir(path)
         except FileNotFoundError:
             di = None
         module_name = []
+        callbackfunc_list = []
         if di is None:
             logger.warning(f"找不到 {path} 所在的路径")
         else:
             for d in di:
                 if len(d) > 3:
-                    e = d.split('.')
-                    if len(e) < 1:
-                        continue
-                    if e[-1] in module_suffix and d != "__init__.py":
-                        module_name.append(e[0])
+                    if d.endswith('.py') and d != "__init__.py":
+                        module_name.append(d[:-3])
                     else:
                         pass
-        self._script.clear()
-        logger.info("模块即将动态加载: " + str(module_name))
-        # module_name = ["abema"]
-        num = 0
         for mname in module_name:
+            callbackfunc = None
             try:
-                mo1 = importlib.import_module(f".{mname}", package=package)
+                mo1 = importlib.import_module(f".{mname}", package="addons.callback")
+                callbackfunc = getattr(mo1, 'callback')
+                if callbackfunc is not None:
+                    if asyncio.iscoroutinefunction(callbackfunc):
+                        callbackfunc_list.append(callbackfunc)
             except ModuleNotFoundError as m:
                 logger.warning(str(m))
-                mo1 = None
+            except AttributeError:
+                pass
             except NameError as n:
                 logger.warning(str(n))
-                mo1 = None
             except Exception as e:
                 logger.error(str(e))
-                mo1 = None
-            if mo1 is None:
+            if callbackfunc is None:
                 continue
-            try:
-                script = getattr(mo1, 'SCRIPT')
-            except AttributeError:
-                script = None
-            if script is None or not isinstance(script, dict):
-                continue
-
-            sname = script.get('MYNAME', None)
-            stask = script.get("TASK", None)
-            sget = script.get("GET", None)
-            if callable(stask) and isinstance(sname, str) and callable(sget):
-                self._script[sname] = [stask, sget]
-                num += 1
-                logger.info(f"已成功加载测试脚本：{sname}")
-            else:
-                logger.warning("测试脚本导入格式错误")
-        logger.info(f"外接测试脚本成功导入数量: {num}")
-
-    # @staticmethod
-    # def init_callback() -> list:
-    #     path = os.path.join(os.getcwd(), "addons", "callback")
-    #     try:
-    #         di = os.listdir(path)
-    #     except FileNotFoundError:
-    #         di = None
-    #     module_name = []
-    #     callbackfunc_list = []
-    #     if di is None:
-    #         logger.warning(f"找不到 {path} 所在的路径")
-    #     else:
-    #         for d in di:
-    #             if len(d) > 3:
-    #                 if d.endswith('.py') and d != "__init__.py":
-    #                     module_name.append(d[:-3])
-    #                 else:
-    #                     pass
-    #     for mname in module_name:
-    #         callbackfunc = None
-    #         try:
-    #             mo1 = importlib.import_module(f".{mname}", package="addons.callback")
-    #             callbackfunc = getattr(mo1, 'callback')
-    #             if callbackfunc is not None:
-    #                 if asyncio.iscoroutinefunction(callbackfunc):
-    #                     callbackfunc_list.append(callbackfunc)
-    #         except ModuleNotFoundError as m:
-    #             logger.warning(str(m))
-    #         except AttributeError:
-    #             pass
-    #         except NameError as n:
-    #             logger.warning(str(n))
-    #         except Exception as e:
-    #             logger.error(str(e))
-    #         if callbackfunc is None:
-    #             continue
-    #     logger.info(f"权限回调脚本导入数量: {len(callbackfunc_list)}")
-    #     return callbackfunc_list
+        logger.info(f"权限回调脚本导入数量: {len(callbackfunc_list)}")
+        return callbackfunc_list
 
     # def init_button(self, isreload=False):
     #     """
@@ -317,10 +307,11 @@ class AddonCleaner:
     #     """
     #     try:
     #         if isreload:
-    #             self.init_addons(self.path)
+    #             self.init_addons(["addons/builtin", self.path])
     #         from pyrogram.types import InlineKeyboardButton
     #         script = addon.script
     #         button = []
+    #
     #         for k in script.keys():
     #             b = InlineKeyboardButton(f"✅{str(k)}", callback_data=f"✅{str(k)}")
     #             button.append(b)
@@ -728,37 +719,34 @@ class ConfigManager:
         """
         self.yaml = {}
         self.config = None
-        flag = 0
+        self._data = data
+        self._path = configpath
+        self._old_path = "./config.yaml"
         if configpath == ':memory:':
             self.config = yaml.safe_load(preTemplate())
             self.yaml.update(self.config)
             return
-        try:
-            with open(configpath, "r", encoding="UTF-8") as fp:
-                self.config = yaml.safe_load(fp)
-                self.yaml.update(self.config)
-        except FileNotFoundError:
-            if flag == 0 and configpath == "./resources/config.yaml":
-                flag += 1
-                logger.warning("无法在 ./resources/ 下找到 config.yaml 配置文件，正在尝试寻找旧目录 ./config.yaml")
-                try:
-                    with open('./config.yaml', "r", encoding="UTF-8") as fp1:
-                        self.config = yaml.safe_load(fp1)
-                        self.yaml.update(self.config)
-                except FileNotFoundError:
-                    self.config = {}
-                    self.yaml = {}
-            elif flag > 1:
-                logger.warning("无法找到配置文件，正在初始化...")
+        cfg_path = self.find_path()
+        with contextlib.suppress(FileNotFoundError), open(cfg_path, "r", encoding="UTF-8") as fp:
+            self.config = yaml.safe_load(fp)
+            self.yaml.update(self.config)
         if self.config is None:
             di = {'loader': "Success"}
-            with open(configpath, "w+", encoding="UTF-8") as fp:
-                yaml.dump(di, fp)
-            self.config = {}
+            with open(cfg_path, "w+", encoding="UTF-8") as fp:
+                yaml.safe_dump(di, fp)
+            self.config = di
         if data:
-            with open(configpath, "w+", encoding="UTF-8") as fp:
+            with open(cfg_path, "w+", encoding="UTF-8") as fp:
                 yaml.dump(data, fp)
             self.yaml = data
+
+    def find_path(self) -> str:
+        if os.path.exists(self._path) or self._data:
+            return self._path
+        elif os.path.exists(self._old_path):
+            return self._old_path
+        else:
+            return "./resources/config.yaml"
 
     @property
     def nospeed(self) -> bool:
@@ -1212,42 +1200,6 @@ class ReCleaner:
                     task = self.script[i][1]
                     info[i] = task(self)
                     continue
-                if i == "Youtube":
-                    from addons.builtin import youtube
-                    you = youtube.get_youtube_info(self)
-                    info['Youtube'] = you
-                elif i == "Disney":
-                    dis = self.getDisneyinfo()
-                    info['Disney'] = dis
-                elif i == "Disney+":
-                    dis = self.getDisneyinfo()
-                    info['Disney+'] = dis
-                elif i == "Dazn":
-                    dazn = self.get_dazn_info()
-                    info['Dazn'] = dazn
-                elif i == "Netflix":
-                    from addons.builtin import netflix
-                    info['Netflix'] = netflix.get_netflix_info_new(self)
-                elif i == "TVB":
-                    from addons.builtin import tvb
-                    info['TVB'] = tvb.get_TVBAnywhere_info(self)
-                elif i == "Viu":
-                    from addons.builtin import viu
-                    info['Viu'] = viu.get_viu_info(self)
-                elif i == "iprisk" or i == "落地IP风险":
-                    from addons.builtin import ip_risk
-                    info['落地IP风险'] = ip_risk.get_iprisk_info(self)
-                elif i == "steam货币":
-                    from addons.builtin import steam
-                    info['steam货币'] = steam.get_steam_info(self)
-                elif i == "维基百科":
-                    from addons.builtin import wikipedia
-                    info['维基百科'] = wikipedia.get_wikipedia_info(self)
-                elif item == "OpenAI":
-                    from addons.builtin import openai
-                    info['OpenAI'] = openai.get_openai_info(self)
-                else:
-                    pass
         except Exception as e:
             logger.error(str(e))
         return info
@@ -1419,14 +1371,16 @@ class ResultCleaner:
 
     @staticmethod
     def format_size(size: Union[int, float]):
-        import math
-        SIZE_UNIT = ["B", "KB", "MB", "GB", "TB", "PB"]
-        if size < 1:
-            return "0KB"
-        i = int(math.floor(math.log(size, 1024)))
-        power = math.pow(1024, i)
-        size = round(size / power, 2)
-        return f"{size}{SIZE_UNIT[i]}"
+        # import math
+        # SIZE_UNIT = ["B", "KB", "MB", "GB", "TB", "PB"]
+        # if size < 1:
+        #     return "0KB"
+        # i = int(math.floor(math.log(size, 1024)))
+        # power = math.pow(1024, i)
+        # size = round(size / power, 2)
+        # return f"{size}{SIZE_UNIT[i]}"
+        # 作为后端不需要处理
+        return size
 
     def padding(self):
         """
@@ -1446,24 +1400,12 @@ class ResultCleaner:
             for a in self.data['平均速度']:
                 avgspeed = self.format_size(a)
                 new_list.append(avgspeed)
-                # avgspeed_mb = float(a) / 1024 / 1024
-                # if avgspeed_mb < 1:
-                #     avgspeed = a / 1024
-                #     new_list.append(f"{avgspeed:.2f}KB")
-                # else:
-                #     new_list.append(f"{avgspeed_mb:.2f}MB")
             self.data['平均速度'] = new_list
         if '最大速度' in self.data:
             new_list = []
             for a in self.data['最大速度']:
                 maxspeed = self.format_size(a)
                 new_list.append(maxspeed)
-                # maxspeed_mb = a / 1024 / 1024
-                # if maxspeed_mb < 1:
-                #     maxspeed = a / 1024
-                #     new_list.append(f"{maxspeed:.2f}KB")
-                # else:
-                #     new_list.append(f"{maxspeed_mb:.2f}MB")
             self.data['最大速度'] = new_list
         if '每秒速度' in self.data:
             self.data['每秒速度'] = [[j / 1024 / 1024 for j in i] for i in self.data['每秒速度']]

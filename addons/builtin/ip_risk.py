@@ -103,7 +103,8 @@ def get_iprisk_info(ReCleaner):
 SCRIPT = {
     "MYNAME": "IP风险",
     "TASK": task,
-    "GET": get_iprisk_info
+    "GET": get_iprisk_info,
+    "RANK": 2
 }
 
 

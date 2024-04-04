@@ -1,5 +1,7 @@
 import asyncio
+import contextlib
 import ssl
+import sys
 import time
 from datetime import datetime
 from pathlib import Path
@@ -75,6 +77,9 @@ class Download(BaseCollector):
         self.url = url
         self.savepath = savepath
         self.savename = savename if savename is not None else f"download-{_formatted_now}"
+        self._start_time = 0
+        self._current_time = 0
+        self._pause = 0.01
         super().__init__()
 
     async def download_common(self, url: str = None, savepath: Union[str, Path] = None, **kwargs) -> bool:
@@ -91,34 +96,51 @@ class Download(BaseCollector):
         url = geturl(url)
         if not url:
             raise DownloadError(f"这不是有效的URL: {url}")
+        print(f"Download URL: {url}")
         try:
-            async with ClientSession(headers=self._headers) as session:
-                async with session.get(url, **kwargs) as resp:
-                    if resp.status == 200:
-                        content_leagth = resp.content_length if resp.content_length else 10 * 1024 * 1024
-                        length = 0
-                        with open(write_path, 'wb') as f:
-                            while True:
+            from async_timeout import timeout
+            async with ClientSession(headers=self._headers) as session, session.get(url, **kwargs) as resp:
+                # async with session.get(url, **kwargs) as resp:
+                if 300 > resp.status >= 200:
+                    content_leagth = resp.content_length if resp.content_length else 10 * 1024 * 1024
+                    length = 0
+                    self._start_time = time.time()
+                    self._current_time = self._start_time
+                    if sys.platform.startswith("win"):
+                        self._pause = 0.03
+                    with open(write_path, 'wb') as f, contextlib.suppress(StopIteration):
+                        while True:
+                            async with timeout(20):
                                 chunk = await resp.content.read(1024)
-                                length += len(chunk)
-                                # 计算进度条长度
-                                percent = '=' * int(length * 100 / content_leagth)
-                                spaces = ' ' * (100 - len(percent))
-                                print(f"\r[{percent}{spaces}] {length} B", end="")
-                                if not chunk:
-                                    break
+                            length += len(chunk)
+                            # 计算进度条长度
+                            percent = int(length * 100 / content_leagth)
+                            p_text = '=' * int(length * 100 / content_leagth)
+                            spaces = ' ' * (100 - percent)
+                            _current_time = time.time()
+                            _time_used = round(_current_time - self._start_time, 2)
+                            if _current_time - self._current_time > self._pause:
+                                print(f"\r[{p_text}>{spaces}]{percent}% {length} B 已用时间={_time_used}s", end="")
+                            self._current_time = _current_time
+                            if not chunk:
+                                break
 
-                                f.write(chunk)
-                            l2 = float(length) / 1024 / 1024
-                            l2 = round(l2, 2)
-                            spath = str(Path(savepath).absolute())
-                            print(f"\r[{'=' * 100}] 共下载{length}B ({l2}MB)"
-                                  f"已保存到 {spath}")
-                    elif resp.status == 404:
-                        raise DownloadError(f"找不到资源: {resp.status}==>\t{url}")
+                            f.write(chunk)
+                        l2 = float(length) / 1024 / 1024
+                        l2 = round(l2, 2)
+                        spath = str(Path(savepath).absolute())
+                        per_second_speed = round(l2 / (self._current_time - self._start_time), 2)
+                        print(f"\r[{p_text}>{spaces}]{percent}% {length} B({l2}MB) {' '*10}"
+                              f"\n已用时间={_time_used}s 速度={per_second_speed}MB/s 保存路径={spath}")
+                elif resp.status == 404:
+                    raise DownloadError(f"Resources not found: {resp.status}==>\t{url}")
+                else:
+                    raise DownloadError("Error Status:" + str(resp.status))
             return True
         except (aiohttp.ClientError, OSError) as e:
             raise DownloadError("Download failed") from e
+        except asyncio.exceptions.TimeoutError as e:
+            raise DownloadError(f"Download timeout: {url}") from e
 
     async def dowload(self, url: str = None, savepath: Union[str, Path] = None, **kwargs) -> bool:
         """
@@ -408,16 +430,15 @@ class SubCollector(BaseCollector):
 class Collector:
     def __init__(self, script: List[str] = None):
         self.tasks = []
+        self.start = self.collect
         self._script = script
         self._headers = {
-            'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
-                          "Chrome/106.0.0.0 Safari/537.36"}
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
+                          'Chrome/123.0.0.0 Safari/537.36'}
         self._headers_json = {
-            'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
+            'user-agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                           "Chrome/106.0.0.0 Safari/537.36", "Content-Type": 'application/json'}
         self.info = {}
-        self.disneyurl1 = "https://www.disneyplus.com/"
-        self.disneyurl2 = "https://global.edge.bamgrid.com/token"
 
     @logger.catch
     def create_tasks(self, session: aiohttp.ClientSession, proxy=None):
@@ -428,124 +449,52 @@ class Collector:
         :return: tasks: []
         """
         items = media_items if self._script is None else self._script
+        if len(items) == 0 or not isinstance(items, list):
+            return self.tasks
         try:
-            if len(items) and isinstance(items, list):
-                for item in items:
-                    i = item
-                    if i in addon.script:
-                        task = addon.script[i][0]
-                        self.tasks.append(task(self, session, proxy=proxy))
-                        continue
-                    if i == "Youtube":
-                        from addons.builtin import youtube
-                        self.tasks.append(youtube.task(self, session, proxy=proxy))
-                    elif i == "Disney" or i == "Disney+":
-                        task5 = asyncio.create_task(self.fetch_dis(session, proxy=proxy))
-                        self.tasks.append(task5)
-                    elif i == "Netflix":
-                        from addons.builtin import netflix
-                        self.tasks.append(netflix.task(self, session, proxy=proxy, netflixurl=netflix_url))
-                    elif i == "TVB":
-                        from addons.builtin import tvb
-                        self.tasks.append(tvb.task(self, session, proxy=proxy))
-                    elif i == "Viu":
-                        from addons.builtin import viu
-                        self.tasks.append(viu.task(self, session, proxy=proxy))
-                    elif i == "Iprisk" or i == "落地IP风险":
-                        from addons.builtin import ip_risk
-                        self.tasks.append(ip_risk.task(self, session, proxy=proxy))
-                    elif i == "steam货币":
-                        from addons.builtin import steam
-                        self.tasks.append(steam.task(self, session, proxy=proxy))
-                    elif i == "维基百科":
-                        from addons.builtin import wikipedia
-                        self.tasks.append(wikipedia.task(self, session, proxy=proxy))
-                    elif item == "OpenAI":
-                        from addons.builtin import openai
-                        self.tasks.append(openai.task(self, session, proxy=proxy))
-                    else:
-                        pass
+            for item in items:
+                i = item
+                if i in addon.script:
+                    task = addon.script[i][0]
+                    self.tasks.append(task(self, session, proxy=proxy))
+                    continue
+                # if i == "Youtube":
+                #     from addons.builtin import youtube
+                #     self.tasks.append(youtube.task(self, session, proxy=proxy))
+                # elif i == "Disney" or i == "Disney+":
+                #     from addons.builtin import disney
+                #     self.tasks.append(disney.task(self, session, proxy=proxy))
+                # elif i == "Netflix":
+                #     from addons.builtin import netflix
+                #     self.tasks.append(netflix.task(self, session, proxy=proxy, netflixurl=netflix_url))
+                # elif i == "TVB":
+                #     from addons.builtin import tvb
+                #     self.tasks.append(tvb.task(self, session, proxy=proxy))
+                # elif i == "Viu":
+                #     from addons.builtin import viu
+                #     self.tasks.append(viu.task(self, session, proxy=proxy))
+                # elif i == "Iprisk" or i == "落地IP风险":
+                #     from addons.builtin import ip_risk
+                #     self.tasks.append(ip_risk.task(self, session, proxy=proxy))
+                # elif i == "steam货币":
+                #     from addons.builtin import steam
+                #     self.tasks.append(steam.task(self, session, proxy=proxy))
+                # elif i == "维基百科":
+                #     from addons.builtin import wikipedia
+                #     self.tasks.append(wikipedia.task(self, session, proxy=proxy))
+                # elif item == "OpenAI":
+                #     from addons.builtin import openai
+                #     self.tasks.append(openai.task(self, session, proxy=proxy))
+                else:
+                    pass
             return self.tasks
         except Exception as e:
             logger.error(e)
             return []
 
-    async def fetch_dis(self, session: aiohttp.ClientSession, proxy=None, reconnection=2):
+    async def collect(self, host: str, port: int, proxy=None):
         """
-        Disney+ 解锁检测
-        :param reconnection:
-        :param session:
-        :param proxy:
-        :return:
-        """
-        try:
-            if reconnection == 0:
-                dis1 = await session.get(self.disneyurl1, proxy=proxy, timeout=5)
-                text1 = await dis1.text()
-                dis1.close()
-                if dis1.status == 200:
-                    # text1 = await dis1.text()
-                    index = str(text1).find('Region', 0, 400)
-                    region = text1[index + 8:index + 10]
-                    if index == -1:
-                        self.info['disney'] = "待解锁"
-                    elif dis1.history:
-                        if 300 <= dis1.history[0].status <= 399:
-                            self.info['disney'] = "待解({})".format(region)
-                        else:
-                            self.info['disney'] = "未知"
-                    else:
-                        self.info['disney'] = "解锁({})".format(region)
-                elif 399 < dis1.status:
-                    self.info['disney'] = "N/A"
-                    logger.info(f"disney+ 访问错误 {dis1.status}")
-                else:
-                    self.info['disney'] = "失败"
-            else:
-                dis1 = await session.get(self.disneyurl1, proxy=proxy, timeout=5)
-                text1 = await dis1.text()
-                dis1.close()
-                dis2 = await session.get(self.disneyurl2, proxy=proxy, timeout=5)
-                if dis1.status == 200 and dis2.status != 403:
-                    # text1 = await dis1.text()
-                    index = str(text1).find('Region', 0, 400)
-                    region = text1[index + 8:index + 10]
-                    if index == -1:
-                        self.info['disney'] = "待解锁"
-                    elif dis1.history:
-                        if 300 <= dis1.history[0].status <= 399:
-                            self.info['disney'] = "待解({})".format(region)
-                        else:
-                            self.info['disney'] = "未知"
-                    else:
-                        self.info['disney'] = "解锁({})".format(region)
-                else:
-                    self.info['disney'] = "失败"
-                dis2.close()
-        except ssl.SSLError:
-            if reconnection != 0:
-                await self.fetch_dis(session=session, proxy=proxy, reconnection=reconnection - 1)
-            else:
-                self.info['disney'] = '证书错误'
-        except ClientConnectorError as c:
-            logger.warning("disney+请求发生错误:" + str(c))
-            if reconnection != 0:
-                await self.fetch_dis(session=session, proxy=proxy, reconnection=reconnection - 1)
-            else:
-                self.info['disney'] = '连接错误'
-        except asyncio.exceptions.TimeoutError:
-            logger.warning("disney+请求超时，正在重新发送请求......")
-            if reconnection != 0:
-                await self.fetch_dis(session=session, proxy=proxy, reconnection=reconnection - 1)
-        except ConnectionResetError:
-            self.info['disney'] = '未知'
-        except ProxyConnectionError as p:
-            logger.warning("似乎目标端口未开启监听")
-            logger.warning(str(p))
-
-    async def start(self, host: str, port: int, proxy=None):
-        """
-        启动采集器，采用并发操作
+        等待采集器工作完成
         :param host:
         :param port:
         :param proxy: using proxy
