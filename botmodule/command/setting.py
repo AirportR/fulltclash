@@ -616,14 +616,17 @@ async def select_script_only(_: "Client", call: Union["CallbackQuery", "Message"
     """
     api_route = "/api/script/ok"
     if isinstance(call, Message):
+        if len(buttons) < 8:
+            await call.reply(f"发生错误: buttons < 8")
+            return
         IKM = InlineKeyboardMarkup(
             [
                 # 第一行
                 [dbtn['b_okpage']],
-                [dbtn[1], dbtn[2], dbtn[3]],
+                [buttons[:3]],
                 # 第二行
-                [dbtn[20], dbtn[25], dbtn[18]],
-                [dbtn[15], dbtn[21], dbtn[19]],
+                [buttons[3:6]],
+                [buttons[6:9]],
                 [dbtn['b_all'], blank_g, next_page_g],
                 [dbtn['b_cancel'], dbtn['b_reverse']],
                 [IKB("👌完成选择", api_route)]
@@ -805,6 +808,9 @@ async def select_sort(app: Client, call: CallbackQuery):
         key = genkey(8)
         BOT_MESSAGE_CACHE[key] = call.message
         await Invite(key=key).invite(app, originmsg)
+        return
+    if len(buttons) < 8:
+        await call.message.edit_text(f"发生错误: buttons < 8")
         return
     IKM = InlineKeyboardMarkup(
         [
