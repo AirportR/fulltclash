@@ -458,33 +458,6 @@ class Collector:
                     task = addon.script[i][0]
                     self.tasks.append(task(self, session, proxy=proxy))
                     continue
-                # if i == "Youtube":
-                #     from addons.builtin import youtube
-                #     self.tasks.append(youtube.task(self, session, proxy=proxy))
-                # elif i == "Disney" or i == "Disney+":
-                #     from addons.builtin import disney
-                #     self.tasks.append(disney.task(self, session, proxy=proxy))
-                # elif i == "Netflix":
-                #     from addons.builtin import netflix
-                #     self.tasks.append(netflix.task(self, session, proxy=proxy, netflixurl=netflix_url))
-                # elif i == "TVB":
-                #     from addons.builtin import tvb
-                #     self.tasks.append(tvb.task(self, session, proxy=proxy))
-                # elif i == "Viu":
-                #     from addons.builtin import viu
-                #     self.tasks.append(viu.task(self, session, proxy=proxy))
-                # elif i == "Iprisk" or i == "落地IP风险":
-                #     from addons.builtin import ip_risk
-                #     self.tasks.append(ip_risk.task(self, session, proxy=proxy))
-                # elif i == "steam货币":
-                #     from addons.builtin import steam
-                #     self.tasks.append(steam.task(self, session, proxy=proxy))
-                # elif i == "维基百科":
-                #     from addons.builtin import wikipedia
-                #     self.tasks.append(wikipedia.task(self, session, proxy=proxy))
-                # elif item == "OpenAI":
-                #     from addons.builtin import openai
-                #     self.tasks.append(openai.task(self, session, proxy=proxy))
                 else:
                     pass
             return self.tasks
