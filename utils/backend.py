@@ -14,7 +14,7 @@ from aiohttp_socks import ProxyConnector
 from loguru import logger
 from utils.collector import proxies
 from libs import pynat
-from utils import cleaner, collector, ipstack, proxy, sorter, geoip
+from utils import cleaner, collector, ipstack, proxy, sorter, geoip, __version__
 
 # 重写整个测试核心，技术栈分离。
 
@@ -254,7 +254,7 @@ class SpeedCore(Basecore):
     async def fetch(self: Speedtest, urls: list, host: str, port: int, buffer: int):
         try:
             async with aiohttp.ClientSession(
-                    headers={"User-Agent": "FullTclash"},
+                    headers={"User-Agent": f"fulltclash/{__version__}"},
                     connector=ProxyConnector(host=host, port=port),
             ) as session:
                 flag = 0

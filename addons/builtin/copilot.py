@@ -3,19 +3,9 @@ import re
 
 import aiohttp
 from loguru import logger
+from utils import retry
 
 UNS_REGION = ["MY", "CV", "CN", "CU", "SR", "TL", "IR", 'CI', 'KP', 'PS', 'RU', 'SH', 'SY']
-try:
-    from utils import retry
-except ImportError:
-    def retry(time=3):
-        def wrapper(func):
-            async def inner(*args, **kwargs):
-                await func(*args, **kwargs)
-
-            return inner
-
-        return wrapper
 
 
 @retry(3)
@@ -54,10 +44,6 @@ async def fetch_copilot(collector, session: aiohttp.ClientSession, proxy=None):
             region = region.upper()
             collector.info['copilot'] = "失败" + region if index < 80000 or region in UNS_REGION else '解锁' + region
             return True
-
-        # with open("temp", "w", encoding="utf-8") as fp:
-        #     fp.write(text)
-        # print(text)
     return True
 
 
