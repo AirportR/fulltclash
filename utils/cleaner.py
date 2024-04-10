@@ -153,7 +153,7 @@ class AddonCleaner:
     动态脚本导入
     """
 
-    def __init__(self, path: str = "./addons/"):
+    def __init__(self, path: str = "addons"):
         """
         模块管理中心
         :param path: 加载路径

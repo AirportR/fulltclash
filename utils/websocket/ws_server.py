@@ -226,7 +226,7 @@ async def main():
         port = 8765
 
     from utils.cleaner import addon
-    addon.init_addons('./addons')
+    addon.init_addons(["addons/builtin", "addons/"])
     await server(host, port)
 
 if __name__ == '__main__':
