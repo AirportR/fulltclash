@@ -1,6 +1,7 @@
 import asyncio
 
 import aiohttp
+import async_timeout
 from aiohttp import ClientConnectorError
 from loguru import logger
 
@@ -17,20 +18,22 @@ async def fetch_tiktok(collector, session: aiohttp.ClientSession, proxy=None, re
     """
     tiktokurl = 'https://www.tiktok.com'
     try:
-        async with aiohttp.ClientSession(timeout=10) as session:
-            async with session.get(tiktokurl, proxy=proxy, timeout=5) as resq:
-                if resq.status == 200:
-                    response_text = await resq.text()
-                    region = response_text.find('"region":')
-                    if region != -1:
-                        region = response_text[region:].split('"')[3]
-                        # print("Tiktok Region: ", region)
-                        collector.info['tiktok'] = f"解锁({region})"
+        conn = session.connector
+        async with async_timeout.timeout(10):
+            async with aiohttp.ClientSession(timeout=10, connector=conn) as session:
+                async with session.get(tiktokurl, proxy=proxy, timeout=5) as resp:
+                    if resp.status == 200:
+                        response_text = await resp.text()
+                        region = response_text.find('"region":')
+                        if region != -1:
+                            region = response_text[region:].split('"')[3]
+                            # print("Tiktok Region: ", region)
+                            collector.info['tiktok'] = f"解锁({region})"
+                        else:
+                            # print("Tiktok Region: Not found")
+                            collector.info['tiktok'] = "失败"
                     else:
-                        # print("Tiktok Region: Not found")
-                        collector.info['tiktok'] = "失败"
-                else:
-                    collector.info['tiktok'] = "未知"
+                        collector.info['tiktok'] = "未知"
     except ClientConnectorError as c:
         logger.warning("tiktok请求发生错误:" + str(c))
         if reconnection != 0:
@@ -81,9 +84,11 @@ if __name__ == "__main__":
                 self.data = self.info
 
         fakecl = FakeColl()
-
+        from aiohttp_socks import ProxyConnector
+        # conn = ProxyConnector(host="127.0.0.1", port=11112, limit=0)
+        # session = aiohttp.ClientSession(connector=conn)
         session = aiohttp.ClientSession()
-        await fetch_tiktok(fakecl, session, proxy='http://127.0.0.1:11112')
+        await fetch_tiktok(fakecl, session, proxy=None)
         print(fakecl.info)
         await session.close()
 
