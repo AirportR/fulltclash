@@ -2,50 +2,40 @@ import asyncio
 
 import aiohttp
 import async_timeout
-from aiohttp import ClientConnectorError
 from loguru import logger
+from utils import retry
 
 
 # collector section
-async def fetch_tiktok(collector, session: aiohttp.ClientSession, proxy=None, reconnection=2):
+@retry(1)
+async def fetch_tiktok(collector, session: aiohttp.ClientSession, proxy=None):
     """
-    tiktok解锁测试,检查测速是否被ban
+    tiktok解锁测试
     :param collector:
-    :param reconnection:
     :param session:
     :param proxy:
     :return:
     """
     tiktokurl = 'https://www.tiktok.com'
-    try:
-        conn = session.connector
-        async with async_timeout.timeout(10):
-            async with aiohttp.ClientSession(connector=conn) as session:
-                async with session.get(tiktokurl, proxy=proxy, timeout=5) as resp:
-                    if resp.status == 200:
-                        response_text = await resp.text()
-                        region = response_text.find('"region":')
-                        if region != -1:
-                            region = response_text[region:].split('"')[3]
-                            # print("Tiktok Region: ", region)
-                            collector.info['tiktok'] = f"解锁({region})"
-                        else:
-                            # print("Tiktok Region: Not found")
-                            collector.info['tiktok'] = "失败"
+    conn = session.connector
+    if type(conn).__name__ == 'ProxyConnector':
+        proxy = "http://" + conn._proxy_host + ":" + str(conn._proxy_port)
+    async with async_timeout.timeout(10):
+        async with aiohttp.ClientSession() as session:
+            async with session.get(tiktokurl, proxy=proxy, timeout=5) as resp:
+                if resp.status == 200:
+                    response_text = await resp.text()
+                    region = response_text.find('"region":')
+                    if region != -1:
+                        region = response_text[region:].split('"')[3]
+                        # print("Tiktok Region: ", region)
+                        collector.info['tiktok'] = f"解锁({region})"
                     else:
-                        collector.info['tiktok'] = "未知"
-    except ClientConnectorError as c:
-        logger.warning("tiktok请求发生错误:" + str(c))
-        if reconnection != 0:
-            await fetch_tiktok(collector, session=session, proxy=proxy, reconnection=reconnection - 1)
-        else:
-            collector.info['tiktok'] = "连接错误"
-    except asyncio.exceptions.TimeoutError:
-        logger.warning("tiktok请求超时，正在重新发送请求......")
-        if reconnection != 0:
-            await fetch_tiktok(collector, session=session, proxy=proxy, reconnection=reconnection - 1)
-        else:
-            collector.info['tiktok'] = "超时"
+                        # print("Tiktok Region: Not found")
+                        collector.info['tiktok'] = "失败"
+                else:
+                    collector.info['tiktok'] = "未知"
+    return True
 
 
 def task(Collector, session, proxy):
@@ -85,9 +75,8 @@ if __name__ == "__main__":
 
         fakecl = FakeColl()
         from aiohttp_socks import ProxyConnector
-        # conn = ProxyConnector(host="127.0.0.1", port=11112, limit=0)
-        # session = aiohttp.ClientSession(connector=conn)
-        session = aiohttp.ClientSession()
+        conn = ProxyConnector(host="127.0.0.1", port=11112, limit=0)
+        session = aiohttp.ClientSession(connector=conn)
         await fetch_tiktok(fakecl, session, proxy=None)
         print(fakecl.info)
         await session.close()
