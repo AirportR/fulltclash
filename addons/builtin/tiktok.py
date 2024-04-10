@@ -20,7 +20,7 @@ async def fetch_tiktok(collector, session: aiohttp.ClientSession, proxy=None, re
     try:
         conn = session.connector
         async with async_timeout.timeout(10):
-            async with aiohttp.ClientSession(timeout=10, connector=conn) as session:
+            async with aiohttp.ClientSession(connector=conn) as session:
                 async with session.get(tiktokurl, proxy=proxy, timeout=5) as resp:
                     if resp.status == 200:
                         response_text = await resp.text()
