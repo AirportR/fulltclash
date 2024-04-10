@@ -70,7 +70,7 @@ class Basecore:
         return [0 for _ in range(nodenum)] if rtt == 0 else rtt
 
     def join_proxy(self, proxyinfo: list, filters: bool = False):
-        self._config.setProxies(proxyinfo)
+        self._config.set_proxies(proxyinfo)
         if filters:
             self._config.node_filter(self._pre_include_text, self._pre_exclude_text, issave=False)  # 从配置文件过滤文件
 
