@@ -8,7 +8,7 @@ UNS_REGION = ["MY", "CV", "CN", "CU", "SR", "TL", "IR", 'CI', 'KP', 'PS', 'RU', 
 try:
     from utils import retry
 except ImportError:
-    def retry(time=3):
+    def retry(_=3):
         def wrapper(func):
             async def inner(*args, **kwargs):
                 await func(*args, **kwargs)
@@ -31,7 +31,7 @@ async def fetch_copilot(collector, session: aiohttp.ClientSession, proxy=None):
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
                       'Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0'
     }
-    url = 'https://www.bing.com/search?q=bing&showconv=1'
+    url = 'https://www.bing.com/search?q=bing'
     async with session.get(url, headers=headers, proxy=proxy, timeout=5) as resp:
         if resp.history:
             for i in resp.history:
@@ -40,8 +40,8 @@ async def fetch_copilot(collector, session: aiohttp.ClientSession, proxy=None):
                     return True
         if resp.status == 200:
             text = await resp.text()
-            index = text.find("Copilot")
-            # print(index)
+            # index = text.find("Copilot")
+            index = text.find("b-scopeListItem-conv")
             try:
                 region = re.search(r'Region:"(\w\w)"', text).group(1)
                 # region2 = re.search(r'Region:"(.*)"', text).group(1)
@@ -52,12 +52,8 @@ async def fetch_copilot(collector, session: aiohttp.ClientSession, proxy=None):
             if region == "WW":
                 region = ""
             region = region.upper()
-            collector.info['copilot'] = "失败" + region if index < 80000 or region in UNS_REGION else '解锁' + region
+            collector.info['copilot'] = "失败" + region if index == -1 or region in UNS_REGION else '解锁' + region
             return True
-
-        # with open("temp", "w", encoding="utf-8") as fp:
-        #     fp.write(text)
-        # print(text)
     return True
 
 
