@@ -21,7 +21,7 @@ async def fetch_copilot(collector, session: aiohttp.ClientSession, proxy=None):
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
                       'Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0'
     }
-    url = 'https://www.bing.com/search?q=bing&showconv=1'
+    url = 'https://www.bing.com/search?q=bing'
     async with session.get(url, headers=headers, proxy=proxy, timeout=5) as resp:
         if resp.history:
             for i in resp.history:
@@ -30,8 +30,8 @@ async def fetch_copilot(collector, session: aiohttp.ClientSession, proxy=None):
                     return True
         if resp.status == 200:
             text = await resp.text()
-            index = text.find("Copilot")
-            # print(index)
+            # index = text.find("Copilot")
+            index = text.find("b-scopeListItem-conv")
             try:
                 region = re.search(r'Region:"(\w\w)"', text).group(1)
                 # region2 = re.search(r'Region:"(.*)"', text).group(1)
@@ -42,7 +42,7 @@ async def fetch_copilot(collector, session: aiohttp.ClientSession, proxy=None):
             if region == "WW":
                 region = ""
             region = region.upper()
-            collector.info['copilot'] = "失败" + region if index < 80000 or region in UNS_REGION else '解锁' + region
+            collector.info['copilot'] = "失败" + region if index == -1 or region in UNS_REGION else '解锁' + region
             return True
     return True
 
