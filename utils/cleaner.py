@@ -1408,7 +1408,7 @@ class ResultCleaner:
                 new_list.append(maxspeed)
             self.data['最大速度'] = new_list
         if '每秒速度' in self.data:
-            self.data['每秒速度'] = [[j / 1024 / 1024 for j in i] for i in self.data['每秒速度']]
+            self.data['每秒速度'] = [[self.format_size(j) for j in i] for i in self.data['每秒速度']]
 
     def calc_used(self):
         if '每秒速度' in self.data and '消耗流量' not in self.data:
