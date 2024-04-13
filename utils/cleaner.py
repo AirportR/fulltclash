@@ -1604,8 +1604,8 @@ def protocol_join(protocol_link: str):
                        "config%2FACL4SSR_Online.ini"
     else:
         remoteconfig = quote(remoteconfig)
-
-    new_link = f"https://{subcvtaddr}/sub?target=clash&new_name=true&url=" + quote(protocol_link) + \
+    scheme = "https" if bool(subcvtconf.get('tls', True)) else "http"
+    new_link = f"{scheme}://{subcvtaddr}/sub?target=clash&new_name=true&url=" + quote(protocol_link) + \
                f"&insert=false&config={remoteconfig}"
     return new_link
 
