@@ -623,10 +623,10 @@ async def select_script_only(_: "Client", call: Union["CallbackQuery", "Message"
             [
                 # 第一行
                 [dbtn['b_okpage']],
-                [buttons[:3]],
+                buttons[:3],
                 # 第二行
-                [buttons[3:6]],
-                [buttons[6:9]],
+                buttons[3:6],
+                buttons[6:9],
                 [dbtn['b_all'], blank_g, next_page_g],
                 [dbtn['b_cancel'], dbtn['b_reverse']],
                 [IKB("👌完成选择", api_route)]
