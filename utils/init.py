@@ -31,7 +31,6 @@ def check_py_version() -> None:
 
 
 def check_args():
-    print(sys.argv)
     import argparse
     help_text_socks5 = "设置socks5代理，bot代理使用的这个\n格式--> host:端口:用户名:密码\t用户名和密码可省略"
     help_text_http = "设置HTTP代理,拉取订阅用的。\n格式--> 用户名:密码@host:端口\t@符号前面的用户名和密码如果不设置可省略"

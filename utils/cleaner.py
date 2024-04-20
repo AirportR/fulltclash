@@ -201,10 +201,11 @@ class AddonCleaner:
         success_list = []
         if script_name:
             for name in script_name:
-                if name[-3:] == '.py' and name != "__init__.py":
+                sname = str(name).removesuffix(".py")
+                if name == "__init__.py":
                     continue
                 try:
-                    os.remove(self.path + name + '.py')
+                    os.remove(Path(self.path).joinpath(f"{sname}.py"))
                     success_list.append(name)
                 except FileNotFoundError as f:
                     logger.warning(f"{name} 文件不存在\t" + str(f))
