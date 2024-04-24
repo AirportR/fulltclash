@@ -1,12 +1,9 @@
 import sys
 from sqlite3 import OperationalError
 
-from utils import bot
+from botmodule import bot
 from glovar import app as app1, bot_info, app2
 from pyrogram import idle
-from botmodule import init_bot
-
-bot_token = init_bot.bot_token
 
 
 # app1 is bot,app2 is user bot.
