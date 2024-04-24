@@ -123,15 +123,10 @@ pip install -r requirements.txt
 ```
 ### 为bot进行相关配置
 以下为启动bot的最低要求（如果您是新手，建议先以最低要求把bot跑起来，否则自己乱改配置容易出现不可预知的错误。）
-- 管理员配置  
+
+新建一个名为config.yaml的文件，放在./resources下，项目有模板例子名为./resources/config.yaml.example,在config.yaml中写入如下信息： 
   
-  新建一个名为config.yaml的文件，放在./resources下，项目有模板例子名为./resources/config.yaml.example,在config.yaml中写入如下信息： 
-  
-  ```yaml
-  admin:
-  - 12345678 # 改成自己的telegram uid
-  - 8765431 # 这是第二行，表示第二个管理员，没有第二个管理员就把该行删除。
-  ```
+
   
 - bot相关配置  
   ```yaml
@@ -155,6 +150,14 @@ pip install -r requirements.txt
    path: "./bin/FullTCore" #这里改成代理客户端文件路径
   ```
   Windows系统名字后缀名.exe要加上，其他类Unix系统不需要加后缀名。
+- 管理员配置（可选）
+
+  从3.6.10版本开始，bot在首次启动时会将接收到的第一条消息的发送者作为管理员，一般无需手动配置，除非您想设置多个管理员：
+  ```yaml
+  admin:
+  - 12345678 # 改成自己的telegram uid
+  - 8765431 # 这是第二行，表示第二个管理员，没有第二个管理员就把该行删除。
+  ```
 - HTTP代理配置（可选）  
   
   如果是在中国大陆地区使用，可能部分网址无法直接连接。可在config.yaml中写入如下信息，下载资源文件时将自动应用该项配置： 
