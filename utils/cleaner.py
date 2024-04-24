@@ -1789,7 +1789,7 @@ def unzip_targz(input_file: Union[str, Path], output_path: Union[str, Path]) -> 
     """解压 tar.gz 文件, 返回解压后的文件名称列表"""
     unzip_files = []
     try:
-        temp_path = str(input_file).rstrip(".gz")
+        temp_path = str(input_file).removesuffix(".gz")
         path = Path(input_file)
         path2 = Path(output_path)
         with gzip.open(path, 'rb') as f_in, open(temp_path, 'wb') as f_out:

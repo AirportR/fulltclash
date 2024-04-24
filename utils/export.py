@@ -2114,6 +2114,6 @@ class ExportSpeed(ExportResult):
 
 def check_path(maybe_path: str, num: int = 1) -> str:
     if os.path.exists(maybe_path):
-        new_path = maybe_path.rstrip(".png").rstrip(f"({num-1})") + f"({num})" + ".png"
+        new_path = maybe_path.removesuffix(".png").rstrip(f"({num-1})") + f"({num})" + ".png"
         return check_path(new_path, num+1)
     return maybe_path
