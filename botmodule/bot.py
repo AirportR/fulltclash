@@ -89,7 +89,7 @@ def born(app: "Client"):
         logger.warning("您尚未配置管理员，请在bot启动成功后私聊bot发送任意消息，bot会自动将您注册为管理员。")
         lock = asyncio.Lock()
 
-        async def waiting_born(_: "Client", message: "Message"):
+        async def waiting_born(client: "Client", message: "Message"):
             async with lock:
                 admin_id = message.from_user.id
                 await message.reply(f"✅初始化成功，您已被确定成管理员，已将您的身份写入到配置文件~\n"
@@ -109,7 +109,8 @@ def born(app: "Client"):
                             break
                     if self_h is not None:
                         app.remove_handler(self_h, -100)
-                logger.info(f"✅已初始化管理员, UID: {admin_id}Username:{message.from_user.username}")
+                logger.info(f"✅已初始化管理员, UID: {admin_id}Username:{message.from_user.username}，正在重启bot...")
+                await botmodule.restart_or_killme(client, message)
         hl = MessageHandler(waiting_born, filters.private)
         app.add_handler(hl, -100)
     else:

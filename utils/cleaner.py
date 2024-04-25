@@ -817,10 +817,12 @@ class ConfigManager:
         return self.config.get('masterconfig', {})
 
     def getUserconfig(self):
-        userconfig = self.config.get('userconfig', {})
-        if not isinstance(userconfig, dict):
-            logger.warning("userconfig的类型应为字典")
-            return {}
+        try:
+            userconfig = self.config['userconfig']
+        except KeyError:
+            logger.info("未存在userconfig，初始化userconfig配置")
+            config.yaml['userconfig'] = {}
+            userconfig = {}
         return userconfig
 
     def getSlavecomment(self, slaveid: str) -> str:
@@ -853,7 +855,7 @@ class ConfigManager:
     def getBotconfig(self):
         botconfig = self.config.get('bot', {})
         if botconfig is None:
-            print("bot_config为None")
+            logger.warning("bot配置项为None")
             return {}
         if not botconfig:
             return botconfig
