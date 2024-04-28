@@ -1,3 +1,5 @@
+import asyncio
+
 from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery, Message
 from loguru import logger
@@ -22,6 +24,7 @@ common_cmd = config.getBotconfig().get('command', [])
 
 
 def loader(app: Client):
+    born(app)
     command_loader(app)
     command_loader2(app)
     callback_loader(app)
@@ -76,6 +79,42 @@ def command_loader2(app: Client):
     @app.on_message(filters.command(['stopspeed']) & filters.user(admin + master_bridge), 2)
     async def _(_: Client, __: Message):
         break_speed.append(True)
+
+
+def born(app: "Client"):
+    if not bool(admin):
+        from pyrogram.handlers import MessageHandler
+        # 如果admin列表为空，说明没有配置管理员或者初次启动，第一个给bot发私聊消息的将是管理员。
+        # 这是来自小说的灵感，蛋生生物睁开第一眼看到的第一个目标是它的母亲。
+        logger.warning("您尚未配置管理员，请在bot启动成功后私聊bot发送任意消息，bot会自动将您注册为管理员。")
+        lock = asyncio.Lock()
+
+        async def waiting_born(client: "Client", message: "Message"):
+            async with lock:
+                admin_id = message.from_user.id
+                await message.reply(f"✅初始化成功，您已被确定成管理员，已将您的身份写入到配置文件~\n"
+                                    f"您的UID为: {admin_id}\n"
+                                    f"用户名: {message.from_user.username}")
+                # 管理员身份添加到配置文件
+                if admin_id:
+                    config.add_admin(message.from_user.id)
+                    config.reload()
+                # 删除此handler回调，否则会将所有人注册成管理员
+                if -100 in app.dispatcher.groups:
+                    _g: list = app.dispatcher.groups[-100]
+                    self_h = None
+                    for _h in _g:
+                        if isinstance(_h, MessageHandler) and "waiting_born" == _h.callback.__name__:
+                            self_h = _h
+                            break
+                    if self_h is not None:
+                        app.remove_handler(self_h, -100)
+                logger.info(f"✅已初始化管理员, UID: {admin_id}Username:{message.from_user.username}，正在重启bot...")
+                await botmodule.restart_or_killme(client, message)
+        hl = MessageHandler(waiting_born, filters.private)
+        app.add_handler(hl, -100)
+    else:
+        return
 
 
 def command_loader(app: Client):

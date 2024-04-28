@@ -5,7 +5,7 @@ import aiohttp
 from utils.cron import *
 from typing import Callable, Any, Union, Coroutine, Optional
 
-__version__ = "3.6.10"  # 项目版本号
+__version__ = "3.6.11"  # 项目版本号
 HOME_DIR = getcwd()
 __all__ = [
     "cron_delete_message",
@@ -57,10 +57,12 @@ def retry(count=5, break_func: Callable[[Any], bool] = None):
                         result = await func(*args, **kwargs)
                     else:
                         result = func(*args, **kwargs)
-                except (aiohttp.ClientError, asyncio.exceptions.TimeoutError, ConnectionResetError, Exception):
+                    if break_func(result):
+                        break
+                except (aiohttp.ClientError, asyncio.exceptions.TimeoutError, ConnectionResetError):
                     continue
-                if break_func(result):
-                    break
+                except Exception as e:
+                    logger.info(str(e))
 
         return inner
 

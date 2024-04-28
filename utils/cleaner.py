@@ -161,14 +161,13 @@ class AddonCleaner:
         self.path = path
         self._script = {}
         self.blacklist = []
+        self.module_suffixes = [".py", ".pyd", ".so", ".dll"]
 
     def global_test_item(self, httptest: bool = False):
         """
         经过去重并支持黑名单一并去除。最后返回一个新列表
         :return:
         """
-        # base_item = ['Netflix', 'Youtube', 'Disney+', 'OpenAI', 'Viu', 'steam货币', 'TVB',
-        #              '维基百科', '落地IP风险', 'SSH']
         base_item = list(self._script.keys())
         new_item = sorted(set(base_item) - set(self.blacklist), key=base_item.index)
         if httptest:
@@ -179,7 +178,10 @@ class AddonCleaner:
     def script(self):
         return self._script
 
-    def reload_script(self, blacklist: list = None, path: str = "./addons/"):
+    def reload_script(self, blacklist: list = None, path: Union[str, List[str]] = None):
+        if path is None:
+            path = ["addons/builtin", "addons"]
+        path = [path] if isinstance(path, str) else path
         self.init_addons(path)
         if blacklist:
             for b in blacklist:
@@ -199,10 +201,11 @@ class AddonCleaner:
         success_list = []
         if script_name:
             for name in script_name:
-                if name[-3:] == '.py' and name != "__init__.py":
+                sname = str(name).removesuffix(".py")
+                if name == "__init__.py":
                     continue
                 try:
-                    os.remove(self.path + name + '.py')
+                    os.remove(Path(self.path).joinpath(f"{sname}.py"))
                     success_list.append(name)
                 except FileNotFoundError as f:
                     logger.warning(f"{name} 文件不存在\t" + str(f))
@@ -220,7 +223,6 @@ class AddonCleaner:
         动态加载测速脚本
         """
         self._script.clear()
-        module_suffixes = [".py", ".pyd", ".so", ".dll"]
         packages = [package] if isinstance(package, str) else package
         num = 0
 
@@ -252,7 +254,7 @@ class AddonCleaner:
                     if entry == "__init__.py":
                         continue
                     _name, _ext = os.path.splitext(entry)
-                    if _ext not in module_suffixes:
+                    if _ext not in self.module_suffixes:
                         continue
                     is_loaded = unsafe_load(_name, _pkg)
                     if is_loaded:
@@ -262,42 +264,39 @@ class AddonCleaner:
         self._script = dict(sorted(self._script.items(), key=lambda x: x[1][2]))
         logger.info(f"外接测试脚本成功导入数量: {num}")
 
-    @staticmethod
-    def init_callback() -> list:
+    def init_callback(self) -> list:
         path = os.path.join(os.getcwd(), "addons", "callback")
-        try:
-            di = os.listdir(path)
-        except FileNotFoundError:
-            di = None
-        module_name = []
         callbackfunc_list = []
-        if di is None:
-            logger.warning(f"找不到 {path} 所在的路径")
-        else:
-            for d in di:
-                if len(d) > 3:
-                    if d.endswith('.py') and d != "__init__.py":
-                        module_name.append(d[:-3])
-                    else:
-                        pass
-        for mname in module_name:
-            callbackfunc = None
+        num = 0
+
+        def unsafe_load(name: str, pkg: str) -> bool:
             try:
-                mo1 = importlib.import_module(f".{mname}", package="addons.callback")
-                callbackfunc = getattr(mo1, 'callback')
-                if callbackfunc is not None:
-                    if asyncio.iscoroutinefunction(callbackfunc):
-                        callbackfunc_list.append(callbackfunc)
-            except ModuleNotFoundError as m:
-                logger.warning(str(m))
-            except AttributeError:
-                pass
-            except NameError as n:
-                logger.warning(str(n))
-            except Exception as e:
-                logger.error(str(e))
-            if callbackfunc is None:
+                mod = importlib.import_module(pathlib.Path(pkg).joinpath(name).as_posix().replace('/', '.'))
+            except (ModuleNotFoundError, NameError, Exception):
+                mod = None
+            if mod is None:
+                return False
+            callbackfunc = getattr(mod, 'callback', None)
+            if callbackfunc is not None and (asyncio.iscoroutinefunction(callbackfunc) or callable(callbackfunc)):
+                callbackfunc_list.append(callbackfunc)
+                return True
+            else:
+                return False
+
+        for _pkg in path:
+            try:
+                for entry in os.listdir(_pkg):
+                    if entry == "__init__.py":
+                        continue
+                    _name, _ext = os.path.splitext(entry)
+                    if _ext not in self.module_suffixes:
+                        continue
+                    is_loaded = unsafe_load(_name, _pkg)
+                    if is_loaded:
+                        num += 1
+            except (FileNotFoundError, NotImplementedError, OSError):
                 continue
+
         logger.info(f"权限回调脚本导入数量: {len(callbackfunc_list)}")
         return callbackfunc_list
 
@@ -321,7 +320,7 @@ class AddonCleaner:
             return []
 
 
-def preTemplate():
+def pre_template():
     """
     内置模板。防止用户误删除项目文件导致出错，无法进行测试。
     """
@@ -415,7 +414,7 @@ class ClashCleaner:
             if _config == ':memory:':
                 try:
                     if _config2 is None:
-                        self.yaml = yaml.safe_load(preTemplate())
+                        self.yaml = yaml.safe_load(pre_template())
                     else:
                         try:
                             self.yaml = yaml.safe_load(_config2)
@@ -442,7 +441,7 @@ class ClashCleaner:
         """
         self.check_unsupport_proxy()
 
-    def setProxies(self, proxyinfo: list):
+    def set_proxies(self, proxyinfo: list):
         """
         覆写里面的proxies键
         :return:
@@ -724,7 +723,7 @@ class ConfigManager:
         self._path = configpath
         self._old_path = "./config.yaml"
         if configpath == ':memory:':
-            self.config = yaml.safe_load(preTemplate())
+            self.config = yaml.safe_load(pre_template())
             self.yaml.update(self.config)
             return
         cfg_path = self.find_path()
@@ -818,10 +817,12 @@ class ConfigManager:
         return self.config.get('masterconfig', {})
 
     def getUserconfig(self):
-        userconfig = self.config.get('userconfig', {})
-        if not isinstance(userconfig, dict):
-            logger.warning("userconfig的类型应为字典")
-            return {}
+        try:
+            userconfig = self.config['userconfig']
+        except KeyError:
+            logger.info("未存在userconfig，初始化userconfig配置")
+            config.yaml['userconfig'] = {}
+            userconfig = {}
         return userconfig
 
     def getSlavecomment(self, slaveid: str) -> str:
@@ -854,7 +855,7 @@ class ConfigManager:
     def getBotconfig(self):
         botconfig = self.config.get('bot', {})
         if botconfig is None:
-            print("bot_config为None")
+            logger.warning("bot配置项为None")
             return {}
         if not botconfig:
             return botconfig
@@ -916,7 +917,7 @@ class ConfigManager:
         """
         try:
             if isjoint:
-                return 'http://' + self.config.get('bot', {}).get('proxy', None)
+                return 'http://' + str(self.config.get('bot', {}).get('proxy', None))
             else:
                 return self.config.get('bot', {}).get('proxy', None)
         except KeyError:
@@ -1606,8 +1607,8 @@ def protocol_join(protocol_link: str):
                        "config%2FACL4SSR_Online.ini"
     else:
         remoteconfig = quote(remoteconfig)
-
-    new_link = f"https://{subcvtaddr}/sub?target=clash&new_name=true&url=" + quote(protocol_link) + \
+    scheme = "https" if bool(subcvtconf.get('tls', True)) else "http"
+    new_link = f"{scheme}://{subcvtaddr}/sub?target=clash&new_name=true&url=" + quote(protocol_link) + \
                f"&insert=false&config={remoteconfig}"
     return new_link
 
@@ -1790,7 +1791,7 @@ def unzip_targz(input_file: Union[str, Path], output_path: Union[str, Path]) -> 
     """解压 tar.gz 文件, 返回解压后的文件名称列表"""
     unzip_files = []
     try:
-        temp_path = str(input_file).rstrip(".gz")
+        temp_path = str(input_file).removesuffix(".gz")
         path = Path(input_file)
         path2 = Path(output_path)
         with gzip.open(path, 'rb') as f_in, open(temp_path, 'wb') as f_out:

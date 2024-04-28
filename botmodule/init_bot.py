@@ -51,7 +51,6 @@ botconfig = config.getBotconfig()
 api_id = botconfig.get('api_id', None)
 api_hash = botconfig.get('api_hash', None)
 bot_token = botconfig.get('bot_token', None)
-CLASH_PATH = config.get_clash_path()  # 为代理客户端运行路径
 USER_TARGET = config.getuser()  # 这是用户列表，从配置文件读取
 BOT_PROXY = parse_bot_proxy()
 

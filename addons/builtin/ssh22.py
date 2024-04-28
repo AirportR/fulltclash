@@ -6,7 +6,7 @@ import async_timeout
 import socks
 import aiohttp
 from loguru import logger
-
+from aiohttp_socks import ProxyConnector
 from utils import retry
 
 SUC_LIST = []
@@ -40,19 +40,19 @@ async def fetch_ssh(collector, session: aiohttp.ClientSession, proxy: str = None
     conn = session.connector
 
     try:
-        if type(conn).__name__ == 'ProxyConnector':
+        if type(conn) is ProxyConnector:
             paddr = conn._proxy_host
             pport = conn._proxy_port
         else:
-            parsed = proxy.lstrip("http://").rstrip("/").split(":")
+            parsed = proxy.removeprefix("http://").removesuffix("/").split(":")
             paddr = parsed[0]
             pport = int(parsed[1])
+        mysocket = socks.socksocket(type=socket.SOCK_STREAM)
+        mysocket.set_proxy(socks.PROXY_TYPE_SOCKS5, addr=paddr, port=pport)
+
+        mysocket.settimeout(10)
 
         async def check():
-            mysocket = socks.socksocket(type=socket.SOCK_STREAM)
-            mysocket.set_proxy(socks.PROXY_TYPE_SOCKS5, addr=paddr, port=pport)
-
-            mysocket.settimeout(10)
 
             async with async_timeout.timeout(10):
                 mysocket.connect((_host, _sport))
@@ -73,7 +73,8 @@ async def fetch_ssh(collector, session: aiohttp.ClientSession, proxy: str = None
             res = await check()
         except (TimeoutError, OSError):
             return False
-        # res = await asyncio.get_running_loop().run_in_executor(None, check)
+        finally:
+            mysocket.close()
         if res is True:
             SUC_LIST.append(ip)
 

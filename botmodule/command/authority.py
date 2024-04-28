@@ -3,7 +3,7 @@ from contextlib import suppress
 import string
 import secrets
 from dataclasses import dataclass
-from typing import List
+from typing import List, Union
 
 from async_timeout import timeout
 from loguru import logger
@@ -12,7 +12,7 @@ from pyrogram import Client
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
 
 from utils.check import get_telegram_id_from_message as get_id
-from utils.cleaner import geturl, addon, ArgCleaner
+from utils.cleaner import geturl, ArgCleaner
 from botmodule.command.test import convert_core_index
 
 b1 = InlineKeyboardMarkup(
@@ -109,7 +109,7 @@ async def invite(client: Client, message):
 
 async def get_url_from_invite(_, message2: "Message"):
     ID = str(get_id(message2))
-    suc_mes: "Message" = success_message_list.get(ID, None)
+    suc_mes: Union["Message", None] = success_message_list.get(ID, None)
     if suc_mes is not None:
         # success_message_list.pop(ID, None)
         if message2.date and suc_mes.date and (message2.date.timestamp() - suc_mes.date.timestamp()) < 55:
@@ -128,77 +128,10 @@ async def get_url_from_invite(_, message2: "Message"):
                 await message2.reply("无效的URL")
 
 
-# async def invite_pass(client: Client, message: Message):
-#     # temp_queue = asyncio.Queue(maxsize=1)
-#     ID = str(get_id(message))
-#     text = str(message.text)
-#     timeout_value = 60
-#     if 'testurl' in text or 'analyzeurl' in text or 'speedurl' in text:
-#         texts = text.split(' ')
-#         pre_key = texts[1] if len(texts) > 1 else ''
-#         if not pre_key:
-#             return
-#         k = pre_key.split('_')
-#         key2 = k[0] if k else ''
-#         A_ID = invite_list.get(key2, '')
-#         if key2 not in invite_list or A_ID != ID:
-#             await message.reply("ID验证失败，请不要乱用别人的测试哦！")
-#             return
-#         task_type_select = k[1] if len(k) > 1 else ''
-#         test_type_select = ['HTTP(S)延迟']
-#         if len(k) > 2:
-#             if k[2] == 'default':
-#                 test_type_select += addon.global_test_item()
-#             else:
-#                 for i in k[2:]:
-#                     if i == 'HTTP(S)延迟':
-#                         continue
-#                     test_type_select.append(i)
-#
-#         if task_type_select in task_type:
-#
-#             s_text = f"✅身份验证成功\n🚗任务项: {task_type_select} \n\n" \
-#                      f"**接下来请在{timeout_value}s内发送Clash配置格式的订阅链接** <过滤器> 否则任务取消\n"
-#             success_mes = await message.reply(s_text)
-#             success_message_list.update({ID: success_mes})
-#             mes = message_list.pop(key2 + ID, None)
-#             if mes is None:
-#                 return
-#             bot_mes = bot_message_list.pop(key2 + ID, None)
-#             if bot_mes:
-#                 await bot_mes.edit_text(f"✅身份验证成功\n🚗任务项: {task_type_select}\n\n⏳正在等待上传订阅链接~~~")
-#             suburl = ''
-#             in_text = ''
-#             ex_text = ''
-#             try:
-#                 async with timeout(timeout_value):
-#                     suburl, in_text, ex_text = await temp_queue.get()
-#             except asyncio.TimeoutError:
-#                 logger.info(f"验证过期: {key2}:{ID}")
-#                 await bot_mes.edit_text("❌任务已取消\n\n原因: 接收订阅链接超时")
-#             if suburl:
-#                 from utils.bot import bot_put
-#                 await message.reply("✨提交成功，请返回群组查看测试结果。")
-#                 await asyncio.sleep(3)
-#                 await bot_mes.delete()
-#                 test_item = test_type_select
-#                 initiator = str(message.from_user.id) if message.from_user else ''
-#                 await bot_put(client, mes, task_type_select, test_items=test_item,
-#                               include_text=in_text, exclude_text=ex_text, url=suburl,
-#                               name="邀请测试", initiator=initiator)
-#             else:
-#                 invite_list.pop(key2, '')
-#         else:
-#             s_text = "❌未知任务类型，请重试"
-#             await message.reply(s_text)
-#             return
-
-
 async def invite_pass(client: Client, message: Message):
     tgargs = ArgCleaner.getarg(message.text)
     start_uid = str(get_id(message))
     timeout_value = 60
-    # https://t.me/AirportRoster_bot?start=8GImRgzY_testurl_default /start sE8ic4MA_testurl_default
     parsertext = tgargs[1] if len(tgargs) > 1 else ''
     if not parsertext:
         await message.reply("输入 /help 查看使用说明。")
@@ -219,12 +152,12 @@ async def invite_pass(client: Client, message: Message):
              f"**接下来请在{timeout_value}s内发送Clash配置格式的订阅链接** <过滤器> \n否则任务取消"
     success_mes = await message.reply(s_text)
     success_message_list[start_uid] = success_mes
-    mes = INVITE_CACHE.pop(key, None)
+    mes: Union["Message", None] = INVITE_CACHE.pop(key, None)
     if mes is None:
         return
 
     # bot_mes = bot_message_list.pop(key2 + ID, None)
-    bot_mes = BOT_MESSAGE_CACHE.pop(subtext[0], None)
+    bot_mes: Union["Message", None] = BOT_MESSAGE_CACHE.pop(subtext[0], None)
     if bot_mes is None:
         logger.warning("未找到bot消息")
         return
@@ -248,13 +181,14 @@ async def invite_pass(client: Client, message: Message):
         logger.info(f"验证过期: {key}")
         await bot_mes.edit_text("❌任务已取消\n\n原因: 接收订阅链接超时")
     if suburl:
-        from utils.bot import bot_put
+        from botmodule.bot import bot_put
         await message.reply("✨提交成功，请返回群组查看测试结果。")
         await asyncio.sleep(3)
         await bot_mes.delete()
         # await bot_put(app, originmsg, put_type, None, sort=sort_str, coreindex=1, slaveid=slaveid)
-        print(f"invite提交的任务项: {subtext[1]}\n测试项:{test_items}\n过滤器: {in_text}<->{ex_text}\n排序: {sort_str}\n"
-              f"coreindex: {coreindex}\n后端id: {slaveid}")
+        print(
+            f"invite提交的任务项: {subtext[1]}\n测试项:{test_items}\n过滤器: {in_text}<->{ex_text}\n排序: {sort_str}\n"
+            f"coreindex: {coreindex}\n后端id: {slaveid}")
         await bot_put(client, mes, subtext[1], test_items=test_items,
                       include_text=in_text, exclude_text=ex_text, url=suburl,
                       sort=sort_str, coreindex=coreindex, slaveid=slaveid)
@@ -336,7 +270,7 @@ class Invite:
             try:
                 cache_key = target_id + ":" + self.key
                 INVITE_CACHE[cache_key] = target
-                bot_mes = BOT_MESSAGE_CACHE.get(self.key, None)
+                bot_mes: Union["Message", None] = BOT_MESSAGE_CACHE.get(self.key, None)
                 if bot_mes is None:
                     await target.reply("⚠️bot消息已被删除，任务取消", quote=True)
                     return
