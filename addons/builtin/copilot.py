@@ -40,8 +40,11 @@ async def fetch_copilot(collector, session: aiohttp.ClientSession, proxy=None):
                     return True
         if resp.status == 200:
             text = await resp.text()
+            print(text)
             # index = text.find("Copilot")
             index = text.find("b-scopeListItem-conv")
+            index2 = text.find("Sorry, it looks like you've been signed out.")
+            print(index2)
             try:
                 region = re.search(r'Region:"(\w\w)"', text).group(1)
                 # region2 = re.search(r'Region:"(.*)"', text).group(1)
