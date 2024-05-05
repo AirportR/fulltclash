@@ -1937,7 +1937,7 @@ class ExportSpeed(ExportResult):
             end_colores = self.end_colores
         else:
             # 默认值
-            colorvalues = ["#f5f3f2", "#beb1aa", "#f6bec8", "#dc6b82", "#c35c5d", "#8ba3c7", "#c8161d"]
+            colorvalues = ["#fae0e4", "#f7cad0", "#f9bec7", "#ff85a1", "#ff7096", "#ff5c8a", "#ff477e"]
             intervals = [0, 1, 5, 10, 20, 60, 100]
             alphaes = [255, 255, 255, 255, 255, 255, 255]
             end_colores = ["#f5f3f2", "#beb1aa", "#f6bec8", "#dc6b82", "#c35c5d", "#8ba3c7", "#c8161d"]
