@@ -213,7 +213,7 @@ async def main():
     if not isinstance(bindaddr, str):
         logger.error("绑定地址解析错误，请重试!")
         sys.exit()
-    ba = bindaddr.lstrip('http:').strip('/').split(':')
+    ba = bindaddr.removeprefix('http:').strip('/').split(':')
     try:
         if len(ba) != 2:
             logger.error("绑定地址解析错误，请重试!")

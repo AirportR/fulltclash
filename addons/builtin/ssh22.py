@@ -44,7 +44,7 @@ async def fetch_ssh(collector, session: aiohttp.ClientSession, proxy: str = None
             paddr = conn._proxy_host
             pport = conn._proxy_port
         else:
-            parsed = proxy.lstrip("http://").rstrip("/").split(":")
+            parsed = proxy.removeprefix("http://").rstrip("/").split(":")
             paddr = parsed[0]
             pport = int(parsed[1])
 
