@@ -4,6 +4,7 @@ import re
 import aiohttp
 from loguru import logger
 
+# 解锁判定方式；目前Copilot除了极少数地区未提供支持，其他的几乎都支持。和节点质量关系并不大。
 UNS_REGION = ["MY", "CV", "CN", "CU", "SR", "TL", "IR", 'CI', 'KP', 'PS', 'RU', 'SH', 'SY']
 try:
     from utils import retry
@@ -31,7 +32,7 @@ async def fetch_copilot(collector, session: aiohttp.ClientSession, proxy=None):
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
                       'Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0'
     }
-    url = 'https://www.bing.com/search?q=bing'
+    url = 'https://www.bing.com/chat?toWww=1'
     async with session.get(url, headers=headers, proxy=proxy, timeout=5) as resp:
         if resp.history:
             for i in resp.history:
@@ -40,11 +41,10 @@ async def fetch_copilot(collector, session: aiohttp.ClientSession, proxy=None):
                     return True
         if resp.status == 200:
             text = await resp.text()
-            print(text)
-            # index = text.find("Copilot")
-            index = text.find("b-scopeListItem-conv")
-            index2 = text.find("Sorry, it looks like you've been signed out.")
-            print(index2)
+            index = text.find("b_wlcmPersLogo.copilot")
+            # print("b_wlcmPersLogo.copilot:", index)
+            collector.info['copilot'] = str(index)
+            # return True
             try:
                 region = re.search(r'Region:"(\w\w)"', text).group(1)
                 # region2 = re.search(r'Region:"(.*)"', text).group(1)
@@ -94,4 +94,6 @@ async def demo():
 
 
 if __name__ == "__main__":
-    asyncio.run(demo())
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(demo())
