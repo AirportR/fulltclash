@@ -291,7 +291,7 @@ class SubCollector(BaseCollector):
         """
         super().__init__()
         self.text = None
-        self._headers = {'User-Agent': 'clash'}  # 这个请求头是获取流量信息的关键
+        self._headers = {'user-agent': 'ClashMetaForAndroid/2.8.9.Meta Mihomo/0.16 Clash.Meta'}  # 这个请求头是获取流量信息的关键
         self.subcvt_conf = config.config.get('subconverter', {})
         self.cvt_enable = self.subcvt_conf.get('enable', False)
         self.url = suburl
@@ -340,7 +340,7 @@ class SubCollector(BaseCollector):
         获取订阅内的流量
         :return: str
         """
-        _headers = {'User-Agent': 'clash'}
+        _headers = config.get_ua() or {'user-agent': 'ClashMetaForAndroid/2.8.9.Meta Mihomo/0.16 Clash.Meta'}
         try:
             async with aiohttp.ClientSession(headers=_headers) as session:
                 async with session.get(self.url, proxy=proxy, timeout=20) as response:
@@ -358,10 +358,13 @@ class SubCollector(BaseCollector):
                     traffic_download = info2.get('download', 0) / 1024 / 1024 / 1024
                     traffic_use = traffic_up + traffic_download
                     traffic_total = info2.get('total', 0) / 1024 / 1024 / 1024
-                    expire_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(info2.get('expire', time.time())))
+                    expire = info2.get('expire', time.time())
+                    days_diff = int((expire - time.time()) // (24 * 60 * 60))
+                    expire_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(expire))
                     if expire_time.startswith('1970') and traffic_total and traffic_use:
                         expire_time = '长期有效'
-                return [traffic_up, traffic_download, traffic_use, traffic_total, expire_time]
+                        days_diff = 0
+                return [traffic_up, traffic_download, traffic_use, traffic_total, expire_time, days_diff]
         except asyncio.exceptions.TimeoutError:
             logger.info("获取订阅超时")
             return []
@@ -377,7 +380,7 @@ class SubCollector(BaseCollector):
         :param inmemory: 直接返回数据到内存，不保存到本地
         :return: 获得一个文件: sub.yaml, bool : True or False
         """
-        _headers = {'User-Agent': 'clash-meta'}
+        _headers = config.get_ua() or {'user-agent': 'ClashMetaForAndroid/2.8.9.Meta Mihomo/0.16 Clash.Meta'}
         # suburl = self.url
         suburl = self.cvt_url if self.cvt_enable else self.url
         cvt_text = "subconverter状态: {}".format("已启用" if self.cvt_enable else "未启用")

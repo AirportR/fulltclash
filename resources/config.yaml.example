@@ -1,11 +1,4 @@
 # 注意，yaml配置文件对缩进敏感，请不要强迫症删掉#号之间的空格。
-admin:
-- 12345678 #管理员，此处写你的账户id或用户名，必须配置该项，否则程序会自动退出
-clash:
- path: './bin/FullTCore' # 代理客户端的路径，默认为 ./bin/ 下。下载地址: https://github.com/AirportR/FullTCore/releases
-# allow-caching: false  #是否缓存测试过程产生的订阅，若否，则测试完成后会自动删除测试订阅，以免造成空间浪费。（此配置暂不生效）
-# core: 4 # 核心数，数量越多测试速度越快，但代价是内存会大量占用(每个核心大概10M)，自己的机子多少内存自己平衡。默认值为1.
-# branch: origin #clash内核上游分支，仅有两个有效值: [origin, meta], meta分支支持更多协议，比如vless、tuic等，但是使用上较为不可控，默认为origin原生内核。
 bot:
  api_id: 123456 # Telegram的api_id
  api_hash: ABCDEFG # Telegram的api_hash
@@ -21,6 +14,12 @@ bot:
 # bright: "]" #右括号自定义文本
 # bspace: "  " #空格自定义文本，默认为2个
 # command: ['mycommand1', 'mycommand2'] #自定义指令，用于适配权限回调。高级用法，不会无需配置。
+#admin:
+#- 12345678 #管理员，此处写你的账户id或用户名，必须配置该项，否则程序会自动退出
+#clash:
+# path: './bin/FullTCore' # 代理客户端的路径，默认为 ./bin/ 下。下载地址: https://github.com/AirportR/FullTCore/releases
+# core: 4 # 单批次中同时测试的节点数量，数量越多测试速度越快，但代价是运行内存会相应变大，自己的机子多少内存自己平衡。默认值为4.
+# branch: origin #clash内核上游分支，仅有两个有效值: [origin, meta], meta分支支持更多协议，比如vless、tuic等，但是使用上较为不可控，默认为meta原生内核。
 #以下是fulltclash的buildtoken，可以用默认的，但是安全性得不到保障，具体原因详见文档
 #buildtoken: c7004ded9db897e538405c67e50e0ef0c3dbad717e67a92d02f6ebcfd1022a5ad1d2c4419541f538ff623051759ec000d2f426e03f9709a6608570c5b9141a6b
 #proxy: "host:端口" # http配置代理(非socks5)，括号内可选用于下载获取订阅链接，订阅链接国内打不开可尝试开启（可选配置）,本机提供的代理可以这样填: '127.0.0.1:7890'
@@ -33,6 +32,7 @@ bot:
 # host: '127.0.0.1:25500' #域名或者ip加端口
 # tls: false #是否启用了tls，决定拼接的转换地址URL前缀是http还是https，默认false
 # remoteconfig: "https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online.ini" #远程配置
+#ua: "ClashMetaForAndroid/2.8.9.Meta Mihomo/0.16 Clash.Meta" #获取订阅时请求UA(user-agent)覆写，此配置仅会影响获取订阅时的UA，默认值如当前所示。
 #pingurl: http://www.gstatic.com/generate_204  #自定义延迟测试URL
 #netflixurl: "https://www.netflix.com/title/80113701"  #自定义奈飞非自制剧检测网页，注意在更换此链接时请确保是非自制的链接。
 #speedfile:  #自定义测速文件，可以添加多个诸如以下格式或者[https://1.com, https://2.com]
