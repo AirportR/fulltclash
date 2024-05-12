@@ -2042,6 +2042,12 @@ class ExportSpeed(ExportResult):
                         speedvalue *= pow(1024, 2)
                     elif "PB" in self.info[t1][t]:
                         speedvalue *= pow(1024, 3)
+                    elif "B" in self.info[t1][t]:
+                        string = str(self.info[t1][t][-2])
+                        if len(string) > 1 and not string.isdigit():
+                            block = c_block_grad((info_list_length[i], speedblock_height), color_value=get_color(1),
+                                                 end_color=get_end_colors(1),
+                                                 alpha=get_alphas(1))
                     else:
                         pass
                     if block is None:
