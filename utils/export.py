@@ -2028,24 +2028,27 @@ class ExportSpeed(ExportResult):
                                              end_color=end_color[7], alpha=alphas[7])
                         img.alpha_composite(block, (width, 60 * (t + 2)))
                 if t1 == "平均速度" or t1 == "最大速度":
-                    if "MB" in self.info[t1][t]:
-                        speedvalue = float(self.info[t1][t][:-2])
-                        block = c_block_grad((info_list_length[i], speedblock_height),
-                                             color_value=get_color(speedvalue), end_color=get_end_colors(speedvalue),
-                                             alpha=get_alphas(speedvalue))
-                        img.alpha_composite(block, (width, speedblock_height * (t + 2)))
-                    elif "KB" in self.info[t1][t] and float(self.info[t1][t][:-2]) > 0:
-                        # speedvalue = float(self.info[t1][t][:-2])
+                    speedvalue = float(self.info[t1][t][:-2])
+                    block = None
+                    if "KB" in self.info[t1][t] and float(self.info[t1][t][:-2]) > 0:
                         block = c_block_grad((info_list_length[i], speedblock_height), color_value=get_color(1),
                                              end_color=get_end_colors(1),
                                              alpha=get_alphas(1))
-                        img.alpha_composite(block, (width, speedblock_height * (t + 2)))
+                    elif "MB" in self.info[t1][t]:
+                        pass
+                    elif "GB" in self.info[t1][t]:
+                        speedvalue *= pow(1024, 1)
+                    elif "TB" in self.info[t1][t]:
+                        speedvalue *= pow(1024, 2)
+                    elif "PB" in self.info[t1][t]:
+                        speedvalue *= pow(1024, 3)
                     else:
-                        speedvalue = float(self.info[t1][t][:-2])
+                        pass
+                    if block is None:
                         block = c_block_grad((info_list_length[i], speedblock_height),
                                              color_value=get_color(speedvalue), end_color=get_end_colors(speedvalue),
                                              alpha=get_alphas(speedvalue))
-                        img.alpha_composite(block, (width, speedblock_height * (t + 2)))
+                    img.alpha_composite(block, (width, speedblock_height * (t + 2)))
                 elif t1 == "每秒速度":
                     speedblock_x = width
                     for speedvalue in self.info[t1][t]:
