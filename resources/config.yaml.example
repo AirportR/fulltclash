@@ -75,7 +75,8 @@ bot:
 #      slaveid: local  #slaveid的有效值参照配置里的 slaveconfig下的所有键。
 #      script: ["Netflix", "Youtube", "Disney+", "维基百科"] #script的有效值参照连通性测试绘图结果中显示的名称（大小写敏感）。
 #      sort: "HTTP升序"
-#  usage-ranking: #后端使用排行，这里记录者用户使用的后端次数，以便测试选择后端时把最常用的后端显示在第一页，这个配置是bot自动生成的，不用手动修改，你也不需要去管它。
+#  usage-ranking: #后端使用排行，这里记录者用户使用的后端次数，以便测试选择后端时把最常用的后端显示在第一页。
+#    enable: True #是否启用
 # 查看你的机器人的所有可用测试项的python变量:
 # from utils.cleaner import addon
 # print(addon.global_test_item)
