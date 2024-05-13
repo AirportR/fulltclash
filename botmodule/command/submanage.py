@@ -3,6 +3,9 @@ import hashlib
 import pyrogram.types
 from pyrogram.errors import RPCError
 from loguru import logger
+from pyrogram.types import Message
+from pyrogram.enums import ParseMode
+
 from utils import check, cleaner
 from botmodule.init_bot import config, admin
 from utils.check import check_user, get_telegram_id_from_message
@@ -74,7 +77,7 @@ async def sub_invite(_, message: pyrogram.types.Message):
 #         print(r)
 
 
-async def sub(_, message):
+async def sub(_, message: "Message"):
     ID = get_telegram_id_from_message(message)
     arg = cleaner.ArgCleaner().getall(str(message.text))
     try:
@@ -90,11 +93,11 @@ async def sub(_, message):
             subowner = subinfo.get('owner', '')
             if await check_user(message, admin, isalert=False):
                 # 管理员至高权限
-                await message.reply(str(subinfo.get('url', '')))
+                await message.reply(str(subinfo.get('url', '')), parse_mode=ParseMode.DISABLED)
                 return
             if subowner and subowner == ID:
                 if hashlib.sha256(pwd.encode("utf-8")).hexdigest() == subpwd:
-                    await message.reply(str(subinfo.get('url', '')))
+                    await message.reply(str(subinfo.get('url', '')), )
                 else:
                     m2 = await message.reply("❌密码错误,请检查后重试")
                     await asyncio.sleep(5)
