@@ -5,7 +5,7 @@ import aiohttp
 from utils.cron import *
 from typing import Callable, Any, Union, Coroutine, Optional
 
-__version__ = "3.6.11"  # 项目版本号
+__version__ = "3.6.12"  # 项目版本号
 HOME_DIR = getcwd()
 DEFAULT_UA = f"fulltclash/{__version__}"  # 默认请求头
 __all__ = [
