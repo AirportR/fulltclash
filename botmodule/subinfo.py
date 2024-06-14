@@ -4,17 +4,17 @@ import time
 from loguru import logger
 from pyrogram.enums import ParseMode
 from pyrogram.errors import RPCError
-from utils.cleaner import geturl
+from utils.cleaner import geturl, ArgCleaner
 from utils.collector import SubCollector
 from utils.check import get_telegram_id_from_message as get_id
 from utils.check import check_user
+from utils import message_delete_queue as mdq
 from botmodule.init_bot import config, admin
-from utils import cleaner
 
 
 async def getSubInfo(_, message):
     ID = get_id(message)
-    arg = cleaner.ArgCleaner().getall(str(message.text))
+    arg = ArgCleaner.getarg(str(message.text))
     call_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())
     try:
         back_message = await message.reply("正在查询流量信息...")  # 发送提示
@@ -22,11 +22,11 @@ async def getSubInfo(_, message):
         url = geturl(text)
         arglen = len(arg)
         status = False
+        subname = arg[1]
         if not url:
             if arglen == 1:
                 await back_message.edit_text("使用方法: /traffic & /subinfo & /流量查询 + <订阅链接> & <订阅名>")
-                await asyncio.sleep(5)
-                await back_message.delete()
+                mdq.put(back_message)
                 return
             else:
                 pwd = arg[2] if len(arg) > 2 else arg[1]
@@ -54,38 +54,26 @@ async def getSubInfo(_, message):
         subcl = SubCollector(url)
         subcl.cvt_enable = False
         subinfo = await subcl.getSubTraffic()
+        if not subinfo:
+            await back_message.edit_text("此订阅无法获取流量信息")
+            return
+        days_diff = subinfo[5] if len(subinfo) > 5 else ""
+        if days_diff:
+            days_diff = f"({days_diff}天)"
+        rs = subinfo[3] - subinfo[2]  # 剩余流量
+        subinfo_text = f"""
+⬆️已用上行：{round(subinfo[0], 3)} GB
+⬇️已用下行：{round(subinfo[1], 3)} GB
+🚗总共使用：{round(subinfo[2], 3)} GB
+⏳剩余流量：{round(rs, 3)} GB
+💧总流量：{round(subinfo[3], 3)} GB
+⏱️过期时间：{subinfo[4]} {days_diff}
+🔍查询时间：{call_time}
+        """
         if status:
-            if subinfo:
-                rs = subinfo[3] - subinfo[2]  # 剩余流量
-                subname = arg[1]
-                subinfo_text = f"""
-                ☁️订阅名称：{subname}
-⬆️已用上行：{round(subinfo[0], 3)} GB
-⬇️已用下行：{round(subinfo[1], 3)} GB
-🚗总共使用：{round(subinfo[2], 3)} GB
-⏳剩余流量：{round(rs, 3)} GB
-💧总流量：{round(subinfo[3], 3)} GB
-⏱️过期时间：{subinfo[4]}
-🔍查询时间：{call_time}
-                    """
-                await back_message.edit_text(subinfo_text, parse_mode=ParseMode.DISABLED)
-            else:
-                await back_message.edit_text("此订阅无法获取流量信息")
+            subinfo_text = f"☁️订阅名称：{subname}" + subinfo_text
         else:
-            if subinfo:
-                rs = subinfo[3] - subinfo[2]  # 剩余流量
-                subinfo_text = f"""
-☁️订阅链接：{url}
-⬆️已用上行：{round(subinfo[0], 3)} GB
-⬇️已用下行：{round(subinfo[1], 3)} GB
-🚗总共使用：{round(subinfo[2], 3)} GB
-⏳剩余流量：{round(rs, 3)} GB
-💧总流量：{round(subinfo[3], 3)} GB
-⏱️过期时间：{subinfo[4]}
-🔍查询时间：{call_time}
-                    """
-                await back_message.edit_text(subinfo_text, parse_mode=ParseMode.DISABLED)
-            else:
-                await back_message.edit_text("此订阅无法获取流量信息")
+            subinfo_text = f"☁️订阅链接：{url}" + subinfo_text
+        await back_message.edit_text(subinfo_text, parse_mode=ParseMode.DISABLED)
     except RPCError as r:
         logger.error(str(r))

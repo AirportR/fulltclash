@@ -433,8 +433,10 @@ async def select_slave_page(_: Client, call: Union[CallbackQuery, Message], cont
     if "default-slave" in slaveconfig:
         slaveconfig.pop("default-slave")
     usermsg = call.message.reply_to_message if isinstance(call, CallbackQuery) else call
-    user_ranking = get_slave_ranking(getID(usermsg))
-    slaveconfig = get_ranked_slave_list(slaveconfig, user_ranking)
+    uconf = config.getUserconfig()
+    if "usage-ranking" in uconf and bool(uconf.get("usage-ranking", {}).get("enable", True)):
+        user_ranking = get_slave_ranking(getID(usermsg))
+        slaveconfig = get_ranked_slave_list(slaveconfig, user_ranking)
     comment = [i.get('comment', None) for k, i in slaveconfig.items() if i.get('comment', None)]
 
     page = int(kwargs.get('page', 1))

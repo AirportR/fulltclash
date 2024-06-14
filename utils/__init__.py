@@ -5,14 +5,16 @@ import aiohttp
 from utils.cron import *
 from typing import Callable, Any, Union, Coroutine, Optional
 
-__version__ = "3.6.11"  # 项目版本号
+__version__ = "3.6.12"  # 项目版本号
 HOME_DIR = getcwd()
+DEFAULT_UA = f"fulltclash/{__version__}"  # 默认请求头
 __all__ = [
     "cron_delete_message",
     "cron_edit_message",
     "message_delete_queue",
     "message_edit_queue",
     "__version__",
+    "DEFAULT_UA",
     "retry",
     "script_demo",
     "HOME_DIR",
@@ -90,7 +92,6 @@ def async_runtime(loop: Optional[asyncio.AbstractEventLoop] = None):
     """
     临时的异步运行时，适用于只有一两个异步函数的情况
     :param: loop: 事件循环
-    :param: break_func: 触发的回调中止函数，参数为调用函数的返回值，返回值为bool，
     """
     if loop is None:
         loop = asyncio.new_event_loop()

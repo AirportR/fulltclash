@@ -42,7 +42,8 @@ INVITE_SELECT_CACHE = {
     'slaveid': {},  # 记录后端id选择
 }
 task_type = ['testurl', 'analyzeurl', 'speedurl']
-temp_queue = asyncio.Queue(maxsize=1)
+# temp_queue = {}
+QUEUE_MAP = {}
 
 
 def generate_random_string(length: int):
@@ -123,6 +124,9 @@ async def get_url_from_invite(_, message2: "Message"):
                 exclude_text = texts_li[2]
             url_li = geturl(text_li, True)
             if url_li:
+                temp_queue: Union[asyncio.Queue, None] = QUEUE_MAP.get(ID, None)
+                if temp_queue is None:
+                    await message2.reply("❌此任务队列已被销毁，请重试")
                 await temp_queue.put((url_li, include_text, exclude_text))
             else:
                 await message2.reply("无效的URL")
@@ -176,24 +180,28 @@ async def invite_pass(client: Client, message: Message):
         return
     try:
         async with timeout(timeout_value):
-            suburl, in_text, ex_text = await temp_queue.get()
+            iq = asyncio.Queue(1)
+            QUEUE_MAP[start_uid] = iq
+            suburl, in_text, ex_text = await iq.get()
     except asyncio.TimeoutError:
         logger.info(f"验证过期: {key}")
         await bot_mes.edit_text("❌任务已取消\n\n原因: 接收订阅链接超时")
+    finally:
+        QUEUE_MAP.pop(start_uid, None)
+        INVITE_CACHE.pop(key, '')
     if suburl:
         from botmodule.bot import bot_put
         await message.reply("✨提交成功，请返回群组查看测试结果。")
-        await asyncio.sleep(3)
+        await asyncio.sleep(1)
         await bot_mes.delete()
         # await bot_put(app, originmsg, put_type, None, sort=sort_str, coreindex=1, slaveid=slaveid)
-        print(
+        logger.info(
             f"invite提交的任务项: {subtext[1]}\n测试项:{test_items}\n过滤器: {in_text}<->{ex_text}\n排序: {sort_str}\n"
             f"coreindex: {coreindex}\n后端id: {slaveid}")
         await bot_put(client, mes, subtext[1], test_items=test_items,
                       include_text=in_text, exclude_text=ex_text, url=suburl,
                       sort=sort_str, coreindex=coreindex, slaveid=slaveid)
-    else:
-        INVITE_CACHE.pop(key, '')
+
     success_message_list.pop(start_uid, None)
 
 

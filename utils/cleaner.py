@@ -785,6 +785,15 @@ class ConfigManager:
             sorted_ranking = {item: c for item, c in sorted_ranking}
             return sorted_ranking
 
+    def get_ua(self):
+        """
+        获取自定义ua
+        """
+        try:
+            return str(self.config['ua'])
+        except KeyError:
+            return ""
+
     def getConcurrency(self) -> int:
         clashconf = self.config.get('clash', {})
         max_workers = min(32, (os.cpu_count() or 1) + 14)

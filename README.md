@@ -25,12 +25,16 @@ FullTClash名字来源于 Full Test base on Clash 。后端部分使用[Clash项
 1. Netflix  
 2. Youtube 
 3. DisneyPlus 
-4. steam货币 
+4. Bilibili解锁 
 5. OpenAI(ChatGPT) 
 6. 落地ip风险(IP欺诈度) 
 7. 维基百科
-8. TVBAnyware
-9. Viu
+8. 微软Copilot
+9. Claude
+10. 落地DNS区域检测
+11. Spotify 
+12. SSH 22端口封禁检测
+13. Tiktok
 
 此外还有：
 
@@ -152,7 +156,7 @@ pip install -r requirements.txt
   Windows系统名字后缀名.exe要加上，其他类Unix系统不需要加后缀名。
 - 管理员配置（可选）
 
-  从3.6.10版本开始，bot在首次启动时会将接收到的第一条消息的发送者作为管理员，一般无需手动配置，除非您想设置多个管理员：
+  从3.6.11版本开始，bot在首次启动时会将接收到的第一条消息的发送者作为管理员，一般无需手动配置，除非您想设置多个管理员：
   ```yaml
   admin:
   - 12345678 # 改成自己的telegram uid
