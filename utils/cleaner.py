@@ -790,7 +790,7 @@ class ConfigManager:
         获取自定义ua
         """
         try:
-            return str(self.config['ua'])
+            return {"user-agent": str(self.config['ua'])}
         except KeyError:
             return ""
 
