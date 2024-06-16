@@ -292,6 +292,7 @@ class AddonCleaner:
                     if entry == "__init__.py":
                         continue
                     _name, _ext = os.path.splitext(entry)
+                    _name = _name.split(".")[0]
                     if _ext not in self.module_suffixes:
                         continue
                     is_loaded = unsafe_load(_name, _pkg)
