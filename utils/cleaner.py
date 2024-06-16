@@ -264,15 +264,18 @@ class AddonCleaner:
         self._script = dict(sorted(self._script.items(), key=lambda x: x[1][2]))
         logger.info(f"外接测试脚本成功导入数量: {num}")
 
-    def init_callback(self) -> list:
-        path = os.path.join(os.getcwd(), "addons", "callback")
+    def init_callback(self, path: Union[str, List[str]] = None) -> list:
+        if path is None:
+            path = ["addons/callback"]
         callbackfunc_list = []
         num = 0
 
         def unsafe_load(name: str, pkg: str) -> bool:
             try:
-                mod = importlib.import_module(pathlib.Path(pkg).joinpath(name).as_posix().replace('/', '.'))
-            except (ModuleNotFoundError, NameError, Exception):
+                m = pathlib.Path(pkg).joinpath(name).as_posix().replace('/', '.')
+                mod = importlib.import_module(m)
+            except (ModuleNotFoundError, NameError, Exception) as e:
+                logger.error(str(e))
                 mod = None
             if mod is None:
                 return False
