@@ -364,18 +364,15 @@ class SubCollector(BaseCollector):
         else:
             domain2 = ''
         async with aiohttp.ClientSession(headers=_headers) as session:
-            tasks = []
             if domain:
                 url_domain = f"{parsed_url.scheme}://{domain}"
-                tasks.append(fetch_title(session, url_domain))
-            if domain2:
-                url_subdomain = f"{parsed_url.scheme}://{domain2}"
-                tasks.append(fetch_title(session, url_subdomain))
+                domain_title = await fetch_title(session, url_domain)
 
-            results = await asyncio.gather(*tasks)
-            domain_title = results[0] if len(results) > 0 else ""
-            domain_title2 = results[1] if len(results) > 1 else ""
-            site_title = domain_title or domain_title2 or ""
+            if not domain_title:
+                url_subdomain = f"{parsed_url.scheme}://{domain2}"
+                await fetch_title(session, url_subdomain)
+
+            site_title = domain_title or ""
             return site_title
 
     @logger.catch()
