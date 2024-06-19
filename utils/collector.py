@@ -366,11 +366,13 @@ class SubCollector(BaseCollector):
         async with aiohttp.ClientSession(headers=_headers) as session:
             if domain:
                 url_domain = f"{parsed_url.scheme}://{domain}"
+                logger.info(f'获取域名的站点标题: {url_domain}')
                 domain_title = await fetch_title(session, url_domain)
 
-            if not domain_title:
+            if not domain_title and domain2:
                 url_subdomain = f"{parsed_url.scheme}://{domain2}"
-                await fetch_title(session, url_subdomain)
+                logger.info(f'尝试获取二级域名站点标题: {url_subdomain}')
+                domain_title = await fetch_title(session, url_subdomain)
 
             site_title = domain_title or ""
             return site_title

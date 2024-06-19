@@ -77,7 +77,8 @@ async def getSubInfo(_, message):
             subinfo_text = f"☁️订阅名称：{subname}" + subinfo_text
         else:
             subinfo_text = f"☁️订阅链接：{url}" + subinfo_text
-        subinfo_text = f"✈️机场名：{site_name}\n" + subinfo_text if site_name else "未知"
+        site_name = f"✈️机场名：{site_name}\n" if site_name else "✈️机场名：未知\n"
+        subinfo_text = site_name + subinfo_text
         await back_message.edit_text(subinfo_text, parse_mode=ParseMode.DISABLED)
     except RPCError as r:
         logger.error(str(r))
