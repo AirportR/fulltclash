@@ -350,7 +350,10 @@ class SubCollector(BaseCollector):
                     else:
                         title = ""
                     return title
-            except (ClientConnectorError, ContentTypeError, aiohttp.client_exceptions.ClientError):
+            except (ClientConnectorError, aiohttp.client_exceptions.ClientError,  asyncio.TimeoutError):
+                return ""
+            except Exception as e:
+                logger.info(str(e))
                 return ""
 
         parsed_url = urlparse(self.url)
