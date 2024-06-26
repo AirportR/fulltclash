@@ -1,6 +1,6 @@
 FROM airportr/fulltclash:alpine AS compile-image
 
-FROM python:3.11.7-alpine3.19
+FROM python:3.11.9-alpine3.20
 
 ARG GIT_Branch
 ENV GIT_Branch=$GIT_Branch
