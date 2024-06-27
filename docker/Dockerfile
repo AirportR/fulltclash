@@ -1,4 +1,4 @@
-FROM python:3.11.7-alpine3.19 AS compile-image
+FROM python:3.11.9-alpine3.20 AS compile-image
 
 RUN apk add --no-cache \
     gcc g++ make libffi-dev libstdc++ gcompat libgcc build-base py3-pybind11-dev abseil-cpp-dev re2-dev ca-certificates
@@ -10,7 +10,7 @@ ADD https://raw.githubusercontent.com/AirportR/FullTclash/backend/requirements.t
 RUN pip3 install --no-cache-dir -r requirements.txt && \
     pip3 install --no-cache-dir supervisor
 
-FROM python:3.11.7-alpine3.19
+FROM python:3.11.9-alpine3.20
 
 ARG GIT_Branch
 ENV GIT_Branch=$GIT_Branch
@@ -19,6 +19,8 @@ ENV bind=0.0.0.0:8765
 ENV token=fulltclash
 ENV branch=origin
 ENV core=4
+ENV SHELL=/bin/bash
+ENV LANG C.UTF-8
 
 WORKDIR /app
 
@@ -33,6 +35,7 @@ RUN apk add --no-cache \
     mv /app/docker/fulltclash.conf /etc/supervisord.d/fulltclash.conf && \
     chmod +x /app/docker/fulltcore.sh && \
     bash /app/docker/fulltcore.sh && \
+    sed -i 's/ash/bash/g' /etc/passwd && \
     chmod +x /app/docker/update.sh && \
     chmod +x /app/docker/docker-entrypoint.sh
 
