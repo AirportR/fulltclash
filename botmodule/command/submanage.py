@@ -6,7 +6,7 @@ from loguru import logger
 from pyrogram.types import Message
 from pyrogram.enums import ParseMode
 
-from utils import check, cleaner
+from utils import check, cleaner, message_delete_queue as mdq
 from botmodule.init_bot import config, admin
 from utils.check import check_user, get_telegram_id_from_message
 
@@ -22,59 +22,47 @@ async def sub_invite(_, message: pyrogram.types.Message):
     arg = cleaner.ArgCleaner().getall(str(message.text))
     try:
         if message.reply_to_message is None:
-            await message.reply("请先用该指令回复一个目标")
+            botmsg = await message.reply("请先用该指令回复一个目标")
+            mdq.put(botmsg)
+            return
+        r_message = message.reply_to_message
+        invite_id = str(get_telegram_id_from_message(r_message))
+        logger.info("被邀请人id: " + invite_id)
+        if len(arg) < 2:
+            m4 = await message.reply("使用方法: /share <订阅名>")
+            mdq.put(m4)
+            return
         else:
-            r_message = message.reply_to_message
-            invite_id = str(get_telegram_id_from_message(r_message))
-            logger.info("被邀请人id: " + invite_id)
-            if len(arg) < 2:
-                m4 = await message.reply("使用方法: /share <订阅名>")
-                await asyncio.sleep(10)
-                await m4.delete()
+            subinfo = config.get_sub(arg[1])
+            owner = subinfo.get('owner', '')
+            if not subinfo:
+                m3 = await message.reply("❌未找到该订阅")
+                mdq.put(m3)
                 return
-            else:
-                subinfo = config.get_sub(arg[1])
-                owner = subinfo.get('owner', '')
-                if not subinfo:
-                    m3 = await message.reply("❌未找到该订阅")
-                    await asyncio.sleep(10)
-                    await m3.delete()
-                    return
-                if ID != owner:
-                    m2 = await message.reply("❌身份ID不匹配，您无法操作该订阅！")
-                    await asyncio.sleep(10)
-                    await m2.delete()
-                    return
-                else:
-                    subname = arg[1]
-                    share_ID = subinfo.get('share', [])
-                    if invite_id in share_ID:
-                        m3 = await message.reply(f"TA已经有 **{subname}** 测试权限啦")
-                        await asyncio.sleep(10)
-                        await m3.delete()
-                        return
-                    share_ID.append(invite_id)
-                    subinfo['share'] = share_ID
-                    subinfo2 = {subname: subinfo}
-                    config.newsub(subinfo2)
-                    config.reload()
-                    try:
-                        invite_name = r_message.from_user.first_name
-                    except AttributeError:
-                        invite_name = r_message.sender_chat.title
-                    await message.reply(f"**{invite_name}** 现在开始拥有 **{subname}** 的测试权限")
+            if ID != owner:
+                m2 = await message.reply("❌身份ID不匹配，您无法操作该订阅！")
+                mdq.put(m2)
+                return
+
+            subname = arg[1]
+            share_ID = subinfo.get('share', [])
+            if invite_id in share_ID:
+                m3 = await message.reply(f"TA已经有 **{subname}** 测试权限啦")
+                mdq.put(m3)
+                return
+            share_ID.append(invite_id)
+            subinfo['share'] = share_ID
+            subinfo2 = {subname: subinfo}
+            config.newsub(subinfo2)
+            config.reload()
+            try:
+                invite_name = r_message.from_user.first_name
+            except AttributeError:
+                invite_name = r_message.sender_chat.title
+            await message.reply(f"**{invite_name}** 现在开始拥有 **{subname}** 的测试权限")
 
     except RPCError as r:
         print(r)
-
-
-# async def remove_sub_invite(_, message: pyrogram.types.Message):
-#     ID = get_telegram_id_from_message(message)
-#     arg = cleaner.ArgCleaner().getall(str(message.text))
-#     try:
-#         print("等待实现")
-#     except RPCError as r:
-#         print(r)
 
 
 async def sub(_, message: "Message"):
@@ -86,8 +74,7 @@ async def sub(_, message: "Message"):
             subinfo = config.get_sub(arg[1])
             if not subinfo:
                 m2 = await message.reply("❌未找到该订阅")
-                await asyncio.sleep(5)
-                await m2.delete()
+                mdq.put(m2)
                 return
             subpwd = subinfo.get('password', '')
             subowner = subinfo.get('owner', '')
@@ -97,11 +84,10 @@ async def sub(_, message: "Message"):
                 return
             if subowner and subowner == ID:
                 if hashlib.sha256(pwd.encode("utf-8")).hexdigest() == subpwd:
-                    await message.reply(str(subinfo.get('url', '')), )
+                    await message.reply(str(subinfo.get('url', '')), parse_mode=ParseMode.DISABLED)
                 else:
                     m2 = await message.reply("❌密码错误,请检查后重试")
-                    await asyncio.sleep(5)
-                    await m2.delete()
+                    mdq.put(m2)
             else:
                 await message.reply("❌身份ID不匹配，您无权查看该订阅。")
         else:
@@ -140,8 +126,7 @@ async def new(_, message):
         owner = subinfo.get('owner', '')
         if subinfo and ID != owner:
             m2 = await message.reply("⚠️该订阅名称已被占用")
-            await asyncio.sleep(5)
-            await m2.delete()
+            mdq.put(m2)
             return
         try:
             suburl = arg[1]

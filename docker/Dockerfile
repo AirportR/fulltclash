@@ -1,6 +1,6 @@
 FROM airportr/fulltclash:debian AS compile-image
 
-FROM python:3.11.7-slim-bookworm
+FROM python:3.11.9-slim-bookworm
 
 ARG GIT_Branch
 ENV GIT_Branch=$GIT_Branch
