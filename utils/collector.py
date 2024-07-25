@@ -1,5 +1,6 @@
 import asyncio
 import contextlib
+import re
 import ssl
 import sys
 import time
@@ -7,7 +8,7 @@ from datetime import datetime
 from pathlib import Path
 
 from typing import List, Union
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 
 import aiohttp
 import async_timeout
@@ -130,7 +131,7 @@ class Download(BaseCollector):
                         l2 = round(l2, 2)
                         spath = str(Path(savepath).absolute())
                         per_second_speed = round(l2 / (self._current_time - self._start_time), 2)
-                        print(f"\r[{p_text}>{spaces}]{percent}% {length} B({l2}MB) {' '*10}"
+                        print(f"\r[{p_text}>{spaces}]{percent}% {length} B({l2}MB) {' ' * 10}"
                               f"\n已用时间={_time_used}s 速度={per_second_speed}MB/s 保存路径={spath}")
                 elif resp.status == 404:
                     raise DownloadError(f"Resources not found: {resp.status}==>\t{url}")
@@ -333,6 +334,48 @@ class SubCollector(BaseCollector):
         except Exception as e:
             logger.error(e)
             return None
+
+    async def getSiteTitle(self, proxy=proxies):
+        _headers = config.get_ua() or {'user-agent': 'ClashMetaForAndroid/2.8.9.Meta Mihomo/0.16 Clash.Meta'}
+
+        async def fetch_title(s: aiohttp.ClientSession, url):
+            try:
+                async with s.get(url, proxy=proxy, timeout=5) as response:
+                    html = await response.text()
+                    title_match = re.search(r'<title>(.*?)</title>', html, re.IGNORECASE | re.DOTALL)
+                    if title_match:
+                        title = title_match.group(1).strip()
+                        if "just a moment" in title.lower():
+                            title = ""
+                    else:
+                        title = ""
+                    return title
+            except (ClientConnectorError, aiohttp.client_exceptions.ClientError,  asyncio.TimeoutError):
+                return ""
+            except Exception as e:
+                logger.info(str(e))
+                return ""
+
+        parsed_url = urlparse(self.url)
+        domain = parsed_url.netloc
+        if '.' in parsed_url.netloc:
+            n = parsed_url.netloc.split('.')
+            domain2 = n[-2] + "." + n[-1]
+        else:
+            domain2 = ''
+        async with aiohttp.ClientSession(headers=_headers) as session:
+            if domain:
+                url_domain = f"{parsed_url.scheme}://{domain}"
+                logger.info(f'获取域名的站点标题: {url_domain}')
+                domain_title = await fetch_title(session, url_domain)
+
+            if not domain_title and domain2:
+                url_subdomain = f"{parsed_url.scheme}://{domain2}"
+                logger.info(f'尝试获取二级域名站点标题: {url_subdomain}')
+                domain_title = await fetch_title(session, url_subdomain)
+
+            site_title = domain_title or ""
+            return site_title
 
     @logger.catch()
     async def getSubTraffic(self, proxy=proxies):

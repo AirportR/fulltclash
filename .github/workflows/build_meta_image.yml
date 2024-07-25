@@ -1,6 +1,7 @@
 name: build_meta_image
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - 'docker/Metafile'

@@ -550,7 +550,7 @@ async def select_slave_only_1(_: Client, call: Union[CallbackQuery, Message], **
     if isinstance(call, CallbackQuery):
         await target.edit_text(target.text, reply_markup=IKM)
     else:
-        return await target.reply(f"请选择测试后端:\n", quote=True, reply_markup=IKM)
+        return await target.reply("请选择测试后端:\n", quote=True, reply_markup=IKM)
 
 
 async def select_slave_only(app: Client, call: Union[CallbackQuery, Message], timeout=60, **kwargs) -> tuple[str, str]:
