@@ -18,12 +18,12 @@
 </div>
 
 
-## 基本介绍
+## 介绍
 
-FullTClash名字来源于 Full Test base on Clash 。后端部分使用[Clash项目](https://github.com/Dreamacro/clash)(现在亦可称之为[mihomo](https://github.com/MetaCubeX/mihomo))相关代码作为出站代理，前端部分使用Telegram API作为交互界面，需配合Telegram使用，即为一个Telegram机器人(bot)， FullTClash bot 是承载其测试任务的Telegram 机器人（以下简称bot）。\
-目前支持以Clash配置文件为载体的**批量**连通性测试，支持以下测试条目:
-1. Netflix  
-2. Youtube 
+🚗快速批量检测**Clash配置**文件里节点的质量，帮助你筛选优质节点✌️，
+目前支持以下测试条目:
+1. Netflix 
+2. Youtube Premium
 3. DisneyPlus 
 4. Bilibili解锁 
 5. OpenAI(ChatGPT) 
@@ -39,7 +39,7 @@ FullTClash名字来源于 Full Test base on Clash 。后端部分使用[Clash项
 此外还有：
 
 1. HTTP延迟测试
-2. 链路拓扑测试（节点出入口分析）。
+2. 链路拓扑测试（节点出入口分析）
 3. 下行速度测试
 
 ## 主要功能
@@ -49,7 +49,7 @@ FullTClash名字来源于 Full Test base on Clash 。后端部分使用[Clash项
 * 测试结果绘图
 * 权限控制
 * 文档支持
-* 基于Pyrogram框架
+* TG MTProto通信(Pyrogram)
 * 规则系统
 * 支持Docker
 * 命令行支持
@@ -89,9 +89,9 @@ FullTClash名字来源于 Full Test base on Clash 。后端部分使用[Clash项
 
 流媒体测试:
 
-![测试图片](https://upload.cc/i1/2023/03/30/xyTGRu.png)
+![测试图片](https://github.com/AirportR/fulltclash/blob/dev/resources/image/test_example.png)
 
-![测试图片](https://upload.cc/i1/2023/03/30/1gdtWf.png)
+![测试图片](https://github.com/AirportR/fulltclash/blob/dev/resources/image/topo_example.jpg)
 
 ## 如何开始
 
@@ -107,7 +107,6 @@ FullTClash名字来源于 Full Test base on Clash 。后端部分使用[Clash项
   
   这步不会请Google。
 
-- 字体文件。（可选，可以用默认的）  
 ### 拉取源码
 方法1：直接下载（不会有人不知道在哪下吧？）\
 方法2：使用git（Linux推荐，方便更新），首先安装git，然后拉取仓库。以下指令为 Ubuntu 发行版作示例，Windows自行解决。
@@ -117,7 +116,7 @@ apt install -y git && git clone https://github.com/AirportR/fulltclash.git && cd
 此方法在中国大陆可能需要代理加速，请自行解决。
 ### 环境准备
 
-- Python 3.9 以上  
+- Python 版本范围 (3.9 ~ 3.11)
 - 以及各种相关包依赖  
 
 您可以用以下命令，在当前项目目录下运行以快速安装环境：
@@ -260,7 +259,8 @@ python ./utils/tool/console.py -h
 Telegram官方并没有承认UID的说法，但确实存在于Telegram中。每一个TG用户都存在一个唯一的身份ID，这个在官方的TG客户端是查询不到的。Bot依靠UID确定管理员身份，至于如何获取Google搜索即可。  
 4. 是否有一键部署脚本\
 目前只有Docker部署脚本，期待你的贡献！  
-
+5. FullTClash名字来源于 Full Test base on Clash。\
+后端部分使用[Clash项目](https://github.com/Dreamacro/clash)(现在亦可称之为[mihomo](https://github.com/MetaCubeX/mihomo))相关代码作为出站代理。
 ## 致谢
 
 - [流媒体解锁思路](https://github.com/lmc999/RegionRestrictionCheck)  
