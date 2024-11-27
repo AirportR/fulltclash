@@ -1,3 +1,4 @@
+import re
 import ssl
 
 import asyncio
@@ -37,9 +38,13 @@ async def fetch_netflix(collector, session: aiohttp.ClientSession, flag=1, proxy
                 if res.status == 200:  # 解锁非自制
                     text = await res.text()
                     try:
-                        locate = text.find("preferredLocale")  # 定位到关键标签
-                        if locate > 0:
-                            region = text[locate + 29:locate + 31]
+                        # 正则表达式模式
+                        pattern = r'"country":"([^"]+)"'
+
+                        # 匹配并提取国家名称
+                        match = re.search(pattern, text)
+                        if match:
+                            region = match.group(1)
                             collector.info['netflix'] = f"解锁({region})"
                         else:
                             region = "未知"
