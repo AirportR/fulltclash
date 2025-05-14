@@ -17,6 +17,11 @@
 	<br>
 </div>
 
+## 注意
+
+**此项目由于架构原因，现已停止维护，感谢大家的支持。**
+
+如果你实在需要后续的优化版本，请关注后续作品: [koipy](https://koipy.gitbook.io/koipy)
 
 ## 介绍
 
@@ -29,12 +34,11 @@
 5. OpenAI(ChatGPT) 
 6. 落地ip风险(IP欺诈度) 
 7. 维基百科
-8. 微软Copilot
-9. Claude
-10. 落地DNS区域检测
-11. Spotify 
-12. SSH 22端口封禁检测
-13. Tiktok
+8. Claude
+9. 落地DNS区域检测
+10. Spotify 
+11. SSH 22端口封禁检测
+12. Tiktok
 
 此外还有：
 

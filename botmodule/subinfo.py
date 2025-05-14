@@ -3,7 +3,7 @@ import time
 from loguru import logger
 from pyrogram.enums import ParseMode
 from pyrogram.errors import RPCError
-from utils.cleaner import geturl, ArgCleaner
+from utils.cleaner import geturl, ArgCleaner, ClashCleaner
 from utils.collector import SubCollector
 from utils.check import get_telegram_id_from_message as get_id
 from utils.check import check_user
@@ -57,6 +57,9 @@ async def getSubInfo(_, message):
         subcl.cvt_enable = False
         subinfo = await subcl.getSubTraffic()
         site_name = await subcl.getSiteTitle()
+        subconfig = await subcl.getSubConfig(inmemory=True)
+        pre_cl = ClashCleaner(':memory:', subconfig)
+        proxynum = pre_cl.nodesCount()
         if not subinfo:
             await back_message.edit_text("此订阅无法获取流量信息.")
             return
@@ -65,6 +68,7 @@ async def getSubInfo(_, message):
             days_diff = f"({days_diff}天)"
         rs = subinfo[3] - subinfo[2]  # 剩余流量
         subinfo_text = f"""
+🚀节点数量：{proxynum} 个
 ⬆️已用上行：{round(subinfo[0], 3)} GB
 ⬇️已用下行：{round(subinfo[1], 3)} GB
 🚗总共使用：{round(subinfo[2], 3)} GB
